@@ -6,6 +6,7 @@ on:
     paths:
       - scripts/import_osm_routes.py
       - scripts/harvest_routes.py
+      - scripts/assemble_treks.py
       - .github/workflows/import-osm-routes.yml
       - tests/test_import_osm_routes.py
       - tests/test_harvest_routes.py
@@ -35,6 +36,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_*routes.py' -v
       - name: Acquisisci un lotto geografico da OSM
         run: python scripts/harvest_routes.py --write --batch-size 2 --pause-seconds 15
+      - name: Ricalcola i grandi trekking su segmenti realmente disponibili
+        run: python scripts/assemble_treks.py
       - name: Registra nuove geometrie verificate
         run: |
           if [ -z "$(git status --porcelain -- public/data/routes-tiles/ public/data/routes-manifest.json public/data/import-status.json)" ]; then
