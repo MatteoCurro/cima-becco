@@ -165,6 +165,13 @@ footer{max-width:880px;margin:0 auto;padding:20px;border-top:1px solid var(--lin
 @media(max-width:660px){.cima-seo-facts,.cima-seo-details{grid-template-columns:repeat(2,minmax(0,1fr))}header{flex-wrap:wrap}main{padding-top:18px}}
 
 `;
+// Le pagine SEO contengono HTML leggibile senza JS; con JS montano la stessa
+// SPA interattiva della home, senza un layout duplicato su permalink.
+const APP_SHELL=readFileSync(join(DIST,'index.html'),'utf8');
+const APP_ASSETS=[
+  ...(APP_SHELL.match(/<script\b[^>]*\btype=["']module["'][^>]*><\/script>/gi)||[]),
+  ...(APP_SHELL.match(/<link\b[^>]*\brel=["']stylesheet["'][^>]*>/gi)||[])
+].filter(tag=>/\b(?:src|href)=["']\/[^"']*\/assets\//.test(tag)).join('\n');
 const MARK = '<svg viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="25" fill="#143d2f"/><path d="M18 18 Q18 54 42 57 L51 31 L68 55 Q96 50 99 19" fill="none" stroke="#ff2677" stroke-width="13" stroke-linecap="square"/><path d="M30 66 L54 42 L78 62 L69 90 L39 90Z" fill="#e4ffbe"/><path d="M77 63 L108 73 L74 79Z" fill="#ff2677"/><circle cx="57" cy="65" r="3.7" fill="#143d2f"/></svg>';const pages = [];
 
 function page({ path, title, description, image, jsonLd, body }) {
@@ -188,13 +195,16 @@ function page({ path, title, description, image, jsonLd, body }) {
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>
 <style>${STYLE}</style>
+${APP_ASSETS}
 </head>
 <body>
+<div id="root">
 <header><a class="brand" href="${SITE}/">${MARK}Cima Becco</a><a href="${SITE}/#map">Esplora la mappa</a></header>
 <main>
 ${body}
 </main>
 <footer>Cima Becco · Ogni cima, un nuovo percorso. <a href="${SITE}/#data">Fonti e crediti</a> · <a href="${SITE}/#privacy">Privacy</a></footer>
+</div>
 </body>
 </html>
 `;
@@ -512,7 +522,7 @@ for (const place of alpinePlaces) {
         ...(photo?{image:photo.url}:{}),
         hasMap:place.osmUrl,
         ...(place.phone?{telephone:place.phone}:{}),
-      },breadcrumbLd([[category==='rifugi'?'Rifugi':category==='bivacchi'?'Bivacchi':'Paesi',appLink(`#atlante/${category}`)],[place.name,null]])]},
+      },breadcrumbLd([[category==='rifugi'?'Rifugi':category==='bivacchi'?'Bivacchi':'Paesi',appLink(`#${category==='borghi'?'paesi':category}`)],[place.name,null]])]},
     body:`${crumbs([['Atlante',appLink(`#atlante/${category}`)],[place.name]])}
       <div class="cima-seo-eyebrow">CIMA BECCO · ${place.kind==='rifugio'?'RIFUGIO':place.kind==='bivacco'?'BIVACCO':'PAESE'} · DOLOMITI</div>
       <h1>${escape(place.name)}</h1>
@@ -526,7 +536,7 @@ for (const place of alpinePlaces) {
         
       </ul>
       <div class="cima-seo-actions">
-        <a class="cta" href="${appLink(`#atlante/${category}/${place.slug}`)}">MAPPA E SENTIERI ↗</a>
+        <a class="cta" href="${appLink(`#${category==='borghi'?'paesi':category}/${place.slug}`)}">MAPPA E SENTIERI ↗</a>
         ${place.phone?`<a class="cima-seo-secondary" href="tel:${escape(place.phone.replace(/[^+\d]/g,''))}">Chiama la struttura</a>`:''}
         ${place.email?`<a class="cima-seo-secondary" href="mailto:${escape(place.email)}">Scrivi alla struttura</a>`:''}
       </div>
@@ -579,7 +589,7 @@ for (const [kind,segment,label,title,blurb] of [
       <div class="cima-seo-eyebrow">CIMA BECCO · ATLANTE DOLOMITI</div>
       <h1>${title}</h1>
       <p class="cima-seo-lead">${escape(blurb)}</p>
-      <div class="cima-seo-actions"><a class="cta" href="${appLink(`#atlante/${segment}`)}">ESPLORA LA MAPPA COMPLETA ↗</a></div>
+      <div class="cima-seo-actions"><a class="cta" href="${appLink(`#${segment==='borghi'?'paesi':segment}`)}">ESPLORA LA MAPPA COMPLETA ↗</a></div>
       <p class="sub">${list.length} luoghi con scheda · luoghi realmente censiti in OpenStreetMap.</p>
       <ul class="list">${list.slice(0,120).map(place=>`<li><a href="${SITE}/${segment}/${place.slug}/">${escape(place.name)}</a>${place.elevationM ? ' · '+metres(place.elevationM) : ''}${(byStop.get(place.slug)||[]).length?' · '+(byStop.get(place.slug)||[]).length+' sentieri':''}</li>`).join('')}</ul>
       <p class="sub">Per trovare anche i luoghi non ancora arricchiti usa la mappa interattiva. I dati OSM e le tracce non certificano condizioni, accessibilità o servizi.</p>`,

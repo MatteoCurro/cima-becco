@@ -6,6 +6,8 @@ export interface AlpinePlace {
   kind: 'rifugio' | 'bivacco' | 'borgo';
   access?: string;
   fee?: string;
+  /** Logo ufficiale verificato/licenziato, mai generato automaticamente. */
+  logo?: {url:string;sourceUrl:string;author:string;license:string};
   winterRoom?: string;
   seasonal?: string;
   lat: number;
@@ -55,7 +57,7 @@ export function atlasCategory(kind: AlpinePlace['kind']): 'rifugi' | 'bivacchi' 
 }
 
 export function alpinePlaceLink(place: Pick<AlpinePlace, 'slug' | 'kind'>): string {
-  return `#atlante/${atlasCategory(place.kind)}/${place.slug}`;
+  return `${import.meta.env.BASE_URL}${atlasCategory(place.kind)}/${encodeURIComponent(place.slug)}/`;
 }
 
 /** Box comodo per aprire la mappa sul POI, non finge un accesso stradale. */

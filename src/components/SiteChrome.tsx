@@ -60,9 +60,9 @@ export function SiteFooter({ openSourcePill = false }: { openSourcePill?: boolea
             <h3>Vai a vedere</h3>
             <a href="#map">Cime e montagne</a>
             <a href="#routes">Escursioni e ferrate</a>
-            <a href="#atlante/rifugi">Rifugi</a>
-            <a href="#atlante/bivacchi">Bivacchi</a>
-            <a href="#atlante/borghi">Paesi di montagna</a>
+            <a href="#rifugi">Rifugi</a>
+            <a href="#bivacchi">Bivacchi</a>
+            <a href="#paesi">Paesi di montagna</a>
             <a href="#atlante/trekking">Alte Vie e Sentiero Italia</a>
             <a href="#pianifica">Pianifica un percorso</a>
             <button type="button" className="site-footer-link" aria-haspopup="dialog" onClick={() => setCoverageOpen(true)}>Cosa c'è nella mappa</button>

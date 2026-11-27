@@ -104,7 +104,9 @@ describe('struttura, geometria e link', () => {
   });
   it('costruisce permalink sicuri dei sentieri', () => {
     const href = routeLink('osm-hiking-1067616');
-    expect(new URL(href).hash).toBe('#route/osm-hiking-1067616');
+    expect(new URL(href).pathname).toBe(`${import.meta.env.BASE_URL}route/osm-hiking-1067616/`);
+    expect(new URL(href).hash).toBe('');
+    expect(new URL(routeLink('community-slug', false)).hash).toBe('#route/community-slug');
     expect(routeSlugFromHash('#route/osm-hiking-1067616')).toBe('osm-hiking-1067616');
     expect(routeSlugFromHash('#route/Has Spaces')).toBeNull();
     expect(routeSlugFromHash('#route/<script>')).toBeNull();

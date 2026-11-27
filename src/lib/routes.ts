@@ -328,8 +328,8 @@ const ROUTE_HASH = '#route/';
  * The address people share for a route: this site, opening on that route. No
  * tracking parameters, just the route's own slug.
  */
-export function routeLink(slug: string): string {
-  return `${window.location.origin}${import.meta.env.BASE_URL}${ROUTE_HASH}${encodeURIComponent(slug)}`;
+export function routeLink(slug: string, staticPage = true): string {
+  return `${window.location.origin}${import.meta.env.BASE_URL}${staticPage ? `route/${encodeURIComponent(slug)}/` : `#route/${encodeURIComponent(slug)}`}`;
 }
 
 /** The route slug in a `#route/<slug>` hash, or null. Anything not shaped like a slug is refused. */

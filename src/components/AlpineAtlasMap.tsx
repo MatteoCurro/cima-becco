@@ -11,7 +11,8 @@ interface Props {
   kind: AlpinePlace['kind'];
   selected?: AlpinePlace | null;
   routes?: Route[];
-  height?: number;
+  height?: number | string;
+  onSelect?: (place: AlpinePlace) => void;
   water?: {lng:number;lat:number;potable:boolean}[];
 }
 const EMPTY_LINE = {type:'FeatureCollection' as const,features:[]};
@@ -27,9 +28,13 @@ function routeGeometry(routes: Route[]) {
 }
 
 /** Mappa riusabile per listati rifugi, paesi e singole pagine locali. */
-export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,water=[]}:Props) {
+export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,water=[],onSelect}:Props) {
   const container=useRef<HTMLDivElement>(null);
   const mapRef=useRef<MapLibreMap | null>(null);
+  const onSelectRef=useRef(onSelect);
+  onSelectRef.current=onSelect;
+  const placesRef=useRef(places);
+  placesRef.current=places;
   const markerRef=useRef<Marker | null>(null);
   const initialized=useRef(false);
   const [ready,setReady]=useState(false);
@@ -49,7 +54,7 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
     map.on('load',()=>{
       if(mapRef.current!==map)return;
       installMountainBasemap(map);
-      addAlpinePlaceLayers(map,places,{kind});
+      addAlpinePlaceLayers(map,places,{kind,onSelect:(place)=>onSelectRef.current?.(place),getPlace:(slug)=>placesRef.current.find(p=>p.slug===slug)});
       map.addSource('cb-atlas-nearby-routes',{type:'geojson',data:EMPTY_LINE});
       map.addLayer({id:'cb-atlas-nearby-route-outline',type:'line',source:'cb-atlas-nearby-routes',
         paint:{'line-color':'#fff','line-width':6,'line-opacity':.92}});
@@ -73,7 +78,9 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
         })),
       });
     }
-    return ()=>{initialized.current=false;markerRef.current?.remove();markerRef.current=null;map.remove();mapRef.current=null;};
+    const observer=new ResizeObserver(()=>map.resize());
+    if(container.current)observer.observe(container.current);
+    return ()=>{observer.disconnect();initialized.current=false;markerRef.current?.remove();markerRef.current=null;map.remove();mapRef.current=null;};
     // Map init is deliberate: props are updated by separate effects, never re-create the map.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);

@@ -70,16 +70,21 @@ def fetch_claims(qids):
     out = {}
     for batch in chunks(qids):
         doc = request(WIKIDATA, {'action': 'wbgetentities', 'format': 'json',
-                                'ids': '|'.join(batch), 'props': 'claims'})
+                                'ids': '|'.join(batch), 'props': 'claims|sitelinks'})
         for qid, entity in doc.get('entities', {}).items():
             claims = entity.get('claims', {})
             item = {}
-            for prop, label in [('P18', 'photo'), ('P373', 'category')]:
+            for prop, label in [('P18', 'photo'), ('P154', 'logo'), ('P373', 'category')]:
                 for claim in claims.get(prop, []):
                     value = claim.get('mainsnak', {}).get('datavalue', {}).get('value')
                     if isinstance(value, str) and value.strip():
                         item[label] = value.strip()
                         break
+            for site, language in [('itwiki','it'),('dewiki','de'),('enwiki','en')]:
+                title = entity.get('sitelinks', {}).get(site, {}).get('title')
+                if title:
+                    item['wiki'] = (language, title)
+                    break
             if item:
                 out[qid] = item
         time.sleep(1.2)
@@ -111,6 +116,22 @@ def nearby_commons_files(place):
     return [row['title'].removeprefix('File:') for row in candidates
             if row.get('title', '').startswith('File:')
             and title_matches_place(place['name'], row['title'])][:5]
+
+
+def wikipedia_page_image(language, title):
+    """Immagine della voce Wikipedia collegata esattamente via Wikidata QID."""
+    if language not in ('it', 'de', 'en') or not title:
+        return None
+    doc = request('https://' + language + '.wikipedia.org/w/api.php', {
+        'action': 'query', 'format': 'json', 'prop': 'pageimages',
+        'titles': title, 'piprop': 'name', 'redirects': '1'})
+    for page in doc.get('query', {}).get('pages', {}).values():
+        filename = page.get('pageimage')
+        if filename and filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+            unwanted = ('coat_of_arms', 'stemma', 'wappen', 'flag', 'bandiera', 'logo')
+            if not any(term in filename.lower() for term in unwanted):
+                return filename
+    return None
 
 
 def commons_photos(filenames):
@@ -158,9 +179,12 @@ def run(limit=75, geo_limit=60, write=False):
     qids = sorted({p['wikidata'] for p in direct if not p.get('commonsFile') and p.get('wikidata')})
     claims = fetch_claims(qids) if qids else {}
     direct_files = {}
+    logo_files = {}
     for place in direct:
         q = claims.get(place.get('wikidata'), {})
         filename = place.get('commonsFile') or q.get('photo')
+        if q.get('logo') and not place.get('logo'):
+            logo_files[place['slug']] = q['logo']
         if not filename and q.get('category'):
             try:
                 names = commons_category_file(q['category'])
@@ -169,6 +193,11 @@ def run(limit=75, geo_limit=60, write=False):
                     filename = next(iter(names), None)
             except Exception as error:
                 print(f"Categoria Commons non disponibile per {place['slug']}: {error}")
+        if not filename and q.get('wiki'):
+            try:
+                filename = wikipedia_page_image(*q['wiki'])
+            except Exception as error:
+                print(f"Immagine Wikipedia non disponibile ({place['slug']}): {error}")
         if filename:
             direct_files[place['slug']] = filename
         time.sleep(.15)
@@ -190,7 +219,7 @@ def run(limit=75, geo_limit=60, write=False):
             print(f"Geo Commons temporaneamente non disponibile ({place['slug']}): {error}")
         time.sleep(1.2)
 
-    filenames = list(direct_files.values()) + list(geo_files.values())
+    filenames = list(direct_files.values()) + list(geo_files.values()) + list(logo_files.values())
     verified = commons_photos(filenames) if filenames else {}
     saved = 0
     for place in direct:
@@ -199,6 +228,10 @@ def run(limit=75, geo_limit=60, write=False):
         if photo:
             place['photo'] = photo
             saved += 1
+        if place['slug'] in logo_files:
+            logo = verified.get(logo_files[place['slug']].replace('_', ' ').casefold())
+            if logo:
+                place['logo'] = logo
         place['photoCheckedAt'] = today
     for place in candidates:
         if place.get('photo'):
@@ -213,6 +246,7 @@ def run(limit=75, geo_limit=60, write=False):
                           encoding='utf-8')
     print(json.dumps({
         'directChecked': len(direct), 'geoChecked': len(candidates),
+        'logos': sum(bool(p.get('logo')) for p in places),
         'newPhotos': saved, 'totalPhotos': sum(bool(p.get('photo')) for p in places),
     }))
 
