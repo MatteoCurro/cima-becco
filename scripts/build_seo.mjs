@@ -85,6 +85,17 @@ writeFileSync(join(DIST,'data','featured-routes.json'),JSON.stringify({generated
 const descriptions = existsSync(join(DATA, 'descriptions.json')) ? readJson(join(DATA, 'descriptions.json')).descriptions ?? {} : {};
 const index = readJson(join(DATA, 'peaks', 'index.json'));
 const peakPhotos = existsSync(join(DATA, 'peaks', 'photos.json')) ? readJson(join(DATA, 'peaks', 'photos.json')).photos ?? {} : {};
+const alpinePlaces = existsSync(join(DATA, 'alpine-places.json')) ? readJson(join(DATA, 'alpine-places.json')).places ?? [] : [];
+const trekProjects = existsSync(join(DATA, 'trekking-projects.json')) ? readJson(join(DATA, 'trekking-projects.json')).projects ?? [] : [];
+const byStop = new Map();
+for (const route of routes) {
+  for (const stop of route.stops || []) {
+    const list = byStop.get(stop.slug) || [];
+    list.push(route);
+    byStop.set(stop.slug, list);
+  }
+}
+
 const regionName = new Intl.DisplayNames(['it'], { type: 'region' });
 const countryName = (code) => {
   try {
@@ -108,14 +119,14 @@ function photoUrl(file) {
 }
 
 const STYLE = `
-:root{--ink:#294536;--muted:#68766b;--accent:#476857;--line:#e1e8de;--sage:#eaf1e8;--paper:#fbfcf8}
-*{box-sizing:border-box}body{margin:0;font:16px/1.65 Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:var(--ink);background:var(--paper)}
+:root{--ink:#143d2f;--muted:#637766;--accent:#ff2677;--line:#e1e8de;--sage:#eaf1e8;--paper:#fbfcf8}
+*{box-sizing:border-box}body{margin:0;font:16px/1.65 'Space Grotesk',-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:var(--ink);background:var(--paper)}
 header{display:flex;align-items:center;justify-content:space-between;gap:16px;max-width:880px;margin:0 auto;padding:18px 20px;border-bottom:1px solid var(--line)}
 .brand{display:inline-flex;align-items:center;gap:8px;color:var(--accent);font-weight:700;font-size:21px;text-decoration:none;letter-spacing:-.03em}
 .brand svg{width:28px;height:28px}
 main{max-width:880px;margin:0 auto;padding:28px 20px 56px}
 nav.crumbs{font-size:14px;color:var(--muted);margin-bottom:12px}nav.crumbs a{color:var(--muted)}
-h1{margin:0 0 12px;font:700 clamp(32px,5vw,48px)/1.13 Bitter,Georgia,serif;letter-spacing:-.028em}h2{font-family:Bitter,Georgia,serif;letter-spacing:-.02em}
+h1{margin:0 0 12px;font:900 clamp(34px,5vw,53px)/1.03 'Bricolage Grotesque',sans-serif;letter-spacing:-.028em}h2{font-family:'Bricolage Grotesque',sans-serif;letter-spacing:-.035em}
 .sub{margin:0 0 20px;color:var(--muted)}
 .facts{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 22px;padding:0;list-style:none}
  .facts li{padding:13px 16px;border:1px solid var(--line);background:#f5f8f2;border-radius:12px;font-size:13px}.facts strong{display:block;font-size:18px}
@@ -130,7 +141,7 @@ footer{max-width:880px;margin:0 auto;padding:20px;border-top:1px solid var(--lin
 .cima-seo-lead{font-size:16px;max-width:750px;color:#506558;line-height:1.8;margin:0 0 20px}
 .cima-seo-tags{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 24px}
 .cima-seo-tags span{border-radius:99px;background:#e7eee2;color:#48684d;padding:6px 12px;font-weight:800;font-size:12px}
-.cima-seo-tags span.fun{background:#f8efdf;color:#79623d}
+.cima-seo-tags span.fun{background:#ff2677;color:#fff;font:900 30px/.93 'Barlow Condensed',Impact,sans-serif;letter-spacing:.01em;border-radius:5px;transform:rotate(-2deg);box-shadow:4px 4px 0 #143d2f}
 .route-sketch{border-radius:18px;background:linear-gradient(145deg,#e2eade,#c9d9c7);padding:18px 25px;overflow:hidden;margin:0 0 23px;position:relative;color:#3b5947}
 .route-sketch::before{content:'';position:absolute;inset:0;opacity:.23;background:repeating-radial-gradient(ellipse at 80% 20%,transparent 0px,transparent 17px,#7f9d88 19px,#7f9d88 20px,transparent 22px,transparent 38px);pointer-events:none}
 .route-sketch svg{display:block;position:relative;width:100%;height:auto;max-height:260px;filter:drop-shadow(0 1px 1px #fafff7)}
@@ -140,7 +151,7 @@ footer{max-width:880px;margin:0 auto;padding:20px;border-top:1px solid var(--lin
 .cima-seo-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:18px 0 24px}
 .cima-seo-facts strong{color:#2f573e;white-space:normal;line-height:1.3}
 .cima-seo-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:24px 0 34px}
-.cima-seo-actions .cta{background:#416751;border-radius:12px}
+.cima-seo-actions .cta{background:#ff2677;border-radius:6px;font-weight:900;box-shadow:3px 3px 0 #143d2f}
 .cima-seo-secondary{font-weight:800;color:#436e53;text-decoration:none;border:1px solid #d8e4d8;border-radius:12px;padding:11px 16px}
 .cima-seo-secondary:hover{background:#e5eee4}
 .cima-seo-body{border-top:1px solid #dfe6db;padding-top:12px;max-width:760px}
@@ -153,8 +164,7 @@ footer{max-width:880px;margin:0 auto;padding:20px;border-top:1px solid var(--lin
 @media(max-width:660px){.cima-seo-facts,.cima-seo-details{grid-template-columns:repeat(2,minmax(0,1fr))}header{flex-wrap:wrap}main{padding-top:18px}}
 
 `;
-const MARK = '<svg viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="27" fill="#476857"/><path d="M18 90 49 31l19 32 12-17 24 44H18Z" fill="#f7f6ed"/><path d="m40 90 17-31 10 18 14-21 17 34H40Z" fill="#b8c7b2"/><path d="m80 46 28 12-18 9-10-21Z" fill="#e6c89c"/></svg>';
-const pages = [];
+const MARK = '<svg viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="25" fill="#143d2f"/><path d="M18 18 Q18 54 42 57 L51 31 L68 55 Q96 50 99 19" fill="none" stroke="#ff2677" stroke-width="13" stroke-linecap="square"/><path d="M30 66 L54 42 L78 62 L69 90 L39 90Z" fill="#e4ffbe"/><path d="M77 63 L108 73 L74 79Z" fill="#ff2677"/><circle cx="57" cy="65" r="3.7" fill="#143d2f"/></svg>';const pages = [];
 
 function page({ path, title, description, image, jsonLd, body }) {
   const url = `${SITE}/${path}`;
@@ -163,6 +173,7 @@ function page({ path, title, description, image, jsonLd, body }) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <title>${escape(title)}</title>
 <meta name="description" content="${escape(description)}">
 <link rel="canonical" href="${url}">
