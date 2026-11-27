@@ -112,8 +112,8 @@ test('navbar: stessa larghezza in home, catalogo e permalink', async ({page}) =>
       await page.goto(path);
       const header=page.locator('.site-header').first();
       await expect(header).toBeVisible();
-      const box=await header.boundingBox();
-      expect(box!.width).toBeGreaterThanOrEqual(width-2);
+      await expect.poll(async()=> (await header.boundingBox())?.width ?? 0)
+        .toBeGreaterThanOrEqual(width-2);
       expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
     }
   }
@@ -124,6 +124,7 @@ test('permalink: scheda sentiero completa, mappa responsive e un solo titolo', a
   test.setTimeout(90_000);
   await page.setViewportSize({width:390,height:844});
   await page.goto('/route/osm-hiking-13956722/');
+  await page.emulateMedia({reducedMotion:'reduce'});
   const panel=page.locator('.route-panel.in-sidebar.is-full-detail');
   await expect(panel).toBeVisible({timeout:45_000});
   await expect(panel.locator('h1.route-title-heading')).toBeVisible();
@@ -181,8 +182,8 @@ test('navbar: la ricerca globale resta disponibile in tutte le sezioni', async (
     await page.setViewportSize({width:390,height:844});
     await page.goto(path);
     await expect(page.locator('.site-header input[type=search]')).toBeVisible();
-    const header=await page.locator('.site-header').boundingBox();
-    expect(header!.width).toBeGreaterThanOrEqual(388);
+    await expect.poll(async()=> (await page.locator('.site-header').boundingBox())?.width ?? 0)
+      .toBeGreaterThanOrEqual(388);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
   }
 });

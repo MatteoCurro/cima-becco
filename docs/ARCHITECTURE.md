@@ -7,7 +7,7 @@
 3. **Percorsi censiti e indicizzati:** `/route/:slug/` (file SEO statico + SPA); **percorsi della comunità:** `/#route/:slug` finché il sito resta su GitHub Pages senza pagine dinamiche. Entrambi montano `RoutePanel` completo nello stesso shell. **GPX solo locali:** anteprima/esplorazione, nessun permalink pubblico fittizio.
 4. **Luoghi alpini:** `/rifugi/:slug/`, `/bivacchi/:slug/`, `/borghi/:slug/`; trekking `/trekking/:slug/`. I vecchi link `#venue/:slug` per le cime restano supportati.
 5. **Un solo header:** `SiteHeader` in `SiteChrome.tsx` e ricerca `SiteSearch` per tutte le pagine; `exploreNavigation.ts` è l'elenco delle sezioni. Falesie e palestre future saranno categorie, non nuove varianti della navbar.
-6. **Mobile:** nessun contenitore può ridursi a una colonna involontaria o superare la larghezza del viewport. Scheda itinerario = contenuti e mappa impilati, desktop = due colonne reali. I filtri della mappa appartengono all'esplorazione, non alle schede.
+6. **Mobile:** nessun contenitore può ridursi a una colonna involontaria o superare la larghezza del viewport. Scheda itinerario = mappa a tutta larghezza prima dei dettagli su mobile, desktop = due colonne reali. I filtri della mappa appartengono all'esplorazione, non alle schede.
 
 ## Proprietà dei componenti
 

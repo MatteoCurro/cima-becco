@@ -100,8 +100,9 @@
     position:relative;
     inset:auto;
     top:auto;
+    order:-1; /* Prima il tracciato, poi la relazione completa */
     flex:none;
-    height:clamp(320px,55dvh,480px);
+    height:clamp(300px,45dvh,430px);
     min-height:320px;
   }
   .map-page.is-route-detail .stage .map-wrap > .map{inset:0}
