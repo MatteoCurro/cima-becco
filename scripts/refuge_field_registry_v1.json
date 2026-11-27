@@ -1,0 +1,938 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "refuge",
+  "canonicalSpec": "docs/MODELLO_METADATI_E_LAYOUT.md",
+  "policy": "fields are a minimum inventory; unknown fields remain absent from entity facts; counts indicate imported/available only, not verified truth",
+  "fields": [
+    {
+      "key": "id",
+      "group": "identity",
+      "priority": "P0",
+      "sources": [
+        "internal"
+      ],
+      "refresh": "stable",
+      "target": "id"
+    },
+    {
+      "key": "kind",
+      "group": "identity",
+      "priority": "P0",
+      "sources": [
+        "osm",
+        "cai"
+      ],
+      "refresh": "on_source_change",
+      "target": "kind"
+    },
+    {
+      "key": "subtype",
+      "group": "identity",
+      "priority": "P0",
+      "sources": [
+        "cai",
+        "osm",
+        "sat"
+      ],
+      "refresh": "on_source_change",
+      "target": "subtype"
+    },
+    {
+      "key": "name",
+      "group": "identity",
+      "priority": "P0",
+      "sources": [
+        "cai",
+        "sat",
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "name"
+    },
+    {
+      "key": "aliases",
+      "group": "identity",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "osm",
+        "wikidata"
+      ],
+      "refresh": "on_source_change",
+      "target": "aliases"
+    },
+    {
+      "key": "localNames",
+      "group": "identity",
+      "priority": "P1",
+      "sources": [
+        "osm",
+        "wikidata",
+        "archives"
+      ],
+      "refresh": "on_source_change",
+      "target": "localNames"
+    },
+    {
+      "key": "slug",
+      "group": "seo",
+      "priority": "P0",
+      "sources": [
+        "internal"
+      ],
+      "refresh": "stable",
+      "target": "slug"
+    },
+    {
+      "key": "slugAliases",
+      "group": "seo",
+      "priority": "P0",
+      "sources": [
+        "internal"
+      ],
+      "refresh": "stable",
+      "target": "slugAliases"
+    },
+    {
+      "key": "shortSummary",
+      "group": "editorial",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "sat",
+        "archives"
+      ],
+      "refresh": "on_source_change",
+      "target": "shortSummary"
+    },
+    {
+      "key": "description",
+      "group": "editorial",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "sat",
+        "cai",
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "description",
+      "legacyKey": "description"
+    },
+    {
+      "key": "history",
+      "group": "editorial",
+      "priority": "P2",
+      "sources": [
+        "official",
+        "sat",
+        "archives",
+        "wikipedia"
+      ],
+      "refresh": "on_source_change",
+      "target": "history"
+    },
+    {
+      "key": "yearBuilt",
+      "group": "history",
+      "priority": "P2",
+      "sources": [
+        "official",
+        "sat",
+        "archives"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.yearBuilt"
+    },
+    {
+      "key": "yearOpened",
+      "group": "history",
+      "priority": "P2",
+      "sources": [
+        "official",
+        "sat",
+        "archives"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.yearOpened"
+    },
+    {
+      "key": "dedication",
+      "group": "history",
+      "priority": "P2",
+      "sources": [
+        "official",
+        "archives"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.dedication"
+    },
+    {
+      "key": "coordinates",
+      "group": "geography",
+      "priority": "P0",
+      "sources": [
+        "osm",
+        "cai",
+        "sat"
+      ],
+      "refresh": "on_source_change",
+      "target": "geo.point"
+    },
+    {
+      "key": "boundary",
+      "group": "geography",
+      "priority": "P2",
+      "sources": [
+        "osm",
+        "geoportal"
+      ],
+      "refresh": "on_source_change",
+      "target": "geo.area"
+    },
+    {
+      "key": "elevationM",
+      "group": "geography",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "sat",
+        "osm",
+        "dem"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.elevationM",
+      "legacyKey": "elevationM"
+    },
+    {
+      "key": "elevationMethod",
+      "group": "geography",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "osm",
+        "dem"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.elevationM.method",
+      "legacyKey": "elevationSource"
+    },
+    {
+      "key": "administrativeHierarchy",
+      "group": "geography",
+      "priority": "P1",
+      "sources": [
+        "istat",
+        "osm",
+        "wikidata"
+      ],
+      "refresh": "on_source_change",
+      "target": "administrativeHierarchy"
+    },
+    {
+      "key": "municipalityId",
+      "group": "geography",
+      "priority": "P1",
+      "sources": [
+        "istat",
+        "cai",
+        "sat"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.municipalityId"
+    },
+    {
+      "key": "localityId",
+      "group": "geography",
+      "priority": "P1",
+      "sources": [
+        "osm",
+        "istat"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.localityId"
+    },
+    {
+      "key": "mountainGroupId",
+      "group": "geography",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "sat",
+        "wikidata"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.mountainGroupId"
+    },
+    {
+      "key": "owner",
+      "group": "operations",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "sat",
+        "official"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.owner"
+    },
+    {
+      "key": "owningSection",
+      "group": "operations",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "sat",
+        "official"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.owningSection"
+    },
+    {
+      "key": "manager",
+      "group": "operations",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "sat",
+        "official"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.manager"
+    },
+    {
+      "key": "operatorReported",
+      "group": "operations",
+      "priority": "P1",
+      "sources": [
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.operatorReported",
+      "legacyKey": "operator"
+    },
+    {
+      "key": "managerContact",
+      "group": "operations",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai"
+      ],
+      "refresh": "daily_if_authorized",
+      "target": "facts.managerContact"
+    },
+    {
+      "key": "website",
+      "group": "operations",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai",
+        "sat",
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.website",
+      "legacyKey": "website"
+    },
+    {
+      "key": "bookingUrl",
+      "group": "operations",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai",
+        "sat"
+      ],
+      "refresh": "daily_if_authorized",
+      "target": "facts.bookingUrl"
+    },
+    {
+      "key": "phone",
+      "group": "operations",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai",
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.phone",
+      "legacyKey": "phone"
+    },
+    {
+      "key": "email",
+      "group": "operations",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai",
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.email",
+      "legacyKey": "email"
+    },
+    {
+      "key": "address",
+      "group": "operations",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "osm",
+        "cai"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.addressReported",
+      "legacyKey": "address"
+    },
+    {
+      "key": "openingStatus",
+      "group": "operations",
+      "priority": "P0",
+      "sources": [
+        "official",
+        "cai",
+        "sat"
+      ],
+      "refresh": "daily_if_authorized",
+      "target": "facts.openingStatus"
+    },
+    {
+      "key": "openingHours",
+      "group": "operations",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai",
+        "sat",
+        "osm"
+      ],
+      "refresh": "daily_if_authorized",
+      "target": "facts.openingHoursReported",
+      "legacyKey": "openingHours"
+    },
+    {
+      "key": "seasonality",
+      "group": "operations",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai",
+        "sat",
+        "osm"
+      ],
+      "refresh": "seasonal",
+      "target": "facts.seasonalReported",
+      "legacyKey": "seasonal"
+    },
+    {
+      "key": "winterRoom",
+      "group": "operations",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai",
+        "sat",
+        "osm"
+      ],
+      "refresh": "seasonal",
+      "target": "facts.winterRoomReported",
+      "legacyKey": "winterRoom"
+    },
+    {
+      "key": "accessRules",
+      "group": "operations",
+      "priority": "P0",
+      "sources": [
+        "official",
+        "cai",
+        "sat",
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.accessReported",
+      "legacyKey": "access"
+    },
+    {
+      "key": "bedsTotal",
+      "group": "capacity",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "sat",
+        "official"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.bedsTotal"
+    },
+    {
+      "key": "capacityReported",
+      "group": "capacity",
+      "priority": "P1",
+      "sources": [
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.capacityReported",
+      "legacyKey": "capacity"
+    },
+    {
+      "key": "bedsWinter",
+      "group": "capacity",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "official"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.bedsWinter"
+    },
+    {
+      "key": "dormitories",
+      "group": "capacity",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "official"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.dormitories"
+    },
+    {
+      "key": "winterShelter",
+      "group": "capacity",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "official"
+      ],
+      "refresh": "seasonal",
+      "target": "facts.winterShelter"
+    },
+    {
+      "key": "nightlyPrice",
+      "group": "prices",
+      "priority": "P2",
+      "sources": [
+        "official"
+      ],
+      "refresh": "daily_if_authorized",
+      "target": "facts.nightlyPrice"
+    },
+    {
+      "key": "halfBoardPrice",
+      "group": "prices",
+      "priority": "P2",
+      "sources": [
+        "official"
+      ],
+      "refresh": "daily_if_authorized",
+      "target": "facts.halfBoardPrice"
+    },
+    {
+      "key": "memberDiscount",
+      "group": "prices",
+      "priority": "P2",
+      "sources": [
+        "official"
+      ],
+      "refresh": "seasonal",
+      "target": "facts.memberDiscount"
+    },
+    {
+      "key": "priceValidUntil",
+      "group": "prices",
+      "priority": "P1",
+      "sources": [
+        "official"
+      ],
+      "refresh": "daily_if_authorized",
+      "target": "facts.priceValidUntil"
+    },
+    {
+      "key": "meals",
+      "group": "services",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai",
+        "sat",
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.meals"
+    },
+    {
+      "key": "drinkingWater",
+      "group": "services",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai",
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.drinkingWater"
+    },
+    {
+      "key": "electricity",
+      "group": "services",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.electricity"
+    },
+    {
+      "key": "wifi",
+      "group": "services",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai",
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.wifi"
+    },
+    {
+      "key": "showers",
+      "group": "services",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.showers"
+    },
+    {
+      "key": "cardPayments",
+      "group": "services",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.cardPayments"
+    },
+    {
+      "key": "kitchen",
+      "group": "services",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.kitchen"
+    },
+    {
+      "key": "pets",
+      "group": "services",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.pets"
+    },
+    {
+      "key": "accessibility",
+      "group": "services",
+      "priority": "P1",
+      "sources": [
+        "official",
+        "cai",
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.accessibility"
+    },
+    {
+      "key": "defibrillator",
+      "group": "services",
+      "priority": "P2",
+      "sources": [
+        "official",
+        "cai"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.defibrillator"
+    },
+    {
+      "key": "trailAccess",
+      "group": "relations",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "sat",
+        "official",
+        "trails_graph"
+      ],
+      "refresh": "on_source_change",
+      "target": "verifiedTrailAccess"
+    },
+    {
+      "key": "routeProximity",
+      "group": "relations",
+      "priority": "P1",
+      "sources": [
+        "atlas_graph"
+      ],
+      "refresh": "on_source_change",
+      "target": "routeProximity"
+    },
+    {
+      "key": "nearbyVillages",
+      "group": "relations",
+      "priority": "P1",
+      "sources": [
+        "atlas_graph"
+      ],
+      "refresh": "on_source_change",
+      "target": "nearbyLocalities"
+    },
+    {
+      "key": "nearbySummits",
+      "group": "relations",
+      "priority": "P1",
+      "sources": [
+        "atlas_graph"
+      ],
+      "refresh": "on_source_change",
+      "target": "nearbySummits"
+    },
+    {
+      "key": "longTrekStages",
+      "group": "relations",
+      "priority": "P1",
+      "sources": [
+        "sat",
+        "cai",
+        "atlas_graph"
+      ],
+      "refresh": "on_source_change",
+      "target": "longTrekStages"
+    },
+    {
+      "key": "photoCurrent",
+      "group": "media",
+      "priority": "P1",
+      "sources": [
+        "commons",
+        "cai",
+        "official"
+      ],
+      "refresh": "on_source_change",
+      "target": "mediaCandidates.photo",
+      "legacyKey": "photo"
+    },
+    {
+      "key": "photoHistorical",
+      "group": "media",
+      "priority": "P2",
+      "sources": [
+        "commons",
+        "archives"
+      ],
+      "refresh": "on_source_change",
+      "target": "mediaCandidates.historical_photo"
+    },
+    {
+      "key": "logo",
+      "group": "media",
+      "priority": "P2",
+      "sources": [
+        "official",
+        "wikidata",
+        "commons"
+      ],
+      "refresh": "on_source_change",
+      "target": "mediaCandidates.logo",
+      "legacyKey": "logo"
+    },
+    {
+      "key": "webcam",
+      "group": "media",
+      "priority": "P2",
+      "sources": [
+        "official",
+        "authorized_webcam_provider"
+      ],
+      "refresh": "hourly_if_authorized",
+      "target": "mediaCandidates.webcam",
+      "legacyKey": "webcam"
+    },
+    {
+      "key": "video",
+      "group": "media",
+      "priority": "P2",
+      "sources": [
+        "official",
+        "authorized_provider"
+      ],
+      "refresh": "on_source_change",
+      "target": "mediaCandidates.video"
+    },
+    {
+      "key": "weatherRef",
+      "group": "weather",
+      "priority": "P1",
+      "sources": [
+        "open_meteo",
+        "regional_agency"
+      ],
+      "refresh": "hourly_separate_cache",
+      "target": "weatherRef"
+    },
+    {
+      "key": "weatherModelElevationM",
+      "group": "weather",
+      "priority": "P1",
+      "sources": [
+        "weather_provider"
+      ],
+      "refresh": "hourly_separate_cache",
+      "target": "weatherModelElevationM"
+    },
+    {
+      "key": "forecastRef",
+      "group": "weather",
+      "priority": "P1",
+      "sources": [
+        "open_meteo",
+        "regional_agency"
+      ],
+      "refresh": "hourly_separate_cache",
+      "target": "forecastRef"
+    },
+    {
+      "key": "snowForecastRef",
+      "group": "weather",
+      "priority": "P2",
+      "sources": [
+        "regional_agency",
+        "weather_provider"
+      ],
+      "refresh": "hourly_separate_cache",
+      "target": "snowForecastRef"
+    },
+    {
+      "key": "climateRef",
+      "group": "weather",
+      "priority": "P2",
+      "sources": [
+        "climate_provider"
+      ],
+      "refresh": "monthly_separate_cache",
+      "target": "climateRef"
+    },
+    {
+      "key": "alerts",
+      "group": "safety",
+      "priority": "P0",
+      "sources": [
+        "cai",
+        "sat",
+        "official",
+        "regional_agency"
+      ],
+      "refresh": "hourly_if_available",
+      "target": "alerts"
+    },
+    {
+      "key": "restrictions",
+      "group": "safety",
+      "priority": "P0",
+      "sources": [
+        "official",
+        "park_authority"
+      ],
+      "refresh": "hourly_if_available",
+      "target": "restrictions"
+    },
+    {
+      "key": "sourceIds",
+      "group": "provenance",
+      "priority": "P0",
+      "sources": [
+        "all_sources"
+      ],
+      "refresh": "on_source_change",
+      "target": "sourceIds"
+    },
+    {
+      "key": "factsAlternatives",
+      "group": "provenance",
+      "priority": "P0",
+      "sources": [
+        "all_sources"
+      ],
+      "refresh": "on_conflict",
+      "target": "factsAlternatives"
+    },
+    {
+      "key": "checkedAt",
+      "group": "provenance",
+      "priority": "P1",
+      "sources": [
+        "all_sources"
+      ],
+      "refresh": "on_source_check",
+      "target": "checkedAt"
+    },
+    {
+      "key": "editorialStatus",
+      "group": "quality",
+      "priority": "P0",
+      "sources": [
+        "review_process"
+      ],
+      "refresh": "on_review",
+      "target": "editorialStatus"
+    },
+    {
+      "key": "quality",
+      "group": "quality",
+      "priority": "P0",
+      "sources": [
+        "review_process"
+      ],
+      "refresh": "on_review",
+      "target": "quality"
+    },
+    {
+      "key": "waterAvailableReported",
+      "group": "services",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "sat",
+        "official",
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.waterAvailableReported",
+      "notes": "CAI acqua_in_rifugio_service segnala acqua presente, non potabilità"
+    },
+    {
+      "key": "largeDormitoriesAvailableReported",
+      "group": "capacity",
+      "priority": "P2",
+      "sources": [
+        "cai",
+        "official"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.largeDormitoriesAvailableReported",
+      "notes": "Boolean presenza camerate con più di 4 posti: NON numero camerate né posti letto"
+    }
+  ]
+}

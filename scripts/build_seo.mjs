@@ -19,6 +19,7 @@
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
@@ -85,7 +86,10 @@ writeFileSync(join(DIST,'data','featured-routes.json'),JSON.stringify({generated
 const descriptions = existsSync(join(DATA, 'descriptions.json')) ? readJson(join(DATA, 'descriptions.json')).descriptions ?? {} : {};
 const index = readJson(join(DATA, 'peaks', 'index.json'));
 const peakPhotos = existsSync(join(DATA, 'peaks', 'photos.json')) ? readJson(join(DATA, 'peaks', 'photos.json')).photos ?? {} : {};
-const alpinePlaces = existsSync(join(DATA, 'alpine-places.json')) ? readJson(join(DATA, 'alpine-places.json')).places ?? [] : [];
+const alpinePlaces = mergeRefugesForSeo(
+  existsSync(join(DATA, 'alpine-places.json')) ? readJson(join(DATA, 'alpine-places.json')).places ?? [] : [],
+  existsSync(join(DATA, 'atlas', 'refuges-v1.json')) ? readJson(join(DATA, 'atlas', 'refuges-v1.json')) : null
+);
 const trekProjects = existsSync(join(DATA, 'trekking-projects.json')) ? readJson(join(DATA, 'trekking-projects.json')).projects ?? [] : [];
 const alpineWater=existsSync(join(DATA,'alpine-water.json')) ? readJson(join(DATA,'alpine-water.json')).sources ?? [] : [];
 const byStop = new Map();
@@ -498,22 +502,24 @@ for (const route of routes) {
 // Evita pagine seriali prive di contenuto: i borghi senza sentieri o fonte propria
 // restano consultabili nell'app ma non vengono generati come pagine indicizzabili.
 for (const place of alpinePlaces) {
-  if (!/^osm-[nwr]-\d+$/.test(place.slug)) continue;
+  if (!/^(?:osm-[nwr]-\d+|cai-\d+)$/.test(place.slug)) continue;
   const related=(byStop.get(place.slug)||[]).slice(0,24);
   // Tutti i luoghi mostrati nel catalogo devono avere una pagina reale: niente link rotti.
   // I borghi poveri di metadati sono consultabili ma non indicizzabili finché non vengono arricchiti.
+  const isCaiOnly = Boolean(place.sourceIds?.cai && !place.sourceIds?.osm);
   const category=place.kind==='rifugio'?'rifugi':place.kind==='bivacco'?'bivacchi':'borghi';
   const kind=place.kind==='rifugio'?'rifugio alpino':place.kind==='bivacco'?'bivacco alpino':'località di montagna';
   const altitude=Number.isFinite(place.elevationM)?` a ${metres(place.elevationM)} di quota`:'';
   const nearbyWater=alpineWater.filter(w=>Math.abs(w.lat-place.lat)<.017 && Math.abs(w.lng-place.lng)<.03 &&
     Math.hypot((w.lat-place.lat)*111195,(w.lng-place.lng)*111320*Math.cos(place.lat*Math.PI/180))<1400).slice(0,8);
   const description=(place.description?`${place.description} `:'')+
-    `${place.name} è ${kind==='località di montagna'?'una':'un'} ${kind} mappat${place.kind==='borgo'?'a':'o'} nelle Dolomiti${altitude}.`+
+    `${place.name} è ${kind==='località di montagna'?'una':'un'} ${kind} mappat${place.kind==='borgo'?'a':'o'} ${isCaiOnly?"nell'Atlante Cima Becco":"nelle Dolomiti"}${altitude}.`+
     (related.length?` Esplora ${related.length} sentieri collegati geograficamente e GPX.`:' Consulta posizione e sentieri nei dintorni.');
-  const photo=place.photo?.url?.startsWith('https://upload.wikimedia.org/') ? place.photo : null;
+  const photo=place.photo?.url?.startsWith('https://') && place.photo?.license && place.photo?.sourceUrl ? place.photo : null;
   page({
     path:`${category}/${place.slug}/`,
-    noindex:place.kind==='borgo' && !related.length && !place.website && !place.description && !place.photo,
+    noindex:(place.kind==='borgo' && !related.length && !place.website && !place.description && !place.photo) ||
+      (isCaiOnly && (!place.description || place.description.length < 100) && !photo),
     title:`${place.name} · ${place.kind==='rifugio'?'Rifugio':place.kind==='bivacco'?'Bivacco':'Paese'}, altitudine, sentieri e meteo | Cima Becco`,
     description:description.slice(0,285),
     image:photo?.url||null,
@@ -527,15 +533,15 @@ for (const place of alpinePlaces) {
         ...(place.phone?{telephone:place.phone}:{}),
       },breadcrumbLd([[category==='rifugi'?'Rifugi':category==='bivacchi'?'Bivacchi':'Paesi',appLink(`#${category==='borghi'?'paesi':category}`)],[place.name,null]])]},
     body:`${crumbs([['Atlante',appLink(`#atlante/${category}`)],[place.name]])}
-      <div class="cima-seo-eyebrow">CIMA BECCO · ${place.kind==='rifugio'?'RIFUGIO':place.kind==='bivacco'?'BIVACCO':'PAESE'} · DOLOMITI</div>
+      <div class="cima-seo-eyebrow">CIMA BECCO · ${place.kind==='rifugio'?'RIFUGIO':place.kind==='bivacco'?'BIVACCO':'PAESE'} · ${isCaiOnly?'ITALIA':'DOLOMITI'}</div>
       <h1>${escape(place.name)}</h1>
       <p class="cima-seo-lead">${escape(description)}</p>
       ${photo?`<figure class="cima-seo-photo"><img src="${escape(photo.url)}" alt="${escape(place.name)}" loading="lazy"></figure>`:''}
       <ul class="facts cima-seo-facts">
-        ${place.elevationM!=null?`<li><strong>${metres(place.elevationM)}</strong>${place.elevationSource==='dem'?'quota DEM stimata':'quota indicata in OSM'}</li>`:''}
+        ${place.elevationM!=null?`<li><strong>${metres(place.elevationM)}</strong>${place.elevationSource==='dem'?'quota DEM stimata':place.elevationSource==='cai'?'quota dichiarata dal CAI':'quota indicata in OSM'}</li>`:''}
         <li><strong>${escape(place.lat.toFixed(4)+', '+place.lng.toFixed(4))}</strong>coordinate</li>
         <li><strong>${related.length}</strong>sentieri collegati</li>
-        ${place.capacity?`<li><strong>${place.capacity}</strong>posti letto OSM</li>`:''}
+        ${place.capacity?`<li><strong>${place.capacity}</strong>posti letto ${place.sourceIds?.cai?'dichiarati CAI':'indicati OSM'}</li>`:''}
         
       </ul>
       <div class="cima-seo-actions">
@@ -557,16 +563,18 @@ for (const place of alpinePlaces) {
       ${nearbyWater.length?`<h2>Acqua sulla cartografia del luogo</h2><p>${nearbyWater.length} fonti censite: posizione e indicazioni di potabilità sono visibili sulla mappa interattiva, non costituiscono una garanzia di sicurezza.</p><p><a class="cta" href="${SITE}/${category}/${place.slug}/#cb-place-map">Apri la mappa con i punti acqua</a></p>`:''}
       <h2>Meteo attuale e temperature stagionali</h2><p>Apri la scheda interattiva per consultare le condizioni attuali, le previsioni neve e pioggia e le medie stagionali 2021–2025 da Open-Meteo.</p>
       <p class="cima-seo-warning">Il dato geografico non prova accessibilità, stato della struttura, potabilità o percorribilità del sentiero. Verifica prima di partire.</p>
-      <p class="sub">Fonte geografica: <a href="${escape(place.osmUrl)}" target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>.
-      ${photo?` Foto: ${escape(photo.author||'Wikimedia Commons')} · ${escape(photo.license||'Licenza nella fonte')} · <a href="${escape(photo.sourceUrl)}" target="_blank" rel="noopener noreferrer">Commons</a>`:''}</p>`,
+      <p class="sub">Fonti:
+      ${place.sourceIds?.osm||!place.sourceIds?.cai?` <a href="${escape(place.osmUrl)}" target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>`:''}
+      ${place.sourceIds?.cai?` · <a href="${escape(place.officialUrl||'https://rifugi.cai.it/shelters/'+place.sourceIds.cai)}" target="_blank" rel="noopener noreferrer">Club Alpino Italiano · Unico Rifugi</a>`:''}.
+      ${photo?` Foto: ${escape(photo.author||'Autore non indicato')} · ${escape(photo.license)} · <a href="${escape(photo.sourceUrl)}" target="_blank" rel="noopener noreferrer">Fonte</a>`:''}</p>`,
   });
 }
 
 // Categoria SEO vera: un ingresso indicizzabile agli itinerari locali,
 // senza 2.000 link a pagine vuote. La mappa dinamica mostra l'archivio intero.
 for (const [kind,segment,label,title,blurb] of [
-  ['rifugio','rifugi','Rifugi delle Dolomiti','RIFUGI. POI SI VEDE.',
-    'Consulta rifugi con posizione, informazioni disponibili, meteo, sentieri e itinerari di avvicinamento nelle Dolomiti.'],
+  ['rifugio','rifugi','Rifugi italiani e alpini','RIFUGI. POI SI VEDE.',
+    'Consulta rifugi in Italia e sulle Alpi con dati OpenStreetMap e CAI, servizi dichiarati, meteo e itinerari nelle vicinanze.'],
   ['bivacco','bivacchi','Bivacchi delle Dolomiti','BIVACCHI. POCHE SCUSE.',
     'Bivacchi alpini, ripari essenziali, quote, coordinate e sentieri nelle Dolomiti. Verifica sempre accesso e condizioni.'],
   ['borgo','borghi','Paesi e località montane','PAESI PICCOLI. GITE GROSSE.',
@@ -593,7 +601,7 @@ for (const [kind,segment,label,title,blurb] of [
       <h1>${title}</h1>
       <p class="cima-seo-lead">${escape(blurb)}</p>
       <div class="cima-seo-actions"><a class="cta" href="${appLink(`#${segment==='borghi'?'paesi':segment}`)}">ESPLORA LA MAPPA COMPLETA ↗</a></div>
-      <p class="sub">${list.length} luoghi con scheda · luoghi realmente censiti in OpenStreetMap.</p>
+      <p class="sub">${list.length} luoghi con scheda · censiti in OpenStreetMap e/o nel catalogo Unico Rifugi CAI.</p>
       <ul class="list">${list.slice(0,120).map(place=>`<li><a href="${SITE}/${segment}/${place.slug}/">${escape(place.name)}</a>${place.elevationM ? ' · '+metres(place.elevationM) : ''}${(byStop.get(place.slug)||[]).length?' · '+(byStop.get(place.slug)||[]).length+' sentieri':''}</li>`).join('')}</ul>
       <p class="sub">Per trovare anche i luoghi non ancora arricchiti usa la mappa interattiva. I dati OSM e le tracce non certificano condizioni, accessibilità o servizi.</p>`,
   });

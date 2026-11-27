@@ -1,0 +1,121 @@
+name: Test importatore canonico rifugi (staging)
+
+on:
+  pull_request:
+    paths:
+      - scripts/import_refuges_v1.py
+      - scripts/import_cai_refuges_v1.py
+      - tests/test_import_cai_refuges_v1.py
+      - scripts/publish_refuges_v1.py
+      - tests/test_publish_refuges_v1.py
+      - scripts/assemble_refuges_release_v1.py
+      - tests/test_assemble_refuges_release_v1.py
+      - scripts/refuges_release_quarantine_v1.json
+      - scripts/merge_refuges_for_seo.mjs
+      - src/lib/refugeRelease.ts
+      - src/lib/refugeRelease.test.ts
+      - src/lib/alpinePlaces.ts
+      - src/components/AlpineAtlasPage.tsx
+      - scripts/build_seo.mjs
+      - tests/test_import_refuges_v1.py
+      - docs/PIANO_IMPORTATORI.md
+      - .github/workflows/test-import-refuges-v1.yml
+      - scripts/refuge_field_registry_v1.json
+      - scripts/cai_refuge_field_map_v1.json
+      - scripts/normalize_cai_refuge_v1.py
+      - tests/test_normalize_cai_refuge_v1.py
+      - scripts/reconcile_cai_osm_refuges_v1.py
+      - tests/test_reconcile_cai_osm_refuges_v1.py
+      - scripts/cai_official_type_evidence_v1.json
+      - scripts/cai_pilot_field_inventory_v1.json
+      - tests/test_cai_pilot_field_inventory_v1.py
+      - scripts/cai_unmapped_fields_review_plan_v1.json
+      - tests/test_cai_unmapped_review_plan_v1.py
+      - scripts/plan_cai_refuge_delta_v1.py
+      - tests/test_plan_cai_refuge_delta_v1.py
+      - scripts/normalize_cai_media_v1.py
+      - tests/test_normalize_cai_media_v1.py
+      - scripts/metadata_source_registry_v1.json
+      - scripts/audit_metadata_spec_v1.py
+      - tests/test_metadata_spec_coverage_v1.py
+      - docs/MODELLO_METADATI_E_LAYOUT.md
+      - docs/MATRICE_ACQUISIZIONE_DATI.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cima-refuges-v1-test
+  cancel-in-progress: false
+
+jobs:
+  test-and-stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 'CAI full catalogue: type, paging, incremental reuse (offline)'
+        run: python -m unittest discover -s tests -p 'test_import_cai_refuges_v1.py' -v
+      - name: 'Publisher OSM-first: review, quarantine, provenance'
+        run: python -m unittest discover -s tests -p 'test_publish_refuges_v1.py' -v
+      - name: 'Publisher OSM + CAI: identity and media QA'
+        run: python -m unittest discover -s tests -p 'test_assemble_refuges_release_v1.py' -v
+      - name: Test offline dei contratti
+        run: python -m unittest discover -s tests -p 'test_import_refuges_v1.py' -v
+      - name: Contratto metadati per tutte le tipologie
+        run: |
+          python -m unittest discover -s tests -p 'test_metadata_spec_coverage_v1.py' -v
+          python scripts/audit_metadata_spec_v1.py
+      - name: Mapping CAI offline sui campi campione (senza rete)
+        run: python -m unittest discover -s tests -p 'test_normalize_cai_refuge_v1.py' -v
+      - name: Copertura delle 127 chiavi CAI gia osservate (senza rete)
+        run: python -m unittest discover -s tests -p 'test_cai_pilot_field_inventory_v1.py' -v
+      - name: Verifica pianificazione di ogni campo CAI non ancora mappato
+        run: python -m unittest discover -s tests -p 'test_cai_unmapped_review_plan_v1.py' -v
+      - name: Revisioni CAI incrementali con checkpoint e nessuna cancellazione
+        run: python -m unittest discover -s tests -p 'test_plan_cai_refuge_delta_v1.py' -v
+      - name: Verifica media CAI in staging, senza contenuti o licenze inventate
+        run: python -m unittest discover -s tests -p 'test_normalize_cai_media_v1.py' -v
+      - name: CAI↔OSM identity matching unitario (senza rete)
+        run: python -m unittest discover -s tests -p 'test_reconcile_cai_osm_refuges_v1.py' -v
+      - name: Import pilota su snapshot esistente (senza rete)
+        run: python scripts/import_refuges_v1.py --strict
+      - name: 'Controlla idempotenza: secondo import byte-identico'
+        shell: bash
+        run: |
+          set -euo pipefail
+          find build/import-refuges-v1 -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/refuges-before.txt
+          python scripts/import_refuges_v1.py --strict
+          find build/import-refuges-v1 -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/refuges-after.txt
+          diff -u /tmp/refuges-before.txt /tmp/refuges-after.txt
+      - name: Smoke test dataset OSM pubblico, con quarantena e licenze
+        run: |
+          python scripts/publish_refuges_v1.py --source-dir build/import-refuges-v1 --dist-dir build/release-smoke
+          python -c "import json; from pathlib import Path; data=json.loads(Path('build/release-smoke/data/atlas/refuges-v1.json').read_text()); assert len(data['entities'])>400; assert all(not e['quality']['seoIndexable'] for e in data['entities']); print('OSM publisher',len(data['entities']),'records')" 
+      - name: Replay opzionale del campione CAI già esaminato nella PR 8
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/cima-cai-replay
+          # L'artefatto della PR8 dura 14 giorni: se è scaduto NON bloccare i test.
+          if curl --silent --show-error --fail --location --retry 2             -H "Authorization: Bearer $GH_TOKEN"             -H 'Accept: application/vnd.github+json'             "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/15220728348/zip"             --output /tmp/cima-cai-replay/previous-pilot.zip; then
+            unzip -p /tmp/cima-cai-replay/previous-pilot.zip cai-shelter-records.json               > /tmp/cima-cai-replay/cai-sample.json
+            python scripts/reconcile_cai_osm_refuges_v1.py               --cai-sample /tmp/cima-cai-replay/cai-sample.json               --output build/import-refuges-v1/cai-osm-match-review.json
+          else
+            echo "Artefatto PR8 non più disponibile: test offline eseguiti; replay saltato"
+          fi
+      - name: Report e JSON di staging, non pubblicati
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-refuges-v1-staging
+          path: |
+            build/import-refuges-v1/
+            build/metadata-audit/
+          retention-days: 10
