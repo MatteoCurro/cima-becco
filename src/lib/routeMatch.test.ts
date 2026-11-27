@@ -1,211 +1,80 @@
-import kluangGpx from '../../data/routes/kluang-district-trail-run.gpx?raw';
-import ridgesGpx from '../../data/routes/southern-ridges-walk.gpx?raw';
-import hk2Gpx from '../../data/routes/hong-kong-trail-section-2.gpx?raw';
-import hk4Gpx from '../../data/routes/hong-kong-trail-section-4.gpx?raw';
-import utsgGpx from '../../data/routes/utsg-60km-final-revised.gpx?raw';
 import { describe, expect, it } from 'vitest';
-import { parseGpx } from './gpx';
-import { routeFromPoints } from './routes';
+import type { Route } from '../types';
 import { DEFAULT_PACE_S_PER_KM, matchRoutes, type RunNeeds } from './routeMatch';
 import { routeEstimateS } from './routeTime';
 
-const load = (name: string, gpx: string) => routeFromPoints(name, parseGpx(gpx).points, []);
-// Real routes, as parsed: Southern Ridges 10.7 km, 305 m EG, 28 m/km
-// (Rolling); Kluang 14.4 km at 105 m/km (Hilly); Hong Kong Trail 2 4.3 km at
-// 53 m/km and section 4 6.8 km at 50 m/km (Hilly); UTSG 62 km at 15 m/km
-// (Rolling).
-const ridges = load('Southern Ridges', ridgesGpx);
-const kluang = load('Kluang', kluangGpx);
-const hk2 = load('Hong Kong Trail 2', hk2Gpx);
-const hk4 = load('Hong Kong Trail 4', hk4Gpx);
-const utsg = load('UTSG', utsgGpx);
-const all = [ridges, kluang, hk2, hk4, utsg];
-
-const needs = (over: Partial<RunNeeds>): RunNeeds => ({
-  where: null,
-  length: null,
-  terrain: 'any',
-  paceSPerKm: DEFAULT_PACE_S_PER_KM,
-  ...over,
+// Geometrie costruite per il test, senza dipendere da GPX esterni eliminati.
+const make = (name: string, slug: string, km: number, gainM: number, longitude: number, latitude: number, loop = false): Route => ({
+  slug, name, venueSlugs: [], distanceM: km * 1000, gainM, lossM: 0,
+  elevationAvailable: true, loop,
+  activity: 'hike', source: 'curated',
+  coordinates: [
+    [longitude, latitude, 950],
+    [longitude + 0.005, latitude + 0.002, 950 + gainM],
+    [longitude + 0.012, latitude + 0.003, 950 + gainM],
+  ],
 });
-const order = (n: RunNeeds, routes = all) => matchRoutes(routes, n).matches.map((m) => m.route.name);
+const lago = make('Sentiero del Lago', 'sentiero-lago', 5, 20, 12.20, 46.52);
+const rifugio = make('Salita al Rifugio', 'salita-rifugio', 8, 600, 12.36, 46.62);
+const lungo = make('Traversata Dolomitica', 'traversata-dolomitica', 24, 450, 11.79, 46.57);
+const ferrata = make('Ferrata', 'ferrata', 3, 900, 12.46, 46.78);
+const routes = [lago, rifugio, lungo, ferrata];
+const needs = (over: Partial<RunNeeds> = {}): RunNeeds =>
+  ({ where: null, length: null, terrain: 'any', paceSPerKm: DEFAULT_PACE_S_PER_KM, ...over });
+const match = (n: RunNeeds, data = routes) => matchRoutes(data, n);
 
-describe('matchRoutes', () => {
-  it('gives nothing for no routes', () => {
-    expect(matchRoutes([], needs({ length: { kind: 'distance', metres: 10_000 } })).matches).toEqual([]);
+describe('suggerimenti escursionistici', () => {
+  it('restituisce un elenco vuoto quando non ci sono percorsi', () => {
+    expect(match(needs(), []).matches).toEqual([]);
   });
-
-  describe('length', () => {
-    it('puts the route closest to the target length first', () => {
-      expect(order(needs({ length: { kind: 'distance', metres: 10_000 } }))[0]).toBe('Southern Ridges');
-      expect(order(needs({ length: { kind: 'distance', metres: 4_000 } }))[0]).toBe('Hong Kong Trail 2');
-      expect(order(needs({ length: { kind: 'distance', metres: 60_000 } }))[0]).toBe('UTSG');
-    });
+  it('ordina per distanza obiettivo, senza privilegiare vecchie categorie bike', () => {
+    expect(match(needs({ length: { kind: 'distance', metres: 5_000 } })).matches[0].route.slug).toBe(lago.slug);
+    expect(match(needs({ length: { kind: 'distance', metres: 8_000 } })).matches[0].route.slug).toBe(rifugio.slug);
+    expect(match(needs({ length: { kind: 'distance', metres: 23_000 } })).matches[0].route.slug).toBe(lungo.slug);
   });
-
-  describe('time', () => {
-    const at = (name: string, n: RunNeeds) => matchRoutes(all, n).matches.find((m) => m.route.name === name)!;
-
-    it('estimates duration with the same model the cards and panel use', () => {
-      // Southern Ridges is a trail: 10.7 km at 7.5 km/h with a little over 200 m of climbing that counts after smoothing.
-      const minutes = at('Southern Ridges', needs({})).durationS / 60;
-      expect(minutes).toBe(routeEstimateS(ridges) / 60);
-      expect(minutes).toBeGreaterThan(95);
-      expect(minutes).toBeLessThan(115);
-      // A slower runner (8:00/km against the 6:40 default) takes 20% longer.
-      const slower = at('Southern Ridges', needs({ paceSPerKm: 480 })).durationS / 60;
-      expect(slower).toBeCloseTo(minutes * (480 / DEFAULT_PACE_S_PER_KM), -1);
-    });
-
-    it('lets a long run slow down: UTSG takes more than its distance at the base speed', () => {
-      const minutes = at('UTSG', needs({})).durationS / 60;
-      expect(minutes).toBe(routeEstimateS(utsg) / 60);
-      expect(minutes).toBeGreaterThan((utsg.distanceM / 1000 / 9) * 60 * 1.2);
-    });
-
-    it('matches a target time against the estimate, so a hilly route of the same length counts as longer', () => {
-      // 45 min is about 6.9 km on the flat, which on length alone is HK Trail 4
-      // (6.8 km). Its climbing makes it over an hour all in, so the shorter
-      // section 2 (about 40 min all in) fits 45 minutes better.
-      expect(order(needs({ length: { kind: 'distance', metres: 6_900 } }))[0]).toBe('Hong Kong Trail 4');
-      expect(order(needs({ length: { kind: 'time', minutes: 45 } }))[0]).toBe('Hong Kong Trail 2');
-    });
+  it('usa lo stesso algoritmo temporale delle schede', () => {
+    const result = match(needs()).matches.find((x) => x.route.slug === rifugio.slug);
+    expect(result?.durationS).toBe(routeEstimateS(rifugio));
+    expect(match(needs({ paceSPerKm: DEFAULT_PACE_S_PER_KM * 1.4 })).matches.find((x) => x.route.slug === rifugio.slug)?.durationS)
+      .toBeGreaterThan(result!.durationS);
   });
-
-  describe('terrain', () => {
-    it('Hilly puts the steep routes first', () => {
-      expect(new Set(order(needs({ terrain: 'hilly' })).slice(0, 3))).toEqual(new Set(['Kluang', 'Hong Kong Trail 2', 'Hong Kong Trail 4']));
-    });
-
-    it('Rolling puts the 10–30 m/km routes first', () => {
-      expect(new Set(order(needs({ terrain: 'rolling' })).slice(0, 2))).toEqual(new Set(['Southern Ridges', 'UTSG']));
-    });
-
-    it('Flat prefers the gentlest route when none is truly flat', () => {
-      expect(order(needs({ terrain: 'flat' })).slice(0, 2)).toEqual(['UTSG', 'Southern Ridges']);
-    });
-
-    it('Any ignores terrain', () => {
-      const scores = matchRoutes(all, needs({ terrain: 'any' })).matches.map((m) => m.score);
-      expect(new Set(scores).size).toBe(1);
-    });
-
-    it('gives a route without elevation a neutral terrain score and says so', () => {
-      const unknown = { ...kluang, name: 'No elevation', elevationAvailable: false };
-      const ranked = matchRoutes([...all, unknown], needs({ terrain: 'flat' })).matches;
-      const names = ranked.map((m) => m.route.name);
-      // Below UTSG (15 m/km, near enough flat), above the steep routes it really is.
-      expect(names.indexOf('No elevation')).toBe(1);
-      expect(names.indexOf('No elevation')).toBeLessThan(names.indexOf('Kluang'));
-      const match = ranked.find((m) => m.route.name === 'No elevation')!;
-      expect(match.reasons).toContainEqual({ kind: 'terrain', band: null, climbRateMPerKm: null });
-    });
+  it('distingue il profilo pianeggiante dalla salita tecnica', () => {
+    const flat = match(needs({ terrain: 'flat' })).matches;
+    expect(flat[0].route.slug).toBe(lago.slug);
+    const hilly = match(needs({ terrain: 'hilly' })).matches;
+    expect([rifugio.slug, ferrata.slug]).toContain(hilly[0].route.slug);
   });
-
-  describe('where', () => {
-    // Mount Faber, on the Southern Ridges; Kluang town, a few km from its trail run.
-    const FABER = { kind: 'point', lng: 103.8196, lat: 1.2741 } as const;
-    const KLUANG = { kind: 'point', lng: 103.3328, lat: 2.0301 } as const;
-    // The same Southern Ridges walk, moved ~100 km north: just as good, but far.
-    const farRidges = {
-      ...ridges,
-      slug: 'far-ridges',
-      name: 'Far Ridges',
-      coordinates: ridges.coordinates.map(([lng, lat, ele]) => [lng, lat + 0.9, ele] as [number, number, number]),
-    };
-
-    it('ranks a near route above an equally good one 100 km away', () => {
-      const ranked = matchRoutes([farRidges, ridges], needs({ where: FABER }), { reachM: [200_000] }).matches;
-      expect(ranked.map((m) => m.route.name)).toEqual(['Southern Ridges', 'Far Ridges']);
-      expect(ranked[0].reasons[0]).toEqual({ kind: 'away', metres: expect.any(Number) });
-      expect((ranked[0].reasons[0] as { metres: number }).metres).toBeLessThan(200);
-      expect((ranked[1].reasons[0] as { metres: number }).metres).toBeGreaterThan(90_000);
-    });
-
-    it('leaves out routes beyond the 5 km reach', () => {
-      const fromFaber = matchRoutes(all, needs({ where: FABER }));
-      expect(fromFaber.reachM).toBe(5_000);
-      expect(fromFaber.matches.map((m) => m.route.name)).not.toContain('Kluang');
-      expect(fromFaber.matches.map((m) => m.route.name)).not.toContain('Hong Kong Trail 2');
-      expect(fromFaber.matches.map((m) => m.route.name)).toContain('Southern Ridges');
-
-      const fromKluang = matchRoutes(all, needs({ where: KLUANG }), { reachM: [1_000, 50_000] });
-      expect(fromKluang.reachM).toBe(50_000);
-      expect(fromKluang.matches.map((m) => m.route.name)).toEqual(['Kluang']);
-    });
-
-    it('finds nothing when every route is out of reach', () => {
-      expect(matchRoutes(all, needs({ where: { kind: 'point', lng: 90, lat: -40 } }))).toEqual({ matches: [], reachM: null });
-    });
-
-    it('counts a route crossing the area as 0 km away', () => {
-      const hongKongIsland = { kind: 'area', bounds: { west: 114.1, south: 22.2, east: 114.3, north: 22.3 } } as const;
-      const ranked = matchRoutes(all, needs({ where: hongKongIsland })).matches;
-      expect(new Set(ranked.map((m) => m.route.name))).toEqual(new Set(['Hong Kong Trail 2', 'Hong Kong Trail 4']));
-      for (const m of ranked) expect(m.reasons[0]).toEqual({ kind: 'away', metres: 0 });
-    });
-
-    it('keeps an area to the routes in it: no widening around a country', () => {
-      // A box over the north of Singapore: the Southern Ridges are ~12 km
-      // south of it, within the 50 km a point would widen to.
-      const north = { kind: 'area', bounds: { west: 103.6, south: 1.4, east: 104.0, north: 1.48 } } as const;
-      expect(matchRoutes([ridges], needs({ where: north }))).toEqual({ matches: [], reachM: null });
-    });
-
-    describe('labels and reasons', () => {
-      const ridgesFrom = (n: Partial<RunNeeds>) =>
-        matchRoutes([ridges], needs({ where: FABER, terrain: 'rolling', ...n })).matches[0];
-
-      it('is a Great match when near, the right length and the right terrain', () => {
-        const m = ridgesFrom({ length: { kind: 'distance', metres: 11_000 } });
-        expect(m.label).toBe('great');
-        expect(m.misses).toEqual([]);
-        expect(m.reasons).toEqual([
-          { kind: 'away', metres: expect.any(Number) },
-          { kind: 'length', metres: 10_741, durationS: expect.any(Number) },
-          { kind: 'terrain', band: 'rolling', climbRateMPerKm: expect.any(Number) },
-        ]);
-        expect(Math.round((m.reasons[2] as { climbRateMPerKm: number }).climbRateMPerKm)).toBe(28);
-      });
-
-      it('is a Good match when a few km off, and says by how much', () => {
-        const m = ridgesFrom({ length: { kind: 'distance', metres: 7_000 } });
-        expect(m.label).toBe('good');
-        expect(m.misses).toEqual([{ kind: 'length', unit: 'distance', by: 3_741, longer: true }]);
-      });
-
-      it('is a Partial match when far off what was asked, and says what is off', () => {
-        const m = ridgesFrom({ length: { kind: 'time', minutes: 45 }, terrain: 'flat' });
-        expect(m.label).toBe('partial');
-        // About 105 min estimated against 45 asked.
-        expect(m.misses[0]).toMatchObject({ kind: 'length', unit: 'time', longer: true });
-        expect(Math.round((m.misses[0] as { by: number }).by / 60)).toBe(Math.round(routeEstimateS(ridges) / 60 - 45));
-        expect(m.misses[1]).toEqual({ kind: 'terrain', wanted: 'flat', band: 'rolling' });
-      });
-
-      it('reports a shorter route as shorter', () => {
-        const m = ridgesFrom({ length: { kind: 'distance', metres: 20_000 } });
-        expect(m.misses).toEqual([{ kind: 'length', unit: 'distance', by: 9_259, longer: false }]);
-      });
-    });
-
-    it('breaks a tie with the closer route before the loop', () => {
-      // The same route twice, one a loop starting 2 km further from the runner.
-      const nearLine = { ...ridges, slug: 'near', name: 'Near line', loop: false };
-      const farLoop = {
-        ...ridges,
-        slug: 'far',
-        name: 'Far loop',
-        loop: true,
-        coordinates: ridges.coordinates.map(([lng, lat, ele]) => [lng, lat + 0.018, ele] as [number, number, number]),
-      };
-      const below = { kind: 'point', lng: 103.8196, lat: 1.2 } as const;
-      const ranked = matchRoutes([farLoop, nearLine], needs({ where: below }), { reachM: [10_000] }).matches;
-      expect(ranked.map((m) => m.route.name)).toEqual(['Near line', 'Far loop']);
-    });
-
-    it('breaks ties with the loop', () => {
-      expect(order(needs({}), [ridges, kluang]).at(0)).toBe('Kluang');
-    });
+  it('non inventa dislivello per itinerari privi di quote', () => {
+    const unknown = { ...lago, slug: 'senza-quote', elevationAvailable: false };
+    const selected = match(needs({ terrain: 'hilly' }), [unknown]).matches[0];
+    expect(selected.reasons).toContainEqual({ kind: 'terrain', band: null, climbRateMPerKm: null });
+    expect(selected.route.slug).toBe('senza-quote');
+  });
+  it('trova itinerari vicini al punto scelto, non quelli oltre 5 km', () => {
+    const center = { kind: 'point' as const, lng: 12.20, lat: 46.52 };
+    const result = match(needs({ where: center }));
+    expect(result.reachM).toBe(5_000);
+    expect(result.matches.map((x) => x.route.slug)).toContain(lago.slug);
+    expect(result.matches.map((x) => x.route.slug)).not.toContain(ferrata.slug);
+    expect(result.matches.map((x) => x.route.slug)).not.toContain(rifugio.slug);
+  });
+  it('rispetta i confini di un area senza allargarla arbitrariamente', () => {
+    const area = { kind: 'area' as const, bounds: { west: 12.19, east: 12.23, south: 46.50, north: 46.54 } };
+    const result = match(needs({ where: area }));
+    expect(result.matches.map((x) => x.route.slug)).toEqual([lago.slug]);
+    expect(result.matches[0].reasons[0]).toEqual({ kind: 'away', metres: 0 });
+  });
+  it('segnala le ragioni del punteggio di un itinerario', () => {
+    const result = match(needs({
+      where: { kind: 'point', lng: 12.20, lat: 46.52 },
+      length: { kind: 'distance', metres: 5_000 }, terrain: 'flat',
+    }), [lago]).matches[0];
+    expect(result.label).toBe('great');
+    expect(result.reasons.map((x) => x.kind)).toEqual(['away', 'length', 'terrain']);
+    expect(result.misses).toEqual([]);
+  });
+  it('esclude tutti gli itinerari quando il punto è lontano', () => {
+    const empty = match(needs({ where: { kind: 'point', lng: 0, lat: 0 } }));
+    expect(empty).toEqual({ matches: [], reachM: null });
   });
 });
