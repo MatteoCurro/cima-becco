@@ -133,14 +133,15 @@ def save_tile(cell, elements, status, now):
             if former.get(key) and not route.get(key):
                 route[key] = former[key]
     pieces = shard_files(tile_id, listed)
-    if old_files and old_count == len(listed):
-        # Count alone does not prove same content; compare the checksums implicitly via file contents.
-        pass
     for piece in pieces:
-        write_json(DATA / piece['path'], {
-            'generatedAt': now, 'source': 'OpenStreetMap', 'licence': 'ODbL-1.0',
-            'routes': piece['routes'],
-        })
+        target = DATA / piece['path']
+        current = read_json(target, {})
+        # La data dell'aggiornamento non deve far riscrivere 200 geometrie immutate.
+        if current.get('routes') != piece['routes']:
+            write_json(target, {
+                'generatedAt': now, 'source': 'OpenStreetMap', 'licence': 'ODbL-1.0',
+                'routes': piece['routes'],
+            })
     new_files = [p['path'] for p in pieces]
     for path in old_files:
         if path not in new_files:
@@ -207,14 +208,17 @@ def process(args):
     for cell in chosen:
         print(f"Acquisisco {cell['id']} ({cell['area']}) bbox={cell['bbox']}", flush=True)
         data = fetch_relations(cell['bbox'], retries=2)
-        count = save_tile(cell, data['elements'], status, timestamp())
-        print(f"{cell['id']}: {count} itinerari validi e assegnati alla cella", flush=True)
-        status['lastSuccess'] = timestamp()
-        status['lastArea'] = cell['area']
-        status['version'] = 1
         if args.write:
+            count = save_tile(cell, data['elements'], status, timestamp())
+            status['lastSuccess'] = timestamp()
+            status['lastArea'] = cell['area']
+            status['version'] = 1
             write_json(STATUS, status)
             write_json(MANIFEST, build_manifest(status, timestamp()))
+        else:
+            count = sum(1 for row in data['elements']
+                        if (route := to_route(row)) and in_own_cell(route, cell['bbox']))
+        print(f"{cell['id']}: {count} itinerari validi e assegnati alla cella", flush=True)
         if len(chosen) > 1 and cell != chosen[-1]:
             time.sleep(args.pause_seconds)
 
