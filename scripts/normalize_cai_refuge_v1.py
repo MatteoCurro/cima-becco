@@ -95,9 +95,21 @@ def convert_detail(doc, rules, registry):
         if is_known != (rule["canonicalStatus"] == "mapped_to_existing_registry"):
             raise ValueError("Contraddizione con field registry: " + source_name)
         value = normalized(field.get("value"), rule["converter"])
+        # Alcuni campi, soprattutto openingTime_contact, hanno value=null
+        # ma data=[...]. Non trattarli come "assenti": conserva il fatto che
+        # esiste un payload strutturato da normalizzare, MAI il contenuto
+        # (potrebbe contenere dati personali o informazioni senza diritti).
+        nested = field.get("data")
+        structured = nested not in (None, "", [], {})
+        value_status = ("parsed" if value is not None else
+                        "structured_source_requires_parser" if structured else
+                        "unknown_or_invalid")
         converted.append({
             "sourceField": source_name, "fieldKeyCandidate": rule["target"],
-            "value": value, "valueStatus": "parsed" if value is not None else "unknown_or_invalid",
+            "value": value, "valueStatus": value_status,
+            "sourceStructuredData": ({"shape": type(nested).__name__,
+                                     "length": len(nested) if isinstance(nested, (dict, list)) else None}
+                                    if structured else None),
             "unit": "m" if rule["target"] == "elevationM" else "places" if rule["target"] in (
                 "bedsTotal", "bedsWinter", "managerBeds") else None,
             "sourceId": "cai:shelter:" + code,
@@ -121,6 +133,9 @@ def convert_detail(doc, rules, registry):
         "summary": {
             "candidateFacts": len(converted),
             "parsedCandidateValues": sum(x["valueStatus"] == "parsed" for x in converted),
+            "structuredFieldsAwaitingParser": sum(x["valueStatus"] ==
+                                                  "structured_source_requires_parser"
+                                                  for x in converted),
             "unmappedFieldOccurrences": sum(unmapped.values()),
             "sensitiveFieldOccurrences": sum(blocked.values()),
             "licenceApproved": False,
