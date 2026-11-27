@@ -45,3 +45,12 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #f719
   .route-item .result-badge.cima-effort strong{font-size:17px!important}
   .cima-trail-mood .cima-mood-pill{font-size:27px!important}
 }
+
+.cb-route-water{margin:18px 0;padding:15px 16px;border:2px solid #bfdfeb;background:#edf7fa;border-radius:8px;color:#174660}
+.cb-route-water>strong{display:block;font:900 22px/1 'Barlow Condensed',sans-serif;letter-spacing:.02em;color:#164a66}
+.cb-route-water>p{margin:6px 0 12px;font:600 12px/1.5 'Space Grotesk',sans-serif;color:#416d7e}
+.cb-route-water-points{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.cb-route-water-points>a,.cb-route-water-points>span{display:flex;flex-direction:column;gap:3px;padding:8px 11px;border:1px solid #a3d0df;background:white;color:#195472;text-decoration:none;border-radius:5px}
+.cb-route-water-points>a:hover{border-color:#0085b4}
+.cb-route-water-points span{font:800 12px 'Space Grotesk',sans-serif}
+.cb-route-water-points small,.cb-route-water>small{font:500 10px/1.5 'Space Grotesk',sans-serif;color:#557885}
