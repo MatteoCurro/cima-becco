@@ -100,7 +100,7 @@ function loadTile(key: string, size: number): Promise<Venue[]> {
 }
 
 /** Above this span the map shows only each tile's tallest few, from the index. */
-const MAX_TILES = 16;
+const MAX_TILES = 4;
 
 /**
  * Results are memoised by what is on screen, not by call: a pan or zoom inside

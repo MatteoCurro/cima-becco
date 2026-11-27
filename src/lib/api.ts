@@ -24,6 +24,7 @@ const SUPABASE_KEY = (import.meta.env.VITE_SUPABASE_KEY as string | undefined) |
 
 /** Shared client: auth.js signs in and out through it, and its session
  *  token authenticates the REST and Storage calls below. */
+export const SUPABASE_CONFIGURED = Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_KEY);
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 export interface Review {
@@ -465,6 +466,7 @@ function toRoute(row: RouteRow): Route {
 }
 
 export async function fetchCommunityRoutes(): Promise<Route[]> {
+  if (!SUPABASE_CONFIGURED) return [];
   try {
     const rows = await rest<RouteRow[]>(`/rest/v1/routes?select=${ROUTE_FIELDS}&order=created_at.desc&limit=1000`);
     return rows.map(toRoute);
@@ -578,6 +580,7 @@ export async function publishRoute(input: PublishRouteInput): Promise<Route> {
 
 /** {slug: downloads} for every route, community and curated alike. */
 export async function fetchRouteDownloads(): Promise<Record<string, number>> {
+  if (!SUPABASE_CONFIGURED) return {};
   return rest<Record<string, number>>('/rest/v1/rpc/route_downloads', { method: 'POST', body: '{}' });
 }
 
@@ -739,6 +742,7 @@ interface RoutePhotoRow {
 }
 
 export async function fetchRoutePhotos(routeSlug: string): Promise<RoutePhoto[]> {
+  if (!SUPABASE_CONFIGURED) return [];
   const rows = await rest<RoutePhotoRow[]>(
     `/rest/v1/route_photos?route_slug=eq.${enc(routeSlug)}&select=id,route_slug,lng,lat,kind,caption,storage_path,author,created_at&order=created_at.desc&limit=200`,
   );

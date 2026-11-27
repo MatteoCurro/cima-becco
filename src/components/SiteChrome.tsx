@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { openImportHere, requestAddPlace } from '../lib/contribute';
 import { AccountMenu } from './AccountMenu';
+import { SUPABASE_CONFIGURED } from '../lib/api';
 import { HeaderControls } from './HeaderControls';
 import { CoverageModal, useCoverage } from './Coverage';
 import { Mark } from './icons';
@@ -42,7 +43,7 @@ export function SiteHeader({ center, sticky = false }: { center?: ReactNode; sti
             <span className="site-header-cta-label" aria-hidden="true">Carica GPX</span>
           </a>
           <HeaderControls />
-          <AccountMenu />
+          {SUPABASE_CONFIGURED && <AccountMenu />}
         </div>
       </div>
     </header>
@@ -70,7 +71,7 @@ export function SiteFooter({ openSourcePill = false }: { openSourcePill?: boolea
           </div>
           <div>
             <h3>Contribute</h3>
-            <a href="#import" onClick={openImportHere}>Upload GPX</a>
+            <a href="#import" onClick={openImportHere}>Importa GPX</a>
             <button type="button" className="site-footer-link" onClick={requestAddPlace}>
               Add a missing place
             </button>

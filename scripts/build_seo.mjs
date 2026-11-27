@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
 const DATA = join(ROOT, 'public', 'data');
-const SITE = (process.env.SITE_URL || process.env.VITE_SITE_URL || 'https://hillgpx.com').replace(/\/+$/, '');
+const SITE = (process.env.SITE_URL || process.env.VITE_SITE_URL || 'https://matteocurro.github.io/cima-becco').replace(/\/+$/, '');
 const TODAY = new Date().toISOString().slice(0, 10);
 const TILE = 5;
 // Cloudflare Pages' free plan takes at most 20,000 files per deployment.
@@ -44,7 +44,7 @@ const routes = Array.isArray(routesFile) ? routesFile : routesFile.routes;
 const descriptions = existsSync(join(DATA, 'descriptions.json')) ? readJson(join(DATA, 'descriptions.json')).descriptions ?? {} : {};
 const index = readJson(join(DATA, 'peaks', 'index.json'));
 const peakPhotos = existsSync(join(DATA, 'peaks', 'photos.json')) ? readJson(join(DATA, 'peaks', 'photos.json')).photos ?? {} : {};
-const regionName = new Intl.DisplayNames(['en'], { type: 'region' });
+const regionName = new Intl.DisplayNames(['it'], { type: 'region' });
 const countryName = (code) => {
   try {
     return regionName.of(code) ?? code;
@@ -92,7 +92,7 @@ const pages = [];
 function page({ path, title, description, image, jsonLd, body }) {
   const url = `${SITE}/${path}`;
   const html = `<!doctype html>
-<html lang="en">
+<html lang="it">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -100,7 +100,7 @@ function page({ path, title, description, image, jsonLd, body }) {
 <meta name="description" content="${escape(description)}">
 <link rel="canonical" href="${url}">
 <link rel="icon" href="${SITE}/favicon.svg" type="image/svg+xml">
-<meta property="og:site_name" content="hillGPX">
+<meta property="og:site_name" content="Cima Becco">
 <meta property="og:type" content="website">
 <meta property="og:title" content="${escape(title)}">
 <meta property="og:description" content="${escape(description)}">
@@ -111,11 +111,11 @@ function page({ path, title, description, image, jsonLd, body }) {
 <style>${STYLE}</style>
 </head>
 <body>
-<header><a class="brand" href="${SITE}/">${MARK}hillGPX</a><a href="${SITE}/#map">Open the map</a></header>
+<header><a class="brand" href="${SITE}/">${MARK}Cima Becco</a><a href="${SITE}/#map">Open the map</a></header>
 <main>
 ${body}
 </main>
-<footer>hillGPX is a free, open-source map of hills, mountains and GPX routes. Map data © OpenStreetMap contributors; summits from GeoNames (CC BY 4.0); photos credited on each page. <a href="${SITE}/#terms">Licences</a> · <a href="${SITE}/#privacy">Privacy</a></footer>
+<footer>Cima Becco is a free, open-source map of hills, mountains and GPX routes. Map data © OpenStreetMap contributors; summits from GeoNames (CC BY 4.0); photos credited on each page. <a href="${SITE}/#terms">Licences</a> · <a href="${SITE}/#privacy">Privacy</a></footer>
 </body>
 </html>
 `;
@@ -126,22 +126,22 @@ ${body}
 }
 
 const crumbs = (items) =>
-  `<nav class="crumbs"><a href="${SITE}/">hillGPX</a>${items.map(([label, href]) => ` › ${href ? `<a href="${href}">${escape(label)}</a>` : escape(label)}`).join('')}</nav>`;
+  `<nav class="crumbs"><a href="${SITE}/">Cima Becco</a>${items.map(([label, href]) => ` › ${href ? `<a href="${href}">${escape(label)}</a>` : escape(label)}`).join('')}</nav>`;
 const breadcrumbLd = (items) => ({
   '@type': 'BreadcrumbList',
-  itemListElement: [['hillGPX', `${SITE}/`], ...items].map(([name, item], i) => ({ '@type': 'ListItem', position: i + 1, name, ...(item ? { item } : {}) })),
+  itemListElement: [['Cima Becco', `${SITE}/`], ...items].map(([name, item], i) => ({ '@type': 'ListItem', position: i + 1, name, ...(item ? { item } : {}) })),
 });
 
 function placePage({ slug, name, lat, lng, heightM, kind, country, countryCode, text, photo, routesHere }) {
   const where = country ? ` in ${country}` : '';
   const heightText = heightM ? `${metres(heightM)} ${kind === 'hill' ? 'summit' : 'climb'}` : 'climb';
-  const description = text || `${name} is a ${heightText}${where}. See it on the hillGPX map with routes, photos, weather and directions.`;
+  const description = text || `${name} is a ${heightText}${where}. See it on the Cima Becco map with routes, photos, weather and directions.`;
   const image = photo ? photoUrl(photo.file) : null;
   const countryHref = countryCode ? `${SITE}/country/${countryCode.toLowerCase()}/` : null;
   placeUrlBySlug.set(slug, `${SITE}/place/${slug}/`);
   page({
     path: `place/${slug}/`,
-    title: `${name}${heightM ? ` (${metres(heightM)})` : ''}${where} · hillGPX`,
+    title: `${name}${heightM ? ` (${metres(heightM)})` : ''}${where} · Cima Becco`,
     description: description.slice(0, 300),
     image,
     jsonLd: {
@@ -248,11 +248,11 @@ for (const [code, [count]] of Object.entries(index.byCountry)) {
     if (peaks.length === 40) break;
   }
   if (peaks.length === 0) continue;
-  const description = `The highest peaks in ${name}, from ${peaks[0].name} (${metres(peaks[0].ele)}) down. ${count.toLocaleString('en')} summits in ${name} are on the hillGPX map, with GPX routes, photos and weather.`;
+  const description = `The highest peaks in ${name}, from ${peaks[0].name} (${metres(peaks[0].ele)}) down. ${count.toLocaleString('en')} summits in ${name} are on the Cima Becco map, with GPX routes, photos and weather.`;
   const [, west, south, east, north] = index.byCountry[code];
   page({
     path: `country/${code.toLowerCase()}/`,
-    title: `Highest peaks in ${name} · hillGPX`,
+    title: `Highest peaks in ${name} · Cima Becco`,
     description,
     image: photoUrl(peakPhotos[peaks[0].slug]?.[0]),
     jsonLd: {
@@ -281,10 +281,10 @@ for (const route of routes) {
   const where = route.country ? ` in ${route.country}` : '';
   const description =
     route.description ||
-    `${route.name}: a ${km(route.distanceM)}${route.loop ? ' loop' : ' point-to-point route'}${where}${route.elevationAvailable !== false ? ` with ${metres(route.gainM)} of elevation gain` : ''}. Free GPX download on hillGPX.`;
+    `${route.name}: a ${km(route.distanceM)}${route.loop ? ' loop' : ' point-to-point route'}${where}${route.elevationAvailable !== false ? ` with ${metres(route.gainM)} of elevation gain` : ''}. Free GPX download on Cima Becco.`;
   page({
     path: `route/${route.slug}/`,
-    title: `${route.name} (${km(route.distanceM)}) GPX · hillGPX`,
+    title: `${route.name} (${km(route.distanceM)}) GPX · Cima Becco`,
     description,
     image: null,
     jsonLd: {
@@ -322,9 +322,9 @@ writeFileSync(
 const topCountries = Object.entries(index.byCountry).sort((a, b) => b[1][0] - a[1][0]).slice(0, 12);
 writeFileSync(
   join(DIST, 'llms.txt'),
-  `# hillGPX
+  `# Cima Becco
 
-> A free, open-source map of ${index.total.toLocaleString('en')}+ hills and mountains in ${index.countries} countries, plus Singapore's stairwells and tall HDB blocks, with a community archive of GPX routes up them. Every route is free to download and keeps honest elevation (EG/EL).
+> Atlante delle montagne italiane, con cime GeoNames, percorsi GPX e strumenti di pianificazione. Le tracce devono essere verificate sul terreno.
 
 - Home and map: ${SITE}/
 - Routes: ${SITE}/#routes
@@ -345,7 +345,7 @@ ${routes.map((route) => `- [${route.name}](${SITE}/route/${route.slug}/): ${km(r
 // duplicate pages.
 writeFileSync(
   join(DIST, '404.html'),
-  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Not found · hillGPX</title><meta name="robots" content="noindex"><style>${STYLE}</style></head><body><header><a class="brand" href="${SITE}/">${MARK}hillGPX</a></header><main><h1>That page is not here</h1><p class="sub">It may have moved, or the address has a typo.</p><p><a class="cta" href="${SITE}/">Go to hillGPX</a></p></main></body></html>\n`,
+  `<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Not found · Cima Becco</title><meta name="robots" content="noindex"><style>${STYLE}</style></head><body><header><a class="brand" href="${SITE}/">${MARK}Cima Becco</a></header><main><h1>That page is not here</h1><p class="sub">It may have moved, or the address has a typo.</p><p><a class="cta" href="${SITE}/">Go to Cima Becco</a></p></main></body></html>\n`,
 );
 
 console.log(`SEO: ${pages.length.toLocaleString('en')} pages, sitemap with ${urls.length.toLocaleString('en')} URLs, robots.txt, llms.txt for ${SITE}`);

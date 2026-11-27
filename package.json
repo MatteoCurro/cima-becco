@@ -1,8 +1,8 @@
 {
-  "name": "hillgpx",
+  "name": "cima-becco",
   "version": "0.1.0",
   "private": true,
-  "description": "Map every hill, staircase and tall block worth training elevation gain on.",
+  "description": "Atlante collaborativo delle montagne italiane basato su HillGPX",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
