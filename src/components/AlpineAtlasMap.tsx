@@ -1,11 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Map as MapLibreMap, Marker, NavigationControl, type GeoJSONSource } from 'maplibre-gl';
 import type { Route } from '../types';
 import { MAP_STYLE_URL } from '../map/constants';
 import { installMountainBasemap, MountainBasemapControl } from '../map/mountainBasemap';
 import { addAlpinePlaceLayers, alpinePlacesGeoJSON } from '../map/alpineOverlays';
 import type { AlpinePlace } from '../lib/alpinePlaces';
-import { placeBounds } from '../lib/alpinePlaces';
 
 interface Props {
   places: AlpinePlace[];
@@ -33,6 +32,7 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
   const mapRef=useRef<MapLibreMap | null>(null);
   const markerRef=useRef<Marker | null>(null);
   const initialized=useRef(false);
+  const [ready,setReady]=useState(false);
 
   useEffect(()=>{
     if(!container.current||mapRef.current)return;
@@ -58,6 +58,7 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
         paint:{'circle-radius':5.5,'circle-color':['case',['==',['get','potable'],true],'#168dd5','#7db6bc'],
           'circle-stroke-color':'#fff','circle-stroke-width':2}});
       initialized.current=true;
+      setReady(true);
       sync();
     });
     function sync(){
@@ -79,12 +80,12 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
     const map=mapRef.current;if(!map||!initialized.current)return;
     const source=map.getSource('cb-atlas-places') as GeoJSONSource | undefined;
     source?.setData(alpinePlacesGeoJSON(places.filter(p=>p.kind===kind)));
-  },[places,kind]);
+  },[places,kind,ready]);
 
   useEffect(()=>{
     const map=mapRef.current;if(!map||!initialized.current)return;
     (map.getSource('cb-atlas-nearby-routes') as GeoJSONSource | undefined)?.setData(routeGeometry(routes));
-  },[routes]);
+  },[routes,ready]);
 
   useEffect(()=>{
     const map=mapRef.current;if(!map||!initialized.current)return;
@@ -94,7 +95,7 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
         geometry:{type:'Point' as const,coordinates:[p.lng,p.lat]},
       })),
     });
-  },[water]);
+  },[water,ready]);
 
   useEffect(()=>{
     const map=mapRef.current;if(!map||!initialized.current)return;
@@ -115,11 +116,11 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
       const south=Math.min(...list.map(p=>p.lat)),north=Math.max(...list.map(p=>p.lat));
       map.fitBounds([[west,south],[east,north]],{padding:45,maxZoom:11,duration:300});
     }
-  },[selected,kind,places]);
+  },[selected,kind,places,ready]);
 
   return <div className="cb-atlas-map-wrap">
     <div ref={container} className="cb-atlas-map" style={{height}} role="application"
       aria-label={selected? `Mappa topografica di ${selected.name} con sentieri vicini` : `Mappa topografica dedicata a ${kind==='rifugio'?'rifugi':'paesi di montagna'}`}/>
-    <span className="cb-atlas-map-caption">TOPO / SAT · ${selected?.name ?? (kind==='rifugio'?'RIFUGI':'PAESI')} · + / − PER ZOOMARE</span>
+    <span className="cb-atlas-map-caption">TOPO / SAT · {selected?.name ?? (kind==='rifugio'?'RIFUGI':'PAESI')} · + / − PER ZOOMARE</span>
   </div>;
 }
