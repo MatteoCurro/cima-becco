@@ -422,3 +422,16 @@ test('hero rifugio: emblema dentro la foto e attribuzione leggibile',async({page
     expect(a!.y+a!.height).toBeLessThan(b!.y);
   }
 });
+
+
+test('catalogo rifugi: filtri quota e posti non allargano il documento',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#rifugi');
+  const altitude=page.getByRole('combobox',{name:'Quota minima'});
+  await expect(altitude).toBeVisible({timeout:30000});
+  await altitude.selectOption('1500');
+  await expect(page.getByRole('button',{name:/Azzera filtri/})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2)).toBe(true);
+  await page.getByRole('button',{name:/Azzera filtri/}).click();
+  await expect(altitude).toHaveValue('');
+});
