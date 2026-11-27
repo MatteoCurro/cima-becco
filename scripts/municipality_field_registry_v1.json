@@ -9,7 +9,7 @@
     "safety": "mayor != fraction; population requires reference date; near != reaches != contains",
     "publication": "noindex and staging until G2 manual gate",
     "credits": "per-fact source retained; only /fonti-e-crediti/ displays attribution",
-    "daitCrosswalk": "DAIT codice_comune is not ISTAT; exact unique (region code, province sigla, municipality legal name) crosswalk; preserve both IDs and quarantine 5 disagreements in official 2026 snapshot."
+    "daitCrosswalk": "DAIT codice_comune is NOT ISTAT; unique audited crosswalk (regionCode, provinceSigla, exact normalized official Italian name), independent source IDs, 3 unresolved discrepancies in 2026-11-27 final official pilot."
   },
   "fields": [
     {
