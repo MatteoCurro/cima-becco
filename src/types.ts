@@ -97,12 +97,25 @@ export type CaiDifficulty = 'T' | 'E' | 'EE' | 'EEA';
 /** A single point on a route: [lng, lat, elevation in metres]. */
 export type RoutePoint = [number, number, number];
 
+/** POI OSM realmente vicino alla polilinea (non indica accessibilità). */
+export interface RouteStop {
+  slug: string;
+  name: string;
+  kind: 'rifugio' | 'borgo';
+  relation: 'partenza' | 'passaggio' | 'arrivo';
+  distanceM: number;
+  /** Posizione approssimativa lungo la geometria, da 0 a 1. */
+  at: number;
+}
+
 export interface Route {
   slug: string;
   name: string;
 
   /** Slugs of the venues this route touches, in the order it reaches them. */
   venueSlugs: string[];
+  /** Rifugi e borghi vicini alla traccia, verificati in fase di importazione. */
+  stops?: RouteStop[];
 
   distanceM: number;
   gainM: number;
