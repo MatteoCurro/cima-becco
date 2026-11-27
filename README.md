@@ -15,7 +15,13 @@ Atlante collaborativo delle montagne italiane, con mappe, cime e itinerari GPX. 
 
 ## Pubblicazione GitHub Pages
 
-La repository contiene il workflow `.github/workflows/deploy.yml`. In **Settings → Pages** selezionare **GitHub Actions**. Il build pubblica il sito su `https://matteocurro.github.io/cima-becco/`.
+Il sito principale è **https://www.cimabecco.it/**. La repository pubblica con `.github/workflows/deploy.yml` tramite **GitHub Actions**; in **Settings → Pages → Custom domain** deve essere impostato `www.cimabecco.it` e va abilitato **Enforce HTTPS** dopo il rilascio del certificato.
+
+Il file `public/CNAME` contiene il dominio canonico ed è usato **dalla nostra build** per compilare Vite con base `/` e generare URL canonici, sitemap e anteprime. **Non configura da solo il Custom domain di GitHub Pages** quando la pubblicazione avviene tramite GitHub Actions.
+
+DNS sul provider: creare `CNAME` per l'host `www` verso `matteocurro.github.io` (senza il nome della repo). Per raggiungere anche `cimabecco.it` senza `www`, configurare il dominio principale con record A/ALIAS per GitHub Pages; con entrambi corretti GitHub reindirizza automaticamente l'apex a `www`. Non puntare `www` direttamente a `www.cimabecco.it` o a un URL contenente `/cima-becco`.
+
+Gli URL completi per rifugi, bivacchi, paesi e percorsi vengono pubblicati direttamente sotto il dominio principale, ad esempio `https://www.cimabecco.it/rifugi/<slug>/`.
 
 Per il test locale:
 

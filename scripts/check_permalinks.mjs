@@ -19,3 +19,13 @@ for(const section of sections){
   if(!html.includes('application/ld+json'))throw Error('Mancano i dati strutturati: '+file);
   console.log('OK',section,slug,'→ SEO + SPA');
 }
+
+const canonical='https://www.cimabecco.it';
+const home=readFileSync(join(dist,'index.html'),'utf8');
+const sitemap=readFileSync(join(dist,'sitemap.xml'),'utf8');
+const robots=readFileSync(join(dist,'robots.txt'),'utf8');
+if(!home.includes('<link rel="canonical" href="'+canonical+'/"'))throw Error('Canonical home non corretto');
+if(!home.includes('src="/assets/')||home.includes('src="/cima-becco/assets/'))throw Error('Asset Vite non pubblicati alla radice');
+if(!sitemap.includes('<loc>'+canonical+'/</loc>'))throw Error('Sitemap non usa il dominio principale');
+if(!robots.includes('Sitemap: '+canonical+'/sitemap.xml'))throw Error('Robots non usa la sitemap principale');
+console.log('OK: dominio canonico, base Vite, sitemap e robots');
