@@ -20,6 +20,8 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
+import { mergeSheltersForSeo } from './merge_shelters_for_seo.mjs';
+import { makeCentralCredits } from './build_source_credits.mjs';
 import { atlasCanonicalPath,atlasLegacyPath,canonicalAtlasSlug } from '../src/lib/placePermalinks.js';
 import { resolveRefugeTerritory, relatedAtlasPlaces } from '../src/lib/atlasConnections.js';
 import { refugeFact, refugeOverview, refugeSeoDescription, refugeServiceFacts } from '../src/lib/refugeEditorial.js';
