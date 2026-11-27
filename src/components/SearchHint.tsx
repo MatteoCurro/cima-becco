@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { prefersReducedMotion } from '../lib/dom';
 
 /** Places worth typing: each is found by the header search (or its place lookup). */
-const HINTS = ['Japan', 'Bukit Timah', 'Hong Kong', 'Kuala Lumpur', 'Taiwan', 'Norway', 'Johor', 'Switzerland'];
+const HINTS = ['Casso', 'Erto', 'Sottoguda', 'Zoppè di Cadore', 'Colle Santa Lucia', 'Cibiana', 'Passo Giau', 'Cortina d’Ampezzo'];
 const STEP_MS = 2600;
 
 /**
@@ -23,10 +23,10 @@ export function SearchHint({ hidden }: { hidden: boolean }) {
   return (
     <span className="search-hint" aria-hidden="true">
       {still ? (
-        'Search countries, hills and towns'
+        'Cerca cime, sentieri e paesini sperduti'
       ) : (
         <>
-          Search{' '}
+          Cerca{' '}
           <span className="search-hint-word" key={index}>
             {HINTS[index]}
           </span>
