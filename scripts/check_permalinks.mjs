@@ -29,3 +29,15 @@ if(!home.includes('src="/assets/')||home.includes('src="/cima-becco/assets/'))th
 if(!sitemap.includes('<loc>'+canonical+'/</loc>'))throw Error('Sitemap non usa il dominio principale');
 if(!robots.includes('Sitemap: '+canonical+'/sitemap.xml'))throw Error('Robots non usa la sitemap principale');
 console.log('OK: dominio canonico, base Vite, sitemap e robots');
+
+const alpine=JSON.parse(readFileSync(join(dist,'data','alpine-places.json'),'utf8')).places;
+for(const place of alpine){
+  const section=place.kind==='rifugio'?'rifugi':place.kind==='bivacco'?'bivacchi':'borghi';
+  const target=join(dist,section,place.slug,'index.html');
+  if(!existsSync(target))throw Error('Catalogo con link rotto: '+section+'/'+place.slug);
+}
+const example=join(dist,'borghi','osm-n-240044790','index.html');
+if(!existsSync(example))throw Error('Permalink Abfaltersbach mancante');
+const html=readFileSync(example,'utf8');
+if(!html.includes('noindex,follow'))throw Error('Pagina locale povera di dati senza noindex');
+console.log('OK: '+alpine.length+' permalinks reali, compreso Abfaltersbach');

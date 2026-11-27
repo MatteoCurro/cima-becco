@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: cima-becco-build-check
@@ -99,18 +99,13 @@ jobs:
           echo "typecheck=$typecheck" >> "$GITHUB_OUTPUT"
           echo "build=$build" >> "$GITHUB_OUTPUT"
           echo "tests=$tests" >> "$GITHUB_OUTPUT"
-      - name: Salva il report nella repository
+      - name: Archivia il report senza modificare main
         if: always()
-        shell: bash
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/BUILD_CHECK.md
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'ci: stato aggiornato della compilazione Cima Becco'
-          git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-diagnostics
+          path: docs/BUILD_CHECK.md
+          retention-days: 14
       - name: Segnala errori al workflow
         if: steps.check.outputs.build != '0' || steps.check.outputs.tests != '0'
         run: exit 1
