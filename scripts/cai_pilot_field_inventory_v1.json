@@ -1,0 +1,441 @@
+{
+  "version": "1.0",
+  "scope": "Field names ONLY: union of 4 CAI detail API probe field-name lists in PR #8, run 46043518773, 27 November 2026. No values, no source personal information, no re-fetch.",
+  "pilotArtifactId": "15220728348",
+  "totalDistinctFieldNames": 108,
+  "classificationPolicy": "mapped=code has strict allowlist; privacy_restricted never auto export; internal_reference not front-end data; field_level_review_needed has NOT been discarded, needs explicit mapping and rights.",
+  "fieldNames": [
+    {
+      "name": "accessibilita_ai_disabili_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "accessibilita_famiglie_con_bambini_service",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "accessibilita_macchina_service",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "accessibilita_mountain_bike_service",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "accesso_alla_cucina_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "acqua_calda_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "acqua_esterno_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "acqua_in_rifugio_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "alias",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "altitude_geo",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "amianto_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "ammissibilita_animali_domestici_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "authority_jurisdiction_geo",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "branch",
+      "state": "internal_reference"
+    },
+    {
+      "name": "branch_id",
+      "state": "internal_reference"
+    },
+    {
+      "name": "buildYear_certification",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "buildingRegulation_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "camerate_superiore_4_posti_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "category",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "cityPlanRegulation_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "clustering_provincia",
+      "state": "internal_reference"
+    },
+    {
+      "name": "clustering_regione",
+      "state": "internal_reference"
+    },
+    {
+      "name": "code_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "company_management_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "contract_end_date_management_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "contract_fee_management_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "contract_start_date_management_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "defibrillatore_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "description_geo",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "docce_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "elettricita_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "emailAddress",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "email_management_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "email_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "energy_class_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "facebook_contact",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "fireRegulation_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "fixedPhone_contact",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "fixedPhone_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "genre_management_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "heating_type_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "hydroelectric_certification",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "instagram_contact",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "iso14001_certification",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "locality_geo",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "mainBody_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "massif_geo",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "matericalCoherence_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "migrate_id",
+      "state": "internal_reference"
+    },
+    {
+      "name": "mobilePhone_management_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "municipality_geo",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "name_management_property",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "name_property",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "oilSeparator_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "openingTime_contact",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "owner",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "ownerRegion_geo",
+      "state": "internal_reference"
+    },
+    {
+      "name": "pagamento_pos_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "pec_management_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "pec_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "photovoltaic_certification",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "possession_type_management_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "possession_type_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "posti_letto_commerciali_service",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "posti_letto_gestore_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "posti_letto_invernali_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "posti_letto_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "posti_totali_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "powerGenerator_certification",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "presidio_culturale_service",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "protected_area_geo",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "province_geo",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "punti_ricarica_camere_service",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "punti_ricarica_spazi_comuni_service",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "rain_water_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "rebuildYear_certification",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "recycling_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "reference_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "region_geo",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "regional_commission_geo",
+      "state": "internal_reference"
+    },
+    {
+      "name": "regional_type",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "regulation_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "rifornimento_estivo_service",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "ristorante_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "role_contact",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "segnale_gsm_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "self_management_property",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "servizi_igienici_per_disabili_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "shelter_cin",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "site_geo",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "ski_area_geo",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "status",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "surname_management_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "taxCode_management_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "taxCode_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "type",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "typologicalCoherence_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "user_regione",
+      "state": "internal_reference"
+    },
+    {
+      "name": "valley_geo",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "vendita_sacco_lenzuolo_service",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "water_certification_certification",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "water_type_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "wc_in_camera_service",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "wc_uso_comune_service",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "webAddress_contact",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "webSite_management_property",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "webSite_property",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "wifi_service",
+      "state": "mapped_for_restricted_staging"
+    }
+  ]
+}
