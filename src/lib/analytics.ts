@@ -1,0 +1,97 @@
+/**
+ * Product analytics, all optional and all switched on by build-time settings
+ * (see README "Analytics"), so a fork or a local build sends nothing.
+ *
+ * - VITE_CF_ANALYTICS_TOKEN: Cloudflare Web Analytics. Visits, pages,
+ *   countries, referrers and load speed. No cookies, no personal data.
+ * - VITE_CF_ANALYTICS_AUTO=1: the same, but Cloudflare adds the script itself
+ *   at the edge ("automatic setup" on a proxied domain, as hillgpx.com is), so
+ *   nothing is loaded here; it only tells the Privacy page it is running.
+ * - VITE_CLARITY_ID: Microsoft Clarity. Heatmaps, scroll depth, rage clicks
+ *   and session replays with typed text masked. Free. Set its project to
+ *   "cookies off" so it stays cookieless.
+ *
+ * `track` records the handful of actions that say whether the product works
+ * (searching, opening and downloading routes, contributing). Events go to
+ * Clarity as custom events; with nothing configured it does nothing.
+ */
+
+const CF_TOKEN = (import.meta.env.VITE_CF_ANALYTICS_TOKEN as string | undefined) || '';
+const CLARITY_ID = (import.meta.env.VITE_CLARITY_ID as string | undefined) || '';
+
+/** What the privacy page should say is running. */
+const CF_AUTO = (import.meta.env.VITE_CF_ANALYTICS_AUTO as string | undefined) === '1';
+export const ANALYTICS = { cloudflare: Boolean(CF_TOKEN) || CF_AUTO, clarity: Boolean(CLARITY_ID) };
+
+type ClarityFn = ((...args: unknown[]) => void) & { q?: unknown[][] };
+declare global {
+  interface Window {
+    clarity?: ClarityFn;
+  }
+}
+
+function addScript(src: string, attributes: Record<string, string> = {}) {
+  const script = document.createElement('script');
+  script.async = true;
+  script.defer = true;
+  script.src = src;
+  for (const [name, value] of Object.entries(attributes)) script.setAttribute(name, value);
+  document.head.appendChild(script);
+}
+
+let started = false;
+
+/** Start whatever is configured, after the page has painted, so it never slows the first view. */
+export function initAnalytics(): void {
+  if (started || typeof window === 'undefined') return;
+  started = true;
+  if (!CF_TOKEN && !CLARITY_ID) return;
+  const start = () => {
+    if (CF_TOKEN) addScript('https://static.cloudflareinsights.com/beacon.min.js', { 'data-cf-beacon': JSON.stringify({ token: CF_TOKEN, spa: true }) });
+    if (CLARITY_ID) {
+      // Clarity's queue stub: calls made before its script arrives are replayed.
+      const queue: ClarityFn = (...args: unknown[]) => {
+        (queue.q ??= []).push(args);
+      };
+      window.clarity ??= queue;
+      // Cookieless, whatever the Clarity project is set to: with storage
+      // consent denied (Consent API v2, queued before the tag loads) Clarity
+      // sets no cookies and shares nothing with Microsoft Ads. Each visit is
+      // recorded on its own instead of being linked to earlier ones.
+      window.clarity('consentv2', { ad_Storage: 'denied', analytics_Storage: 'denied' });
+      addScript(`https://www.clarity.ms/tag/${encodeURIComponent(CLARITY_ID)}`);
+    }
+  };
+  if ('requestIdleCallback' in window) window.requestIdleCallback(start, { timeout: 4000 });
+  else setTimeout(start, 2000);
+}
+
+export type TrackedEvent =
+  | 'search'
+  | 'route_open'
+  | 'gpx_download'
+  | 'gpx_upload'
+  | 'photo_upload'
+  | 'review_post'
+  | 'route_review_post'
+  | 'report_sent'
+  | 'contact_sent'
+  | 'place_suggested'
+  | 'sign_up'
+  | 'log_in'
+  | 'username_change'
+  | 'password_reset'
+  | 'map_expand'
+  | 'run_needs_submit'
+  | 'ranked_route_open'
+  | 'route_bookmarked'
+  | 'route_edit'
+  | 'ghealth_connect'
+  | 'ghealth_import';
+
+/** Record one product action (and an optional short label, e.g. the route). */
+export function track(event: TrackedEvent, label?: string): void {
+  if (!CLARITY_ID || typeof window === 'undefined' || !window.clarity) return;
+  window.clarity('event', event);
+  if (label) window.clarity('set', event, label.slice(0, 80));
+}
