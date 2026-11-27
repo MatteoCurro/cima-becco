@@ -345,7 +345,7 @@ export class RouteMarkers {
         element.className = 'pin route-pin route-cluster';
         const glyph = document.createElement('span');
         glyph.className = 'pin-glyph route-pin-badge';
-        setSvgIcon(glyph, activityGlyphSvg('run', 17, 2.4));
+        setSvgIcon(glyph, activityGlyphSvg('hike', 17, 2.4));
         const label = document.createElement('span');
         label.className = 'pin-label';
         element.append(glyph, label);
