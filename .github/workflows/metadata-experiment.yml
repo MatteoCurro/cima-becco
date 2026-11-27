@@ -1,0 +1,45 @@
+name: Experiment — metadata-only atlas
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/metadata_atlas_engine.mjs'
+      - 'scripts/metadata_route_catalog.mjs'
+      - 'tests/metadata_engine.test.mjs'
+      - '.github/workflows/metadata-experiment.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test del motore
+        run: node --test tests/metadata_engine.test.mjs
+      - name: Normalizza tutte le schede luoghi (no GPS)
+        run: node scripts/metadata_atlas_engine.mjs
+      - name: Normalizza tutti i metadati sentieri esistenti (no GPS)
+        run: node scripts/metadata_route_catalog.mjs
+      - name: Prova 20 schede Wikidata con cache e throttling
+        run: node scripts/metadata_atlas_engine.mjs --fetch --limit 20
+      - name: Conserva report e campione metadata per revisione
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-metadata-experiment
+          path: |
+            experiments/metadata/atlas-metadata.json
+            experiments/metadata/simulation-report.json
+            experiments/metadata/route-metadata.json
+            experiments/metadata/route-place-relations.json
+            experiments/metadata/route-simulation-report.json
+            experiments/metadata/wikidata-cache.json
+          if-no-files-found: warn
+          retention-days: 7
