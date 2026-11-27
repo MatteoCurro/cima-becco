@@ -21,11 +21,11 @@
       "url": "https://rifugi.cai.it/api/documentation",
       "format": "REST JSON list, search, detail fields[], media[]",
       "rights": "diritti di riutilizzo e licenze media NON confermati: nessun bulk publish",
-      "evidence": "PR8:cai-api-access-report.json; cai-shelter-coverage.json; 80/764 list + 4 detail",
+      "evidence": "PR8 80/764 list and 4 detail probes; bounded 27 Nov 2026 detailed shape audit: 4/4 accessible, 125 distinct field names (119 populated), union 127 with prior pilot; offline 3 CAI/OSM candidate pairs from 80 list rows; no established links",
       "status": "tested_pilot",
       "licenseGate": "requires_review",
-      "refresh": "updatedAt / incrementale SOLO dopo autorizzazione",
-      "operations": "reuse scripts/pilot_cai_api_access.py and pilot_cai_batch_metadata.py from PR8"
+      "refresh": "Check documented /api/v1/shelters/updatedAt response shape and checkpoint before enabling incremental polling; no bulk until rights granted",
+      "operations": "Reuse PR8 pilot parsers. Official /api/v1/shelters/updatedAt change tracking route (OpenAPI spec); detail fields[].value may be null while fields[].data contains nested opening schedule, require explicit parser; media[] carries URLs but no confirmed republishing rights. Never merge refuge/bivouac without detail type; 127 fieldnames classified in cai_pilot_field_inventory_v1.json."
     },
     {
       "id": "sat",
