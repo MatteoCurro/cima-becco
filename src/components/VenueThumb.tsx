@@ -50,7 +50,7 @@ export function VenueThumb({ venue, rounded = true, index = 0 }: { venue: Venue;
   return (
     <span className={`card-thumb placeholder${rounded ? '' : ' square'}`} role="img" aria-label={`No photo of ${venue.name} yet — add one`}>
       <PlaceArt venue={venue} />
-      <span className="place-art-cta">Add photo</span>
+      <span className="place-art-cta">Aggiungi una foto</span>
     </span>
   );
 }
