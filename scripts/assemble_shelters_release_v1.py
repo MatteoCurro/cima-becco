@@ -35,7 +35,7 @@ CAI_TO_KIND = {
 # bivouac dossier. Omit hotel/certification noise, nulls and contact internals.
 VISIBLE_FACTS = frozenset({
     "elevationM", "bedsTotal", "bedsWinter", "owner", "ownerClassReported",
-    "manager", "yearBuilt", "yearRebuilt", "description", "aliases",
+    "manager", "yearBuilt", "yearRebuilt", "aliases",
     "regionReported", "provinceReported", "municipalityNameReported",
     "localityNameReported", "mountainGroupNameReported", "valleyName",
     "protectedAreaName", "waterAvailableReported", "outsideWater",
@@ -43,8 +43,7 @@ VISIBLE_FACTS = frozenset({
     "hydropower", "kitchen", "heatingTypeReported", "sleepingBagLiner",
     "hotWater", "accessibleToilets", "accessibility", "carAccessibilityReported",
     "pets", "phone", "email", "website", "selfManaged",
-    "caiCatalogueStatus", "caiCategory", "caiStructureTypeOriginal",
-    "caiStatusOriginal", "officialFacebookCandidate",
+    "caiCatalogueStatus", "caiCategory",
 })
 LABELS = {
     "bedsTotal": "Posti dichiarati", "bedsWinter": "Posti invernali dichiarati",
@@ -64,6 +63,26 @@ LABELS = {
     "municipalityNameReported": "Comune dichiarato",
     "mountainGroupNameReported": "Gruppo montuoso dichiarato",
     "protectedAreaName": "Area protetta dichiarata",
+}
+SHELTER_FACT_GROUPS = {
+    "bedsTotal": "Capienza e struttura", "bedsWinter": "Capienza e struttura",
+    "owner": "Capienza e struttura", "ownerClassReported": "Capienza e struttura",
+    "yearBuilt": "Capienza e struttura", "yearRebuilt": "Capienza e struttura",
+    "selfManaged": "Capienza e struttura", "caiCatalogueStatus": "Capienza e struttura",
+    "waterAvailableReported": "Acqua e dotazioni", "outsideWater": "Acqua e dotazioni",
+    "waterSourceTypeReported": "Acqua e dotazioni",
+    "heatingTypeReported": "Acqua e dotazioni", "electricity": "Acqua e dotazioni",
+    "solarPower": "Acqua e dotazioni", "hydropower": "Acqua e dotazioni",
+    "generatorPower": "Acqua e dotazioni", "kitchen": "Acqua e dotazioni",
+    "hotWater": "Acqua e dotazioni", "sleepingBagLiner": "Acqua e dotazioni",
+    "accessibleToilets": "Acqua e dotazioni", "pets": "Acqua e dotazioni",
+    "regionReported": "Territorio", "provinceReported": "Territorio",
+    "municipalityNameReported": "Territorio", "localityNameReported": "Territorio",
+    "mountainGroupNameReported": "Territorio", "valleyName": "Territorio",
+    "protectedAreaName": "Territorio", "elevationM": "Territorio",
+    "carAccessibilityReported": "Accesso dichiarato", "accessibility": "Accesso dichiarato",
+    "website": "Contatti", "email": "Contatti", "phone": "Contatti",
+    "manager": "Contatti",
 }
 OSM_SOURCE_RE = re.compile(r"^https://www\.openstreetmap\.org/(node|way|relation)/([1-9]\d*)$")
 CAI_ID_RE = re.compile(r"^\d{1,20}$")
@@ -96,7 +115,9 @@ def factor(fact, *, key):
     require(fact.get("value") is not None and isinstance(fact["value"], (bool, int, float, str)),
             "Fatto " + key + " non scalare")
     result = deepcopy(fact)
-    result.setdefault("label", LABELS.get(key))
+    if not result.get("label") and key in LABELS:
+        result["label"] = LABELS[key]
+    result["group"] = SHELTER_FACT_GROUPS.get(key, "Altri dati dichiarati")
     result.pop("rawValue", None)
     return result
 
@@ -122,7 +143,7 @@ def cai_entity(row):
             and m.get("sourceUrl") == "https://rifugi.cai.it/shelters/" + cai_id
             and m.get("subjectVerified") is True and m.get("reuseAllowed") is True):
             media.append(deepcopy(m))
-    desc = facts.get("description", {}).get("value")
+    desc = (row.get("facts") or {}).get("description", {}).get("value")
     return {
         "id": "cai:" + cai_id, "kind": kind, "subtype": subtype,
         "name": name, "slug": "cai-" + cai_id, "slugAliases": [],
