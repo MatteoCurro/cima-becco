@@ -1,0 +1,94 @@
+name: Experimental — multi-domain data coverage
+on:
+  push:
+    branches:
+      - experiment/cross-domain-data-pilot
+    paths:
+      - 'scripts/pilot_place_weather_wikidata.py'
+      - 'scripts/pilot_geography_pois.py'
+      - 'scripts/pilot_sat_trekking_stages.py'
+      - 'scripts/pilot_media_hut_history.py'
+      - 'scripts/pilot_cai_api_access.py'
+      - 'scripts/pilot_admin_biography_webcams.py'
+      - 'scripts/pilot_cai_batch_metadata.py'
+      - 'fixtures/sat-sentiero-italia-trentino-2026.json'
+      - 'tests/test_cross_domain_pilot.py'
+      - '.github/workflows/pilot-cross-domain.yml'
+  pull_request:
+    paths:
+      - 'scripts/pilot_place_weather_wikidata.py'
+      - 'scripts/pilot_geography_pois.py'
+      - 'scripts/pilot_sat_trekking_stages.py'
+      - 'scripts/pilot_media_hut_history.py'
+      - 'scripts/pilot_cai_api_access.py'
+      - 'scripts/pilot_admin_biography_webcams.py'
+      - 'scripts/pilot_cai_batch_metadata.py'
+      - 'fixtures/sat-sentiero-italia-trentino-2026.json'
+      - 'tests/test_cross_domain_pilot.py'
+      - '.github/workflows/pilot-cross-domain.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+jobs:
+  localities-weather-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test unitari per tutte le categorie
+        run: python -m unittest discover -s tests -p test_cross_domain_pilot.py -v
+      - name: Importa metadati Wikidata da localita rifugi e bivacchi; meteo esempio
+        run: python scripts/pilot_place_weather_wikidata.py
+      - name: Verifica SAT, immagini Commons, storia Wikipedia, API rifugi CAI
+        run: python scripts/pilot_media_hut_history.py
+      - name: Prova accesso REST al CAI (solo 1 record, senza credenziali)
+        run: python scripts/pilot_cai_api_access.py
+      - name: Verifica ISTAT DAIT, alpinisti e webcam
+        run: python scripts/pilot_admin_biography_webcams.py
+      - name: Campione ufficiale CAI 80 rifugi e ricerca Antermoia
+        run: python scripts/pilot_cai_batch_metadata.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: multi-domain-places-weather-history
+          path: experiments/cross-domain-pilot/
+          if-no-files-found: warn
+          retention-days: 14
+  geography:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Importa cime rifugi passi acqua e altri POI da OSM; calcola distanze
+        run: python scripts/pilot_geography_pois.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: multi-domain-geography-pois
+          path: experiments/cross-domain-pilot/
+          if-no-files-found: warn
+          retention-days: 14
+  official-trek-stages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Importa tappe del Sentiero Italia Trentino dalla tabella SAT
+        run: python scripts/pilot_sat_trekking_stages.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: multi-domain-trekking-sat
+          path: experiments/cross-domain-pilot/
+          if-no-files-found: warn
+          retention-days: 14
