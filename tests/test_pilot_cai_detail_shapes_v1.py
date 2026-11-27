@@ -64,6 +64,12 @@ class ShapeProbeTests(unittest.TestCase):
         obj = probe.summarize_updated_at({"data": sample, "total": 1})
         self.assertEqual(obj["responseType"], "object")
         self.assertEqual(obj["dataItems"], 1)
+        numeric_map = probe.summarize_updated_at({
+            "1": "PRIVATE_TIME_A", "2": "PRIVATE_TIME_B"})
+        self.assertEqual(numeric_map["topLevelKeyCount"], 2)
+        self.assertEqual(numeric_map["numericTopLevelKeys"], 2)
+        self.assertEqual(numeric_map["valueTypes"], {"str": 2})
+        self.assertNotIn("PRIVATE_TIME", json.dumps(numeric_map))
 
     def test_audit_disallows_arbitrary_remote_ids(self):
         with self.assertRaisesRegex(ValueError, "non autorizzato"):
