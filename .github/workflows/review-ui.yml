@@ -3,6 +3,9 @@ on:
   pull_request:
     paths:
       - 'src/**'
+      - 'public/CNAME'
+      - 'vite.config.ts'
+      - '.github/workflows/deploy.yml'
       - 'scripts/**'
       - 'tests/**'
       - 'public/data/alpine-places.json'
@@ -37,9 +40,9 @@ jobs:
         run: npm run test
       - name: Vite and static SEO build
         env:
-          VITE_BASE: /cima-becco/
-          VITE_SITE_URL: https://matteocurro.github.io/cima-becco
-          SITE_URL: https://matteocurro.github.io/cima-becco
+          VITE_BASE: /
+          VITE_SITE_URL: https://www.cimabecco.it
+          SITE_URL: https://www.cimabecco.it
         run: npm run build
 
       - name: Check deep link SEO pages boot into React
