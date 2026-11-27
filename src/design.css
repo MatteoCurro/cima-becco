@@ -883,193 +883,7 @@
   background: var(--bg-raised);
 }
 
-/* ─── Category bar ────────────────────────────────────────────────────── */
-
-.filterbar {
-  padding: 0 16px;
-  box-shadow: none;
-  border-bottom: 1px solid var(--hairline);
-}
-@media (min-width: 900px) {
-  .filterbar {
-    padding: 0 max(40px, calc((100% - 1280px) / 2));
-  }
-}
-
-.filterbar-row {
-  justify-content: flex-start;
-  gap: 16px;
-  height: 78px;
-}
-
-.mode-switch {
-  position: relative;
-  display: inline-grid;
-  grid-template-columns: 1fr 1fr;
-  flex: none;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--bg-raised);
-}
-.mode-tab {
-  position: relative;
-  z-index: 1;
-  height: 36px;
-  padding: 0 18px;
-  border: none;
-  border-radius: 999px;
-  background: none;
-  color: var(--muted);
-  font: 600 14px/1 var(--font-sans);
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-.mode-tab.on {
-  color: var(--ink);
-}
-.mode-thumb {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  width: calc(50% - 4px);
-  border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 14%);
-  transition: transform 0.32s var(--ease-spring);
-}
-.mode-thumb.routes {
-  transform: translateX(100%);
-}
-
-.filterbar-divider {
-  flex: none;
-  width: 1px;
-  height: 32px;
-  background: var(--border);
-}
-
-.categories {
-  display: flex;
-  flex: 1;
-  gap: 28px;
-  min-width: 0;
-  height: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
-  mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
-}
-.categories::-webkit-scrollbar {
-  display: none;
-}
-
-.category {
-  position: relative;
-  display: inline-flex;
-  flex: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 2px;
-  border: none;
-  background: none;
-  color: var(--muted);
-  font: 600 12px/1 var(--font-sans);
-  white-space: nowrap;
-  cursor: pointer;
-  opacity: 0.8;
-  transition: color 0.2s ease, opacity 0.2s ease;
-}
-.category svg {
-  transition: transform 0.3s var(--ease-spring);
-}
-.category-label-short {
-  display: none;
-}
-.category::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 2px;
-  background: var(--border);
-  transform: scaleX(0);
-  transition: transform 0.25s var(--ease-out), background 0.2s ease;
-}
-.category:hover:not(:disabled) {
-  color: var(--ink);
-  opacity: 1;
-}
-.category:hover:not(:disabled)::after {
-  transform: scaleX(1);
-}
-.category:hover:not(:disabled) svg {
-  transform: translateY(-2px);
-}
-.category.on {
-  color: var(--ink);
-  opacity: 1;
-}
-.category.on::after {
-  background: var(--ink);
-  transform: scaleX(1);
-}
-.category:disabled {
-  opacity: 0.3;
-  cursor: default;
-}
-
-.filter-open {
-  height: 48px;
-  padding: 0 16px;
-  border-radius: 12px;
-  font-size: 12px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-@media (max-width: 743px) {
-  .filterbar-row {
-    height: 64px;
-    gap: 8px;
-  }
-  .filterbar-divider {
-    display: none;
-  }
-  .categories {
-    gap: 16px;
-    scroll-padding-inline: 8px;
-    scroll-snap-type: x proximity;
-  }
-  .category {
-    scroll-snap-align: start;
-    gap: 4px;
-    font-size: 11px;
-  }
-  .category svg {
-    width: 20px;
-    height: 20px;
-  }
-  .category-label {
-    display: none;
-  }
-  .category-label-short {
-    display: inline;
-  }
-  .filter-open {
-    height: 40px;
-    padding: 0 12px;
-  }
-  .mode-tab {
-    padding: 0 10px;
-    font-size: 12px;
-  }
-}
-
-.filter-modal-sm {
-  max-width: 560px;
-}
+.filter-modal-sm {max-width:560px}
 
 /* ─── Listing cards ───────────────────────────────────────────────────── */
 
@@ -3747,31 +3561,6 @@
   margin: 0;
 }
 
-/* Category bar: one centred group — mode switch, categories, then Filters right
-   beside the last chip — instead of stretching to the window edges. */
-.filterbar,
-.stage ~ .filterbar {
-  padding: 0 16px;
-}
-.filterbar-row {
-  justify-content: center;
-  max-width: 1120px;
-  margin: 0 auto;
-}
-.filterbar .categories {
-  flex: 0 1 auto;
-  mask-image: none;
-}
-@media (max-width: 743px) {
-  .filterbar-row {
-    justify-content: flex-start;
-  }
-  .filterbar .categories {
-    flex: 1 1 auto;
-    mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
-  }
-}
-
 /* The list pane is a column of sections. */
 .list-pane.open,
 .stage .list-pane {
@@ -3798,31 +3587,6 @@
   width: 100%;
 }
 
-/* Centred in the page, and the same width in both modes: the category strip
-   is a fixed number of fixed-width slots (--category-slots, set by FilterBar
-   to the larger of the two modes), so switching Climbs ↔ Routes only changes
-   the chips, never where the bar or the Filters button sits. */
-.filterbar-row {
-  justify-content: center;
-  width: 100%;
-  max-width: none;
-}
-@media (min-width: 744px) {
-  .filterbar .categories {
-    flex: 0 1 auto;
-    width: calc(var(--category-slots, 5) * 96px);
-  }
-}
-/* Narrow: start-aligned and scrolling sideways, as before. */
-@media (max-width: 743px) {
-  .filterbar-row {
-    justify-content: flex-start;
-  }
-}
-.filterbar .mode-switch {
-  width: 188px;
-}
-
 /* 3D toggle: the label is the icon. */
 .maplibregl-ctrl-group.map-terrain-ctrl button {
   font: 800 13px/1 var(--font-sans);
@@ -3831,73 +3595,6 @@
 .terrain-ctrl-label {
   font: inherit;
 }
-/* Narrow: one row, no empty space. A compact Climbs | Routes toggle, the
-   category icons scrolling sideways in the middle (fading at the edge when
-   there are more), and Filters as an icon button with its count. */
-@media (max-width: 743px) {
-  .filterbar .filterbar-row {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    gap: 6px;
-    height: 64px;
-  }
-  .filterbar .mode-switch {
-    flex: none;
-    width: auto;
-    padding: 3px;
-  }
-  .filterbar .mode-tab {
-    height: 30px;
-    padding: 0 10px;
-    font-size: 12px;
-  }
-  .filterbar .mode-thumb {
-    top: 3px;
-    bottom: 3px;
-    left: 3px;
-    width: calc(50% - 3px);
-  }
-  /* Only as wide as its icons, so the whole group sits centred; it scrolls
-     (and fades at the edge) only when they do not fit. */
-  .filterbar .categories {
-    flex: 1 1 0;
-    width: auto;
-    min-width: 0;
-    height: 100%;
-  }
-  .filterbar .categories:has(> :nth-child(5)) {
-    mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
-  }
-  .filterbar .category {
-    width: 56px;
-  }
-  .filterbar .filter-open {
-    position: relative;
-    flex: none;
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    justify-content: center;
-    gap: 0;
-    border-radius: 50%;
-  }
-  /* Icon only: the label stays for screen readers. */
-  .filterbar .filter-open-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-  .filterbar .filter-open .filter-badge {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    font-size: 11px;
-  }
-}
-
 /* ─── Landing: hero, rows ──────────────────────────────────────────────── */
 
 
@@ -5074,19 +4771,6 @@
    activity colour, because it holds a mix. */
 .route-pin.route-cluster .route-pin-badge { background: var(--ink); }
 
-/* Category slots have a fixed width, so the icons sit in the same places in
-   Climbs and Routes and nothing slides when you switch. */
-.filterbar .categories {
-  gap: 0;
-}
-.filterbar .category {
-  width: 96px;
-}
-@media (max-width: 743px) {
-  .filterbar .category {
-    width: 64px;
-  }
-}
 .tile-top .activity-tag,
 .result-card-top .activity-tag {
   margin-left: auto;
@@ -5349,8 +5033,10 @@
    round icons, except Upload GPX, which is a short text button from 744 px
    (a round + below that); both sides stay narrow enough for a centred pill. */
 .site-header-row {
-  grid-template-columns: minmax(max-content, 1fr) minmax(0, 608px) minmax(max-content, 1fr);
+  grid-template-columns: max-content minmax(0,1fr) max-content;
 }
+.site-header-center {width:100%}
+.site-header-center .header-search {width:100%;min-width:0}
 .site-header .home-search {
   width: 100%;
 }
@@ -7439,10 +7125,7 @@
 
 /* Switching Climbs and Routes swaps the icon row: each category pops in a
    beat after the one before, then Filters. */
-.filterbar .categories .category,
-.filterbar .filter-open {
-  animation: category-pop 0.42s var(--ease-spring) both;
-}
+
 .filterbar .categories .category:nth-child(2) { animation-delay: 40ms; }
 .filterbar .categories .category:nth-child(3) { animation-delay: 80ms; }
 .filterbar .categories .category:nth-child(4) { animation-delay: 120ms; }
