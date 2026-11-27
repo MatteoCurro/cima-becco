@@ -114,6 +114,44 @@ def fetch_detail(code):
     return json.loads(payload)
 
 
+def summarize_updated_at(payload):
+    """Only response structure, no CAI IDs/timestamps emitted."""
+    if isinstance(payload, list):
+        sample = payload[0] if payload else None
+        return {"responseType": "array", "items": len(payload),
+                "firstItemType": shape(sample),
+                "firstItemKeys": sorted(sample) if isinstance(sample, dict) else []}
+    if isinstance(payload, dict):
+        data = payload.get("data")
+        if not isinstance(data, list):
+            data = payload.get("results")
+        if not isinstance(data, list):
+            data = []
+        sample = data[0] if data else None
+        return {"responseType": "object",
+                "topLevelKeys": sorted(payload),
+                "dataItems": len(data),
+                "firstItemType": shape(sample),
+                "firstItemKeys": sorted(sample) if isinstance(sample, dict) else []}
+    return {"responseType": shape(payload), "unrecognized": True}
+
+
+def probe_updated_at():
+    url = BASE + "updatedAt"
+    req = Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
+    with urlopen(req, timeout=35) as resp:
+        if resp.status != 200:
+            raise ValueError("Unexpected status " + str(resp.status))
+        raw = resp.read(4_000_001)
+        if len(raw) > 4_000_000:
+            raise ValueError("updatedAt payload exceeds 4 MB")
+    doc = json.loads(raw)
+    return {"schemaVersion": "1.0", "source": url,
+            "status": "ONE_OFF_SHAPE_ONLY", "fieldValuesIncluded": False,
+            "rightsCleared": False, "apiResponseShape": summarize_updated_at(doc),
+            "fetchedAt": datetime.now(timezone.utc).isoformat()}
+
+
 def run(codes=SAMPLE_IDS):
     records, errors = [], []
     for code in codes:
@@ -142,7 +180,16 @@ def main():
                    "cai-detail-shapes" / "summary.json")
     p.add_argument("--one", action="store_true",
                    help="One chosen previously-tested CAI ID, no bulk")
+    p.add_argument("--updated-only", action="store_true",
+                   help="Check only metadata shape of documented updatedAt endpoint")
     args = p.parse_args()
+    if args.updated_only:
+        result = probe_updated_at()
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(result, ensure_ascii=False, sort_keys=True,
+                                          indent=2) + "\n", encoding="utf-8")
+        print(json.dumps(result["apiResponseShape"], ensure_ascii=False))
+        return
     result = run((SAMPLE_IDS[2],) if args.one else SAMPLE_IDS)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2)
