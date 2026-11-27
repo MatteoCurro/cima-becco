@@ -11,6 +11,17 @@ export interface AlpinePlace {
   wikidata?: string;
   website?: string;
   operator?: string;
+  /** OSM, Wikidata e Commons: mai foto associate dal solo nome. */
+  photo?: {url:string;sourceUrl:string;author:string;license:string;licenseUrl?:string};
+  photoCheckedAt?: string;
+  description?:string;
+  address?:string;
+  openingHours?:string;
+  phone?:string;
+  email?:string;
+  capacity?:number;
+  wikipedia?:string;
+  commonsFile?:string;
 }
 export interface AlpinePlacesDataset {
   generatedAt: string | null;
