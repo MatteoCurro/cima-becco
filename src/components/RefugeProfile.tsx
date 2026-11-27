@@ -144,7 +144,6 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
   const extraRecord={...place,facts:others,history:undefined,historySourceUrl:undefined};
   const galleryLogo=place.media?.find(m=>m.kind==='logo'&&m.reuseAllowed&&m.subjectVerified&&m.url&&m.sourceUrl&&m.licence);
   const logo=place.logo?.url||galleryLogo?.url;
-  const official=place.officialUrl||(place.sourceIds?.cai?'https://rifugi.cai.it/shelters/'+place.sourceIds.cai:undefined);
   const items:DetailJumpItem[]=[
     {id:'cb-refuge-stay',label:'Ospitalità',icon:'bed'},
     ...(knownServices.length?[{id:'cb-refuge-services',label:'Servizi',icon:'wifi' as const}]:[]),
@@ -164,8 +163,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
         <div className="cb-refuge-avatar">{logo?<img src={logo} alt={'Logo di '+place.name}/>:<AlpinePlaceIcon kind="rifugio" size={33}/>}</div>
       </div>
       <div className="cb-refuge-hero-info">
-        <div className="cb-refuge-kicker"><AlpinePlaceIcon kind="rifugio" size={16}/> RIFUGIO ALPINO
-          {place.sourceIds?.cai&&<span> · ARCHIVIO CAI</span>}</div>
+        <div className="cb-refuge-kicker"><AlpinePlaceIcon kind="rifugio" size={16}/> RIFUGIO ALPINO</div>
         <h1>{place.name}</h1>
         <p className="cb-refuge-intro">{refugeOverview(place)}</p>
         <DetailMetrics label="Riepilogo del rifugio" items={[
@@ -292,9 +290,6 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
     <div className="cb-refuge-credits">
       <p>Informazioni documentate e soggette ad aggiornamento. Apertura, disponibilità e condizioni dei sentieri vanno verificate prima di partire.</p>
       <AtlasDossierBlocks record={place} placement="credits"/>
-      {place.sourceIds?.cai&&!Object.values(place.facts??{}).some(f=>f.sourceUrl)&&
-        <p>Catalogo CAI · <SourceLink url={official}>Scheda originale</SourceLink></p>}
-      {place.sourceIds?.osm&&!place.facts&&<p>Dati OpenStreetMap · <SourceLink url={place.osmUrl}>Crediti</SourceLink></p>}
     </div>
   </div>;
 }

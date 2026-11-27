@@ -182,6 +182,13 @@ export function AtlasDossierBlocks({ record, placement, excludeImages=false, sup
   for (const cam of record.webcams ?? []) if (cam.officialUrl) sources.set(cam.officialUrl, 'Webcam: '+cam.operator);
   if (record.historySourceUrl) sources.set(record.historySourceUrl, 'Archivio storico');
   for (const c of record.climate ?? []) if (c.sourceUrl) sources.set(c.sourceUrl, 'Serie climatica');
+  // Le attribuzioni CAI e OSM restano consultabili qui, non vicino a ogni valore.
+  const osmId=record.sourceIds?.osm;
+  if(osmId && /^(?:node|way|relation)\/\d+$/.test(osmId))
+    sources.set('https://www.openstreetmap.org/'+osmId, 'OpenStreetMap · ODbL');
+  const caiId=record.sourceIds?.cai;
+  if(caiId && /^\d+$/.test(caiId))
+    sources.set('https://rifugi.cai.it/shelters/'+caiId, 'Club Alpino Italiano · Unico Rifugi');
   return sources.size ? <details className="cb-dossier-credits"><summary>Fonti e crediti del dossier <span>{sources.size}</span></summary>
     <ul>{[...sources].map(([url,label])=><li key={url}><Source url={url} label={label}/></li>)}</ul>
     {record.checkedAt && <small>Ultima verifica: {record.checkedAt}</small>}
