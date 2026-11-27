@@ -62,9 +62,9 @@ class CAIPilotFieldInventoryTests(unittest.TestCase):
         self.assertIn("largeDormitoriesAvailableReported", canon)
 
     def test_rights_are_not_inferred_from_field_exists(self):
-        self.assertIn("No values", self.inv["scope"].replace("no values", "No values")
-                      if "no values" in self.inv["scope"].lower()
-                      else "No values")
+        self.assertIn("No values", self.inv["scope"])
+        self.assertTrue(all(set(x) == {"name", "state"}
+                            for x in self.inv["fieldNames"]))
         for r in self.rules["fields"]:
             self.assertEqual(r["publicationStatus"],
                              "blocked_pending_rights_and_identity")
