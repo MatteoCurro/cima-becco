@@ -150,6 +150,8 @@ Conservare il contratto di [ARCHITECTURE.md](ARCHITECTURE.md): dettaglio desktop
 | foto attuali, storiche, logo solo autorizzato, webcam | P2 | CAI media, WC, OFF | H, V |
 | meteo locale, neve prevista, modello/altitudine di riferimento | P1/P2 | METEO | G |
 
+**Chiarimento CAI sui servizi (audit 27/11/2026):** il campo `acqua_in_rifugio_service` indica *disponibilità d'acqua dichiarata* (`waterAvailableReported`) e **non** ne certifica la potabilità (`drinkingWater`, solo con fonte esplicita). `camerate_superiore_4_posti_service` indica la presenza dichiarata di camerate con più di quattro posti (`largeDormitoriesAvailableReported`), **non** il loro numero né i letti totali. Entrambi sono fatti booleani con fonte, data e validità quando presenti; un valore assente resta sconosciuto. Gli ulteriori campi CAI su energia, certificazioni, servizi, accessi e requisiti gestionali restano candidati alla mappatura tipizzata: la mera presenza delle chiavi non implica contenuto pubblicabile o attendibile. I campi contrattuali, fiscali e i recapiti personali non si pubblicano tramite import automatico.
+
 **Layout**: hero con foto autentica e nome/quota → **stato apertura datato** → posti letto/contatti/prenotazione → servizi → storia → **Come arrivare / sentieri / trekking che passano qui** → meteo, foto e webcam → crediti.
 
 **Evidenza di copertura al 27/11/2026**: API CAI indica 764 strutture, 80 record d'elenco testati con nome/quota/coordinate. Il dettaglio offre fields[] con chiavi quali posti_totali_service, posti_letto_invernali_service, openingTime_contact, name_management_property, wifi_service, defibrillatore_service, media[]; **presenza della chiave non prova valore valorizzato né permesso di ripubblicazione**.
