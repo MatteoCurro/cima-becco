@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import design from './design.css?raw';
 import styles from './styles.css?raw';
+import explore from './alpineExplore.css?raw';
+import location from './locationProfile.css?raw';
+import hero from './homeHeroV2.css?raw';
 
 /**
  * An unclosed rule makes a browser read every rule after it as nested inside it, so the styles
@@ -24,7 +27,19 @@ describe('stylesheets', () => {
   it.each([
     ['design.css', design],
     ['styles.css', styles],
+    ['alpineExplore.css', explore],
+    ['locationProfile.css', location],
+    ['homeHeroV2.css', hero],
   ])('%s closes every rule it opens', (_name, css) => {
-    expect(unclosed(css)).toEqual({ depth: 0, negativeAt: null });
+    expect(unclosed(css)).toEqual({ depth: 0, negativeAt: null   it('riserva spazio reale a elenco e mappa senza sottrazioni hard-coded', () => {
+    expect(explore).toContain('.cb-explore-screen{height:100vh;height:100dvh');
+    expect(explore).toContain('container-type:inline-size');
+    expect(explore).not.toContain('height:calc(100dvh - 205px)');
+  });
+  it('la hero e solo navigazione e contenuti senza montagne decorative', () => {
+    expect(hero).toContain('.cb-hero-v3-directory');
+    expect(hero).not.toContain('.cb-hero-v2-landscape');
+  });
+});
   });
 });
