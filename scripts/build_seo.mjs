@@ -169,6 +169,14 @@ footer{max-width:880px;margin:0 auto;padding:20px;border-top:1px solid var(--lin
 .cima-seo-details div{background:#f0f5ed;border-radius:10px;padding:12px}
 .cima-seo-details dt{font-size:11px;color:#687869}
 .cima-seo-details dd{margin:2px 0 0;font-weight:800}
+.cima-seo-refuge-details{gap:0 24px}
+.cima-seo-refuge-details div{padding:13px 0;border:0;border-bottom:1px solid #e1e8de;
+  background:transparent;border-radius:0}
+.cima-seo-refuge-details dt{font-size:10px;text-transform:uppercase;letter-spacing:.07em}
+.cima-seo-refuge-details dd{font-size:18px;line-height:1.5}
+.cima-seo-refuge-facts li{padding:14px 15px 14px 0;border:0;border-bottom:1px solid #dde8d9;
+  border-radius:0;background:transparent}
+.cima-seo-refuge-facts strong{font-size:clamp(22px,2.8vw,33px)}
 .cima-seo-warning{font-size:13px;color:#6b6249;background:#f6f0e3;padding:12px 16px;border-radius:10px;margin-top:24px}
 .cima-seo-territory{margin:27px 0;padding:24px;border-radius:13px;background:#193f2e;color:#ecf6e7}
 .cima-seo-territory h2{margin:0 0 10px;font-size:27px}
@@ -609,7 +617,7 @@ for (const place of alpinePlaces) {
           <figcaption>${escape(m.caption||place.name)} · ${escape(m.author||'Autore non indicato')} · ${escape(m.licence)}
             · <a href="${escape(m.sourceUrl)}" rel="noopener noreferrer">Fonte e licenza</a></figcaption></figure>`).join('')}</div>
       </section>`:''}
-      <ul class="facts cima-seo-facts">
+      <ul class="facts cima-seo-facts ${place.kind==='rifugio'?'cima-seo-refuge-facts':''}">
         ${place.elevationM!=null?`<li><strong>${metres(place.elevationM)}</strong>${place.elevationSource==='dem'?'quota DEM stimata':place.elevationSource==='cai'?'quota dichiarata dal CAI':'quota indicata in OSM'}</li>`:''}
         <li><strong>${escape(place.lat.toFixed(4)+', '+place.lng.toFixed(4))}</strong>coordinate</li>
         <li><strong>${related.length}</strong>sentieri collegati</li>
@@ -636,7 +644,7 @@ for (const place of alpinePlaces) {
         ${place.address?`<div><dt>Indirizzo</dt><dd>${escape(place.address)}</dd></div>`:''}
         ${place.website?`<div><dt>Sito</dt><dd><a href="${escape(place.website)}" rel="noopener noreferrer">Sito della struttura</a></dd></div>`:''}
       </dl>`:''}
-      ${place.kind==='rifugio'&&publishedDetails.length?`<h2>Ospitalità, gestione e storia del rifugio</h2><dl class="cima-seo-details">${publishedDetails.map(({label,value,fact})=>`<div><dt>${escape(label)}</dt><dd>${escape(typeof value==='boolean'?(value?'Sì':'No'):value)}
+      ${place.kind==='rifugio'&&publishedDetails.length?`<h2>Ospitalità, gestione e storia del rifugio</h2><dl class="cima-seo-details cima-seo-refuge-details">${publishedDetails.map(({label,value,fact})=>`<div><dt>${escape(label)}</dt><dd>${escape(typeof value==='boolean'?(value?'Sì':'No'):value)}
         ${fact?.unit?' '+escape(fact.unit):''}</dd></div>`).join('')}</dl>`:''}
       ${place.kind==='rifugio'&&refugeServices.length?`<section><h2>Vivere il rifugio: servizi e dotazioni</h2>
         ${refugeServices.some(item=>item.value)?`<p>Servizi indicati come disponibili: ${escape(refugeServices.filter(item=>item.value).map(item=>item.label).join(', '))}.</p>`:''}

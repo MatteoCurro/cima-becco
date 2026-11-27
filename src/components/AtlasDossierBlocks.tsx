@@ -40,7 +40,7 @@ function Technical({ technical }: { technical: AtlasTechnical }) {
     <p className="cb-dossier-note">Dati tecnici documentali: non attestano lo stato degli ancoraggi né la sicurezza della via. Spit e rinvii non vengono dedotti l'uno dall'altro.</p>
   </Section>;
 }
-function RelationItem({ relation }: { relation: AtlasRelation }) {
+function RelationItem({ relation, showSource = true }: { relation: AtlasRelation; showSource?: boolean }) {
   const suffix = relation.type === 'near' || relation.type === 'passes_near'
     ? ' · prossimità geografica, non prova di accesso' : '';
   return <li className="cb-dossier-relation">
@@ -51,14 +51,16 @@ function RelationItem({ relation }: { relation: AtlasRelation }) {
     {relation.straightLineKm != null && relation.type === 'near' &&
       <small>{relation.straightLineKm.toLocaleString('it-IT', {maximumFractionDigits:1})} km in linea d'aria</small>}
     {suffix && <small>{suffix.replace(/^ · /, '')}</small>}
-    {relation.sourceUrl && <small><Source url={relation.sourceUrl}/></small>}
+    {showSource && relation.sourceUrl && <small><Source url={relation.sourceUrl}/></small>}
   </li>;
 }
 /** Moduli separati per responsabilità; nessun blocco vuoto, nessuna fonte o immagine inventata. */
-export function AtlasDossierBlocks({ record, placement, excludeImages=false }: {
+export function AtlasDossierBlocks({ record, placement, excludeImages=false, suppressRelationSources=false }: {
   record: AtlasEntityMetadata; placement: 'alerts' | 'core' | 'connections' | 'media' | 'credits';
   /** Le fotografie del rifugio sono già nella gallery principale. */
   excludeImages?: boolean;
+  /** Rifugi: le provenienze di ogni relazione restano nel registro fonti finale. */
+  suppressRelationSources?: boolean;
 }) {
   if (placement === 'alerts') {
     const notices = activeAtlasAlerts([...(record.alerts??[]),...(record.restrictions??[])]);
@@ -139,7 +141,7 @@ export function AtlasDossierBlocks({ record, placement, excludeImages=false }: {
   if (placement === 'connections') {
     const relations = (record.relations ?? []).filter(r=>r.target?.id && r.target.name && ATLAS_RELATION_LABELS[r.type]);
     return relations.length ? <Section kicker="ATLANTE / CONNESSIONI" title="Nello stesso territorio">
-      <ul className="cb-dossier-relations">{relations.map((relation,index)=><RelationItem relation={relation} key={relation.type + ':' + relation.target.id + ':' + index}/>)}</ul>
+      <ul className="cb-dossier-relations">{relations.map((relation,index)=><RelationItem relation={relation} showSource={!suppressRelationSources} key={relation.type + ':' + relation.target.id + ':' + index}/>)}</ul>
     </Section> : null;
   }
 

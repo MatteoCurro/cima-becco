@@ -276,7 +276,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
       <p className="cb-refuge-disclaimer">Distanze e presenza sulla mappa non garantiscono accessibilità, disponibilità o potabilità.</p>
     </RefugeBlock>}
     <NearbyAtlasPlaces items={nearbyPlaces}/>
-    <AtlasDossierBlocks record={place} placement="connections"/>
+    <AtlasDossierBlocks record={place} placement="connections" suppressRelationSources/>
     {(hasSpecial||Object.keys(others).length>0||place.climate?.length||place.aliases?.length||place.administrativeHierarchy)&&
       <section id="cb-refuge-archive" className="cb-refuge-archive cb-detail-group">
         <details><summary>Altri approfondimenti, toponimi e dati tecnici</summary>

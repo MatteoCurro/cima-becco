@@ -156,6 +156,10 @@
 .cb-refuge-profile .cb-refuge-archive .cb-dossier-relation{
   padding:12px 0;background:transparent;border:0;border-bottom:1px solid #e2e9df;border-radius:0}
 .cb-refuge-profile .cb-refuge-archive .cb-dossier-fact dd{font-size:17px}
+.cb-refuge-profile .cb-dossier-relations{gap:0 22px}
+.cb-refuge-profile .cb-dossier-relation{padding:14px 0;border:0;border-bottom:1px solid #dde8da;
+  border-radius:0;background:transparent}
+.cb-refuge-profile .cb-dossier-relation strong{font-size:17px}
 .cb-refuge-profile .cb-refuge-archive .cb-dossier-section{border-top:0}
 .cb-refuge-profile .cb-refuge-credits .cb-dossier-credits{margin:10px 0 0;padding:9px 0;border-top:0}
 @container(max-width:520px){
