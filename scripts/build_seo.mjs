@@ -82,26 +82,52 @@ function photoUrl(file) {
 }
 
 const STYLE = `
-:root{--ink:#222;--muted:#6a6a6a;--accent:#c1502e;--line:#ebebeb}
-*{box-sizing:border-box}body{margin:0;font:16px/1.6 Figtree,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:var(--ink);background:#fff}
+:root{--ink:#294536;--muted:#68766b;--accent:#476857;--line:#e1e8de;--sage:#eaf1e8;--paper:#fbfcf8}
+*{box-sizing:border-box}body{margin:0;font:16px/1.65 Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;color:var(--ink);background:var(--paper)}
 header{display:flex;align-items:center;justify-content:space-between;gap:16px;max-width:880px;margin:0 auto;padding:18px 20px;border-bottom:1px solid var(--line)}
 .brand{display:inline-flex;align-items:center;gap:8px;color:var(--accent);font-weight:700;font-size:21px;text-decoration:none;letter-spacing:-.03em}
 .brand svg{width:28px;height:28px}
 main{max-width:880px;margin:0 auto;padding:28px 20px 56px}
 nav.crumbs{font-size:14px;color:var(--muted);margin-bottom:12px}nav.crumbs a{color:var(--muted)}
-h1{margin:0 0 6px;font-size:34px;line-height:1.15;letter-spacing:-.02em}
+h1{margin:0 0 12px;font:700 clamp(32px,5vw,48px)/1.13 Bitter,Georgia,serif;letter-spacing:-.028em}h2{font-family:Bitter,Georgia,serif;letter-spacing:-.02em}
 .sub{margin:0 0 20px;color:var(--muted)}
 .facts{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 22px;padding:0;list-style:none}
-.facts li{padding:10px 14px;border:1px solid var(--line);border-radius:12px;font-size:14px}.facts strong{display:block;font-size:18px}
+ .facts li{padding:13px 16px;border:1px solid var(--line);background:#f5f8f2;border-radius:12px;font-size:13px}.facts strong{display:block;font-size:18px}
 figure{margin:0 0 22px}figure img{width:100%;max-height:440px;object-fit:cover;border-radius:16px;background:#f2f2f2}
 figcaption{margin-top:6px;color:var(--muted);font-size:12px}
 .cta{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 22px;border-radius:10px;background:var(--ink);color:#fff;font-weight:600;text-decoration:none}
-.cta:hover{background:#000}
+.cta:hover{background:#50765f}
 ul.list{padding-left:20px}ul.list li{margin:4px 0}ul.list a{color:var(--ink)}
 footer{max-width:880px;margin:0 auto;padding:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}footer a{color:var(--muted)}
-`;
-const MARK = '<svg viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="26.25" fill="#c1502e"/><g fill="none" stroke="#fff" stroke-width="8.5" stroke-linecap="round"><path d="M23 86A37 37 0 0 1 97 86"/><path d="M38 86A22 22 0 0 1 82 86"/><path d="M52.5 86A7.5 7.5 0 0 1 67.5 86"/></g><circle cx="60" cy="33" r="6.5" fill="#fff"/></svg>';
+.cima-seo-trail{max-width:900px;margin:auto}
+.cima-seo-eyebrow{color:#658272;font-size:12px;font-weight:800;letter-spacing:.17em;margin-bottom:14px}
+.cima-seo-lead{font-size:16px;max-width:750px;color:#506558;line-height:1.8;margin:0 0 20px}
+.cima-seo-tags{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 24px}
+.cima-seo-tags span{border-radius:99px;background:#e7eee2;color:#48684d;padding:6px 12px;font-weight:800;font-size:12px}
+.cima-seo-tags span.fun{background:#f8efdf;color:#79623d}
+.route-sketch{border-radius:18px;background:linear-gradient(145deg,#e2eade,#c9d9c7);padding:18px 25px;overflow:hidden;margin:0 0 23px;position:relative;color:#3b5947}
+.route-sketch::before{content:'';position:absolute;inset:0;opacity:.23;background:repeating-radial-gradient(ellipse at 80% 20%,transparent 0px,transparent 17px,#7f9d88 19px,#7f9d88 20px,transparent 22px,transparent 38px);pointer-events:none}
+.route-sketch svg{display:block;position:relative;width:100%;height:auto;max-height:260px;filter:drop-shadow(0 1px 1px #fafff7)}
+.route-sketch-caption{font-weight:800;font-size:12px;letter-spacing:.12em}
+.route-sketch small{position:relative;display:block;color:#557462;font-size:11px}
+.cima-seo-photo img{max-height:400px;object-fit:cover;display:block;width:100%;border-radius:18px}
+.cima-seo-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:18px 0 24px}
+.cima-seo-facts strong{color:#2f573e;white-space:normal;line-height:1.3}
+.cima-seo-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:24px 0 34px}
+.cima-seo-actions .cta{background:#416751;border-radius:12px}
+.cima-seo-secondary{font-weight:800;color:#436e53;text-decoration:none;border:1px solid #d8e4d8;border-radius:12px;padding:11px 16px}
+.cima-seo-secondary:hover{background:#e5eee4}
+.cima-seo-body{border-top:1px solid #dfe6db;padding-top:12px;max-width:760px}
+.cima-seo-body h2{font-size:23px;margin:25px 0 10px}
+.cima-seo-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.cima-seo-details div{background:#f0f5ed;border-radius:10px;padding:12px}
+.cima-seo-details dt{font-size:11px;color:#687869}
+.cima-seo-details dd{margin:2px 0 0;font-weight:800}
+.cima-seo-warning{font-size:13px;color:#6b6249;background:#f6f0e3;padding:12px 16px;border-radius:10px;margin-top:24px}
+@media(max-width:660px){.cima-seo-facts,.cima-seo-details{grid-template-columns:repeat(2,minmax(0,1fr))}header{flex-wrap:wrap}main{padding-top:18px}}
 
+`;
+const MARK = '<svg viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="27" fill="#476857"/><path d="M18 90 49 31l19 32 12-17 24 44H18Z" fill="#f7f6ed"/><path d="m40 90 17-31 10 18 14-21 17 34H40Z" fill="#b8c7b2"/><path d="m80 46 28 12-18 9-10-21Z" fill="#e6c89c"/></svg>';
 const pages = [];
 
 function page({ path, title, description, image, jsonLd, body }) {
@@ -126,11 +152,11 @@ function page({ path, title, description, image, jsonLd, body }) {
 <style>${STYLE}</style>
 </head>
 <body>
-<header><a class="brand" href="${SITE}/">${MARK}Cima Becco</a><a href="${SITE}/#map">Open the map</a></header>
+<header><a class="brand" href="${SITE}/">${MARK}Cima Becco</a><a href="${SITE}/#map">Esplora la mappa</a></header>
 <main>
 ${body}
 </main>
-<footer>Cima Becco is a free, open-source map of hills, mountains and GPX routes. Map data © OpenStreetMap contributors; summits from GeoNames (CC BY 4.0); photos credited on each page. <a href="${SITE}/#terms">Licences</a> · <a href="${SITE}/#privacy">Privacy</a></footer>
+<footer>Cima Becco · Ogni cima, un nuovo percorso. <a href="${SITE}/#data">Fonti e crediti</a> · <a href="${SITE}/#privacy">Privacy</a></footer>
 </body>
 </html>
 `;
