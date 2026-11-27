@@ -23,7 +23,7 @@ describe('real hiking routes', { timeout: 30_000 }, () => {
   for (const [path, xml] of Object.entries(gpxFiles).filter(([path]) => /walk|trail|hiking|trek/i.test(path) && !/cycle|bike|cycling/i.test(path))) {
     it(`is not held: ${path.split('/').pop()}`, () => {
       const parsed = parseGpx(xml);
-      const result = assess({ points: parsed.points, times: parsed.times, hasElevation: hasRealElevation(parsed.points) });
+      const result = assess({ points: parsed.points, times: parsed.times, hasElevation: hasRealElevation(parsed.points), activity: /trail|run/i.test(path) ? 'trail' : 'hike' });
       expect(result.flags.filter((f) => f.severity === 'key')).toEqual([]);
       expect(result.verdict).toBe('ok');
     });
