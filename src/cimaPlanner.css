@@ -30,3 +30,33 @@
 .cb-side .cb-note { font-size:11px; color:#819088; line-height:1.55; }
 .cb-plan-link { text-decoration:none; }
 @media (max-width:780px) { .cb-planner { display:flex; flex-direction:column-reverse; } .cb-map { height:50dvh; min-height:300px; } .cb-side { max-height:none; padding:20px; border-right:none; } }
+
+/* Pianificatore: base topo, destinazioni vere e comandi leggibili anche su mobile. */
+.cb-page{background:#eff4eb}
+.cb-side{background:#fafff5;border-right:2px solid #d6e4d6}
+.cb-kicker{color:#fc2371;font:900 11px 'Space Grotesk',sans-serif;letter-spacing:.12em}
+.cb-side h1{font:900 clamp(33px,3.6vw,49px)/.97 'Bricolage Grotesque',sans-serif;letter-spacing:-.06em;color:#173e2e}
+.cb-side p{font-family:'Space Grotesk',sans-serif}
+.cb-label{font:900 11px 'Space Grotesk',sans-serif;letter-spacing:.055em;color:#3e5c49}
+.cb-input{border:2px solid #c3d4be;border-radius:6px;font:600 14px 'Space Grotesk',sans-serif}
+.cb-input:focus{outline:2px solid rgba(255,38,119,.25);border-color:#ff2677}
+.cb-planner-destinations{position:relative;background:#e9f1e5;padding:13px;border-radius:9px;margin-bottom:19px}
+.cb-planner-destinations .cb-label{margin-top:0}
+.cb-planner-suggest{display:flex;flex-direction:column;gap:0;margin-top:5px;max-height:290px;overflow-y:auto;border:2px solid #d7e4d2;border-radius:7px;background:white;box-shadow:0 8px 19px #143d2f15}
+.cb-planner-suggest button{display:flex;justify-content:space-between;align-items:center;gap:9px;padding:10px 13px;border:0;border-bottom:1px solid #e7eee2;background:#fff;color:#214836;text-align:left;cursor:pointer;font:700 12px 'Space Grotesk',sans-serif}
+.cb-planner-suggest button:hover{background:#e4ffbe}
+.cb-planner-suggest button strong{font-size:13px}
+.cb-planner-suggest button small{font-size:9px;font-weight:900;color:#e91667;flex-shrink:0}
+.cb-action{border:2px solid #bfd3bf;border-radius:5px;font:900 13px 'Barlow Condensed',sans-serif;letter-spacing:.05em;text-transform:uppercase;padding:11px 15px}
+.cb-action:hover:not(:disabled){border-color:#ff2677}
+.cb-action.primary{background:#ff2677;border-color:#ff2677;color:#fff;box-shadow:3px 3px 0 #143d2f}
+.cb-action.primary:hover{background:#df005b}
+.cb-point{background:#ff2677;border:3px solid #f9fff3;font:900 12px 'Barlow Condensed',sans-serif}
+.cb-point-list li span{font:800 13px 'Space Grotesk',sans-serif}
+.cb-result h2{font:900 23px 'Bricolage Grotesque',sans-serif;letter-spacing:-.05em}
+.cb-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.cb-stats>div{background:#eaf3e6;padding:11px;border-radius:5px}
+.cb-stats strong{font:900 23px 'Barlow Condensed',sans-serif;color:#1b4b35}
+.cb-stats small{font-size:10px;line-height:1.2}
+.cb-planner .maplibregl-ctrl-attrib{font-size:10px}
+@media(max-width:780px){.cb-side{padding:22px}.cb-map{height:50dvh;min-height:350px}.cb-stats strong{font-size:20px}.cb-planner-suggest button{flex-direction:column;align-items:flex-start}}
