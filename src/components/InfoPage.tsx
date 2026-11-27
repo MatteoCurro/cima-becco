@@ -160,25 +160,26 @@ function Community() {
 function DataSources() {
   return (
     <>
-      <h1>Data sources and licences</h1>
-      <p className="info-lead">Everything on the map is credited to the people and projects it came from.</p>
-      <h2>Where the data comes from</h2>
+      <h1>Fonti dei dati e licenze</h1>
+      <p className="info-lead">Cima Becco distingue dati geografici aperti, fotografie e contributi degli utenti. Ogni fonte mantiene le proprie condizioni di riutilizzo.</p>
+      <h2>Cartografia e itinerari</h2>
       <ul>
-        <li><strong>Map data</strong> © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors (ODbL), served by <a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a>.</li>
-        <li><strong>Worldwide summits</strong> from <a href="https://www.geonames.org" target="_blank" rel="noreferrer">GeoNames</a> (CC BY 4.0) and OpenStreetMap (ODbL).</li>
-        <li><strong>Place summaries</strong> from <a href="https://en.wikipedia.org" target="_blank" rel="noreferrer">Wikipedia</a> (CC BY-SA).</li>
-        <li><strong>Photos</strong> from <a href="https://commons.wikimedia.org" target="_blank" rel="noreferrer">Wikimedia Commons</a> and <a href="https://www.mapillary.com" target="_blank" rel="noreferrer">Mapillary</a>, each credited.</li>
-        <li><strong>Weather</strong> from <a href="https://open-meteo.com" target="_blank" rel="noreferrer">Open-Meteo</a> (CC BY 4.0).</li>
-        <li><strong>Elevation and hillshade</strong> from <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noreferrer">AWS Terrain Tiles</a>.</li>
-        <li><strong>Singapore blocks</strong> from <a href="https://data.gov.sg" target="_blank" rel="noreferrer">data.gov.sg</a>; neighbourhood search contains information from Master Plan 2019 Subzone Boundary (No Sea) accessed on 25 October 2026 from data.gov.sg under the <a href="https://data.gov.sg/open-data-licence" target="_blank" rel="noreferrer">Singapore Open Data Licence 1.0</a>.</li>
+        <li><strong>Cartografia e tracciati escursionistici:</strong> © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a> (ODbL).</li>
+        <li><strong>Catasto sentieristico nazionale:</strong> <a href="https://www.cai.it/sentieri-e-rifugi/infomont/" target="_blank" rel="noreferrer">CAI INFOMONT</a> (ODbL), con attribuzioni CAI e OSM quando utilizzato.</li>
+        <li><strong>Trentino:</strong> <a href="https://www.sat.tn.it/sentieri/mappa-sentieri/" target="_blank" rel="noreferrer">SAT</a> (ODbL per il catalogo sentieri pubblicato come open data).</li>
+        <li><strong>Cime e toponimi:</strong> <a href="https://www.geonames.org" target="_blank" rel="noreferrer">GeoNames</a> (CC BY 4.0).</li>
       </ul>
-      <h2>Licences for what people add</h2>
+      <h2>Immagini e informazioni</h2>
       <ul>
-        <li><strong>GPX routes and reviews:</strong> CC BY 4.0, credited with the name the contributor gives.</li>
-        <li><strong>Photos:</strong> CC BY-SA 4.0, CC BY 4.0 or CC0 — the contributor picks at upload.</li>
+        <li><strong>Fotografie:</strong> <a href="https://commons.wikimedia.org" target="_blank" rel="noreferrer">Wikimedia Commons</a>, con autore e licenza indicati per ogni fotografia; altre sorgenti solo quando autorizzate.</li>
+        <li><strong>Descrizioni dei luoghi:</strong> riferimenti a <a href="https://it.wikipedia.org" target="_blank" rel="noreferrer">Wikipedia</a>, Wikidata e alle schede ufficiali dei gestori, nel rispetto delle licenze.</li>
+        <li><strong>Altimetria:</strong> <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noreferrer">AWS Terrain Tiles</a> quando disponibile.</li>
       </ul>
-      <h2>The code</h2>
-      <p>hillGPX's code is open source under the MIT licence:</p>
+      <h2>Contenuti della community</h2>
+      <p>I tracciati, le recensioni e le fotografie caricate dagli utenti riportano la licenza scelta o dichiarata. La licenza delle fonti OSM/CAI non viene sostituita da quella dei contributi degli utenti.</p>
+      <p>La presenza di una traccia non certifica la percorribilità attuale né la sicurezza di un'escursione o via ferrata. Verifica sempre le indicazioni ufficiali.</p>
+      <h2>Codice sorgente</h2>
+      <p>Il progetto mantiene gli avvisi di licenza MIT del software originario HillGPX.</p>
       <pre className="licence-block">{MIT_TEXT}</pre>
     </>
   );
