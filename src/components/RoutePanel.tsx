@@ -556,6 +556,20 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
         <img src={route.photos[0].url} alt={route.photos[0].caption || displayTitle} loading="lazy" />
         <small>Fotografia: {route.photos[0].author || 'Wikimedia Commons'} · {route.photos[0].license || 'licenza nella fonte'}</small>
       </a>}
+      {route.stops && route.stops.length > 0 && (
+        <section className="cb-route-destinations" aria-label="Rifugi e località vicine alla traccia">
+          <h3>RIFUGI &amp; POSTI DOVE FINIRE</h3>
+          <p>Questi luoghi sono stati trovati vicino alla traccia. Il sentiero non garantisce accesso diretto.</p>
+          <div className="cb-route-destination-list">
+            {route.stops.slice(0, 7).map((stop) => (
+              <a key={stop.slug} href={`#atlante/${stop.kind === 'rifugio' ? 'rifugi' : 'borghi'}/${stop.slug}`}>
+                <strong>{stop.name}</strong>
+                <small>{stop.kind === 'rifugio' ? 'RIFUGIO' : 'BORGO'} · {stop.relation === 'arrivo' ? 'ZONA ARRIVO' : stop.relation === 'partenza' ? 'ZONA PARTENZA' : 'LUNGO IL TRACCIATO'} ↗</small>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
       {reviewable && !reviewsState.error && (
         <p className="route-rating">{reviewsState.reviews && <RatingLabel rating={reviewsState.rating} />}</p>
       )}
