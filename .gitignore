@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Environment — the app itself needs no secrets, but the ingest scripts do
+.env
+.env.local
+.env.*.local
+.env.production
+.env.docker
+.dev.vars
+
+# Local MongoDB data (if mongod is ever run against the repo checkout)
+mongo-data/
+mongodb-data/
+
+# Cloudflare Tunnel credentials/certificates if a named tunnel is configured locally
+cloudflared/
+*.pem
+
+# Python (data scripts)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Large intermediate data — the *outputs* under public/data are committed,
+# these raw downloads are not (see scripts/README.md)
+scripts/.cache/
+open_trail_media/
+*.tif
+*.tiff
+
+# IDE / OS
+.claude/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+
+# Logs
+*.log
+npm-debug.*
+
+# Test artifacts
+test-results/
+playwright-report/
+
+dummy_gpx/
+supabase/.temp/
+
+# Wrangler local state
+.wrangler/
+
+bulk_uploads/*
+
