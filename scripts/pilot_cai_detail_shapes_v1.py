@@ -130,11 +130,25 @@ def summarize_updated_at(payload):
         sample = data[0] if data else None
         numeric_keys = [key for key in payload if isinstance(key, str) and key.isdigit()]
         value_types = Counter(shape(value) for value in payload.values())
+        stamp_formats = Counter()
+        for value in payload.values():
+            if not isinstance(value, str):
+                stamp_formats["not_string"] += 1
+                continue
+            try:
+                dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                if dt.tzinfo is not None and dt.utcoffset() is not None:
+                    stamp_formats["timezone_aware_iso"] += 1
+                else:
+                    stamp_formats["timezone_naive_iso"] += 1
+            except ValueError:
+                stamp_formats["not_iso_datetime"] += 1
         sample_value = next(iter(payload.values()), None)
         return {"responseType": "object",
                 "topLevelKeyCount": len(payload),
                 "numericTopLevelKeys": len(numeric_keys),
                 "valueTypes": dict(sorted(value_types.items())),
+                "timestampFormatCounts": dict(sorted(stamp_formats.items())),
                 "firstValueObjectKeys": (sorted(sample_value)[:70]
                                          if isinstance(sample_value, dict) else []),
                 "dataItems": len(data),
