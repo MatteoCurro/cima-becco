@@ -6,6 +6,7 @@ import { DESTINATIONS, boundsToHash, normalisePlace, regionBounds, regionOf } fr
 import { countrySummaries, type CountrySummary } from '../lib/worldPeaks';
 import { SiteFooter, SiteHeader } from './SiteChrome';
 import { mixByDifficulty, routeDifficulty, routeHasElevation } from '../lib/routes';
+import { trailTitle } from '../lib/routeEditorial';
 import { ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { RatingLabel } from './ResultsList';
 import { RouteThumb } from './RouteThumb';
@@ -162,11 +163,11 @@ interface RowSpec {
   showKind: boolean;
 }
 
-const SINGAPORE = DESTINATIONS[0].bounds;
+const DOLOMITI = DESTINATIONS[0].bounds;
 
 const PLACEHOLDER_ROWS: RowSpec[] = [
-  { title: 'Climbs in Singapore', venues: [], bounds: SINGAPORE, showKind: true },
-  { title: 'Summits across Malaysia', venues: [], bounds: DESTINATIONS[5].bounds, showKind: false },
+  { title: 'Cime delle Dolomiti', venues: [], bounds: DOLOMITI, showKind: false },
+  { title: 'Fra passi e rifugi', venues: [], bounds: DESTINATIONS[8].bounds, showKind: false },
 ];
 
 /** Photo first, then height: an empty grey tile in a row of photos reads as broken. */
@@ -189,9 +190,9 @@ function buildRows(venues: Venue[], worldRows: ReadonlySet<string>): RowSpec[] {
     else byRegion.set(region, [venue]);
   }
   // "See all" frames every place the row stands for, not just the dozen shown.
-  const boundsFor = (region: string, list: Venue[]): Bounds => boundsOf(list) ?? regionBounds(region) ?? SINGAPORE;
-  const sg = byRegion.get('Singapore') ?? [];
-  const malaysia = byRegion.get('Malaysia') ?? [];
+  const boundsFor = (region: string, list: Venue[]): Bounds => boundsOf(list) ?? regionBounds(region) ?? DOLOMITI;
+  const sg = byRegion.get('Italia') ?? [];
+  const malaysia = byRegion.get('Austria') ?? [];
   // Singapore's hills and its stairs and blocks share one row, taking turns,
   // so neither kind crowds the other out.
   const sgClimbs = interleave(
@@ -199,11 +200,11 @@ function buildRows(venues: Venue[], worldRows: ReadonlySet<string>): RowSpec[] {
     showcase(sg.filter((v) => v.type === 'stairs' || v.type === 'hdb_block')),
   ).slice(0, 12);
   const rows: RowSpec[] = [
-    { title: 'Climbs in Singapore', venues: sgClimbs, bounds: SINGAPORE, showKind: true },
-    { title: 'Summits across Malaysia', venues: showcase(malaysia), bounds: boundsFor('Malaysia', malaysia), showKind: false },
+    { title: 'Cime e luoghi d’Italia', venues: sgClimbs, bounds: boundsFor('Italia', sg), showKind: true },
+    { title: 'Cime oltreconfine', venues: showcase(malaysia), bounds: boundsFor('Austria', malaysia), showKind: false },
   ];
   for (const [region, list] of byRegion) {
-    if (region === 'Singapore' || region === 'Malaysia' || list.length < 4 || worldRows.has(normalisePlace(region))) continue;
+    if (region === 'Italia' || region === 'Austria' || list.length < 4 || worldRows.has(normalisePlace(region))) continue;
     rows.push({ title: `Peaks in ${region}`, venues: showcase(list), bounds: boundsFor(region, list), showKind: false });
   }
   return rows.filter((row) => row.venues.length > 0);
@@ -367,12 +368,12 @@ function RouteTile({ route, index }: { route: Route; index: number }) {
           <span className="tile-badge">{routeDifficulty(route)}</span>
         </span>
         <span className="tile-top">
-          <span className="tile-name">{route.name}</span>
+          <span className="tile-name">{trailTitle(route)}</span>
           <ActivityTag activity={routeActivity(route)} />
         </span>
         <span className="tile-meta">{[region, route.loop ? 'Loop' : 'Point to point'].filter(Boolean).join(' · ')}</span>
         <span className="tile-meta">
-          <strong>{units.distance(route.distanceM)}</strong> · <strong>{routeHasElevation(route) ? `${units.height(route.gainM)} EG` : 'Elevation unavailable'}</strong>
+          <strong>{units.distance(route.distanceM)}</strong> · <strong>{routeHasElevation(route) ? `${units.height(route.gainM)} di salita` : 'Dislivello da stimare'}</strong>
         </span>
       </button>
       <RouteBookmarkButton route={route} variant="card" />
