@@ -59,3 +59,82 @@
 .cb-atlas-trek-slogan{font:900 21px 'Bricolage Grotesque',sans-serif;color:#f32776}
 @media(max-width:800px){.cb-atlas-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cb-atlas-intro{grid-template-columns:1fr auto;padding:26px}.cb-atlas-intro-symbol{font-size:140px}.cb-atlas-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.cb-atlas-shell{width:calc(100% - 26px);padding-top:18px}.cb-atlas-tabs a{font-size:11px;padding:11px}.cb-atlas-intro{grid-template-columns:1fr;padding:22px;border-radius:10px 26px 10px 10px}.cb-atlas-intro-symbol{display:none}.cb-atlas-grid{grid-template-columns:1fr}.cb-atlas-card{min-height:160px}.cb-atlas-detail{padding:22px}.cb-atlas-facts,.cb-atlas-routes{grid-template-columns:1fr}}
+
+/* Layout rifugi, borghi e schede locali: leggibilità prima dei colori. */
+.cb-atlas-kind{display:inline-flex;align-items:center;gap:7px;color:#1c4b35!important}
+.cb-atlas-kind--trek{color:#e8ffca!important}
+.cb-atlas-detail-wide{max-width:none!important;padding:clamp(18px,3.5vw,42px)}
+.cb-atlas-detail-wide h1{max-width:900px;text-wrap:balance}
+.cb-atlas-detail-wide .cb-atlas-lead{max-width:850px}
+.cb-atlas-cover{margin:20px 0 14px;max-width:1020px}
+.cb-atlas-cover img{display:block;width:100%;height:clamp(190px,33vw,350px);object-fit:cover;border-radius:11px;background:#e3ebdb}
+.cb-atlas-card-photo{width:calc(100% + 42px);margin:-7px -21px 2px;height:110px;object-fit:cover;border-radius:8px 8px 0 0;background:#e7eee2}
+.cb-atlas-card-photo~h2{margin-top:1px}
+.cb-atlas-facts{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.cb-atlas-facts>span{background:#f0f5ea;border:1px solid #e1eade;font-weight:700}
+.cb-atlas-facts>span strong{color:#1e4433!important}
+.cb-atlas-detail .cb-atlas-actions{margin:22px 0 31px}
+.cb-atlas-section-top{margin:28px 0 14px}
+.cb-atlas-section-top>span{font:900 11px 'Space Grotesk',sans-serif;color:#d70059;letter-spacing:.14em}
+.cb-atlas-section-top h2{font:900 clamp(23px,3vw,34px)/1 'Bricolage Grotesque',sans-serif;letter-spacing:-.05em;color:#173c2e;margin:7px 0 8px}
+.cb-atlas-section-top p{font:500 13px/1.6 'Space Grotesk',sans-serif;color:#587360;max-width:720px}
+.cb-atlas-list-map{margin:25px 0 35px;background:#edf4e7;padding:18px;border-radius:12px}
+.cb-atlas-list-map .cb-atlas-section-top{margin:0 0 14px}
+.cb-atlas-map-wrap{position:relative;border:2px solid #cedecc;overflow:hidden;border-radius:10px;background:#dcebd5}
+.cb-atlas-map{width:100%;max-width:100%;min-height:235px}
+.cb-atlas-map-caption{position:absolute;bottom:15px;left:12px;z-index:2;background:#183d30;color:#fff;font:900 10px 'Space Grotesk',sans-serif;letter-spacing:.06em;padding:8px 10px;border-radius:5px;pointer-events:none;max-width:calc(100% - 140px)}
+.cb-atlas-selected-pin{display:grid;place-items:center;width:38px;height:38px;border:3px solid #fff;border-radius:50% 50% 50% 0;background:#f71970;transform:rotate(-45deg);color:#fff;font:900 25px 'Barlow Condensed',sans-serif;box-shadow:1px 4px 8px #0005}
+.cb-atlas-loading{font-size:13px;font-weight:700;color:#697c6c;margin-top:15px}
+.cb-atlas-nearby{margin-top:30px}
+.cb-atlas-nearby h2{font:900 clamp(22px,3.2vw,28px) 'Bricolage Grotesque',sans-serif;color:#173f2f;letter-spacing:-.05em}
+.cb-atlas-routes>a:hover{background:#f1f9eb}
+.cb-local-water{background:#e8f3f7;padding:23px;border-radius:11px;margin:35px 0;border:1px solid #c5dde8}
+.cb-local-water h2{display:flex;align-items:center;gap:10px;font:900 clamp(19px,3vw,28px)/1.05 'Barlow Condensed',sans-serif;color:#164e66;margin:0 0 10px}
+.cb-local-water>p{font:500 12px/1.6 'Space Grotesk',sans-serif;color:#4a6d78}
+.cb-local-water-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.cb-local-water-grid a{display:flex;flex-direction:column;gap:7px;padding:12px;background:#fff;border:1px solid #c0d8e2;border-radius:6px;text-decoration:none;color:#144a68}
+.cb-local-water-grid a strong{font:800 14px 'Bricolage Grotesque',sans-serif}
+.cb-local-water-grid a small{font:600 11px 'Space Grotesk',sans-serif;color:#4d6b7a}
+.cb-local-water-grid a:hover{border-color:#008ac4}
+.cb-local-weather{background:#f1f6ec;border:2px solid #dee9d8;border-radius:11px;padding:clamp(18px,3vw,30px);margin:34px 0}
+.cb-local-heading{margin:0 0 12px}
+.cb-local-heading>span{font:900 11px 'Space Grotesk',sans-serif;letter-spacing:.13em;color:#df005b}
+.cb-local-heading h2{font:900 clamp(27px,3.5vw,38px)/1 'Bricolage Grotesque',sans-serif;color:#183f2f;letter-spacing:-.055em;margin:8px 0 12px}
+.cb-weather-now{display:flex;gap:20px;align-items:stretch;flex-wrap:wrap;margin-bottom:16px}
+.cb-weather-now>div:first-child{display:flex;flex-direction:column;gap:4px;flex:1;min-width:170px}
+.cb-weather-now>div:first-child strong{font:900 clamp(50px,8vw,78px)/.9 'Barlow Condensed',sans-serif;color:#143e2e}
+.cb-weather-now>div:first-child span{font:700 14px 'Space Grotesk',sans-serif;color:#4d654f}
+.cb-weather-now-minors{display:flex;gap:9px;flex:2;flex-wrap:wrap}
+.cb-weather-now-minors span{background:#fff;padding:14px 16px;flex:1;min-width:125px;border-radius:8px;font-size:11px;color:#637769}
+.cb-weather-now-minors strong{display:block;font:900 24px 'Barlow Condensed',sans-serif;color:#173f2e;margin-bottom:5px}
+.cb-weather-quip{background:#e8ffca;color:#153f30;padding:16px 18px;margin:15px 0 20px;border-left:5px solid #173f2e;border-radius:6px}
+.cb-weather-quip--warning{background:#ffc7d9;border-color:#d30056}
+.cb-weather-quip--caution{background:#fff2bf;border-color:#a67a00}
+.cb-weather-quip strong{font:900 clamp(23px,3vw,32px)/1 'Barlow Condensed',Impact,sans-serif;letter-spacing:.02em}
+.cb-weather-quip p{font:600 12px/1.5 'Space Grotesk',sans-serif;color:#45594d;margin:6px 0 0}
+.cb-weather-days{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.cb-weather-days>div{padding:12px;background:#fff;border:1px solid #d9e6d7;border-radius:8px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.cb-weather-days strong{font:900 13px 'Space Grotesk',sans-serif;text-transform:uppercase;color:#214d37}
+.cb-weather-days span{font:600 11px 'Space Grotesk',sans-serif;color:#607364}
+.cb-weather-days span.cb-weather-temperatures{font:900 19px 'Barlow Condensed',sans-serif;color:#213e32}
+.cb-weather-stamp,.cb-weather-disclaimer{display:block;font:500 11px/1.6 'Space Grotesk',sans-serif;color:#6c796b;margin-top:13px}
+.cb-weather-stamp{font-size:10px}
+.cb-weather-seasonal{margin-top:25px;border-top:2px solid #deead9;padding-top:17px}
+.cb-weather-seasonal h3{font:900 21px 'Bricolage Grotesque',sans-serif;letter-spacing:-.045em;margin:0 0 6px}
+.cb-weather-seasonal>p{font:500 12px/1.6 'Space Grotesk',sans-serif;color:#667e67;margin:0 0 13px}
+.cb-weather-seasons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.cb-weather-seasons>div{background:#dcebd5;padding:11px;border-radius:6px;min-width:0}
+.cb-weather-seasons small{display:block;font:900 9px 'Space Grotesk',sans-serif;letter-spacing:.05em;color:#537458}
+.cb-weather-seasons strong{font:900 27px 'Barlow Condensed',sans-serif;color:#234734}
+.cb-weather-loading{color:#607565;font:600 13px 'Space Grotesk',sans-serif}
+.cb-hut-claim{background:#1d4231;color:#fff;margin:35px 0;padding:25px;border-radius:10px;display:flex;justify-content:space-between;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.cb-hut-claim small{font:900 11px 'Space Grotesk',sans-serif;color:#ff91b9;letter-spacing:.12em}
+.cb-hut-claim h2{font:900 clamp(24px,3vw,33px) 'Bricolage Grotesque',sans-serif;letter-spacing:-.05em;color:#fff;margin:8px 0}
+.cb-hut-claim p{font:500 13px/1.6 'Space Grotesk',sans-serif;color:#eff5e7;max-width:690px;margin:0 0 10px}
+.cb-hut-claim button,.cb-hut-claim a{font:900 13px 'Space Grotesk',sans-serif;color:#fff;border:0;background:#d80057;border-radius:5px;padding:13px 18px;text-decoration:none;cursor:pointer}
+.cb-hut-claim button:disabled{opacity:.5;cursor:not-allowed}
+.cb-hut-claim .cb-hut-claim-cancel{background:transparent;border:1px solid #90b098}
+.cb-hut-claim-form{width:100%;max-width:690px;display:flex;flex-direction:column;gap:10px}
+.cb-hut-claim-form textarea{background:#fff;color:#153f2e;padding:12px;border:2px solid #cbe3c4;border-radius:7px;resize:vertical;font:500 13px 'Space Grotesk',sans-serif}
+.cb-hut-claim-form button,.cb-hut-claim-form a{align-self:flex-start}
+@media(max-width:720px){.cb-weather-days,.cb-weather-seasons{grid-template-columns:repeat(2,minmax(0,1fr))}.cb-atlas-map-caption{font-size:9px}.cb-atlas-detail-wide{padding:18px}}
