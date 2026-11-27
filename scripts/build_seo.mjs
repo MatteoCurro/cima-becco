@@ -544,6 +544,41 @@ for (const place of alpinePlaces) {
   });
 }
 
+// Categoria SEO vera: un ingresso indicizzabile agli itinerari locali,
+// senza 2.000 link a pagine vuote. La mappa dinamica mostra l'archivio intero.
+for (const [kind,segment,label,title,blurb] of [
+  ['rifugio','rifugi','Rifugi delle Dolomiti','RIFUGI. POI SI VEDE.',
+    'Consulta rifugi con posizione, informazioni disponibili, meteo, sentieri e itinerari di avvicinamento nelle Dolomiti.'],
+  ['borgo','borghi','Borghi e località montane','BORGHI PICCOLI. GITE GROSSE.',
+    'Esplora paesi alpini e punti di partenza con sentieri mappati, meteo e informazioni topografiche.'],
+]) {
+  const list=alpinePlaces
+    .filter(p=>p.kind===kind && (kind==='rifugio'||(byStop.get(p.slug)||[]).length||p.website||p.photo||p.description))
+    .sort((a,b)=>{
+      const n=(byStop.get(b.slug)||[]).length-(byStop.get(a.slug)||[]).length;
+      return n || a.name.localeCompare(b.name,'it');
+    });
+  page({
+    path:`${segment}/`,
+    title:`${label} · Meteo, dislivello, sentieri | Cima Becco`,
+    description:blurb,
+    jsonLd:{'@context':'https://schema.org','@graph':[
+      {'@type':'CollectionPage',name:label,url:`${SITE}/${segment}/`,description:blurb,
+        mainEntity:{'@type':'ItemList',itemListElement:list.slice(0,120).map((item,i)=>({
+          '@type':'ListItem',position:i+1,name:item.name,url:`${SITE}/${segment}/${item.slug}/`
+        }))}},
+      breadcrumbLd([[label,null]])]},
+    body:`${crumbs([[label]])}
+      <div class="cima-seo-eyebrow">CIMA BECCO · ATLANTE DOLOMITI</div>
+      <h1>${title}</h1>
+      <p class="cima-seo-lead">${escape(blurb)}</p>
+      <div class="cima-seo-actions"><a class="cta" href="${appLink(`#atlante/${segment}`)}">ESPLORA LA MAPPA COMPLETA ↗</a></div>
+      <p class="sub">${list.length} luoghi con scheda · località e rifugi realmente censiti in OpenStreetMap.</p>
+      <ul class="list">${list.slice(0,120).map(place=>`<li><a href="${SITE}/${segment}/${place.slug}/">${escape(place.name)}</a>${place.elevationM ? ' · '+metres(place.elevationM) : ''}${(byStop.get(place.slug)||[]).length?' · '+(byStop.get(place.slug)||[]).length+' sentieri':''}</li>`).join('')}</ul>
+      <p class="sub">Per trovare anche i luoghi non ancora arricchiti usa la mappa interattiva. I dati OSM e le tracce non certificano condizioni, accessibilità o servizi.</p>`,
+  });
+}
+
 // Le Alte Vie sono progetti contenitore; la lista delle tappe deriva soltanto
 // da riferimenti espliciti OSM, non da distanze arbitrarie.
 for (const trek of trekProjects) {
