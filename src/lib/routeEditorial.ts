@@ -101,8 +101,8 @@ export function trailMood(route: Route): TrailMood {
   }
   const level = route.caiDifficulty;
   if (level === 'T') return { level: 'gentle', label: 'Turistico · CAI T', quip: 'MERENDEROS', basis: 'Classificazione CAI T' };
-  if (level === 'E') return { level: 'regular', label: 'Escursionistico · CAI E', quip: 'MUOVI QUELLE GAMBE', basis: 'Classificazione CAI E' };
-  if (level === 'EE') return { level: 'demanding', label: 'Escursionisti esperti · CAI EE', quip: 'OGGI SI BESTEMMIA', basis: 'Classificazione CAI EE' };
+  if (level === 'E') return { level: 'regular', label: 'Escursionistico · CAI E', quip: route.gainM >= 850 && route.elevationAvailable !== false ? 'GAMBE IN SCIOPERO' : 'MUOVI QUELLE GAMBE', basis: 'Classificazione CAI E' };
+  if (level === 'EE') return { level: 'demanding', label: 'Escursionisti esperti · CAI EE', quip: route.gainM >= 900 && route.elevationAvailable !== false ? 'DO VETO MORE?' : 'OGGI SI BESTEMMIA', basis: 'Classificazione CAI EE' };
   if (level === 'EEA') return { level: 'technical', label: 'Esperti con attrezzatura · CAI EEA', quip: 'NON FARE IL FENOMENO', basis: 'Classificazione CAI EEA' };
   return { level: 'unknown', label: 'Difficoltà da verificare', quip: 'GRADO IN LATITANZA', basis: 'Classificazione CAI assente' };
 }
