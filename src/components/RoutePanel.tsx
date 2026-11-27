@@ -5,7 +5,7 @@ import { RouteBookmarkButton } from './RouteBookmarkButton';
 import type { Route, RoutePoint, Venue } from '../types';
 import { computeGain, cumulativeDistances, totalDistanceM } from '../lib/elevation';
 import { linkVenues, routeDirectionsUrl, routeEndpoints, routeHasElevation } from '../lib/routes';
-import { trailArea, trailDescription, trailMood, trailSources, trailTitle } from '../lib/routeEditorial';
+import { trailArea, trailDescription, trailMood, trailTitle } from '../lib/routeEditorial';
 import { hasRealElevation, terrainElevations } from '../lib/terrain';
 import { assessRoute } from '../lib/routeQuality';
 import { toGpx } from '../lib/gpx';
@@ -199,22 +199,6 @@ export function InfoTip({ children, label = 'About these numbers' }: { children:
           </span>,
           document.body,
         )}
-    </span>
-  );
-}
-
-/** Who added a route and under what licence, shown inside the (i) rather than under the panel. */
-function RouteCredit({ route }: { route: Route }) {
-  if (!route.contributor && !route.licence && !route.sourceUrl) return null;
-  return (
-    <span className="route-meta muted">
-      {route.contributor && <>Caricato da {route.contributor}. </>}
-      {route.licence && <>{route.licence}. </>}
-      {route.sourceUrl && (
-        <a href={route.sourceUrl} target="_blank" rel="noreferrer">
-          Fonte originale
-        </a>
-      )}
     </span>
   );
 }
@@ -472,7 +456,6 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
   const overlaps = useMemo(() => findOverlaps(route.coordinates, allRoutes, route.slug), [route, allRoutes]);
   const region = trailArea(route);
   const mood = trailMood(route);
-  const sources = trailSources(route);
   const displayTitle = trailTitle(route);
   const touches = route.venueSlugs
     .map((slug) => venuesBySlug.get(slug))
@@ -564,8 +547,8 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
       ) : (
         <>
       <div className="cima-trail-mood">
-        <span className={`cima-mood-pill cima-mood-pill--${mood.level}`} title={mood.basis}>{mood.label}</span>
-        {mood.quip && <span className="cima-mood-quip">{mood.quip}</span>}
+        <strong className={`cima-mood-pill cima-mood-pill--${mood.level}`} title={mood.basis}>{mood.quip}</strong>
+        <span className="cima-mood-technical">{mood.label}</span>
         <span className="cima-trail-area">{region}{route.loop ? ' · Anello' : ''}</span>
       </div>
       <p className="cima-route-description">{trailDescription(route)}</p>
@@ -622,7 +605,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
       <div className="route-more" id={`route-more-${route.slug}`} ref={moreRef}>
         <div className="route-more-inner">
           {(route.trailRef || route.caiDifficulty || route.viaFerrataScale || route.sacScale || route.officialDescriptionUrl || route.sourceUrl) && (
-            <section className="route-official-data" aria-label="Fonti e dati escursionistici">
+            <section className="route-official-data" aria-label="Segnavia e dati tecnici">
               <strong>Segnavia e dati tecnici</strong>
               <p className="route-meta muted">
                 {[
@@ -633,10 +616,6 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
                   route.operator ? `Gestore: ${route.operator}` : null,
                 ].filter(Boolean).join(' · ')}
               </p>
-              <div className="cima-route-sources">
-                {sources.map((source) => <a key={source.href} href={source.href} target="_blank" rel="noopener noreferrer">{source.label} ↗</a>)}
-              </div>
-              <RouteCredit route={route} />
               {routeActivity(route) === 'ferrata' && <p className="route-meta muted">Via ferrata: la sola traccia GPX non indica condizioni, difficoltà effettiva né tempi tecnici. Verifica sempre la relazione ufficiale e l'attrezzatura necessaria.</p>}
             </section>
           )}
