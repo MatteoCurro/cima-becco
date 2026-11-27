@@ -21,7 +21,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Route, RoutePoint, Venue } from '../types';
 import type { RoutePhoto } from '../lib/api';
 import { rankingHeight, type Bounds } from '../lib/venues';
-import { haversineM } from '../lib/elevation';
+import { nearestRoutePointIndex } from '../lib/routeHover';
 import { useUnits } from '../components/UnitsContext';
 import { VenueCard } from '../components/VenueCard';
 import { RoutePhotoViewer } from '../components/RoutePhotoViewer';
@@ -650,16 +650,7 @@ export function MapView({
             onRouteHoverRef.current(null);
             return;
           }
-          let nearest = 0;
-          let distance = Infinity;
-          for (let index = 0; index < points.length; index++) {
-            const next = haversineM(event.lngLat.lng, event.lngLat.lat, points[index][0], points[index][1]);
-            if (next < distance) {
-              distance = next;
-              nearest = index;
-            }
-          }
-          onRouteHoverRef.current(nearest);
+          onRouteHoverRef.current(nearestRoutePointIndex(points,event.lngLat.lng,event.lngLat.lat));
         });
       });
       map.on('mouseout', () => onRouteHoverRef.current(null));

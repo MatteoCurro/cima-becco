@@ -219,16 +219,31 @@ function addRouteArrowImage(map: MlMap): void {
   map.addImage('route-arrow', context.getImageData(0, 0, size, size), { pixelRatio: 2 });
 }
 
+/** One shared cursor layer for map and altitude profile, in both renderers. */
+export function addRouteHoverLayer(map: MlMap): void {
+  map.addSource('route-hover', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  });
+  map.addLayer({
+    id: 'route-hover-point',
+    type: 'circle',
+    source: 'route-hover',
+    paint: {
+      'circle-radius': 7,
+      'circle-color': '#c1502e',
+      'circle-stroke-width': 2.5,
+      'circle-stroke-color': '#ffffff',
+    },
+  });
+}
+
 export function addRouteLayers(map: MlMap): void {
   map.addSource('active-route', {
     type: 'geojson',
     data: { type: 'FeatureCollection', features: [] },
   });
   map.addSource('active-route-cut', {
-    type: 'geojson',
-    data: { type: 'FeatureCollection', features: [] },
-  });
-  map.addSource('route-hover', {
     type: 'geojson',
     data: { type: 'FeatureCollection', features: [] },
   });
@@ -280,17 +295,7 @@ export function addRouteLayers(map: MlMap): void {
     },
   });
 
-  map.addLayer({
-    id: 'route-hover-point',
-    type: 'circle',
-    source: 'route-hover',
-    paint: {
-      'circle-radius': 7,
-      'circle-color': '#c1502e',
-      'circle-stroke-width': 2.5,
-      'circle-stroke-color': '#ffffff',
-    },
-  });
+  addRouteHoverLayer(map);
 }
 
 /**
