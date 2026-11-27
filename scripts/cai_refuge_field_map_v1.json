@@ -13,9 +13,27 @@
     "role_contact"
   ],
   "sensitiveExact": [
+    "branch_id",
+    "company_management_property",
+    "contract_end_date_management_property",
+    "contract_fee_management_property",
+    "contract_start_date_management_property",
+    "email_management_property",
+    "email_property",
+    "fixedPhone_property",
+    "genre_management_property",
     "id",
-    "user_id",
-    "branch_id"
+    "mobilePhone_management_property",
+    "pec_management_property",
+    "pec_property",
+    "possession_type_management_property",
+    "possession_type_property",
+    "reference_property",
+    "role_contact",
+    "surname_management_property",
+    "taxCode_management_property",
+    "taxCode_property",
+    "user_id"
   ],
   "fields": [
     {
@@ -199,12 +217,12 @@
     },
     {
       "sourceField": "acqua_in_rifugio_service",
-      "target": "drinkingWater",
-      "converter": "water_reported_not_potability",
+      "target": "waterAvailableReported",
+      "converter": "reported_bool",
       "canonicalStatus": "mapped_to_existing_registry",
       "publicationStatus": "blocked_pending_rights_and_identity",
       "source": "cai_refuges",
-      "notes": "Dichiarazione servizio acqua, NON attesta potabilità"
+      "notes": "Acqua presente non prova potabilità; drinkingWater resta ignoto"
     },
     {
       "sourceField": "accesso_alla_cucina_service",
@@ -272,11 +290,12 @@
     },
     {
       "sourceField": "camerate_superiore_4_posti_service",
-      "target": "dormitories",
+      "target": "largeDormitoriesAvailableReported",
       "converter": "reported_bool",
       "canonicalStatus": "mapped_to_existing_registry",
       "publicationStatus": "blocked_pending_rights_and_identity",
-      "source": "cai_refuges"
+      "source": "cai_refuges",
+      "notes": "Indica presenza di camerate >4 posti, non il numero delle camere"
     },
     {
       "sourceField": "posti_letto_gestore_service",
