@@ -96,14 +96,7 @@ jobs:
       - name: Smoke test dataset OSM pubblico, con quarantena e licenze
         run: |
           python scripts/publish_refuges_v1.py --source-dir build/import-refuges-v1 --dist-dir build/release-smoke
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          d=json.loads(Path('build/release-smoke/data/atlas/refuges-v1.json').read_text())
-          assert len(d['entities']) > 400
-          assert all(not e['quality']['seoIndexable'] for e in d['entities'])
-          print('OSM publisher:',len(d['entities']),'records')
-          PY
+          python -c "import json; from pathlib import Path; data=json.loads(Path('build/release-smoke/data/atlas/refuges-v1.json').read_text()); assert len(data['entities'])>400; assert all(not e['quality']['seoIndexable'] for e in data['entities']); print('OSM publisher',len(data['entities']),'records')" 
       - name: Replay opzionale del campione CAI già esaminato nella PR 8
         shell: bash
         env:
