@@ -50,7 +50,10 @@ const FACT_LABELS:Record<string,string>={
   yearBuilt:'Anno di costruzione',yearRebuilt:'Anno di ricostruzione',
   yearOpened:'Anno di apertura',dedication:'Intitolazione',
   mountainGroupId:'Gruppo montuoso indicato',municipalityId:'Comune indicato',
-  localityId:'Località indicata',valleyName:'Valle',protectedAreaName:'Area protetta',
+  localityId:'Località indicata',
+  mountainGroupNameReported:'Gruppo montuoso dichiarato',
+  municipalityNameReported:'Comune dichiarato',localityNameReported:'Località dichiarata',
+  valleyName:'Valle',protectedAreaName:'Area protetta',
   regionReported:'Regione indicata',provinceReported:'Provincia indicata',
   hospitalityRegistrationId:'Identificativo ricettivo',
   iso14001:'Certificazione ISO 14001',waterCertification:'Certificazione delle acque',
@@ -62,7 +65,8 @@ const STAY=['bedsTotal','capacityReported','bedsWinter','winterRoom','winterShel
 const OPEN=['openingHoursReported','openingHours','seasonality','openingStatus','accessRules'];
 const MANAGEMENT=['manager','operatorReported','owner','owningSection','selfManaged'];
 const PRICES=['nightlyPrice','halfBoardPrice','memberDiscount','priceValidUntil'];
-const TERRITORY=['mountainGroupId','municipalityId','localityId','valleyName','protectedAreaName','regionReported','provinceReported'];
+const TERRITORY=['mountainGroupNameReported','municipalityNameReported','localityNameReported',
+  'mountainGroupId','municipalityId','localityId','valleyName','protectedAreaName','regionReported','provinceReported'];
 const HISTORY=['yearBuilt','yearRebuilt','yearOpened','dedication'];
 const SPECIAL=['hospitalityRegistrationId','iso14001','waterCertification','caiCategory','caiCatalogueStatus'];
 const COVERED=new Set([
