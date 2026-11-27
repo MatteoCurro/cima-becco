@@ -1,0 +1,68 @@
+# Cima Becco — piano di importazione e collegamenti
+
+**Data:** 27/11/2026. **Stato:** roadmap operativa, nessun nuovo job di pubblicazione attivato.  
+**Specifica superiore e vincolante:** [MODELLO_METADATI_E_LAYOUT.md](MODELLO_METADATI_E_LAYOUT.md). Il presente piano organizza i lavori e NON cambia la tassonomia o le regole canoniche.  
+**UI:** [ARCHITECTURE.md](ARCHITECTURE.md); un solo sistema di ricerca, mappa, dettaglio e filtri.
+
+## Regole operative
+
+1. **Un importatore per volta**. Per ciascuno: schema/adapter fonte, test offline con fixture, pilot su campione reale, report anomalie/copertura, revisione e solo dopo schedulazione.
+2. **Raw → Normalization → Entity resolution → Graph → Quality gate → Publish**. Snapshot minimali immutabili e checksum, ID stabili, sourceIds, facts con unità/licenza/date/metodo e identità separate dai permalink.
+3. **No merge per mera omonimia o distanza**. La riconciliazione fra fonti richiede ID o controllo di congruenza multiplo; i conflitti restano in coda di revisione.
+4. **near ≠ passes_through ≠ accessible_from**. Distanze lineari e proiezioni sul tracciato non attestano passaggio, accessibilità, sicurezza, apertura.
+5. Non cambiare URL live e non rendere indicizzabili schede G0/G1 solo perché esistono nel catalogo. Niente testi/foto inventati o copia di materiale senza licenza.
+6. Separare l'archivio stabile da meteo, prezzi, aperture, chiusure, allerte e altri dati con TTL. Niente cron a frequenza alta su Overpass; incrementali a celle o PBF.
+7. Riutilizzare gli attuali importer OSM e il frontend legacy: mai far scrivere due job sugli stessi file di destinazione.
+
+## Sequenza e dipendenze
+
+| Ordine | Importatore | Fonti e legami necessari |
+| --- | --- | --- |
+| **1, in sviluppo** | **Rifugi: normalizzazione baseline OSM** | Snapshot esistente; identità, facts, vicino a località/cime e percorsi, SEO invariata |
+| 2 | Rifugi: riconciliazione/arricchimento ufficiale | CAI Unico Rifugi e SAT (diritti da validare): proprietà, gestione, letti, servizi, orari e conflitti |
+| 3 | Bivacchi e ricoveri | OSM + CAI/SAT/enti; schema diverso dai rifugi, chiusure e dotazioni |
+| 4 | Comuni | ISTAT ufficiale (codici, confini, popolazione datata), DAIT per sindaci |
+| 5 | Frazioni/località/borghi | ISTAT località + OSM + Wikidata: located_in documentato, non ereditare dati comunali |
+| 6 | Cime e gruppi | GeoNames, OSM, Wikidata; quote con fonte, storia e immagini specifiche |
+| 7 | Passi, laghi, valli, sorgenti e altri POI | OSM/geoportali; distinguere potabilità da presenza acqua |
+| 8 | Rete sentieristica fisica | OSM + CAI INFOMONT + SAT; nodi, segmenti e geometrie con continuità verificata |
+| 9 | Itinerari giornalieri | Tracce e fonti gestori; tappe, estremi e intersezioni, profili/calcoli con metodo |
+| 10 | Grandi trekking, Alte Vie e tappe | Fonti ufficiali CAI/SAT/altre; stage_of, previous_stage, next_stage; ufficiale ≠ algoritmico |
+| 11 | Vie ferrate | Difficoltà su scala originale, attrezzature e restrizioni con fonte |
+| 12 | Aree e falesie/settori | OSM/OpenBeta, niente duplicazione con OpenClimbing, relazione padre/figlio |
+| 13 | Vie monotiro | OpenBeta/archivi autorizzati, chiodatura/spit/rinvii separati, gradi e soste |
+| 14 | Multipitch/tiri/soste | Tiri realmente censiti, obbligatorio ≠ massimo, nessun tiro sintetico |
+| 15 | Boulder | Area, blocco e problema, scale Fontainebleau/V separate da gradi sportivi |
+| 16 | Palestre indoor | Sede fisica OSM + sito ufficiale, distinta da società FASI |
+| 17 | Parchi, trasporti, accessi | Vincoli territoriali e periodi; permessi e percorrenza soltanto attestati |
+| 18 | Persone, storia, immagini e archivi | Wikidata, archivi e Commons: legami documentati e media con diritti |
+| 19 | Meteo, neve, webcam, restrizioni e avvisi | Feed ufficiali e meteo cache separati; data/quota/validità sempre |
+
+Il resolver comune convertirà progressivamente i riferimenti delle entità non ancora importate in ID canonici mantenendo sourceIds, metodo e qualità del join; non richiederà nuovi layout.
+
+## Importatore 1: rifugi da snapshot OSM
+
+**Codice:** [import_refuges_v1.py](../scripts/import_refuges_v1.py) · **test:** [test_import_refuges_v1.py](../tests/test_import_refuges_v1.py) · **CI:** [workflow di staging](../.github/workflows/test-import-refuges-v1.yml).
+
+**Input di sola lettura:** catalogo OSM preesistente in public/data/alpine-places.json (solo kind=rifugio), routes-manifest e shard effettivamente disponibili, peaks GeoNames. Nessuna API viene interrogata in questo pilot.
+
+**Output di staging (non pubblico):** build/import-refuges-v1 con raw/osm-refuges-SHA256.json immutabile, refuges.json (entità canoniche), links.json (archi di prossimità percorso → rifugio), identity-registry.json, review.json e report.json. La CI carica solo un artefatto scaricabile; non riscrive public/data né esegue il deploy.
+
+**Riconciliazione:** rifugio → borgo e rifugio → cima hanno solo near con distanza Haversine; un legacy route.stops produce un arco dal percorso al rifugio di tipo passes_near, usando la distanza dalla polilinea. Non significa accessibile, né attraversato, né che il percorso sia ufficiale. I link saranno risolti agli ID canonici dopo i rispettivi importatori.
+
+**Trattamento dati:** lo storico capacity deriva indistintamente dai tag OSM beds o capacity: viene nominato capacityReported e non posti letto certificati. Le quote DEM legacy senza provenienza del raster non vengono attribuite a OSM. Gli opening_hours sono segnalazioni OSM, non prova dell'apertura corrente. La data generatedAt dello snapshot non è una verifica campo per campo; i retrievedAt non dimostrabili restano null. Media con attribuzione/licenza incompleta esclusi.
+
+**Quality gate attuale:** G0, nessuna nuova pagina SEO; identità CAI/SAT ancora da risolvere. Slug parlante preliminare separato da slug alias e legacyUrl. Prima dell'automazione il registry va versionato e conservato, inclusi ID dismessi/tombstone, affinché una rinomina non cambi gli URL.
+
+## Accettazione prima dell'importatore 2
+
+- Tutti i test offline e il job CI verdi, errori di identità/duplicati bloccanti.
+- Due esecuzioni dello stesso snapshot producono file con SHA-256 identico.
+- Report quantitativo su tutti i rifugi pilota e analisi dei valori assenti e dei conflitti.
+- Verifica manuale di almeno 10 rifugi eterogenei e di 10 collegamenti (nome, posizione, quota, licenza, distanza, assenza di affermazioni non provate).
+- Registrazione dei conflitti e verifica di licenze e compatibilità dei permalink.
+- Non si attiva una schedule né si pubblica un nuovo indice finché questi controlli non sono superati.
+
+## Frequenze future (proposte, non attive)
+
+Il numero N di aggiornamenti al giorno è **per fonte/tipologia** e sarà configurabile, non universale. Esempi iniziali da confermare: meteo/allerte ogni 3–6 ore se consentito dai feed; disponibilità e comunicazioni operative ufficiali 1–2 volte al giorno se esiste una fonte idonea; OSM in celle incrementali con revisita plurimensile o dopo alcune settimane; ISTAT, biografie e archivi quando il dataset cambia. Foto Commons in piccoli batch. Gli snapshot uguali (hash invariato) non creano nuovi commit; i refresh di meteo non ricostruiscono le pagine statiche.
