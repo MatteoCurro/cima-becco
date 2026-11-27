@@ -17,6 +17,7 @@ export function alpinePlacesGeoJSON(places: AlpinePlace[]): FeatureCollection<Po
 export interface AlpineMapOptions {
   kind?: AlpinePlace['kind'];
   onSelect?: (place: AlpinePlace) => void;
+  getPlace?: (slug:string) => AlpinePlace | undefined;
 }
 
 /** Icone proprietarie disegnate in canvas: casetta/rifugio e paese. */
@@ -131,7 +132,7 @@ export function addAlpinePlaceLayers(map: MlMap, all: AlpinePlace[], options: Al
     // Non catturare la lista iniziale dei POI: l'atlante carica il JSON
     // dopo la mappa, e i click devono usare i properties aggiornati del source.
     if(options.onSelect){
-      const item=places.find(p=>p.slug===slug);
+      const item=options.getPlace?.(slug) ?? places.find(p=>p.slug===slug);
       if(item)options.onSelect(item);
     }else window.location.hash=`#atlante/${kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'borghi'}/${slug}`;
   };

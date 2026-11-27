@@ -33,6 +33,8 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
   const mapRef=useRef<MapLibreMap | null>(null);
   const onSelectRef=useRef(onSelect);
   onSelectRef.current=onSelect;
+  const placesRef=useRef(places);
+  placesRef.current=places;
   const markerRef=useRef<Marker | null>(null);
   const initialized=useRef(false);
   const [ready,setReady]=useState(false);
@@ -52,7 +54,7 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
     map.on('load',()=>{
       if(mapRef.current!==map)return;
       installMountainBasemap(map);
-      addAlpinePlaceLayers(map,places,{kind,onSelect:(place)=>onSelectRef.current?.(place)});
+      addAlpinePlaceLayers(map,places,{kind,onSelect:(place)=>onSelectRef.current?.(place),getPlace:(slug)=>placesRef.current.find(p=>p.slug===slug)});
       map.addSource('cb-atlas-nearby-routes',{type:'geojson',data:EMPTY_LINE});
       map.addLayer({id:'cb-atlas-nearby-route-outline',type:'line',source:'cb-atlas-nearby-routes',
         paint:{'line-color':'#fff','line-width':6,'line-opacity':.92}});

@@ -15,6 +15,7 @@ import { loadAlpineWater, alpineWaterNear, potabilityLabel, type AlpineWaterPoin
 import { track } from '../lib/analytics';
 import '../alpineAtlas.css';
 import '../locationProfile.css';
+import '../alpineExplore.css';
 
 interface TrekProject {
   slug: string;
