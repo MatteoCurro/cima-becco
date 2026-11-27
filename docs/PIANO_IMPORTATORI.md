@@ -1,8 +1,26 @@
 # Cima Becco — piano di importazione e collegamenti
 
-**Data:** 27/11/2026. **Stato:** blocco 1 pubblicato; blocco 2 con import CAI/OSM, attributi e pagina crediti verificati nel pilota, in fase di rilascio.  
+**Data:** 27/11/2026. **Stato:** blocchi 1 e 2 pubblicati e verificati; blocco 3 Comuni in pilota di staging separato (non pubblicato).  
 **Specifica superiore e vincolante:** [MODELLO_METADATI_E_LAYOUT.md](MODELLO_METADATI_E_LAYOUT.md). Il presente piano organizza i lavori e NON cambia la tassonomia o le regole canoniche.  
 **UI:** [ARCHITECTURE.md](ARCHITECTURE.md); un solo sistema di ricerca, mappa, dettaglio e filtri.
+
+## Blocco 3 — Comuni ISTAT/DAIT: pilota di importazione e riconciliazione
+
+**Riferimento vincolante:** sezioni 1, 2, 30 e 31 della Bibbia. **Stato:** ramo `feat/municipalities-istat-dait-pilot-v1`, test/offline + esecuzione pilota su fonti reali tramite CI; nessun write in `public/data`, nessuna nuova scheda SEO o cron di produzione finché i quality gate non saranno verificati.
+
+**Identità e fonte primaria:** la classificazione ISTAT 2026 dei comuni (permalink XLSX: https://www.istat.it/storage/codici-unita-amministrative/Elenco-comuni-italiani.xlsx) fornisce **codice ISTAT a sei cifre**, denominazione, regione e provincia/UTS; altitudine e superficie solo se intestazioni ufficiali contengono dati corrispondenti. Il numero ufficiale di comuni al 21/02/2026 è **7.894**; il pilota non assume una copertura numerica invariabile nel tempo. L'ID interno è UUID stabile derivato dal codice iniziale e viene mantenuto dal registro precedente, separato dallo slug parlante. Fusioni, soppressioni, variazioni di codici e omonimie sono operazioni di migrazione/revisione, non merge per nome.
+
+**Amministrazione:** CSV DAIT `https://dait.interno.gov.it/documenti/sindaciincarica.csv` acquisito come snapshot indipendente; un sindaco si collega **solo tramite codice ISTAT univoco + carica ufficiale**. `dataElezione` è distinta da inizio/fine mandato e l'assenza del dato non genera sindaci inesistenti. Le frazioni **non** ereditano sindaco, popolazione, superficie o codice del comune.
+
+**Identità geografica e relazioni:** riuso dello snapshot `alpine-places.json` (1.857 record OSM etichettati `borgo`, ma **non equiparabili a comuni**) e del resolver Wikidata `P635` = ISTAT ID. Solo join `ISTAT codice -> Wikidata QID -> OSM QID univoco`, con controllo del nome, abilita una posizione OSM dichiarata come punto dell'abitato, non confine/centro amministrativo ufficiale. Le relazioni verso rifugi e bivacchi già importati sono esclusivamente `near` con distanza Haversine misurata dal punto OSM, mai `located_in`, `passes_through` o `accessible_from` dedotte. Registrare mismatch in revisione.
+
+**Copertura metadati:** il registro [municipality_field_registry_v1.json](../scripts/municipality_field_registry_v1.json) distingue campo previsto, importato, parziale o in attesa di fonte. Popolazione e anno da ISTAT demografia/censimento, confini da geodata ufficiale, stemmi/foto da Commons/sito istituzionale con licenza, storia documentata e dati climatici trentennali sono **fasi successive del medesimo blocco**, non valori sintetici. Informazioni live e temporali rimangono in un layer con TTL, non mescolate alla base statica.
+
+**Pipeline e prova:** [import_municipalities_v1.py](../scripts/import_municipalities_v1.py), [resolver P635](../scripts/resolve_wikidata_istat_v1.py), [test contrattuali](../tests/test_import_municipalities_v1.py), [CI staging](../.github/workflows/test-import-municipalities-v1.yml). Input ufficiali sono snapshot raw con SHA256; parser XLSX OpenXML e CSV gestiscono intestazioni variabili/preamboli e falliscono esplicitamente se non riconosciuti; valori -1, data assente e numeri non validi non diventano fatti. Output: `build/import-municipalities-v1/{raw/,municipalities.json,report.json,wikidata-resolver.json}`, artefatto GitHub Actions. Nessun aggiornamento di pagine o motore UI in questo step.
+
+**Criteri per la successiva promozione:** test offline e download reali verdi; copertura, checksum e collisioni verificate; sindaci e date controllati sul campione, nessuna popolazione senza data; entità OSM non promosse a comuni per omonimia; qualità G0/G1 `noindex`; poi eventuale arricchimento G2, collegamento frontend senza layout paralleli e solo infine job ricorrente per fonte. **Frequenze proposte per il rilascio:** ISTAT anagrafe a nuova pubblicazione/controllo giornaliero del checksum; DAIT controllo quotidiano e reimport solo a cambiamento; popolazione alla pubblicazione Istat; non moltiplicare richieste per entità.
+
+---
 
 ## Blocco 2 — Bivacchi, capanne sociali e punti d'appoggio
 
