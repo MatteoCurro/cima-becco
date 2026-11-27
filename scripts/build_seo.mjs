@@ -778,6 +778,9 @@ for(const e of municipalities) {
   if(typeof osm==='string' && /^(node|way|relation)\/[1-9][0-9]*$/.test(osm)) {
     const [type,idNumber]=osm.split('/');
     const oldPath='borghi/osm-'+type[0]+'-'+idNumber+'/';
+    // Old OSM aliases redirect and must not remain in the XML sitemap.
+    const oldIndex=pages.indexOf(SITE+'/'+oldPath);
+    if(oldIndex>=0)pages.splice(oldIndex,1);
     const oldFile=join(DIST,oldPath,'index.html');
     mkdirSync(dirname(oldFile),{recursive:true});
     writeFileSync(oldFile,'<!doctype html><html lang="it"><head><meta charset="utf-8">'+
