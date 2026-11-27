@@ -7,12 +7,13 @@
 ## Regole operative
 
 1. **Un importatore per volta**. Per ciascuno: schema/adapter fonte, test offline con fixture, pilot su campione reale, report anomalie/copertura, revisione e solo dopo schedulazione.
-2. **Raw → Normalization → Entity resolution → Graph → Quality gate → Publish**. Snapshot minimali immutabili e checksum, ID stabili, sourceIds, facts con unità/licenza/date/metodo e identità separate dai permalink.
-3. **No merge per mera omonimia o distanza**. La riconciliazione fra fonti richiede ID o controllo di congruenza multiplo; i conflitti restano in coda di revisione.
-4. **near ≠ passes_through ≠ accessible_from**. Distanze lineari e proiezioni sul tracciato non attestano passaggio, accessibilità, sicurezza, apertura.
-5. Non cambiare URL live e non rendere indicizzabili schede G0/G1 solo perché esistono nel catalogo. Niente testi/foto inventati o copia di materiale senza licenza.
-6. Separare l'archivio stabile da meteo, prezzi, aperture, chiusure, allerte e altri dati con TTL. Niente cron a frequenza alta su Overpass; incrementali a celle o PBF.
-7. Riutilizzare gli attuali importer OSM e il frontend legacy: mai far scrivere due job sugli stessi file di destinazione.
+2. **La specifica canonica è la base minima, non un limite massimo.** Ogni importatore deve avere un registro completo e verificabile dei metadati, comprendendo attributi, foto, loghi/stemmi, webcam, storia, servizi, restrizioni, provenienza, legami e aggiornamenti temporali. Se esistono dati ulteriori utili, si propone prima l'estensione del modello canonico e poi si integra l'importatore; non si scartano informazioni solo perché la scheda non le mostra ancora.
+3. **Raw → Normalization → Entity resolution → Graph → Quality gate → Publish**. Snapshot minimali immutabili e checksum, ID stabili, sourceIds, facts con unità/licenza/date/metodo e identità separate dai permalink.
+4. **No merge per mera omonimia o distanza**. La riconciliazione fra fonti richiede ID o controllo di congruenza multiplo; i conflitti restano in coda di revisione.
+5. **near ≠ passes_through ≠ accessible_from**. Distanze lineari e proiezioni sul tracciato non attestano passaggio, accessibilità, sicurezza, apertura.
+6. Non cambiare URL live e non rendere indicizzabili schede G0/G1 solo perché esistono nel catalogo. Niente testi/foto inventati o copia di materiale senza licenza.
+7. Separare l'archivio stabile da meteo, prezzi, aperture, chiusure, allerte e altri dati con TTL. Niente cron a frequenza alta su Overpass; incrementali a celle o PBF.
+8. Riutilizzare gli attuali importer OSM e il frontend legacy: mai far scrivere due job sugli stessi file di destinazione.
 
 ## Sequenza e dipendenze
 
@@ -51,6 +52,15 @@ Il resolver comune convertirà progressivamente i riferimenti delle entità non 
 **Riconciliazione:** rifugio → borgo e rifugio → cima hanno solo near con distanza Haversine; un legacy route.stops produce un arco dal percorso al rifugio di tipo passes_near, usando la distanza dalla polilinea. Non significa accessibile, né attraversato, né che il percorso sia ufficiale. I link saranno risolti agli ID canonici dopo i rispettivi importatori.
 
 **Trattamento dati:** lo storico capacity deriva indistintamente dai tag OSM beds o capacity: viene nominato capacityReported e non posti letto certificati. Le quote DEM legacy senza provenienza del raster non vengono attribuite a OSM. Gli opening_hours sono segnalazioni OSM, non prova dell'apertura corrente. La data generatedAt dello snapshot non è una verifica campo per campo; i retrievedAt non dimostrabili restano null. Media con attribuzione/licenza incompleta esclusi.
+
+
+**Inventario minimo vincolante del rifugio:** [refuge_field_registry_v1.json](../scripts/refuge_field_registry_v1.json). Traccia campo per campo copertura, priorità, fonte e frequenza prevista. Il file di staging `field-coverage.json` mostra per ognuno la quantità effettivamente valorizzata, quanta è presente nel legacy ma non ancora validata e quanta manca. **Avere un campo in schema non equivale ad aver raccolto il dato**.
+
+**Media come risorse autonome:** lo stesso rifugio può avere molte fotografie correnti e storiche, foto di interni, esterni e panorami, stemma/logo istituzionale, video e più webcam. Le fotografie richiedono associazione al soggetto, data di scatto se nota, licenza, autore, URL della fonte e diritti per ciascun file; i loghi richiedono titolare e permesso. Le webcam richiedono posizione, orientamento, oggetto ripreso, operatore, permalink ufficiale, autorizzazione alla ripubblicazione dello still/stream, validità e stato: una webcam citata da una pagina non diventa uno stream live autorizzato. Tutto è collegato per ID della risorsa, non soltanto per nome o prossimità.
+
+**Nella fase 1:** le foto già note con licenze ma soggetto non sufficientemente comprovato sono conservate in `mediaCandidates` come materiale **da verificare**, non pubblicate come `media`. Lo stesso meccanismo supporta loghi e webcam; la copertura non si azzera per assenza di un dato. L'acquisizione indipendente da Commons/Wikidata, siti ufficiali, archivi e portali webcam è una fase di arricchimento da implementare e provare all'interno della lavorazione dei rifugi, senza attendere un importatore multimediale globale a fine progetto. Non scraping indiscriminato delle immagini.
+
+**Per le nuove fonti:** ciascuna sarà un adapter composabile sullo stesso entityId, con snapshot e licenza propri, senza sovrascrivere l'identità o l'URL stabilizzati da OSM. Ritmi di refresh indipendenti per immagini, news operative, webcam, meteo e metadati statici.
 
 **Controllo duplicati:** nodi/edifici OSM con stesso nome entro 150 m, oppure lo stesso QID Wikidata entro 1 km, finiscono in review.json come candidati da verificare. Non vengono mai fusi automaticamente, neppure con lo stesso QID. Il caso del Rifugio Passo Lusia è già emerso nel pilota.
 
