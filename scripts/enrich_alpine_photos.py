@@ -78,6 +78,10 @@ def run(limit=75,write=False):
     places=data.get('places',[])
     targets=[p for p in places if not p.get('photo') and not p.get('photoCheckedAt')
              and (p.get('commonsFile') or re.fullmatch(r'Q\d+',p.get('wikidata','')))]
+    # Prima OSM File: espliciti, poi rifugi, poi località con sito verificabile.
+    # La scansione alfabetica dei villaggi senza foto ha finora prodotto 0 immagini.
+    targets.sort(key=lambda p:(not bool(p.get('commonsFile')),p.get('kind')!='rifugio',
+                               not bool(p.get('website')),p.get('name','').casefold()))
     targets=targets[:max(0,min(300,limit))]
     qids=sorted(set(p['wikidata'] for p in targets if not p.get('commonsFile') and p.get('wikidata')))
     p18=fetch_p18(qids) if qids else {}
