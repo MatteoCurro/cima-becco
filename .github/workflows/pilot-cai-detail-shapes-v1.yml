@@ -1,0 +1,35 @@
+name: CAI shape pilot (bounded, metadata only, no publishing)
+
+on:
+  push:
+    branches:
+      - feat/refuges-canonical-import-v1
+    paths:
+      - scripts/pilot_cai_detail_shapes_v1.py
+      - tests/test_pilot_cai_detail_shapes_v1.py
+      - .github/workflows/pilot-cai-detail-shapes-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-source-shapes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify no values, addresses or media are exported
+        run: python -m unittest discover -s tests -p 'test_pilot_cai_detail_shapes_v1.py' -v
+      - name: Query only four previously identified CAI detail IDs
+        run: python scripts/pilot_cai_detail_shapes_v1.py
+      - name: Upload metadata-only source shape audit (never raw field values)
+        uses: actions/upload-artifact@v4
+        with:
+          name: cai-detail-shapes-v1-safe-report
+          path: build/cai-detail-shapes/summary.json
+          retention-days: 7
+          if-no-files-found: error
