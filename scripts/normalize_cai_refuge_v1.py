@@ -51,7 +51,7 @@ def normalized(value, converter):
     if not isinstance(value, str):
         return None
     text = " ".join(value.split())
-    if not text or text.casefold() in ("n.d.", "n/a", "unknown", "-1"):
+    if not text or text.casefold() in ("n.d.", "n/d", "n.d", "n/a", "na", "non disponibile", "unknown", "-1"):
         return None
     if converter == "https_url":
         return text if text.startswith("https://") and " " not in text and len(text) < 400 else None
