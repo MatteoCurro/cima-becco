@@ -108,9 +108,9 @@ export function Landing() {
               <nav className="cb-home-atlas-grid" aria-label="Categorie di esplorazione">
                 <a href="#routes"><small>01 / MUOVERSI</small><strong>SENTIERI<br/>E FERRATE.</strong><span>VEDI I PERCORSI ↗</span></a>
                 <a href="#map"><small>02 / SALIRE</small><strong>CIME<br/>E VETTE.</strong><span>ESPLORA LE CIME ↗</span></a>
-                <a href="#atlante/rifugi"><small>03 / RIPOSARE</small><strong>RIFUGI.<br/>POI SI VEDE.</strong><span>SCOPRI I RIFUGI ↗</span></a>
-                <a href="#atlante/bivacchi"><small>04 / ARRANGIARSI</small><strong>BIVACCHI.<br/>POCHE SCUSE.</strong><span>TROVA UN BIVACCO ↗</span></a>
-                <a href="#atlante/borghi"><small>05 / PARTIRE</small><strong>PAESI.<br/>GITE GROSSE.</strong><span>ESPLORA I PAESI ↗</span></a>
+                <a href="#rifugi"><small>03 / RIPOSARE</small><strong>RIFUGI.<br/>POI SI VEDE.</strong><span>SCOPRI I RIFUGI ↗</span></a>
+                <a href="#bivacchi"><small>04 / ARRANGIARSI</small><strong>BIVACCHI.<br/>POCHE SCUSE.</strong><span>TROVA UN BIVACCO ↗</span></a>
+                <a href="#paesi"><small>05 / PARTIRE</small><strong>PAESI.<br/>GITE GROSSE.</strong><span>ESPLORA I PAESI ↗</span></a>
               </nav>
               <a className="cb-home-atlas-treks" href="#atlante/trekking">CERCHI UN'AVVENTURA LUNGA? ALTE VIE E TREKKING A TAPPE ↗</a>
             </section>

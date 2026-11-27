@@ -512,7 +512,7 @@ for (const place of alpinePlaces) {
         ...(photo?{image:photo.url}:{}),
         hasMap:place.osmUrl,
         ...(place.phone?{telephone:place.phone}:{}),
-      },breadcrumbLd([[category==='rifugi'?'Rifugi':category==='bivacchi'?'Bivacchi':'Paesi',appLink(`#atlante/${category}`)],[place.name,null]])]},
+      },breadcrumbLd([[category==='rifugi'?'Rifugi':category==='bivacchi'?'Bivacchi':'Paesi',appLink(`#${category==='borghi'?'paesi':category}`)],[place.name,null]])]},
     body:`${crumbs([['Atlante',appLink(`#atlante/${category}`)],[place.name]])}
       <div class="cima-seo-eyebrow">CIMA BECCO · ${place.kind==='rifugio'?'RIFUGIO':place.kind==='bivacco'?'BIVACCO':'PAESE'} · DOLOMITI</div>
       <h1>${escape(place.name)}</h1>
@@ -526,7 +526,7 @@ for (const place of alpinePlaces) {
         
       </ul>
       <div class="cima-seo-actions">
-        <a class="cta" href="${appLink(`#atlante/${category}/${place.slug}`)}">MAPPA E SENTIERI ↗</a>
+        <a class="cta" href="${appLink(`#${category==='borghi'?'paesi':category}/${place.slug}`)}">MAPPA E SENTIERI ↗</a>
         ${place.phone?`<a class="cima-seo-secondary" href="tel:${escape(place.phone.replace(/[^+\d]/g,''))}">Chiama la struttura</a>`:''}
         ${place.email?`<a class="cima-seo-secondary" href="mailto:${escape(place.email)}">Scrivi alla struttura</a>`:''}
       </div>
@@ -579,7 +579,7 @@ for (const [kind,segment,label,title,blurb] of [
       <div class="cima-seo-eyebrow">CIMA BECCO · ATLANTE DOLOMITI</div>
       <h1>${title}</h1>
       <p class="cima-seo-lead">${escape(blurb)}</p>
-      <div class="cima-seo-actions"><a class="cta" href="${appLink(`#atlante/${segment}`)}">ESPLORA LA MAPPA COMPLETA ↗</a></div>
+      <div class="cima-seo-actions"><a class="cta" href="${appLink(`#${segment==='borghi'?'paesi':segment}`)}">ESPLORA LA MAPPA COMPLETA ↗</a></div>
       <p class="sub">${list.length} luoghi con scheda · luoghi realmente censiti in OpenStreetMap.</p>
       <ul class="list">${list.slice(0,120).map(place=>`<li><a href="${SITE}/${segment}/${place.slug}/">${escape(place.name)}</a>${place.elevationM ? ' · '+metres(place.elevationM) : ''}${(byStop.get(place.slug)||[]).length?' · '+(byStop.get(place.slug)||[]).length+' sentieri':''}</li>`).join('')}</ul>
       <p class="sub">Per trovare anche i luoghi non ancora arricchiti usa la mappa interattiva. I dati OSM e le tracce non certificano condizioni, accessibilità o servizi.</p>`,

@@ -55,7 +55,7 @@ export function atlasCategory(kind: AlpinePlace['kind']): 'rifugi' | 'bivacchi' 
 }
 
 export function alpinePlaceLink(place: Pick<AlpinePlace, 'slug' | 'kind'>): string {
-  return `#atlante/${atlasCategory(place.kind)}/${place.slug}`;
+  return `#${place.kind==='borgo'?'paesi':atlasCategory(place.kind)}/${place.slug}`;
 }
 
 /** Box comodo per aprire la mappa sul POI, non finge un accesso stradale. */

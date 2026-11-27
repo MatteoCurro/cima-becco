@@ -73,10 +73,11 @@ const NO_PHOTOS: RoutePhoto[] = [];
 const MapView = lazy(() => import('./map/MapView').then((m) => ({ default: m.MapView })));
 const PlannerPage = lazy(() => import('./components/PlannerPage').then((m) => ({ default: m.PlannerPage })));
 const AlpineAtlasPage = lazy(() => import('./components/AlpineAtlasPage').then((m) => ({ default: m.AlpineAtlasPage })));
+const AlpineExplorePage = lazy(() => import('./components/AlpineExplorePage').then((m) => ({ default: m.AlpineExplorePage })));
 const SiteInsightsPage = lazy(() => import('./components/SiteInsightsPage').then((m) => ({ default: m.SiteInsightsPage })));
 const PublicProfilePage = lazy(() => import('./components/PublicProfilePage').then((m) => ({ default: m.PublicProfilePage })));
 
-type View = 'landing' | 'planner' | 'atlas' | 'insights' | 'public_profile' | 'map' | 'training' | 'account' | 'settings' | InfoPageId;
+type View = 'landing' | 'planner' | 'atlas' | 'explore' | 'insights' | 'public_profile' | 'map' | 'training' | 'account' | 'settings' | InfoPageId;
 
 const INFO_PAGES: ReadonlySet<string> = new Set<InfoPageId>(['privacy', 'terms', 'community', 'data', 'contact']);
 
@@ -84,6 +85,7 @@ function viewFromHash(): View {
   const hash = window.location.hash;
   if (hash === '#pianifica') return 'planner';
   if (hash === '#atlante' || hash.startsWith('#atlante/')) return 'atlas';
+  if (/^#(rifugi|bivacchi|paesi)(\/|$)/.test(hash)) return 'explore';
   if (hash === '#statistiche') return 'insights';
   if (hash.startsWith('#profilo/')) return 'public_profile';
   if (hash === '#map' || hash === '#routes' || hash === '#import' || hash.startsWith('#map/') || hash.startsWith('#venue/') || hash.startsWith('#route/')) return 'map';
@@ -137,6 +139,8 @@ export default function App() {
         <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><PlannerPage /></Suspense>
       ) : view === 'atlas' ? (
         <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><AlpineAtlasPage /></Suspense>
+      ) : view === 'explore' ? (
+        <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><AlpineExplorePage /></Suspense>
       ) : view === 'insights' ? (
         <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><SiteInsightsPage /></Suspense>
       ) : view === 'public_profile' ? (
