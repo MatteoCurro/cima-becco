@@ -1,0 +1,317 @@
+{
+  "version": 1,
+  "type": "fact_only_static_official_open_data_snapshot",
+  "source": "https://www.sat.tn.it/sentiero-italia/",
+  "retrievalMethod": "Manually transcribed from official SAT page read 2026-11-27 (web), NOT fetched by CI",
+  "licence": "ODbL-1.0",
+  "credit": "© Società degli Alpinisti Tridentini (SAT)",
+  "note": "Partial names and tabular numeric facts; no GPX and no narrative copyrighted prose. Stage endpoints can conflict across SAT table; never auto-join by name.",
+  "stages": [
+    {
+      "id": "si-c01",
+      "code": "SI C01",
+      "sequence": 1,
+      "startNameReported": "Rifugio Montozzo A. Bozzi",
+      "endNameReported": "Pejo paese",
+      "ascentM": 450,
+      "descentM": 1350,
+      "durationMinutes": 330,
+      "difficultyOriginal": "E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c02",
+      "code": "SI C02",
+      "sequence": 2,
+      "startNameReported": "Pejo paese",
+      "endNameReported": "Bagni di Rabbi",
+      "ascentM": 1450,
+      "descentM": 1800,
+      "durationMinutes": 480,
+      "difficultyOriginal": "E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c03",
+      "code": "SI C03",
+      "sequence": 3,
+      "startNameReported": "Bagni di Rabbi",
+      "endNameReported": "Malga Bordolona di sotto",
+      "ascentM": 1400,
+      "descentM": 600,
+      "durationMinutes": 330,
+      "difficultyOriginal": "E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c04",
+      "code": "SI C04",
+      "sequence": 4,
+      "startNameReported": "Malga Bordolona di sopra",
+      "endNameReported": "Mocenigo (Rumo)",
+      "ascentM": 850,
+      "descentM": 1950,
+      "durationMinutes": 450,
+      "difficultyOriginal": "E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c05",
+      "code": "SI C05",
+      "sequence": 5,
+      "startNameReported": "Mocenigo (Rumo)",
+      "endNameReported": "Fondo",
+      "ascentM": 1050,
+      "descentM": 1150,
+      "durationMinutes": 420,
+      "difficultyOriginal": "T/E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c06",
+      "code": "SI C06",
+      "sequence": 6,
+      "startNameReported": "Fondo",
+      "endNameReported": "Rifugio Oltradige",
+      "ascentM": 900,
+      "descentM": 100,
+      "durationMinutes": 330,
+      "difficultyOriginal": "T/E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c07",
+      "code": "SI C07",
+      "sequence": 7,
+      "startNameReported": "Rifugio Oltradige",
+      "endNameReported": "Favogna",
+      "ascentM": 700,
+      "descentM": 1400,
+      "durationMinutes": 420,
+      "difficultyOriginal": "EE",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c08",
+      "code": "SI C08",
+      "sequence": 8,
+      "startNameReported": "Favogna di sotto",
+      "endNameReported": "Salorno",
+      "ascentM": null,
+      "descentM": 800,
+      "durationMinutes": 180,
+      "difficultyOriginal": "E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c09",
+      "code": "SI C09",
+      "sequence": 9,
+      "startNameReported": "Salorno",
+      "endNameReported": "Rifugio Potzmauer",
+      "ascentM": 1300,
+      "descentM": 250,
+      "durationMinutes": 480,
+      "difficultyOriginal": "E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c10s",
+      "code": "SI C10S",
+      "sequence": 10,
+      "startNameReported": "Rifugio Potzmauer",
+      "endNameReported": "Molina di Fiemme",
+      "ascentM": 750,
+      "descentM": 1250,
+      "durationMinutes": 450,
+      "difficultyOriginal": "E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c11s",
+      "code": "SI C11S",
+      "sequence": 11,
+      "startNameReported": "Molina di Fiemme",
+      "endNameReported": "Rifugio Malga Conseria",
+      "ascentM": 1100,
+      "descentM": 500,
+      "durationMinutes": 330,
+      "difficultyOriginal": "E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c12s",
+      "code": "SI C12S",
+      "sequence": 12,
+      "startNameReported": "Rifugio Malga Conseria",
+      "endNameReported": "Rifugio O. Brentari a Cima d’Asta",
+      "ascentM": 910,
+      "descentM": 280,
+      "durationMinutes": 300,
+      "difficultyOriginal": "E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c13s",
+      "code": "SI C13S",
+      "sequence": 13,
+      "startNameReported": "Rifugio O. Brentari a Cima d’Asta",
+      "endNameReported": "Caoria",
+      "ascentM": 50,
+      "descentM": 1650,
+      "durationMinutes": 300,
+      "difficultyOriginal": "EE",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c14s",
+      "code": "SI C14S",
+      "sequence": 14,
+      "startNameReported": "Caoria",
+      "endNameReported": "Passo Rolle",
+      "ascentM": 1400,
+      "descentM": 250,
+      "durationMinutes": 450,
+      "difficultyOriginal": "T/E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c15s",
+      "code": "SI C15S",
+      "sequence": 15,
+      "startNameReported": "Passo Rolle",
+      "endNameReported": "Passo San Pellegrino",
+      "ascentM": 800,
+      "descentM": 800,
+      "durationMinutes": 360,
+      "difficultyOriginal": "T/E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c16s",
+      "code": "SI C16S",
+      "sequence": 16,
+      "startNameReported": "Passo San Pellegrino",
+      "endNameReported": "Rifugio Contrin",
+      "ascentM": 800,
+      "descentM": 700,
+      "durationMinutes": 300,
+      "difficultyOriginal": "E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-c17s",
+      "code": "SI C17S",
+      "sequence": 17,
+      "startNameReported": "Rifugio Contrin",
+      "endNameReported": "Diga di Fedaia / Rifugio Castiglioni",
+      "ascentM": 550,
+      "descentM": 550,
+      "durationMinutes": 240,
+      "difficultyOriginal": "E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    },
+    {
+      "id": "si-b01",
+      "code": "SI B01",
+      "sequence": 18,
+      "startNameReported": "Diga di Fedaia / Rifugio Castiglioni",
+      "endNameReported": "Arabba",
+      "ascentM": 400,
+      "descentM": 900,
+      "durationMinutes": 240,
+      "difficultyOriginal": "E",
+      "source": {
+        "url": "https://www.sat.tn.it/sentiero-italia/",
+        "dataLicence": "ODbL-1.0",
+        "credit": "© Società degli Alpinisti Tridentini (SAT)"
+      },
+      "status": "official_table_manually_transcribed_not_live_import"
+    }
+  ]
+}
