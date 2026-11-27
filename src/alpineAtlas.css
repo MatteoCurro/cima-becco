@@ -155,3 +155,6 @@
 .cb-profile-actions button,.cb-profile-actions a{background:#d10058;color:#fff!important;border:0;border-radius:5px;padding:12px 16px;font:900 12px 'Space Grotesk',sans-serif;text-decoration:none;cursor:pointer}
 .cb-profile-actions button:disabled{opacity:.5;cursor:not-allowed}
 .cb-public-profile-page>h1{font:900 clamp(38px,5vw,64px)/1 'Bricolage Grotesque',sans-serif;letter-spacing:-.06em;color:#214a35}
+
+/* Le schede dell'Atlante usano lo stesso contenitore full-width dei dettagli locali. */
+.cb-atlas-shell.cb-atlas-shell--detail{width:100%;max-width:none;padding:0}

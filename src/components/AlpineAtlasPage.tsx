@@ -306,9 +306,9 @@ export function AlpineAtlasPage() {
   const trek=slug?treks.projects.find(p=>p.slug===slug):null;
   return <div className="cb-atlas-page">
     <SiteHeader sticky/>
-    <main className="cb-atlas-shell">
-      <div className="cb-atlas-overline">CIMA BECCO / ESPLORA</div>
-      <AtlasHeader section={section}/>
+    <main className={slug ? 'cb-atlas-shell cb-atlas-shell--detail' : 'cb-atlas-shell'}>
+      {!slug && <div className="cb-atlas-overline">CIMA BECCO / ESPLORA</div>}
+      {!slug && <AtlasHeader section={section}/>} 
       {place ? <PlaceDetail place={place} onBack={`#atlante/${section}`} places={allSectionPlaces}/>
         : trek ? <TrekDetail trek={trek} onBack="#atlante/trekking"/>
         : slug ? <div className="cb-atlas-empty"><h1>Questa tappa ci sfugge.</h1><p>Il dato non è ancora disponibile in questo atlante.</p><a href={`#atlante/${section}`}>Vai all'elenco</a></div>
