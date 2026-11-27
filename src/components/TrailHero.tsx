@@ -10,61 +10,34 @@ import { focusSiteSearch } from './SearchBar';
  * y in pixels, read off the path below at that x.
  */
 const STEPS = [
-  { x: 16.7, y: 72, title: 'Scopri le cime', text: 'Cerca una montagna o una località in Italia.' },
-  { x: 50, y: 40, title: 'Consulta il percorso', text: 'Consulta lunghezza, dislivello e traccia prima di partire.' },
-  { x: 83.3, y: 60, title: 'Scarica il GPX', text: "Salva l'itinerario e condividi la tua escursione." },
+  { x: 16.7, y: 72, title: 'PUNTA LA CIMA', text: 'Vetta, borgo o rifugio: trova la tua scusa per salire.' },
+  { x: 50, y: 40, title: 'CONTA I METRI', text: 'Dislivello, sentieri e difficoltà. Poi non dire che non lo sapevi.' },
+  { x: 83.3, y: 60, title: 'PORTA IL GPX', text: 'Sul sentiero serve la testa. E una traccia fatta bene.' },
 ];
 
 /** A ridge from the start (left, low) through the three steps to the summit flag (right, high). */
 const TRAIL = 'M10 112 C 60 108, 110 76, 167 72 S 250 104, 300 100 S 420 44, 500 40 S 600 92, 650 96 S 770 64, 833 60 S 940 34, 990 28';
 
-/** The real ground around Bukit Timah as a topo map (scripts/render_hero_contours.py). */
-const HERO_MAP = `${import.meta.env.BASE_URL}hero/bukit-timah`;
-
-interface ContourMap {
-  width: number;
-  height: number;
-  /** Each line with its length in the map's units, which tracing it in needs. */
-  lines: { d: string; index: boolean; length: number }[];
-}
-
-/** The contour lines, fetched after the page (they are decoration, ~60 KB). */
-function useContours(): ContourMap | null {
-  const [map, setMap] = useState<ContourMap | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`${HERO_MAP}-contours.json`)
-      .then((response) => (response.ok ? (response.json() as Promise<ContourMap>) : null))
-      .then((data) => {
-        if (!cancelled && data) setMap(data);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  return map;
-}
-
-/**
- * The map behind the hero: height tints, then the contour lines, which trace
- * themselves in on arrival. With a mouse, the layers lean towards the pointer
- * by different amounts (`--px`, `--py`), so the map has depth.
- */
+/** Trama topografica *illustrata*, nessun riferimento ai rilievi asiatici di HillGPX. */
 function HeroMap({ mapRef }: { mapRef: React.RefObject<HTMLDivElement> }) {
-  const contours = useContours();
-  return (
-    <div className="trail-hero-map" ref={mapRef} aria-hidden="true">
-      <img className="tints" src={`${HERO_MAP}-tint.png`} alt="" decoding="async" />
-      {contours && (
-        <svg className="lines" viewBox={`0 0 ${contours.width} ${contours.height}`} preserveAspectRatio="xMidYMid slice" focusable="false">
-          {contours.lines.map((line, i) => (
-            <path key={i} d={line.d} className={line.index ? 'index' : undefined} style={{ '--l': line.length } as React.CSSProperties} />
-          ))}
-        </svg>
-      )}
-    </div>
-  );
+  return <div className="trail-hero-map cb-hero-topo" ref={mapRef} aria-hidden="true">
+    <svg className="cb-hero-topo-lines" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid slice" focusable="false">
+      <g fill="none" stroke="#42674e" strokeWidth="1.4" opacity=".34">
+        {Array.from({length:12},(_,i)=>(
+          <path key={i} d={`M ${-210+i*23} ${440-i*25} C 30 ${270-i*20}, 140 ${390-i*38}, 320 ${200-i*6} S 750 ${315-i*27}, 1200 ${55+i*7}`}/>
+        ))}
+        {Array.from({length:8},(_,i)=>(
+          <path key={`b${i}`} d={`M ${90+i*20} ${-50+i*24} C 310 ${120+i*21}, 650 ${-80+i*10}, 950 ${190+i*32}`}/>
+        ))}
+      </g>
+      <path d="M570 450 750 135 843 260 906 155 1060 450Z" fill="#c2d7b6" opacity=".53"/>
+      <path d="M655 450 750 135 819 270 905 156 1030 450" fill="none" stroke="#143d2f" strokeWidth="4" opacity=".14"/>
+      <path d="m748 135 33 58-26-13-38 19Z" fill="#f2f8e8"/>
+      <circle cx="752" cy="160" r="16" fill="#ff2677"/>
+      <path d="m741 161 8 8 17-22" stroke="#fff" strokeWidth="5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+    <span className="cb-hero-topo-stamp">ALTA QUOTA, BASSA PAZIENZA.</span>
+  </div>;
 }
 
 /** Pointer position over the hero as -0.5…0.5 each way, written straight to CSS (no re-render). */
@@ -119,24 +92,25 @@ export function TrailHero() {
       <HeroMap mapRef={mapRef} />
       <div className="home-shell">
         <h1 className="trail-hero-title">
-          Ogni cima, <span>un percorso</span>
+          MA CHI TE L’HA <span>FATTO FARE?</span>
         </h1>
         <p className="trail-hero-lead">
-          Scopri le montagne italiane, esplora i sentieri, pianifica un trekking e condividi i tuoi itinerari.
+          Rifugi, sentieri, borghi, ferrate e GPX. Il panorama te lo guadagni. Le scuse lasciale a valle.
         </p>
         <div className="trail-hero-actions">
           <button type="button" className="btn btn-dark" onClick={() => openMapWith({ kind: 'near-me' })}>
             <LocateIcon size={16} />
-            Percorsi vicino a me
+            FAMMI SALIRE
           </button>
           <button type="button" className="btn btn-light" onClick={searchByRegion}>
             <SearchIcon size={16} />
-            Cerca per zona
+            CERCA LA SCUSA
           </button>
           <a className="btn btn-light" href="#pianifica">
             <SearchIcon size={16} />
-            Pianifica un percorso
+            DISEGNA LA FOLLIA
           </a>
+          <a className="btn btn-light" href="#atlante/rifugi">RIFUGI &amp; BORGHI ↗</a>
         </div>
 
         <div className="hero-trail">
