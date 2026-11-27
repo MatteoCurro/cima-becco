@@ -43,13 +43,13 @@ export function VenueCard({
   const cover = venuePhotos(venue)[0];
   const detail = [
     venueKindLabel(venue),
-    venue.storeys != null ? `${venue.storeys} floors` : null,
+    venue.storeys != null ? `${venue.storeys} piani` : null,
     townName(venue.town),
   ]
     .filter(Boolean)
     .join(' · ');
   const routeLabel =
-    routes.length > 0 ? ` · ${routes.length} route${routes.length === 1 ? '' : 's'}` : '';
+    routes.length > 0 ? ` · ${routes.length} ${routes.length === 1 ? 'percorso' : 'percorsi'}` : '';
 
   return (
     <aside className={['venue-card', className].filter(Boolean).join(' ')}>
@@ -64,8 +64,8 @@ export function VenueCard({
             event.stopPropagation();
             onToggleFavorite();
           }}
-          aria-label={isFavorite ? 'Remove favourite' : 'Add to favourites'}
-          title={isFavorite ? 'Remove favourite' : 'Add to favourites'}
+          aria-label={isFavorite ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'}
+          title={isFavorite ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'}
         >
           <HeartIcon size={24} filled={isFavorite} />
         </button>
@@ -79,11 +79,11 @@ export function VenueCard({
         }}
         aria-label="Share this place"
         aria-haspopup="dialog"
-        title="Share"
+        title="Condividi"
       >
         <ShareIcon size={15} />
       </button>
-      <button className="icon-btn card-close" onClick={onClose} aria-label="Close">
+      <button className="icon-btn card-close" onClick={onClose} aria-label="Chiudi">
         <CloseIcon size={14} />
       </button>
 
@@ -104,11 +104,11 @@ export function VenueCard({
             </span>
           </p>
         ) : (
-          <p className="card-height muted">No height recorded{routeLabel}</p>
+          <p className="card-height muted">Quota non disponibile{routeLabel}</p>
         )}
       </a>
-      <a className="route-more-toggle venue-more-toggle" href={`#venue/${venue.slug}`} target="_blank" rel="noopener" aria-label={`More details about ${venue.name}`}>
-        <span>More details</span>
+      <a className="route-more-toggle venue-more-toggle" href={`#venue/${venue.slug}`} target="_blank" rel="noopener" aria-label={`Dettagli su ${venue.name}`}>
+        <span>Apri scheda</span>
         <ChevronRightIcon size={13} />
       </a>
       {cover && <PhotoCredit photo={cover} />}
@@ -117,7 +117,7 @@ export function VenueCard({
           title="Share this place"
           name={venue.name}
           stats={[venueKindLabel(venue), height ? `${units.height(height.value)} ${HEIGHT_LABEL[height.kind]}` : null].filter(Boolean).join(' · ')}
-          text={`${venue.name}${height ? `: ${units.height(height.value)} ${HEIGHT_LABEL[height.kind]}` : ''} on HillGPX`}
+          text={`${venue.name}${height ? `: ${units.height(height.value)} ${HEIGHT_LABEL[height.kind]}` : ''} su Cima Becco`}
           url={`${window.location.origin}${import.meta.env.BASE_URL}#venue/${encodeURIComponent(venue.slug)}`}
           onClose={() => setSharing(false)}
         />
