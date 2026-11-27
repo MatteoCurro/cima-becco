@@ -84,6 +84,43 @@ class CAIResolverTests(unittest.TestCase):
         self.assertTrue(r["candidateMatches"][0]["conflict"])
         self.assertTrue(all(not x["autoMerged"] for x in r["candidateMatches"][0]["suggestions"]))
 
+    def test_official_public_category_excludes_bivouac_from_refuge_candidates(self):
+        official = [{"caiId": "100", "officialType": "Bivacco",
+                     "classification": "bivouac",
+                     "officialPage": "https://rifugi.cai.it/shelters/100"}]
+        r = linker.identity_candidates(
+            [cai(100, "Fiamme Gialle")],
+            [hut("1", "Fiamme Gialle")], verified_types=official)
+        self.assertEqual(r["summary"]["officiallyVerifiedTypes"], 1)
+        self.assertEqual(r["summary"]["candidatePairs"], 0)
+        self.assertEqual(r["summary"]["osmCategoryConflicts"], 1)
+        self.assertEqual(r["unmatched"][0]["reason"], "non_refuge_type")
+        self.assertFalse(r["typeConflicts"][0]["autoReclassified"])
+        self.assertEqual(r["summary"]["establishedLinks"], 0)
+
+    def test_official_refuge_type_keeps_candidate_as_review_only(self):
+        official = [{"caiId": "100", "officialType": "Rifugio custodito",
+                     "classification": "refuge",
+                     "officialPage": "https://rifugi.cai.it/shelters/100"}]
+        r = linker.identity_candidates(
+            [cai(100, "Rifugio Boé")], [hut("1", "Rifugio Boé")],
+            verified_types=official)
+        self.assertEqual(r["summary"]["candidatePairs"], 1)
+        self.assertEqual(r["candidateMatches"][0]["typeReview"], "confirmed_refuge_type")
+        self.assertFalse(r["candidateMatches"][0]["linkEstablished"])
+
+    def test_unverified_official_evidence_is_rejected(self):
+        fake = [{"caiId": "100", "officialType": "Bivacco",
+                 "classification": "refuge",
+                 "officialPage": "https://rifugi.cai.it/shelters/100"}]
+        with self.assertRaisesRegex(ValueError, "discordante"):
+            linker.identity_candidates([cai(100, "Boe")],
+                                       [hut("1", "Boe")], verified_types=fake)
+        fake[0]["officialPage"] = "https://example.org/forged"
+        with self.assertRaisesRegex(ValueError, "fonte ufficiale"):
+            linker.identity_candidates([cai(100, "Boe")],
+                                       [hut("1", "Boe")], verified_types=fake)
+
     def test_elevation_mismatch_blocks_even_with_identical_name_and_coordinates(self):
         r = linker.identity_candidates([cai(100, "BOE", altitude=2400)],
                                        [hut("1", "Boé", elevation=1500)])
