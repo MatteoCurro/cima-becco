@@ -64,7 +64,7 @@ export const QUALITY_LIMITS = {
   /** After a lone spike the track returns to within this of where it was. */
   spikeReturnM: 100,
   speedWindowS: 60,
-  maxFootKmh: 45,
+  maxFootKmh: 25,
   minDistanceM: 300,
   minPoints: 10,
   // Temporarily disabled: Infinity never trips. Restore to 5 to re-enable.
