@@ -140,7 +140,7 @@ class RefugeImportTests(unittest.TestCase):
         doc = json.loads(file.read_text())
         doc["places"][0]["osmUrl"] = "javascript:alert(1)"
         file.write_text(json.dumps(doc), encoding="utf-8")
-        with self.assertRaisesRegex(ValueError, "Identita OSM invalida"):
+        with self.assertRaisesRegex(ValueError, "Identità OSM invalida"):
             importer.run(self.root, self.out, strict=True)
 
     def test_zero_and_false_are_not_interpreted_as_absent(self):
