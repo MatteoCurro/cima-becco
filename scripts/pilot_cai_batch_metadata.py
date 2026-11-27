@@ -60,6 +60,18 @@ def main():
           "resultShape":shape(p.get("results")) if isinstance(p,dict) else None,
           "resultCount":len(p.get("results") or []) if isinstance(p,dict) and isinstance(p.get("results"),list) else None}
     except Exception as ex:result["errors"].append({"source":"CAI named search","error":str(ex)[:220]})
+    result["detailProbe"]=[]
+    for entry in records[:4]:
+        try:
+            detail,detail_url=get("/shelters/"+str(entry["caiId"]),{})
+            result["detailProbe"].append({"caiId":entry["caiId"],"url":detail_url,
+                "responseShape":shape(detail),
+                "topLevelKeys":list(detail)[:40] if isinstance(detail,dict) else [],
+                "nestedTypes":{k:shape(v) for k,v in detail.items()
+                    if k in ("data","fields","media","shelter","contacts","services")}
+                    if isinstance(detail,dict) else {}})
+        except Exception as ex:
+            result["detailProbe"].append({"caiId":entry["caiId"],"error":str(ex)[:200]})
     OUT.mkdir(parents=True,exist_ok=True)
     (OUT/"cai-shelter-records.json").write_text(json.dumps({"records":records,
       "notice":"Staging only; check licence and freshness before publication."},ensure_ascii=False,indent=2),encoding="utf-8")
