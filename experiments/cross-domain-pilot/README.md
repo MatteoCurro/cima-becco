@@ -37,3 +37,10 @@ Branch: `experiment/cross-domain-data-pilot`; PR draft [#8](https://github.com/M
 
 ## Reperibilità
 I JSON di esecuzione restano negli artifact GitHub Actions del workflow `Experimental — multi-domain data coverage`; lo staging è separato dai dati distribuiti da GitHub Pages. Nessun dataset nuovo è stato aggiunto al sito pubblico.
+
+## Verifica ulteriore dei dettagli CAI (4 schede)
+L'endpoint GET /api/v1/shelters/{id_cai} ha risposto con `fields[]` e `media[]`: per i quattro rifugi provati **99, 76, 64 e 81 voci di campo**, rispettivamente **1, 3, 1 e 2 elementi media**. Tra i *nomi dei campi tecnicamente previsti* compaiono `posti_totali_service`, `posti_letto_service`, `posti_letto_invernali_service`, `openingTime_contact`, `name_management_property`, `webAddress_contact`, `wifi_service`, `acqua_in_rifugio_service`, `docce_service`, `defibrillatore_service`. **Questo non dimostra che il valore di ogni campo sia valorizzato:** il prossimo audit deve leggere `value` e valutare completezza, anno, coerenza e diritti.
+
+Nel CSV DAIT è stato confermato l'header corretto: i **7.783** record costituiscono le righe di dati a valle di due righe introduttive. Per il sample Canazei il CSV datato 24/08/2026 riporta sindaco Giovanni Bernard, Moena Alberto Kostner e Cortina d'Ampezzo Gianluca Lorenzi. Non applicare ai borghi che non sono comuni amministrativi.
+
+Conferma: i 18 record SAT sono stati acquisiti **live** con tutti i tempi e difficoltà e 17/18 dislivelli di salita; una esecuzione precedente aveva trovato una pagina difforme e viene documentata separatamente. 
