@@ -57,14 +57,13 @@ export interface QualityInput {
 
 /** Tunable limits; the issue's first-guess values. */
 export const QUALITY_LIMITS = {
-  /** A step implying more than this is not a person or a bike. */
+  /** Un salto GPS non compatibile con un movimento umano. */
   jumpKmh: 150,
   /** With no timestamps, adjacent raw points further apart than this are a jump. */
   jumpGapM: 2000,
   /** After a lone spike the track returns to within this of where it was. */
   spikeReturnM: 100,
   speedWindowS: 60,
-  maxKmh: 80,
   maxFootKmh: 45,
   minDistanceM: 300,
   minPoints: 10,
@@ -109,7 +108,7 @@ export function assessRoute(input: QualityInput): QualityAssessment {
     return a != null && b != null && b > a ? (b - a) / 1000 : null;
   };
 
-  // GPS jumps: a step no person or bike could make, after which the track stays displaced.
+  // GPS jumps: a step implausible for a person, after which the track stays displaced.
   for (let i = 0; i < steps.length; i++) {
     const seconds = timed(i);
     const kmh = seconds != null ? (steps[i] / 1000) / (seconds / 3600) : null;
@@ -126,7 +125,7 @@ export function assessRoute(input: QualityInput): QualityAssessment {
   }
 
   // Sustained speed: over the shortest run of steps spanning a full window, so one noisy fix does not trip it.
-  const limit = activity === 'cycle' ? QUALITY_LIMITS.maxKmh : QUALITY_LIMITS.maxFootKmh;
+  const limit = QUALITY_LIMITS.maxFootKmh;
   let worst = 0;
   let worstAt = 0;
   let lo = 0;
