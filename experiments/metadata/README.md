@@ -55,3 +55,15 @@ Il fetch Wikidata **non è stato eseguito in questa simulazione**: qui misuriamo
 
 ## Risultato
 Il collo di bottiglia NON è la quantità di tracce. È la scarsa densità di metadati: nel catalogo luoghi troviamo già centinaia di identificativi esterni recuperabili, ma quasi nessuna descrizione utilizzabile. La prossima attività è collaudare l'arricchimento dei 934 Q-id, verificare fonti/licenze e fare il matching dei nomi ambigui prima di pubblicare nuove pagine SEO.
+
+## Collaudo completo su GitHub Actions — esito verificato
+Esecuzione [metadata-only atlas](https://github.com/MatteoCurro/cima-becco/actions/runs/46036891237) conclusa con **successo** il 27/11/2026.
+
+- 3 test automatici superati, 0 falliti.
+- 7.755 schede itinerario deduplicate per slug ed elaborate senza geometrie; 6.318 con riferimento sentiero, 1.748 con difficoltà CAI riportata, 1.742 con luoghi vicini, 1.573 luoghi distinti associati, 3.193 record con titolo non univoco.
+- 934 record luogo con Q-id; **931 entità Wikidata distinte recuperate** con descrizioni brevi, denominazioni alternative quando presenti e collegamento alla voce italiana quando disponibile.
+- Archivio cache salvato nel **solo branch sperimentale**: `experiments/metadata/wikidata-cache.json`.
+- Le schede luogo candidate alla **revisione** secondo un'euristica interna salgono da 180 (solo OSM) a **852** con l'arricchimento Wikidata. Questo numero NON equivale a 852 pagine pronte per Google.
+- Nessuna modifica al sito in produzione e nessun GPX/geometria distribuito nell'output editoriale.
+
+Criterio di conteggio: 934 record OSM fanno riferimento a 931 Q-id unici, perché alcuni luoghi condividono lo stesso identificativo. Non vanno fusi automaticamente: è un segnale che richiede verifica di identità.
