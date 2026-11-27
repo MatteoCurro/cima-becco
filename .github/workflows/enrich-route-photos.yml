@@ -30,7 +30,7 @@ jobs:
       - name: Verifica corrispondenza e attribuzioni delle foto
         run: python -m unittest discover -s tests -p 'test_enrich_route_photos.py' -v
       - name: Arricchimento Wikimedia Commons prudente
-        run: python scripts/enrich_route_photos.py --write --max-routes 30
+        run: python scripts/enrich_route_photos.py --write --max-routes 12
       - name: Registra foto e checkpoint
         run: |
           if [ -z "$(git status --porcelain -- public/data/route-photo-status.json public/data/routes-tiles/)" ]; then
