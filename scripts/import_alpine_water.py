@@ -12,13 +12,13 @@ import re
 import sys
 from urllib.parse import urlencode
 from urllib.request import Request,urlopen
-from import_alpine_places import DATA,MANIFEST,ENDPOINTS,BBOX,projection_distance_m,read_json,write_json,clean_name
+from import_alpine_places import DATA,MANIFEST,ENDPOINTS,BBOX,PROGRESS,alpine_cells,projection_distance_m,read_json,write_json,clean_name
 
 OUT=DATA/'alpine-water.json'
 
 
-def fetch_water():
-    south,west,north,east=BBOX
+def fetch_water(bbox=None):
+    south,west,north,east=bbox if bbox is not None else BBOX
     rect=f"({south},{west},{north},{east})"
     query=(
         "[out:json][timeout:65];("
@@ -114,15 +114,41 @@ def connect(waters):
 
 
 def main(write=False,link_only=False):
-    if link_only:
-        waters=read_json(OUT,{'sources':[]}).get('sources',[])
-    else:
-        waters=sorted(
-            {item['slug']:item for raw in fetch_water() if (item:=to_water(raw))}.values(),
-            key=lambda x:x['slug'])
-        if write:write_json(OUT,{'generatedAt':datetime.now(timezone.utc).date().isoformat(),
-            'source':'OpenStreetMap · ODbL 1.0',
-            'coverage':'Dolomiti (pilota)','sources':waters})
+    previous=read_json(OUT,{'sources':[]})
+    sources={p['slug']:p for p in previous.get('sources',[])}
+    if not link_only:
+        # La stessa cella aggiornata da import_alpine_places.py.
+        checkpoint=read_json(PROGRESS,{'lastCell':0})
+        cell_id=int(checkpoint.get('lastCell',0))%len(alpine_cells())
+        try:
+            rows=fetch_water(alpine_cells()[cell_id])
+        except Exception as error:
+            if not sources:raise
+            # Non perdere 3.000+ fonti già importate quando Overpass
+            # risponde 429/502 o è temporaneamente indisponibile.
+            print(f'AVVISO: import acqua rinviato per cella {cell_id+1}; '
+                  f'conservo {len(sources)} fonti OSM già presenti: {error}',file=sys.stderr)
+            rows=None
+        if rows is not None:
+            changed=0
+            for row in rows:
+                item=to_water(row)
+                if not item:continue
+                former=sources.get(item['slug'],{})
+                for field,value in former.items():
+                    if field not in item:item[field]=value
+                if item!=former:changed+=1
+                sources[item['slug']]=item
+            print(f'Cella acqua {cell_id+1}/{len(alpine_cells())}: '
+                  f'{len(rows)} risultati, {changed} record aggiornati',file=sys.stderr)
+            if write:
+                write_json(OUT,{
+                    'generatedAt':datetime.now(timezone.utc).date().isoformat(),
+                    'source':'OpenStreetMap · ODbL 1.0',
+                    'coverage':'Dolomiti (pilota)',
+                    'sources':sorted(sources.values(),key=lambda x:x['slug']),
+                })
+    waters=sorted(sources.values(),key=lambda x:x['slug'])
     outcome={'sources':len(waters),'potableConfirmed':sum(i['potable']=='yes' for i in waters),
              'potabilityUnknown':sum(i['potable']=='unknown' for i in waters)}
     if write:outcome.update(connect(waters))
