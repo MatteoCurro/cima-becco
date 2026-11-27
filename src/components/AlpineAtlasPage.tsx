@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Route } from '../types';
 import { SiteFooter, SiteHeader } from './SiteChrome';
+import { ExploreNavigation } from './ExploreNavigation';
+import { homeHref } from '../lib/navigation';
 import { loadAlpinePlaces, alpinePlaceLink, atlasCategory, placeBounds, type AlpinePlace, type AlpinePlacesDataset } from '../lib/alpinePlaces';
 import { loadRouteBySlug, loadRoutesInBounds } from '../lib/routeTiles';
 import { routesNear } from '../lib/routes';
@@ -47,13 +49,6 @@ function parseAtlas(hash: string): { section: Section; slug: string | null } {
 }
 
 const sectionLabels: Record<Section,string> = { rifugi:'RIFUGI',bivacchi:'BIVACCHI',borghi:'PAESI',trekking:'TREKKING A TAPPE' };
-
-function AtlasHeader({ section }: { section: Section }) {
-  return <div className="cb-atlas-tabs" role="navigation" aria-label="Esplora atlante">
-    {(['rifugi','bivacchi','borghi','trekking'] as Section[]).map(key =>
-      <a key={key} className={section === key ? 'active' : ''} href={`#atlante/${key}`}>{sectionLabels[key]}</a>)}
-  </div>;
-}
 
 function PlaceBadge({ place }: { place: AlpinePlace }) {
   return <span className={`cb-atlas-kind cb-atlas-kind--${place.kind}`}>
@@ -284,6 +279,13 @@ export function AlpineAtlasPage() {
   const [visible,setVisible] = useState(36);
   const {section,slug}=parseAtlas(hash);
   usePageTitle(sectionLabels[section] + ' · Cima Becco');
+  useEffect(()=>{
+    if(section==='trekking')return;
+    if(slug){
+      const kind=section==='rifugi'?'rifugio':section==='bivacchi'?'bivacco':'borgo';
+      window.location.replace(alpinePlaceLink({kind,slug}));
+    }else window.location.replace(homeHref(section==='borghi'?'paesi':section));
+  },[section,slug]);
   useEffect(() => {
     const change = () => {setHash(window.location.hash);setQuery('');setVisible(36);window.scrollTo({top:0});};
     window.addEventListener('hashchange',change);
@@ -303,7 +305,7 @@ export function AlpineAtlasPage() {
     <SiteHeader sticky/>
     <main className={slug ? 'cb-atlas-shell cb-atlas-shell--detail' : 'cb-atlas-shell'}>
       {!slug && <div className="cb-atlas-overline">CIMA BECCO / ESPLORA</div>}
-      {!slug && <AtlasHeader section={section}/>} 
+      {!slug && <ExploreNavigation active={section==='trekking'?'trekking':section==='borghi'?'paesi':section}/>} 
       {place ? <PlaceDetail place={place} onBack={`#atlante/${section}`}/>
         : trek ? <TrekDetail trek={trek} onBack="#atlante/trekking"/>
         : slug ? <div className="cb-atlas-empty"><h1>Questa tappa ci sfugge.</h1><p>Il dato non è ancora disponibile in questo atlante.</p><a href={`#atlante/${section}`}>Vai all'elenco</a></div>

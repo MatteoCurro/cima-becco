@@ -1,0 +1,8 @@
+.cb-atlas-map-wrap{position:relative;border:2px solid #cedecc;overflow:hidden;border-radius:10px;background:#dcebd5}
+.cb-atlas-map{width:100%;max-width:100%;min-height:235px}
+.cb-atlas-map-caption{position:absolute;bottom:15px;left:12px;z-index:2;background:#183d30;color:#fff;font:900 10px 'Space Grotesk',sans-serif;letter-spacing:.06em;padding:8px 10px;border-radius:5px;pointer-events:none;max-width:calc(100% - 140px)}
+.cb-atlas-selected-pin{display:grid;place-items:center;width:38px;height:38px;border:3px solid #fff;border-radius:50% 50% 50% 0;background:#f71970;transform:rotate(-45deg);color:#fff;font:900 25px 'Barlow Condensed',sans-serif;box-shadow:1px 4px 8px #0005}
+.cb-water-map-popover{display:grid;gap:5px;color:#234735;font:600 13px/1.4 'Space Grotesk',sans-serif}
+.cb-water-map-popover small{font:500 11px/1.4 'Space Grotesk',sans-serif;color:#637a68}
+.cb-location-side-map .cb-map-layer-switches{top:auto;bottom:54px;left:12px;max-width:calc(100% - 24px)}
+@media(max-width:720px){.cb-atlas-map-caption{font-size:9px;max-width:calc(100% - 70px)}}

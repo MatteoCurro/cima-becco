@@ -212,7 +212,7 @@ ${body}
   const file = join(DIST, path, 'index.html');
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, html);
-  pages.push(url);
+  if (!noindex) pages.push(url);
 }
 
 const crumbs = (items) =>
