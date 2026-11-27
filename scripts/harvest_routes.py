@@ -141,7 +141,7 @@ def save_tile(cell, elements, status, now):
 
     for route in listed:
         former = old_enrichment.get(route['slug'], {})
-        for key in ('photos',):
+        for key in ('photos', 'stops'):
             if former.get(key) and not route.get(key):
                 route[key] = former[key]
         # Il DEM viene calcolato da un job diverso: non perderlo ai refresh OSM
