@@ -52,6 +52,8 @@ Il resolver comune convertirà progressivamente i riferimenti delle entità non 
 
 **Trattamento dati:** lo storico capacity deriva indistintamente dai tag OSM beds o capacity: viene nominato capacityReported e non posti letto certificati. Le quote DEM legacy senza provenienza del raster non vengono attribuite a OSM. Gli opening_hours sono segnalazioni OSM, non prova dell'apertura corrente. La data generatedAt dello snapshot non è una verifica campo per campo; i retrievedAt non dimostrabili restano null. Media con attribuzione/licenza incompleta esclusi.
 
+**Controllo duplicati:** nodi/edifici OSM con stesso nome entro 150 m, oppure lo stesso QID Wikidata entro 1 km, finiscono in review.json come candidati da verificare. Non vengono mai fusi automaticamente, neppure con lo stesso QID. Il caso del Rifugio Passo Lusia è già emerso nel pilota.
+
 **Quality gate attuale:** G0, nessuna nuova pagina SEO; identità CAI/SAT ancora da risolvere. Slug parlante preliminare separato da slug alias e legacyUrl. Prima dell'automazione il registry va versionato e conservato, inclusi ID dismessi/tombstone, affinché una rinomina non cambi gli URL.
 
 ## Accettazione prima dell'importatore 2
