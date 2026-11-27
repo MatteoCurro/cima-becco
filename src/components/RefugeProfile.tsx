@@ -89,9 +89,7 @@ function FactLines({place,keys}:{place:AlpinePlace;keys:readonly string[]}){
         {(fact.sourceUpdatedAt||fact.validUntil||fact.method==='estimated')&&<small>
           {[fact.method==='estimated'?'Stima':null,fact.sourceUpdatedAt?'Fonte aggiornata: '+fact.sourceUpdatedAt:null,
           fact.validUntil?'Valido fino al: '+fact.validUntil:null].filter(Boolean).join(' · ')}</small>}
-        {fact.sourceUrl&&/^https:\/\//.test(fact.sourceUrl)&&<a href={fact.sourceUrl}
-          target="_blank" rel="noopener noreferrer" aria-label={'Fonte per '+(FACT_LABELS[key]||key)}>
-          <FaIcon name="arrow-up-right-from-square" size={10}/> Fonte</a>}
+
       </dd>
     </div>)}
   </dl>:null;
@@ -266,7 +264,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
         <div><h3>Storia documentata</h3>
           <FactLines place={place} keys={HISTORY.filter(key=>key!=='yearBuilt'||!value(place,'yearBuilt'))}/>
           {place.history&&place.historySourceUrl&&<><p className="cb-refuge-editorial">{place.history}</p>
-            <SourceLink url={place.historySourceUrl}>Fonte dell'approfondimento storico</SourceLink></>}
+</>}
         </div>
       </div>}
     </RefugeBlock>}
@@ -294,9 +292,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
       <HutClaimRequest place={place}/>
     </RefugeBlock>
     <div className="cb-refuge-credits">
-      <AtlasDossierBlocks record={place} placement="credits"/>
-      {place.sourceIds?.cai&&<p>Archivio CAI · <SourceLink url={official}>Unico Rifugi</SourceLink></p>}
-      {place.sourceIds?.osm&&<p>Informazioni OpenStreetMap · <SourceLink url={place.osmUrl}>ODbL</SourceLink></p>}
+
       <p>La scheda riporta informazioni raccolte da fonti documentate. Apertura, condizioni del terreno e disponibilità possono cambiare.</p>
     </div>
   </div>;
