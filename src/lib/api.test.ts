@@ -56,7 +56,7 @@ describe('publishing with quality flags', () => {
   const note: QualityFlag = { id: 'no-elevation', severity: 'advisory', value: 0, threshold: 1, unit: 'm' };
   const input = (qualityFlags: QualityFlag[]): PublishRouteInput => ({
     route: routeFromPoints('Ridge Loop', Array.from({ length: 12 }, (_, i): [number, number, number] => [103.8 + i * 0.001, 1.3, 10]), []),
-    activity: 'run',
+    activity: 'hike',
     fingerprint: 'abcdef123456',
     recordedAt: null,
     elevationSource: 'gps',
