@@ -153,6 +153,25 @@ class MunicipalitiesContracts(unittest.TestCase):
         self.assertEqual(report["mayorsMatched"], 1)
         self.assertEqual(report["daitRowsOfficialCrosswalkRejected"], 0)
 
+    def test_official_istat_extended_identifiers_and_languages(self):
+        columns = ISTAT_COLS + [
+            "Denominazione altra lingua", "Codice Catastale del Comune",
+            "Codice NUTS3 2024", "Codice Comune numerico con 107 Province (dal 2017 al 2025)",
+            "Flag Comune capoluogo di Provincia/Città metropolitana/libero consorzio",
+        ]
+        rows = [["022039", "Canazei", "Trentino-Alto Adige", "Trento", "04", "TN",
+                 "", "", "Cianacei", "B579", "ITH20", "22039", "0"]]
+        source = csv_data(columns, rows)
+        doc, report = build(source, retrieved_at="2026-11-27", min_municipalities=1)
+        entity = doc["entities"][0]
+        self.assertEqual(entity["sourceIds"]["istat"], "022039")
+        self.assertEqual(entity["sourceIds"]["cadastral"], "B579")
+        self.assertEqual(entity["facts"]["nuts3_2024"]["value"], "ITH20")
+        self.assertEqual(entity["facts"]["localName"]["value"], "Cianacei")
+        self.assertEqual(entity["aliases"][0]["name"], "Cianacei")
+        self.assertEqual(entity["facts"]["provinceCapitalFlag"]["value"], False)
+        self.assertFalse(entity["quality"]["seoIndexable"])
+
     def test_duplicate_istat_is_hard_error(self):
         source = csv_data(ISTAT_COLS, [
             ["022039", "Canazei", "Trentino-Alto Adige", "Trento", "04", "TN", "", ""],
