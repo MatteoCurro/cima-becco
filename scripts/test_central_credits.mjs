@@ -21,6 +21,25 @@ assert.equal(missing.length,0,String(missing.length)+' fotografie pubblicate sen
 const links = credits.photoCredits.filter(p=>p.sourceUrl && p.author && p.licence &&
   p.entityUrl.startsWith('/'));
 assert.equal(links.length,credits.counts.total);
+const municipalityFile=join(root,'data','atlas','municipalities-v1.json');
+if(existsSync(municipalityFile)){
+  const communes=read('data/atlas/municipalities-v1.json').entities;
+  const creditsByMedia=new Set(credits.photoCredits.map(p=>p.mediaUrl));
+  const texts=credits.textCredits||[];
+  for(const e of communes){
+    if(e.quality?.gate!=='G2')continue;
+    for(const media of e.media||[]){
+      if(media.reuseAllowed&&media.subjectVerified&&media.url&&media.licence){
+        assert.ok(creditsByMedia.has(media.url),e.name+' foto senza credito centrale');
+      }
+    }
+    for(const source of e.textSources||[]){
+      assert.ok(texts.some(t=>t.slug===e.slug&&t.sourceId===source.sourceId&&
+          t.sourceUrl===source.sourceUrl&&t.licence===source.licence),
+        e.name+' testo senza credito centrale');
+    }
+  }
+}
 assert.ok(existsSync(join(root,'fonti-e-crediti','index.html')));
 const body=readFileSync(join(root,'fonti-e-crediti','index.html'),'utf8');
 assert.ok(body.includes('https://www.cimabecco.it/fonti-e-crediti/'));
