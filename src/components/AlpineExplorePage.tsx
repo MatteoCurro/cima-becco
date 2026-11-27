@@ -78,7 +78,7 @@ export function AlpineExplorePage(){
     {nav.slug ? <>
       <SiteHeader sticky/>
       <main className="cb-explore-detail-shell">
-      {detail?<PlaceDetail place={detail} onBack={import.meta.env.BASE_URL+'#'+nav.section} places={places}/>:
+      {detail?<PlaceDetail place={detail} onBack={import.meta.env.BASE_URL+'#'+nav.section}/>:
       <div className="cb-explore-no-data"><h1>{loaded?'Luogo non trovato':'Caricamento in corso…'}</h1><a href={'#'+nav.section}>Torna all'elenco</a></div>}
       </main>
     </> : <div className="cb-explore-screen">

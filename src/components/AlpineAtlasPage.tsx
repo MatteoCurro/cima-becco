@@ -78,7 +78,7 @@ function RouteGroup({title,items}:{title:string;items:Route[]}) {
   </section>;
 }
 
-export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onBack: string; places: AlpinePlace[] }) {
+export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: string }) {
   const [nearby,setNearby]=useState<Route[]>([]);
   const [loading,setLoading]=useState(true);
   const [water,setWater]=useState<AlpineWaterPoint[]>([]);
@@ -304,7 +304,7 @@ export function AlpineAtlasPage() {
     <main className={slug ? 'cb-atlas-shell cb-atlas-shell--detail' : 'cb-atlas-shell'}>
       {!slug && <div className="cb-atlas-overline">CIMA BECCO / ESPLORA</div>}
       {!slug && <AtlasHeader section={section}/>} 
-      {place ? <PlaceDetail place={place} onBack={`#atlante/${section}`} places={allSectionPlaces}/>
+      {place ? <PlaceDetail place={place} onBack={`#atlante/${section}`}/>
         : trek ? <TrekDetail trek={trek} onBack="#atlante/trekking"/>
         : slug ? <div className="cb-atlas-empty"><h1>Questa tappa ci sfugge.</h1><p>Il dato non è ancora disponibile in questo atlante.</p><a href={`#atlante/${section}`}>Vai all'elenco</a></div>
         : <>
