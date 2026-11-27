@@ -93,8 +93,55 @@ export type TrackedEvent =
   | 'hut_claim_request'
   | 'water_source_open';
 
+/** Solo per diagnosi di questo browser. Nessun cookie e nessun evento remoto
+ * finché non sarà attivo un backend di statistiche con policy e rate limit. */
+export interface LocalInsightEvent {
+  event: TrackedEvent;
+  label: string;
+  at: string;
+}
+const LOCAL_KEY='cimabecco:insights:v1';
+const INTERESTING = new Set<TrackedEvent>([
+  'search','route_open','gpx_download','route_bookmarked','atlas_place_view',
+  'atlas_place_search','hut_claim_request','water_source_open',
+]);
+export function localInsights():LocalInsightEvent[]{
+  try{
+    const events=JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]') as LocalInsightEvent[];
+    return Array.isArray(events)?events.filter(x=>x&&typeof x.event==='string'&&typeof x.at==='string').slice(-1800):[];
+  }catch{return [];}
+}
+function recordLocal(event:TrackedEvent,label=''):void{
+  if(typeof window==='undefined'||!INTERESTING.has(event))return;
+  try{
+    const now=new Date().toISOString();const events=localInsights();
+    const last=events[events.length-1];
+    if(last&&last.event===event&&last.label===label&&Date.now()-Date.parse(last.at)<1200)return;
+    events.push({event,label:label.trim().slice(0,100),at:now});
+    localStorage.setItem(LOCAL_KEY,JSON.stringify(events.slice(-1800)));
+  }catch{/* modalità privata: no storage */}
+}
+export function summarizeInsights(events:LocalInsightEvent[]=localInsights()){
+  const counts:Record<string,number>={};
+  const subjects=new Map<string,Map<string,number>>();
+  for(const row of events){
+    counts[row.event]=(counts[row.event]||0)+1;
+    if(!row.label)continue;
+    if(!subjects.has(row.event))subjects.set(row.event,new Map());
+    const map=subjects.get(row.event)!;
+    map.set(row.label,(map.get(row.label)||0)+1);
+  }
+  const top=(event:TrackedEvent,limit=12)=>[...(subjects.get(event)||new Map()).entries()]
+    .sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,limit)
+    .map(([name,total])=>({name,total}));
+  return {total:events.length,counts,
+    searches:top('search'),routes:top('route_open'),places:top('atlas_place_view'),
+    downloads:top('gpx_download'),bookmarks:top('route_bookmarked')};
+}
+
 /** Record one product action (and an optional short label, e.g. the route). */
 export function track(event: TrackedEvent, label?: string): void {
+  recordLocal(event,label);
   if (!CLARITY_ID || typeof window === 'undefined' || !window.clarity) return;
   window.clarity('event', event);
   if (label) window.clarity('set', event, label.slice(0, 80));
