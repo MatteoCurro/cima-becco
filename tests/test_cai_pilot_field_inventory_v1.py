@@ -1,4 +1,4 @@
-"""Coverage contract for 108 exact field *names* observed in the PR8 CAI pilot.
+"""Coverage contract for 127 exact field *names* observed in the PR8 CAI pilot.
 
 The fixture includes NO field values, no personal data, no media. Matching
 the full observed name set prevents a silent loss of useful metadata.
@@ -18,10 +18,10 @@ class CAIPilotFieldInventoryTests(unittest.TestCase):
         cls.rules = json.loads((ROOT / "scripts" / "cai_refuge_field_map_v1.json").read_text())
         cls.schema = json.loads((ROOT / "scripts" / "refuge_field_registry_v1.json").read_text())
 
-    def test_all_108_observed_names_are_accounted_for(self):
+    def test_all_127_observed_names_are_accounted_for(self):
         names = [x["name"] for x in self.inv["fieldNames"]]
-        self.assertEqual(self.inv["totalDistinctFieldNames"], 108)
-        self.assertEqual(len(names), 108)
+        self.assertEqual(self.inv["totalDistinctFieldNames"], 127)
+        self.assertEqual(len(names), 127)
         self.assertEqual(len(set(names)), 108)
         self.assertEqual(set(x["state"] for x in self.inv["fieldNames"]), {
             "mapped_for_restricted_staging", "field_level_review_needed",
@@ -35,9 +35,9 @@ class CAIPilotFieldInventoryTests(unittest.TestCase):
         self.assertEqual(mapped, found)
         self.assertEqual(Counter(x["state"] for x in self.inv["fieldNames"]), {
             "mapped_for_restricted_staging": 47,
-            "field_level_review_needed": 35,
+            "field_level_review_needed": 50,
             "internal_reference": 8,
-            "privacy_restricted": 18,
+            "privacy_restricted": 22,
         })
 
     def test_private_fields_are_always_denied(self):
