@@ -11,6 +11,8 @@ on:
       - scripts/cai_refuge_field_map_v1.json
       - scripts/normalize_cai_refuge_v1.py
       - tests/test_normalize_cai_refuge_v1.py
+      - scripts/reconcile_cai_osm_refuges_v1.py
+      - tests/test_reconcile_cai_osm_refuges_v1.py
       - scripts/metadata_source_registry_v1.json
       - scripts/audit_metadata_spec_v1.py
       - tests/test_metadata_spec_coverage_v1.py
@@ -20,6 +22,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: cima-refuges-v1-test
@@ -42,6 +45,8 @@ jobs:
           python scripts/audit_metadata_spec_v1.py
       - name: Mapping CAI offline sui campi campione (senza rete)
         run: python -m unittest discover -s tests -p 'test_normalize_cai_refuge_v1.py' -v
+      - name: CAI↔OSM identity matching unitario (senza rete)
+        run: python -m unittest discover -s tests -p 'test_reconcile_cai_osm_refuges_v1.py' -v
       - name: Import pilota su snapshot esistente (senza rete)
         run: python scripts/import_refuges_v1.py --strict
       - name: 'Controlla idempotenza: secondo import byte-identico'
@@ -52,6 +57,20 @@ jobs:
           python scripts/import_refuges_v1.py --strict
           find build/import-refuges-v1 -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/refuges-after.txt
           diff -u /tmp/refuges-before.txt /tmp/refuges-after.txt
+      - name: Replay opzionale del campione CAI già esaminato nella PR 8
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/cima-cai-replay
+          # L'artefatto della PR8 dura 14 giorni: se è scaduto NON bloccare i test.
+          if curl --silent --show-error --fail --location --retry 2             -H "Authorization: Bearer $GH_TOKEN"             -H 'Accept: application/vnd.github+json'             "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/15220728348/zip"             --output /tmp/cima-cai-replay/previous-pilot.zip; then
+            unzip -p /tmp/cima-cai-replay/previous-pilot.zip cai-shelter-records.json               > /tmp/cima-cai-replay/cai-sample.json
+            python scripts/reconcile_cai_osm_refuges_v1.py               --cai-sample /tmp/cima-cai-replay/cai-sample.json               --output build/import-refuges-v1/cai-osm-match-review.json
+          else
+            echo "Artefatto PR8 non più disponibile: test offline eseguiti; replay saltato"
+          fi
       - name: Report e JSON di staging, non pubblicati
         uses: actions/upload-artifact@v4
         with:
