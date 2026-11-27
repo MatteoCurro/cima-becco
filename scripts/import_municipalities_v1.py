@@ -182,8 +182,10 @@ def headered_rows(matrices, required):
 
 ISTAT_CODE = ("codice comune formato alfanumerico", "codice istat del comune alfanumerico",
               "codice istat comune", "codice comune", "codice istat")
-ISTAT_NAME = ("denominazione in italiano e straniero", "denominazione italiana e straniera",
-              "denominazione in italiano", "denominazione del comune", "denominazione comune", "comune")
+# Prefer the *Italian* official name when both Italian and bilingual names
+# exist in the ISTAT workbook (e.g. South Tyrol); retain alternate names below.
+ISTAT_NAME = ("denominazione in italiano", "denominazione italiana e straniera",
+              "denominazione del comune", "denominazione comune", "comune")
 ISTAT_REGION = ("denominazione regione", "regione")
 ISTAT_PROVINCE = ("denominazione dell unita territoriale sovracomunale",
                   "denominazione unita territoriale sovracomunale", "provincia")
@@ -282,9 +284,13 @@ def municipality(row, cols, retrieved_at):
     province_sigla = field(row, cols, "sigla automobilistica")
     cadastral = field(row, cols, "codice catastale del comune")
     local_name = field(row, cols, "denominazione altra lingua")
-    aliases = ([{"name": local_name, "language": None,
-                 "sourceId": source_id, "sourceUrl": ISTAT_URL}]
-               if local_name and header(local_name) != header(name) else [])
+    bilingual_name = field(row, cols, "denominazione italiana e straniera")
+    aliases = []
+    for alternate in (local_name, bilingual_name):
+        if alternate and header(alternate) != header(name) and not any(
+                header(x["name"]) == header(alternate) for x in aliases):
+            aliases.append({"name": alternate, "language": None,
+                            "sourceId": source_id, "sourceUrl": ISTAT_URL})
     return {
         "id": "municipality:" + str(uuid5(NAMESPACE, "IT/ISTAT/" + code)),
         "kind": "municipality", "subtype": "italian_municipality",
