@@ -113,14 +113,14 @@ describe('elevation', () => {
     expect(result.flags.map((f) => [f.id, f.severity])).toEqual([['no-elevation', 'advisory']]);
   });
 
-  it('holds an altimeter that jumps hundreds of metres in a second', () => {
+  it('non blocca altimetri rumorosi finché il controllo verticale resta esplicitamente disabilitato', () => {
     const { points, times } = walk(100, { stepS: 2, ele: (i) => (i === 40 ? 900 : 10) });
-    expect(ids(assess({ points, times }))).toContain('implausible-elevation');
+    expect(ids(assess({ points, times }))).not.toContain('implausible-elevation');
   });
 
-  it('holds noise that climbs hundreds of metres per km', () => {
+  it('non blocca dislivelli ripidi mentre il limite m/km è sospeso per evitare falsi positivi', () => {
     const { points, times } = walk(400, { stepS: 5, degPerStep: 0.00009, ele: (i) => i * 8 }); // 8 m per ~10 m
-    expect(ids(assess({ points, times }))).toContain('implausible-elevation');
+    expect(ids(assess({ points, times }))).not.toContain('implausible-elevation');
   });
 
   it('does not check terrain-filled heights', () => {
