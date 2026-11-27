@@ -198,3 +198,49 @@ test('navbar: la ricerca globale resta disponibile in tutte le sezioni', async (
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
   }
 });
+
+test('permalink borgo privo di metadati: pagina vera e mappa locale',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/borghi/osm-n-240044790/');
+  await expect(page.locator('.cb-location-profile h1')).toContainText('Abfaltersbach',{timeout:30_000});
+  await expect(page.locator('.cb-location-sidebar .cb-atlas-map')).toBeVisible();
+  await expect(page.locator('.cb-location-sidebar .cb-map-layer-switches')).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
+});
+
+test('unico selettore: cambia categoria e mostra solo i filtri pertinenti',async({page})=>{
+  await page.setViewportSize({width:1280,height:850});
+  await page.goto('/#rifugi');
+  const selector=page.getByRole('navigation',{name:'Esplora e filtra le risorse'});
+  await expect(selector.getByRole('tab',{name:'Rifugi'})).toHaveAttribute('aria-selected','true');
+  await expect(selector.getByRole('button',{name:'Con recapiti'})).toBeVisible();
+  await selector.getByRole('tab',{name:'Sentieri'}).click();
+  await expect(page).toHaveURL(/#routes$/);
+  await expect(page.locator('.cb-browse-tabs a.is-active')).toHaveText('Sentieri');
+  await expect(page.getByRole('group',{name:'Tipologia di sentiero'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Con recapiti'})).toHaveCount(0);
+});
+
+test('cima: hero nella colonna sinistra e mappa nel 58% destro',async({page})=>{
+  test.setTimeout(90_000);
+  const response=await page.request.get('/data/venues.json');
+  expect(response.ok()).toBeTruthy();
+  const dataset=await response.json() as {venues:{slug:string}[]};
+  const slug=dataset.venues[0].slug;
+  await page.setViewportSize({width:1366,height:800});
+  await page.goto('/#venue/'+slug);
+  await expect(page.locator('.venue-detail-content.cb-venue-document')).toBeVisible({timeout:45_000});
+  await expect(page.locator('.cb-venue-hero-media')).toBeVisible();
+  await expect(page.locator('.cb-venue-map-pane .mini-map')).toBeVisible();
+  const sizes=await page.evaluate(()=>{
+    const left=document.querySelector('.cb-venue-grid>.venue-detail-head')!.getBoundingClientRect();
+    const right=document.querySelector('.cb-venue-grid>.venue-detail-side')!.getBoundingClientRect();
+    return {left:left.width,right:right.width,space:innerWidth,overflow:document.documentElement.scrollWidth};
+  });
+  expect(sizes.left).toBeGreaterThan(450);
+  expect(sizes.right).toBeGreaterThan(sizes.left);
+  expect(sizes.overflow).toBeLessThanOrEqual(1368);
+  await page.setViewportSize({width:390,height:844});
+  const mobile=await page.locator('.cb-venue-map-pane').boundingBox();
+  expect(mobile?.width||0).toBeGreaterThanOrEqual(388);
+});

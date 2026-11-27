@@ -100,7 +100,7 @@ export function AlpineExplorePage(){
               <input type="search" placeholder={'Cerca un '+config.singular+'…'} value={query} onChange={e=>setQuery(e.target.value)} />
             </label>
           </div>
-          <div className="cb-explore-result-header"><h2>{loaded?count:'…'} {nav.section} <span>in elenco</span></h2>
+          <div className="cb-explore-result-header"><h1>{loaded?count:'…'} {nav.section} <span>in elenco</span></h1>
             <p>Seleziona una scheda per individuarla sulla mappa, poi apri il dettaglio.</p>
           </div>
           {loaded&&!filtered.length&&<div className="cb-explore-empty"><strong>Nessun risultato con questi filtri.</strong><p>Prova a rimuovere il filtro sulle fotografie o a cercare un'altra località.</p><button type="button" onClick={()=>{setOnlyPhoto(false);setOnlyContacts(false);setQuery('');}}>Mostra tutti</button></div>}
