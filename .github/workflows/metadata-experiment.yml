@@ -1,0 +1,58 @@
+name: Experiment — metadata-only atlas
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/metadata_atlas_engine.mjs'
+      - 'scripts/metadata_route_catalog.mjs'
+      - 'tests/metadata_engine.test.mjs'
+      - '.github/workflows/metadata-experiment.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test del motore
+        run: node --test tests/metadata_engine.test.mjs
+      - name: Normalizza tutte le schede luoghi (no GPS)
+        run: node scripts/metadata_atlas_engine.mjs
+      - name: Normalizza tutti i metadati sentieri esistenti (no GPS)
+        run: node scripts/metadata_route_catalog.mjs
+      - name: Acquisizione controllata dei 934 identificativi Wikidata
+        run: node scripts/metadata_atlas_engine.mjs --fetch --limit 934
+      - name: Salva la cache verificabile solo nel branch sperimentale
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add experiments/metadata/wikidata-cache.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "data: cache Wikidata metadati, branch di ricerca"
+          git push origin "HEAD:${HEAD_REF}"
+      - name: Conserva report e campione metadata per revisione
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-metadata-experiment
+          path: |
+            experiments/metadata/atlas-metadata.json
+            experiments/metadata/simulation-report.json
+            experiments/metadata/route-metadata.json
+            experiments/metadata/route-place-relations.json
+            experiments/metadata/route-simulation-report.json
+            experiments/metadata/wikidata-cache.json
+          if-no-files-found: warn
+          retention-days: 7
