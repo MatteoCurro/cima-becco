@@ -128,8 +128,15 @@ def summarize_updated_at(payload):
         if not isinstance(data, list):
             data = []
         sample = data[0] if data else None
+        numeric_keys = [key for key in payload if isinstance(key, str) and key.isdigit()]
+        value_types = Counter(shape(value) for value in payload.values())
+        sample_value = next(iter(payload.values()), None)
         return {"responseType": "object",
-                "topLevelKeys": sorted(payload),
+                "topLevelKeyCount": len(payload),
+                "numericTopLevelKeys": len(numeric_keys),
+                "valueTypes": dict(sorted(value_types.items())),
+                "firstValueObjectKeys": (sorted(sample_value)[:70]
+                                         if isinstance(sample_value, dict) else []),
                 "dataItems": len(data),
                 "firstItemType": shape(sample),
                 "firstItemKeys": sorted(sample) if isinstance(sample, dict) else []}
