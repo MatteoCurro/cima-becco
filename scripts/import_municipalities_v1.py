@@ -223,8 +223,8 @@ def municipality(row, cols, retrieved_at):
         ("provinceName", province, None),
         ("italianName", field(row, cols, "denominazione in italiano"), None),
         ("localName", field(row, cols, "denominazione altra lingua"), None),
-        ("elevationM", number(field(row, cols, "altitudine del centro metri", "altitudine del centro")), "m"),
-        ("surfaceKm2", number(field(row, cols, "superficie territoriale kmq", "superficie territoriale km2")), "km2"),
+        ("quotaCentroM", number(field(row, cols, "altitudine del centro metri", "altitudine del centro")), "m"),
+        ("superficieKm2", number(field(row, cols, "superficie territoriale kmq", "superficie territoriale km2")), "km2"),
     ]
     for key, value, unit in values:
         if value is not None:
@@ -284,12 +284,12 @@ def attach_mayors(entities, rows, cols, retrieved_at):
             continue
         person, election_day = entries[0]
         attached += 1
-        entity["facts"]["mayorNameReported"] = fact(person, "dait:mayors:" + code, DAIT_URL,
+        entity["facts"]["sindacoNome"] = fact(person, "dait:mayors:" + code, DAIT_URL,
                                                      as_of=retrieved_at, valid_at=election_day)
-        entity["facts"]["mayorRole"] = fact("Sindaco", "dait:mayors:" + code, DAIT_URL,
+        entity["facts"]["carica"] = fact("Sindaco", "dait:mayors:" + code, DAIT_URL,
                                             as_of=retrieved_at)
         if election_day:
-            entity["facts"]["mayorElectionDate"] = fact(election_day, "dait:mayors:" + code,
+            entity["facts"]["dataElezione"] = fact(election_day, "dait:mayors:" + code,
                                                          DAIT_URL, as_of=retrieved_at)
         # A DAIT snapshot documents the office at extraction, NOT open-ended current tenure.
     return {"mayorsMatched": attached, "mayorsAmbiguous": ambiguous,
@@ -334,7 +334,11 @@ def reconcile_osm(entities, places, qid_map):
         if header(place.get("name")) != header(entity["name"]):
             review.append({"qid": qid, "reason": "name_discrepancy", "istatCode": code})
             continue
-        entity["sourceIds"].update({"wikidata": qid, "osm": place.get("osmUrl")})
+        osm_match = re.fullmatch(r"https://www\\.openstreetmap\\.org/(node|way|relation)/([1-9]\\d*)", str(place.get("osmUrl") or ""))
+        if not osm_match:
+            review.append({"qid": qid, "reason": "invalid_osm_source", "istatCode": code})
+            continue
+        entity["sourceIds"].update({"wikidata": qid, "osm": osm_match.group(1) + "/" + osm_match.group(2)})
         entity["geo"]["point"] = {"lat": lat, "lng": lng}
         entity["geo"]["method"] = "osm_settlement_point_not_administrative_centroid"
         entity["geo"]["sourceUrl"] = place.get("osmUrl")
