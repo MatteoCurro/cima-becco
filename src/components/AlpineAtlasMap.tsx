@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import '../alpineMap.css';
 import { Map as MapLibreMap, Marker, NavigationControl, Popup, type GeoJSONSource } from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import '../map/worker';
 import type { Route } from '../types';
 import { MAP_STYLE_URL } from '../map/constants';
 import { installMountainBasemap, MountainBasemapControl } from '../map/mountainBasemap';
