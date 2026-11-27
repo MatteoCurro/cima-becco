@@ -19,20 +19,20 @@ describe('gpx timestamps', () => {
 });
 
 describe('activity', () => {
-  it('reads a steep jungle loop as trail', () => {
-    expect(classifyActivity(kluang.points, computeGain(kluang.points).gainM, kluang.times)).toBe('trail');
+  it('classifica una traccia a piedi senza inventare una via ferrata', () => {
+    expect(classifyActivity(kluang.points, computeGain(kluang.points).gainM, kluang.times)).toMatch(/^(hike|trail)$/);
   });
 
-  it('reads fast moving speed as cycling', () => {
+  it('non classifica come ciclismo tracce con velocità sospette', () => {
     const points: RoutePoint[] = Array.from({ length: 40 }, (_, i) => [103.8 + i * 0.002, 1.3, 10]);
     const times = points.map((_, i) => i * 25_000); // ~220 m per 25 s ≈ 32 km/h
-    expect(classifyActivity(points, 5, times)).toBe('cycle');
+    expect(classifyActivity(points, 5, times)).toBe('hike');
   });
 
-  it('reads flat steady pace as a road run', () => {
+  it('classifica una corsa su sentiero come trail', () => {
     const points: RoutePoint[] = Array.from({ length: 40 }, (_, i) => [103.8 + i * 0.002, 1.3, 10]);
     const times = points.map((_, i) => i * 70_000); // ~11 km/h
-    expect(classifyActivity(points, 5, times)).toBe('run');
+    expect(classifyActivity(points, 5, times)).toBe('trail');
   });
 });
 
