@@ -16,7 +16,7 @@ import re
 import unicodedata
 
 ROOT = Path(__file__).resolve().parents[1]
-GENERIC = {"rifugio", "bivacco", "capanna", "casa", "alpina", "alpin", "albergo",
+GENERIC = {"rifugio", "bivacco", "capanna", "casa", "alpina", "alpin", "albergo", "cai",
            "mountain", "hut", "hutte", "huette", "refuge", "chalet", "il", "la",
            "lo", "dei", "degli", "della", "del", "di", "da", "d", "the"}
 CANDIDATE_RADIUS_M = 250
