@@ -518,6 +518,29 @@ test('Font Awesome: simboli inline SVG, nessun emoji di fallback nelle schede',a
 });
 
 
+test('scheda bivacco: dossier coerente, accesso e mappa responsive',async({page})=>{
+  test.setTimeout(100_000);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#bivacchi');
+  const first=page.locator('.cb-explore-card-detail').first();
+  await expect(first).toBeVisible({timeout:30_000});
+  await first.click();
+  await expect(page.locator('.cb-refuge-profile--bivacco h1')).toBeVisible({timeout:30_000});
+  await expect(page.locator('.cb-refuge-gallery')).toBeVisible();
+  await expect(page.locator('.cb-hut-safety-notice')).toBeVisible();
+  await expect(page.locator('#cb-refuge-stay')).toBeAttached();
+  await expect(page.locator('#cb-place-map')).toBeAttached();
+  await expect(page.locator('.cb-refuge-profile')).not.toContainText('Il luogo, secondo le fonti');
+  await expect(page.locator('.cb-refuge-profile')).not.toContainText("La disponibilità d'acqua non ne certifica la potabilità");
+  for(const width of [320,390,768,1280]){
+    await page.setViewportSize({width,height:900});
+    await expect(page.locator('.cb-refuge-profile h1')).toBeVisible();
+    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
+    expect(overflow,'overflow bivacco '+width).toBeLessThanOrEqual(3);
+  }
+});
+
 test('scheda rifugio: profilo completo CAI, mappa non ridimensionata e sezioni navigabili',async({page})=>{
   test.setTimeout(90_000);
   await page.emulateMedia({reducedMotion:'reduce'});
