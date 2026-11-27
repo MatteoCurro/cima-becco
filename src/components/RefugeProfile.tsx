@@ -73,7 +73,8 @@ const OPEN=['openingHoursReported','openingHours','seasonality','openingStatus',
 const SHELTER_STAY=['bedsTotal','capacityReported','bedsWinter','winterRoomReported','winterRoom','winterShelter'];
 const SHELTER_RULES=['keysRequired','emergencyUseOnly','reservationsRequired','usageRules',
   'accessRestrictions','accessRules','openingHoursReported','openingHours','seasonality','openingStatus','currentOpenStatus'];
-const SHELTER_MANAGER=['owner','owningSection','operatorReported','maintenanceProvider','maintenanceCheckedAt','lastInspectionAt'];
+const SHELTER_MANAGER=['owner','owningSection','manager','operatorReported','selfManaged',
+  'maintenanceProvider','maintenanceCheckedAt','lastInspectionAt'];
 const MANAGEMENT=['manager','operatorReported','owner','owningSection','selfManaged'];
 const PRICES=['nightlyPrice','halfBoardPrice','memberDiscount','priceValidUntil'];
 const TERRITORY=['mountainGroupNameReported','municipalityNameReported','localityNameReported',
@@ -86,6 +87,7 @@ const COVERED=new Set([
   ...REFUGE_AMENITIES.map(s=>s.key),...BIVOUAC_AMENITIES.map(s=>s.key),
   'elevationM','phone','email','website','accessTrailRef','accessDifficultyOfficial',
   'accessDurationOfficial','description','address','bookingUrl','iso14001','aliases',
+  'heatingTypeReported','waterSourceTypeReported',
 ]);
 
 function value(place:AlpinePlace,key:string):AtlasFact|null{
@@ -146,7 +148,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
   const hasOpen=OPEN.some(key=>value(place,key)!==null);
   const hasRules=isShelter&&SHELTER_RULES.some(key=>value(place,key)!==null);
   const hasManager=(isShelter?SHELTER_MANAGER:MANAGEMENT).some(key=>value(place,key)!==null);
-  const hasPrice=!isShelter&&(PRICES.some(key=>value(place,key)!==null)||Boolean(place.fee));
+  const hasPrice=PRICES.some(key=>value(place,key)!==null)||Boolean(place.fee);
   const hasAccessDetails=isShelter&&['accessTrailRef','accessDifficultyOfficial','accessDurationOfficial'].some(key=>value(place,key)!==null);
   const hasTerritory=TERRITORY.some(key=>value(place,key)!==null);
   const hasHistory=HISTORY.some(key=>value(place,key)!==null)||Boolean(place.history&&place.historySourceUrl);
@@ -239,6 +241,10 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
     {knownServices.length>0&&<RefugeBlock id="cb-refuge-services" kicker={isShelter?'DENTRO IL RICOVERO':'VITA IN RIFUGIO'}
       title={isShelter?'Dotazioni del bivacco':'Cosa trovi una volta arrivato'}>
       <HutServices place={place}/>
+      {isShelter&&['heatingTypeReported','waterSourceTypeReported'].some(key=>value(place,key)!==null)&&
+        <div className="cb-hut-extra-features"><h3>Caratteristiche delle dotazioni</h3>
+          <FactLines place={place} keys={['heatingTypeReported','waterSourceTypeReported']}/>
+        </div>}
     </RefugeBlock>}
     <RefugeBlock id="cb-refuge-access" kicker="NEL TERRITORIO" title="Come arrivare e sentieri" icon="person-hiking">
       {place.access&&<p className="cb-refuge-section-intro"><strong>Accesso:</strong> {place.access}</p>}
