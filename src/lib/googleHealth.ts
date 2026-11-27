@@ -291,7 +291,8 @@ export async function listGoogleWorkouts(): Promise<GoogleWorkout[]> {
   const result = await healthGet(`${HEALTH}/users/me/dataTypes/exercise/dataPoints?page_size=50`, '/api/ghealth?kind=workouts', 'application/json');
   if (!result.ok) throw healthError(result.status, result.body);
   const data = JSON.parse(result.body) as { dataPoints?: DataPoint[] };
-  return (data.dataPoints ?? []).map(toWorkout).filter((w): w is GoogleWorkout => Boolean(w));
+  return (data.dataPoints ?? []).map(toWorkout).filter((w): w is GoogleWorkout =>
+    Boolean(w) && /RUN|JOG|WALK|HIK|STAIR|TREADMILL/i.test(w!.type));
 }
 
 /** The workout's GPS route as TCX text (Google's own export). Needs BOTH the
@@ -304,10 +305,8 @@ export async function fetchWorkoutTcx(id: string): Promise<string> {
   return result.body;
 }
 
-/** Google's exerciseType → our icon set; unknowns draw as a trail glyph. */
+/** Importa solo attività a piedi; le sessioni ciclistiche vengono escluse a monte. */
 export function workoutActivity(type: string): RouteActivity {
-  if (/RUN|JOG/i.test(type)) return 'run';
-  if (/WALK|HIK|STAIR|TREADMILL/i.test(type)) return 'trail';
-  if (/BIK|CYC/i.test(type)) return 'cycle';
-  return 'trail';
+  if (/RUN|JOG/i.test(type)) return 'trail';
+  return 'hike';
 }
