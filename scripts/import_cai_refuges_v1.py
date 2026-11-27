@@ -289,6 +289,8 @@ def build_catalogue(rows, details_by_id, mapping, proposals, previous=None, *, c
                       if x.get("caiId")}
     records, errors = [], []
     for row in rows:
+        if row.get("published") is False or row.get("deleted_at") not in (None, ""):
+            continue
         key = str(row["id_cai"])
         old = previous_by_id.get(key)
         if old and old.get("revision") == row.get("updated_at"):
