@@ -290,6 +290,57 @@ for (const [code, [count]] of Object.entries(index.byCountry)) {
   });
 }
 
+// Presentazione editoriale dei GPX: tenere sincronizzata la logica con src/lib/routeEditorial.ts.
+function trailArea(route) {
+  const p = route.coordinates?.[Math.floor((route.coordinates?.length ?? 1)/2)] ?? [0,0];
+  const [lng,lat] = p;
+  if (lat>46.1 && lat<47.2 && lng>=10.8 && lng<12) return 'Dolomiti occidentali';
+  if (lat>46.1 && lat<47.2 && lng>=12 && lng<13.5) return 'Dolomiti orientali';
+  if (lat>45 && lat<47.8 && lng>=6 && lng<11) return 'Alpi occidentali e centrali';
+  if (lat>45 && lat<47.8 && lng>=11 && lng<17) return 'Alpi orientali';
+  if (lat>43.3 && lat<=45.5) return 'Appennino settentrionale';
+  if (lat>40.5 && lat<=43.5) return 'Appennino centrale';
+  return 'Italia';
+}
+function trailName(route) {
+  const s = (route.name || '').trim();
+  const area = trailArea(route);
+  if (/^sentiero si$/i.test(s)) return 'Sentiero Italia · ' + area;
+  if (/^sentiero\s+\d+[a-z]?$/i.test(s)) return s + ' · ' + area;
+  if (!s || /^route\s*\d+$/i.test(s)) return (route.activity === 'ferrata' ? 'Via ferrata' : 'Escursione') + ' · ' + area;
+  return s;
+}
+function trailMood(route) {
+  if (route.activity === 'ferrata') {
+    const n = parseInt(route.viaFerrataScale || '',10);
+    if (!n) return ['Difficoltà da verificare', ''];
+    if (n<=2) return ['Ferrata poco difficile','Attaccati e vai'];
+    if (n===3) return ['Ferrata impegnativa','Strattona'];
+    return ['Ferrata molto impegnativa',n>=5 ? 'Vai bomber' : 'Braccia in leasing'];
+  }
+  return ({T:['Turistico','Due curve e spiana'],E:['Escursionistico','Si fa sentire'],EE:['Per escursionisti esperti','Non spiana'],EEA:['Esperti con attrezzatura','Vai bomber']})[route.caiDifficulty] || ['Difficoltà da verificare',''];
+}
+function trailText(route) {
+  const raw = (route.description || '').trim();
+  if (raw && !/Tracciato OSM da verificare|non certifica percorribilità|^GPX route/i.test(raw)) return raw;
+  const area=trailArea(route), len=km(route.distanceM);
+  const start=route.activity==='ferrata' ? 'Questo tratto attrezzato' : 'Questo percorso a piedi';
+  const ref=route.trailRef ? ' Segnavia o riferimento: ' + route.trailRef + '.' : '';
+  const gain=route.elevationAvailable!==false ? ' Il dislivello positivo stimato è '+ metres(route.gainM) + '.' : '';
+  const tech=route.activity==='ferrata' ? ' È una via ferrata: prima di partire consulta una relazione tecnica aggiornata.' : route.caiDifficulty ? ' La classificazione riportata è CAI '+route.caiDifficulty+'.' : '';
+  return start + ' attraversa ' + area + ' per circa '+len + (route.loop ? ', con andamento ad anello' : '') + '.' + ref + gain + tech;
+}
+function routeSketch(route) {
+  const pts=route.coordinates || [];
+  if (pts.length<2) return '';
+  const minx=Math.min(...pts.map(p=>p[0])), maxx=Math.max(...pts.map(p=>p[0]));
+  const miny=Math.min(...pts.map(p=>p[1])), maxy=Math.max(...pts.map(p=>p[1]));
+  const dx=Math.max(.0001,maxx-minx),dy=Math.max(.0001,maxy-miny);
+  const scale=Math.min(500/dx,170/dy);
+  const ox=(560-dx*scale)/2,oy=(230-dy*scale)/2;
+  const path=pts.filter((_,i)=>i%Math.max(1,Math.ceil(pts.length/240))===0||i===pts.length-1).map((p,i)=>(i?'L':'M')+(ox+(p[0]-minx)*scale).toFixed(1)+' '+(230-oy-(p[1]-miny)*scale).toFixed(1)).join(' ');
+  return '<div class="route-sketch"><div class="route-sketch-caption">IL TRACCIATO · '+escape(trailArea(route))+'</div><svg viewBox="0 0 560 230" role="img" aria-label="Anteprima schematica del tracciato"><path d="'+path+'" fill="none" stroke="#355d47" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" /></svg><small>Rappresentazione schematica. Apri la mappa per il dettaglio.</small></div>';
+}
 // Committed GPX routes.
 for (const route of routes) {
   const passes = (route.venueSlugs ?? []).map((slug) => venues.find((venue) => venue.slug === slug)).filter(Boolean);
