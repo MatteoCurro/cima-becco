@@ -25,5 +25,18 @@ class PhotoMatchingTest(unittest.TestCase):
         self.assertTrue(photos.title_matches_place(
             "San Candido", "Paesaggio San Candido.jpg"))
 
+
+    def test_wikipedia_image_from_exact_page_and_no_coats_of_arms(self):
+        from unittest.mock import patch
+        with patch.object(photos, 'request', return_value={
+            'query': {'pages': {'1': {'pageimage': 'Rifugio_Locatelli.jpg'}}}
+        }):
+            self.assertEqual(photos.wikipedia_page_image('it', 'Rifugio Locatelli'),
+                             'Rifugio_Locatelli.jpg')
+        with patch.object(photos, 'request', return_value={
+            'query': {'pages': {'1': {'pageimage': 'Stemma_Canazei.png'}}}
+        }):
+            self.assertIsNone(photos.wikipedia_page_image('it', 'Canazei'))
+
 if __name__ == "__main__":
     unittest.main()

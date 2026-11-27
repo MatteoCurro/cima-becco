@@ -101,6 +101,8 @@ export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onB
   const arrivals=tagged.filter(route=>!departures.includes(route)&&(route.stops??[]).some(stop=>stop.slug===place.slug&&stop.relation==='arrivo'));
   const passes=tagged.filter(route=>!departures.includes(route)&&!arrivals.includes(route));
   const around=nearby.filter(route=>!tagged.includes(route));
+  const wiki=place.wikipedia?.match(/^([a-z]{2,3}):(.+)$/);
+  const wikiUrl=wiki?`https://${wiki[1]}.wikipedia.org/wiki/${encodeURIComponent(wiki[2].replace(/ /g,'_'))}`:null;
   const kindLabel=place.kind==='rifugio'?'rifugio alpino':place.kind==='bivacco'?'bivacco':'località montana';
   const placeLine=place.kind==='borgo'
     ? `${place.name} è una località di montagna censita nelle Dolomiti.`
@@ -130,15 +132,16 @@ export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onB
         <h1>{place.name}</h1>
         <p className="cb-location-lead">{placeLine}</p>
         {place.description&&<p className="cb-location-story">{place.description}</p>}
+        {wikiUrl&&<a className="cb-location-wiki" href={wikiUrl} target="_blank" rel="noopener noreferrer">Storia e approfondimenti enciclopedici ↗</a>}
         <div className="cb-location-metrics" aria-label="Informazioni principali">
           <div><strong>{place.elevationM!=null?place.elevationM.toLocaleString('it-IT')+' m':'n.d.'}</strong><span>Altitudine{place.elevationSource==='dem'?' stimata':''}</span></div>
           {place.capacity!=null&&<div><strong>{place.capacity}</strong><span>{place.kind==='bivacco'?'Posti indicati':'Posti letto'}</span></div>}
           <div><strong>{loading?'…':nearby.length}</strong><span>Sentieri vicini</span></div>
         </div>
-        {place.fee&&<div className="cb-location-cost">
+        {place.kind!=='borgo'&&<div className="cb-location-cost">
           <span>PREZZI / ACCESSO</span>
-          {/^\s*(yes|no)\s*$/i.test(place.fee)?<strong>{place.fee.toLowerCase()==='no'?'Accesso indicato gratuito':'Tariffa presente, importo da verificare'}</strong>:
-            <><strong>{place.fee}</strong>{/\d/.test(place.fee)&&<span className="cb-location-dobloni" title="Indicazione giocosa basata su una tariffa dichiarata; non è un rating">🪙🪙 <small>Tariffa da verificare</small></span>}</>}
+          {!place.fee?<strong>Tariffa non disponibile: chiedi al gestore</strong>:/^\s*(yes|no)\s*$/i.test(place.fee)?<strong>{place.fee.toLowerCase()==='no'?'Accesso indicato gratuito':'Tariffa presente, importo da verificare'}</strong>:
+            <><strong>{place.fee}</strong>{/\d/.test(place.fee)&&<span className="cb-location-dobloni" title="Indicazione giocosa basata su una tariffa dichiarata; non è un rating">🪙 <small>Importo dichiarato · verifica con il gestore</small></span>}</>}
         </div>}
         <div className="cb-location-actions">
           <button type="button" className="cb-location-action-primary" onClick={()=>document.getElementById('cb-place-map')?.scrollIntoView({behavior:'smooth',block:'start'})}>ESPLORA SULLA MAPPA <span aria-hidden="true">↗</span></button>
