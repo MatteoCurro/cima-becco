@@ -25,6 +25,7 @@ I nomi tecnici proposti sono *chiavi canoniche*, non una migrazione già impleme
 | slug / slugAliases[] | URL parlante unico, storico alias e redirect/compatibilità legacy | P0 | SEO |
 | shortSummary | Sommario documentato non generico, distinto da contenuti generati automaticamente | P1 | H |
 | description / history | Testi editoriali con fatti e fonti verificabili; eventuale versione multilingue | P1/P2 | B |
+| textSources[] | Riferimenti verificati a testi riutilizzati con autore collettivo/individuale, URL originale, licenza, lingua, data, QID/ID sorgente e distinzione estratto vs testo editoriale originale; vietata attribuzione per sola omonimia | P1 | B, C |
 | geo.point / geo.area | Latitudine, longitudine, eventuale poligono, precisione e metodo | P0 per POI | M |
 | elevationM / elevationMethod | Quota, fonte, datum/precisione quando nota; DEM = stima | P1 | K |
 | administrativeHierarchy | Stato, regione/provincia, comune e ID ufficiale ove pertinente | P1 | B, F |
@@ -63,9 +64,9 @@ Conservare il contratto di [ARCHITECTURE.md](ARCHITECTURE.md): dettaglio desktop
 
 L'attribuzione visibile di **dati, immagini, testi e fotografie** è in una pagina dedicata, `/fonti-e-crediti/`, raggiungibile nel menu/footer e indicizzata. Non inserire crediti fotografici, nomi di autori, licenze, collegamenti alla singola fonte o accordion di crediti all'interno del dossier di ogni luogo. Fanno eccezione i collegamenti **operativi indispensabili** a fonti ufficiali di avvisi/chiusure/restrizioni, il cui contenuto deve essere immediatamente verificabile per ragioni di sicurezza.
 
-La centralizzazione riguarda **soltanto la visualizzazione**, non la conservazione: i campi `facts{}`, `factsAlternatives[]`, `media[]`, `geo`, `relations[]` e `sourceIds{}` devono **continuare a contenere fonte, URL, autore, licenza, validità, timestamp, metodo e identità originali**. L'indice pubblico `credits-v1.json` è derivato dagli stessi dati pubblicati, non una seconda verità o una tabella compilata a mano. I contenuti provenienti da CAI conservano gli identificativi ufficiali e il riuso dichiarato dall'utente titolare del progetto; non servono verifiche ripetute sui permessi CAI.
+La centralizzazione riguarda **soltanto la visualizzazione**, non la conservazione: i campi `facts{}`, `factsAlternatives[]`, `media[]`, `textSources[]`, `geo`, `relations[]` e `sourceIds{}` devono **continuare a contenere fonte, URL, autore, licenza, validità, timestamp, metodo e identità originali**. L'indice pubblico `credits-v1.json` è derivato dagli stessi dati pubblicati, non una seconda verità o una tabella compilata a mano. I contenuti provenienti da CAI conservano gli identificativi ufficiali e il riuso dichiarato dall'utente titolare del progetto; non servono verifiche ripetute sui permessi CAI.
 
-Per le fotografie, la pagina attribuisce ogni media visibile alla sua **scheda concreta**, con autore/licenza/URL originali, filtri di ricerca e limite di caricamento iniziale. Eventuali casi con metadati incompleti vanno revisionati, non mascherati.
+Per le fotografie, la pagina attribuisce ogni media visibile alla sua **scheda concreta**, con autore/licenza/URL originali, filtri di ricerca e limite di caricamento iniziale. Eventuali casi con metadati incompleti vanno revisionati, non mascherati. Per i testi ripresi da Wikipedia, la verifica del QID della voce e la conservazione della licenza CC BY-SA sono indispensabili; un estratto attribuito resta distinto da una sintesi originale e non può sostituire dati demografici ISTAT datati.
 
 ---
 
