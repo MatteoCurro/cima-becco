@@ -10,13 +10,17 @@
   --ink: #243c31;
   --muted: #66766b;
   --border: #dbe3d8;
-  --accent: #476857;
+  --accent: #ff2677;
+  --cima-hot: #ff2677;
+  --cima-neon: #e4ffbe;
+  --cima-forest: #143d2f;
   --danger: #c13515;
   --shadow-card: 0 6px 16px rgb(0 0 0 / 12%);
   --radius: 12px;
   --topbar-h: 64px;
-  --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
-  --font-display: 'Bitter', Georgia, serif;
+  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Barlow Condensed', sans-serif;
+  --font-impact: 'Barlow Condensed', 'Space Grotesk', sans-serif;
 
   /* Type scale */
   --t1: 13px;
