@@ -19,7 +19,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: cima-becco-municipalities-staging-${{ github.ref }}
+  # Same group for branch push and its PR: avoid duplicate API calls and 429s.
+  group: cima-becco-municipalities-staging-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
