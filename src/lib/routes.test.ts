@@ -88,30 +88,29 @@ describe('filterRoutes: distance and gain bounds', () => {
     expect(slugs(filterRoutes(pool, { ...NO_ROUTE_FILTERS, minDistanceM: 5_000, maxDistanceM: 20_000 }))).toEqual(['mid', 'no-elev']);
   });
 
-  // Estimated times (no tracks here, so climbing counts as gentle): short 30 min,
-  // no-elev (distance only) 55 min, mid 105 min, long 375 min.
+  // Tempi escursionistici: 4 km/80 m circa 65 min; 8 km pianeggianti circa 105 min;
+  // 12 km/300 m circa 210 min. Nessuna velocità ciclistica.
   it('keeps only routes under a maximum estimated time', () => {
-    expect(slugs(filterRoutes(pool, { ...NO_ROUTE_FILTERS, maxDurationS: 3_600 }))).toEqual(['short', 'no-elev']);
+    expect(slugs(filterRoutes(pool, { ...NO_ROUTE_FILTERS, maxDurationS: 7_200 }))).toEqual(['short', 'no-elev']);
   });
 
   it('keeps only routes over a minimum estimated time', () => {
-    expect(slugs(filterRoutes(pool, { ...NO_ROUTE_FILTERS, minDurationS: 3_600 }))).toEqual(['mid', 'long']);
+    expect(slugs(filterRoutes(pool, { ...NO_ROUTE_FILTERS, minDurationS: 7_200 }))).toEqual(['mid', 'long']);
   });
 
   it('brackets routes between an estimated time floor and cap', () => {
-    expect(slugs(filterRoutes(pool, { ...NO_ROUTE_FILTERS, minDurationS: 2_400, maxDurationS: 7_200 }))).toEqual(['mid', 'no-elev']);
+    expect(slugs(filterRoutes(pool, { ...NO_ROUTE_FILTERS, minDurationS: 6_000, maxDurationS: 13_200 }))).toEqual(['mid', 'no-elev']);
   });
 
   it('keeps a route with unknown elevation, timing it by distance alone', () => {
-    expect(slugs(filterRoutes(pool, { ...NO_ROUTE_FILTERS, maxDurationS: 3_300 }))).toContain('no-elev');
+    expect(slugs(filterRoutes(pool, { ...NO_ROUTE_FILTERS, maxDurationS: 7_200 }))).toContain('no-elev');
   });
 
-  it('times a trail slower than a run of the same shape, and a ride quicker', () => {
+  it('distingue i tempi per escursione, trail running e ferrata', () => {
     const trail = { ...short, slug: 'trail-short', activity: 'trail' as const };
-    const ride = { ...short, slug: 'ride-short', activity: 'cycle' as const };
-    // 4.8 km effective: run 30 min, trail 40 min, ride 15 min.
-    expect(slugs(filterRoutes([short, trail, ride], { ...NO_ROUTE_FILTERS, maxDurationS: 1_800 }))).toEqual(['short', 'ride-short']);
-    expect(slugs(filterRoutes([short, trail, ride], { ...NO_ROUTE_FILTERS, minDurationS: 1_800 }))).toEqual(['short', 'trail-short']);
+    const ferrata = { ...short, slug: 'ferrata-short', activity: 'ferrata' as const };
+    expect(slugs(filterRoutes([short, trail, ferrata], { ...NO_ROUTE_FILTERS, maxDurationS: 3_600 }))).toEqual(['trail-short']);
+    expect(slugs(filterRoutes([short, trail, ferrata], { ...NO_ROUTE_FILTERS, minDurationS: 3_600 }))).toEqual(['short', 'ferrata-short']);
   });
 
   it('brackets routes between a gain floor and cap', () => {
