@@ -40,6 +40,7 @@ import type { Route, RoutePoint, Venue } from './types';
 import { ListIcon, MapIcon } from './components/icons';
 import { LocateNote } from './components/LocateNote';
 import { loadLocalRoutes, saveLocalRoutes } from './lib/localRoutes';
+import { loadRouteBySlug, loadRoutesInBounds } from './lib/routeTiles';
 import { logSession } from './lib/training';
 import { TrainingPanel } from './components/TrainingPanel';
 import { AccountPage } from './components/AccountPage';
@@ -230,6 +231,7 @@ function MapApp() {
   const [listOpen, setListOpen] = useState(true);
   const [gpxOpen, setGpxOpen] = useState(() => window.location.hash === '#import');
   const [communityRoutes, setCommunityRoutes] = useState<Route[]>([]);
+  const [tiledRoutes, setTiledRoutes] = useState<Route[]>([]);
   // Settled (loaded or failed): a search can now tell whether a place has routes.
   const [routesReady, setRoutesReady] = useState(false);
   const [publishedRoute, setPublishedRoute] = useState<Route | null>(null);
@@ -444,10 +446,30 @@ function MapApp() {
     return counts;
   }, [localRoutes, communityRoutes]);
 
+  // Gli shard possono includere i percorsi pilota: deduplica per slug conservando la fonte più recente.
   const allRoutes = useMemo(
-    () => [...(dataset?.routes ?? []), ...communityRoutes, ...localRoutes],
-    [dataset, communityRoutes, localRoutes],
+    () => [...new Map(
+      [...(dataset?.routes ?? []), ...tiledRoutes, ...communityRoutes, ...localRoutes]
+        .map((route) => [route.slug, route] as const),
+    ).values()],
+    [dataset, tiledRoutes, communityRoutes, localRoutes],
   );
+  useEffect(() => {
+    if (!viewport || mode !== 'routes') return;
+    let active = true;
+    void loadRoutesInBounds(viewport)
+      .then((loaded) => {
+        if (!active || loaded.length === 0) return;
+        setTiledRoutes((previous) => {
+          const collection = new Map(previous.map((route) => [route.slug, route]));
+          for (const route of loaded) collection.set(route.slug, route);
+          // Evita accumulo indefinito su browser mobile durante l'esplorazione.
+          return [...collection.values()].slice(-6000);
+        });
+      })
+      .catch((error: unknown) => console.warn('Catalogo itinerari non disponibile:', error));
+    return () => { active = false; };
+  }, [viewport, mode]);
   const routeBookmarks = useRouteBookmarks();
   const filteredRoutes = useMemo(() => filterRoutes(allRoutes, routeFilters, routeBookmarks), [allRoutes, routeFilters, routeBookmarks]);
   const selectedRoute = selectedRouteSlug ? allRoutes.find((route) => route.slug === selectedRouteSlug) ?? null : null;
@@ -535,13 +557,22 @@ function MapApp() {
   useEffect(() => {
     if (!linkedRoute || !dataset || !routesReady) return;
     setLinkedRoute(null);
-    // Back to an ordinary map address, so the bar never names a route that is no longer open.
     history.replaceState(null, '', '#routes');
     setMode('routes');
     if (allRoutes.some((route) => route.slug === linkedRoute)) {
       selectRoute(linkedRoute);
     } else {
-      setLocateHint({ title: "That route isn't available", text: 'It may have been removed. Here are the routes on the map.', retry: null });
+      // Carica solo la cella a cui appartiene il percorso condiviso.
+      void loadRouteBySlug(linkedRoute).then((found) => {
+        if (found) {
+          setTiledRoutes((previous) => [...previous.filter((route) => route.slug !== found.slug), found]);
+          selectRoute(found.slug);
+        } else {
+          setLocateHint({ title: 'Percorso non disponibile', text: 'La traccia potrebbe essere stata rimossa. Esplora gli itinerari sulla mappa.', retry: null });
+        }
+      }).catch(() => {
+        setLocateHint({ title: 'Percorso non disponibile', text: 'Impossibile caricare la traccia.', retry: null });
+      });
     }
   }, [linkedRoute, dataset, routesReady, allRoutes, selectRoute]);
 
