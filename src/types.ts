@@ -108,6 +108,16 @@ export interface RouteStop {
   at: number;
 }
 
+/** Presenza geografica vicino alla traccia, non garanzia di acqua o accesso. */
+export interface RouteWaterSource {
+  slug: string;
+  name: string;
+  kind: 'fontanella' | 'sorgente' | 'rubinetto';
+  potable: 'yes' | 'no' | 'unknown';
+  distanceM: number;
+  at: number;
+}
+
 export interface Route {
   slug: string;
   name: string;
@@ -116,6 +126,8 @@ export interface Route {
   venueSlugs: string[];
   /** Rifugi e borghi vicini alla traccia, verificati in fase di importazione. */
   stops?: RouteStop[];
+  /** Fonti idriche fino a 120 m dal GPX; potabilità esplicitamente distinta. */
+  waterSources?: RouteWaterSource[];
 
   distanceM: number;
   gainM: number;
