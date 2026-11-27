@@ -57,7 +57,7 @@ La sonda CAI limitata a quattro dettagli ha confermato **125 nomi di campo**, 11
 
 `openingTime_contact` risulta `value=null` e `data=array` negli esempi reali: i dati strutturati sono **presenti ma ancora da interpretare**, non vanno qualificati come apertura corrente. L'ispezione delle chiavi interne in un singolo record ha rivelato `attributes`, `key`, `layout`; per il calendario definitivo serve il parsing documentato della struttura e del periodo. Le immagini CAI hanno i metadati tecnici della risorsa ma **nessuna licenza singola accertata** nel pilot, pertanto nessuna ripubblicazione.
 
-La specifica REST ufficiale indica `/api/v1/shelters/updatedAt`: **endpoint documentato, risposta non ancora convalidata**. Prima di un job ricorrente valutare checkpoint e idempotenza e soprattutto diritti di riuso. Report CAI pilota solo in artefatti temporanei di staging, non `public/data`.
+La specifica REST ufficiale indica `/api/v1/shelters/updatedAt`: la prova delimitata ha trovato **764 chiavi interne numeriche e 764 timestamp ISO senza fuso orario**. Il planner offline [plan_cai_refuge_delta_v1.py](../scripts/plan_cai_refuge_delta_v1.py) gestisce delta, regressioni, ID interno↔CAI e tombstone senza cancellazioni automatiche; finché il fornitore non conferma il fuso, tali date **NON superano il controllo di import**. L'[adapter media](../scripts/normalize_cai_media_v1.py) conserva UUID/mime/riferimento CAI, mai URL o contenuto in artefatti; le sette immagini CAI osservate non hanno una licenza riutilizzabile verificata. Prima di un job ricorrente valutare checkpoint e idempotenza e soprattutto diritti di riuso. Report CAI pilota solo in artefatti temporanei di staging, non `public/data`.
 
 ## Importatore 1: rifugi da snapshot OSM
 
