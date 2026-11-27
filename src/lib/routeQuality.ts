@@ -82,7 +82,7 @@ function flag(id: QualityFlagId, value: number, threshold: number, unit: Quality
 }
 
 export function assessRoute(input: QualityInput): QualityAssessment {
-  const { points, times = [], activity, hasElevation, deviceElevation, spacing = 'raw' } = input;
+  const { points, times = [], hasElevation, deviceElevation, spacing = 'raw' } = input;
   const flags: QualityFlag[] = [];
 
   const steps = points.slice(1).map((p, i) => haversineM(points[i][0], points[i][1], p[0], p[1]));
