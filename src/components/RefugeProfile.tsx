@@ -15,7 +15,9 @@ import { NearbyAtlasPlaces } from './NearbyAtlasPlaces';
 import { HutClaimRequest } from './HutClaimRequest';
 import { scrollToDetailSection } from '../lib/detailNavigation';
 import { formatAtlasFact, type AtlasFact } from '../lib/atlasDossier';
-import { REFUGE_AMENITIES, refugeFact, refugeOverview, refugeServiceFacts } from '../lib/refugeEditorial';
+import { REFUGE_AMENITIES, refugeFact, refugeOverview } from '../lib/refugeEditorial';
+import { BIVOUAC_AMENITIES, HUT_FACT_GROUP_LABELS, hutAliases, hutServiceFacts, shelterOverview } from '../lib/hutEditorial';
+import { HutServices } from './HutServices';
 import { trailTitle, trailMood } from '../lib/routeEditorial';
 import { resolveRefugeTerritory } from '../lib/atlasConnections';
 import './refugeProfile.css';
@@ -31,6 +33,17 @@ interface RefugeProfileProps {
 
 const FACT_LABELS:Record<string,string>={
   bedsTotal:'Posti letto totali',capacityReported:'Capienza dichiarata',
+  mattressAvailableReported:'Materassi',blanketAvailableReported:'Coperte',
+  stoveAvailableReported:'Stufa',firewoodAvailableReported:'Legna',
+  gasAvailableReported:'Gas',toiletAvailableReported:'Servizi igienici',
+  heatingTypeReported:'Tipo di riscaldamento',waterSourceTypeReported:'Approvisionnement idrico',
+  winterRoomReported:'Locale invernale',maintenanceProvider:'Ente manutentore',
+  maintenanceCheckedAt:'Ultima manutenzione indicata',lastInspectionAt:'Ultimo controllo indicato',
+  accessRestrictions:'Limitazioni d’accesso',reservationsRequired:'Prenotazione richiesta',
+  usageRules:'Regole d’uso',keysRequired:'Chiavi necessarie',
+  emergencyUseOnly:'Solo utilizzo d’emergenza',currentOpenStatus:'Stato attuale dichiarato',
+  accessTrailRef:'Segnavia d’accesso',accessDifficultyOfficial:'Difficoltà d’accesso',
+  accessDurationOfficial:'Tempo d’accesso',
   bedsWinter:'Posti letto invernali',winterShelter:'Ricovero invernale',
   dormitories:'Camerate',largeDormitoriesAvailableReported:'Camerate con più di 4 posti',
   managerBeds:'Posti riservati al gestore',
@@ -57,6 +70,9 @@ const FACT_LABELS:Record<string,string>={
 };
 const STAY=['bedsTotal','capacityReported','bedsWinter','winterRoom','winterShelter','dormitories','largeDormitoriesAvailableReported','managerBeds'];
 const OPEN=['openingHoursReported','openingHours','seasonality','openingStatus','accessRules'];
+const SHELTER_STAY=['bedsTotal','capacityReported','bedsWinter','winterRoomReported','winterRoom','winterShelter'];
+const SHELTER_RULES=['keysRequired','emergencyUseOnly','reservationsRequired','usageRules','accessRestrictions','accessRules','currentOpenStatus'];
+const SHELTER_MANAGER=['owner','owningSection','operatorReported','maintenanceProvider','maintenanceCheckedAt','lastInspectionAt'];
 const MANAGEMENT=['manager','operatorReported','owner','owningSection','selfManaged'];
 const PRICES=['nightlyPrice','halfBoardPrice','memberDiscount','priceValidUntil'];
 const TERRITORY=['mountainGroupNameReported','municipalityNameReported','localityNameReported',
@@ -65,8 +81,10 @@ const HISTORY=['yearBuilt','yearRebuilt','yearOpened','dedication'];
 const SPECIAL=['hospitalityRegistrationId','waterCertification','caiCategory','caiCatalogueStatus'];
 const COVERED=new Set([
   ...STAY,...OPEN,...MANAGEMENT,...PRICES,...TERRITORY,...HISTORY,...SPECIAL,
-  ...REFUGE_AMENITIES.map(s=>s.key), 'elevationM','phone','email','website',
-  'description','address','bookingUrl','iso14001',
+  ...SHELTER_STAY,...SHELTER_RULES,...SHELTER_MANAGER,
+  ...REFUGE_AMENITIES.map(s=>s.key),...BIVOUAC_AMENITIES.map(s=>s.key),
+  'elevationM','phone','email','website','accessTrailRef','accessDifficultyOfficial',
+  'accessDurationOfficial','description','address','bookingUrl','iso14001',
 ]);
 
 function value(place:AlpinePlace,key:string):AtlasFact|null{
@@ -110,41 +128,43 @@ function RouteLine({route}:{route:Route}){
   </a>;
 }
 export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces,water}:RefugeProfileProps){
+  const isShelter=place.kind==='bivacco';
   const facts=place.facts??{};
-  const knownServices=refugeServiceFacts(place);
+  const knownServices=hutServiceFacts(place);
   const territoryLinks=resolveRefugeTerritory(place,allPlaces);
-  const serviceChapters=[
-    {id:'ristoro',title:'Ristoro e pernottamento',description:'Alimentazione e comfort per la sosta.',
-      keys:['meals','kitchen','showers','hotWater','sleepingBagLiner']},
-    {id:'servizi',title:'Connettività ed energia',description:'Comunicazioni, pagamenti e alimentazione elettrica.',
-      keys:['wifi','cardPayments','electricity','mobileSignal','solarPower','hydropower','generatorPower']},
-    {id:'attenzioni',title:'Acqua, accessibilità e sicurezza',description:'Dotazioni utili prima di programmare una salita.',
-      keys:['waterAvailableReported','drinkingWater','outsideWater','pets','accessibility','defibrillator','accessibleToilets']},
-  ].map(chapter=>({...chapter,items:knownServices.filter(item=>chapter.keys.includes(item.key))}))
-    .filter(chapter=>chapter.items.length>0);
+  const aliases=hutAliases(place);
+  const fullDescription=place.description?.trim();
+  const displayKind=isShelter?(place.shelterTypeLabel||'Bivacco alpino'):'Rifugio alpino';
   const arrival=routes.filter(route=>(route.stops??[]).some(stop=>
     stop.slug===place.slug && ['arrivo','partenza'].includes(stop.relation)));
   const pass=routes.filter(route=>!arrival.includes(route) && (route.stops??[]).some(stop=>stop.slug===place.slug));
   const inArea=routes.filter(route=>!arrival.includes(route)&&!pass.includes(route));
   const booking=refugeFact(place,'bookingUrl');
   const bookingHref=typeof booking==='string'&&/^https:\/\//.test(booking)?booking:null;
-  const hasStay=STAY.some(key=>value(place,key)!==null);
+  const hasStay=(isShelter?SHELTER_STAY:STAY).some(key=>value(place,key)!==null);
   const hasOpen=OPEN.some(key=>value(place,key)!==null);
-  const hasManager=MANAGEMENT.some(key=>value(place,key)!==null);
-  const hasPrice=PRICES.some(key=>value(place,key)!==null)||Boolean(place.fee);
+  const hasRules=isShelter&&SHELTER_RULES.some(key=>value(place,key)!==null);
+  const hasManager=(isShelter?SHELTER_MANAGER:MANAGEMENT).some(key=>value(place,key)!==null);
+  const hasPrice=!isShelter&&(PRICES.some(key=>value(place,key)!==null)||Boolean(place.fee));
+  const hasAccessDetails=isShelter&&['accessTrailRef','accessDifficultyOfficial','accessDurationOfficial'].some(key=>value(place,key)!==null);
   const hasTerritory=TERRITORY.some(key=>value(place,key)!==null);
   const hasHistory=HISTORY.some(key=>value(place,key)!==null)||Boolean(place.history&&place.historySourceUrl);
   const hasContact=Boolean(place.phone||place.email||place.website||bookingHref);
   const hasSpecial=SPECIAL.some(key=>value(place,key)!==null);
-  const others=Object.fromEntries(Object.entries(facts).filter(([key,entry])=>!COVERED.has(key)&&!/^iso\d+/i.test(key)&&entry?.value!==null&&entry?.value!==undefined));
-  const extraRecord={...place,facts:others,history:undefined,historySourceUrl:undefined};
+  const others=Object.fromEntries(Object.entries(facts)
+    .filter(([key,entry])=>!COVERED.has(key)&&!/^iso\d+/i.test(key)&&entry?.value!==null&&entry?.value!==undefined)
+    .map(([key,entry])=>[key,{...entry,label:FACT_LABELS[key]||entry.label,
+      group:HUT_FACT_GROUP_LABELS[entry.group||'']||entry.group||'Ulteriori caratteristiche'}]));
+  const extraRecord={...place,facts:others,aliases:[],localNames:[],history:undefined,historySourceUrl:undefined};
+  const hasArchive=Boolean(hasSpecial||Object.keys(others).length||place.climate?.length||
+    place.administrativeHierarchy||place.factsAlternatives?.length||place.technical||place.pitches?.length);
   const galleryLogo=place.media?.find(m=>m.kind==='logo'&&m.reuseAllowed&&m.subjectVerified&&m.url&&m.sourceUrl&&m.licence);
   const logo=place.logo?.url||galleryLogo?.url;
   const items:DetailJumpItem[]=[
-    {id:'cb-refuge-stay',label:'Ospitalità',icon:'bed'},
+    {id:'cb-refuge-stay',label:isShelter?'Utilizzo':'Ospitalità',icon:'bed'},
     ...(knownServices.length?[{id:'cb-refuge-services',label:'Servizi',icon:'wifi' as const}]:[]),
     {id:'cb-refuge-access',label:'Sentieri',icon:'route'},
-    ...(place.description||hasHistory||hasTerritory?[{id:'cb-refuge-story',label:'Il rifugio',icon:'book-open' as const}]:[]),
+    ...(hasHistory||hasTerritory?[{id:'cb-refuge-story',label:isShelter?'Il luogo':'Il rifugio',icon:'book-open' as const}]:[]),
     {id:'cb-refuge-weather',label:'Meteo',icon:'compass'},
     ...(nearbyPlaces.length?[{id:'cb-place-nearby',label:'Dintorni',icon:'location-dot' as const}]:[]),
     {id:'cb-place-map',label:'Mappa',icon:'map'},
@@ -152,25 +172,37 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
   const beds=refugeFact(place,'bedsTotal')??place.capacity;
   const elevation=refugeFact(place,'elevationM')??place.elevationM;
 
-  return <div className="cb-refuge-profile">
+  return <div className={'cb-refuge-profile'+(isShelter?' cb-refuge-profile--bivacco':'')}>
     <header className="cb-refuge-hero">
       <div className="cb-refuge-hero-media">
         <RefugeGallery key={place.slug} place={place}/>
-        <div className="cb-refuge-avatar">{logo?<img src={logo} alt={'Logo di '+place.name}/>:<AlpinePlaceIcon kind="rifugio" size={33}/>}</div>
+        <div className="cb-refuge-avatar">{logo?<img src={logo} alt={'Logo di '+place.name}/>:<AlpinePlaceIcon kind={place.kind} size={33}/>}</div>
       </div>
       <div className="cb-refuge-hero-info">
-        <div className="cb-refuge-kicker"><AlpinePlaceIcon kind="rifugio" size={16}/> RIFUGIO ALPINO</div>
+        <div className="cb-refuge-kicker"><AlpinePlaceIcon kind={place.kind} size={16}/> {displayKind.toLocaleUpperCase('it-IT')}</div>
         <h1>{place.name}</h1>
-        <p className="cb-refuge-intro">{refugeOverview(place)}</p>
-        <DetailMetrics label="Riepilogo del rifugio" items={[
+        {aliases.length>0&&<div className="cb-hut-aliases">
+          <span>Conosciuto anche come</span>
+          <p>{aliases.slice(0,3).map((item,i)=><span key={item.value}>
+            {i>0?' · ':''}<strong>{item.value}</strong>
+            {item.historical&&<em> nome storico</em>}
+            {item.language&&<em> {item.language}</em>}
+          </span>)}</p>
+          {aliases.length>3&&<details><summary>Altre denominazioni ({aliases.length-3})</summary>
+            <p>{aliases.slice(3).map(item=>item.value).join(' · ')}</p>
+          </details>}
+        </div>}
+        <p className="cb-refuge-intro">{fullDescription||(isShelter?(place.shortSummary||shelterOverview(place)):refugeOverview(place))}</p>
+        {isShelter&&<p className="cb-hut-safety-notice">Ricovero non necessariamente custodito: accesso, dotazioni e utilizzabilità possono cambiare. Verifica prima della salita.</p>}
+        <DetailMetrics label="Riepilogo della struttura" items={[
           ...(typeof elevation==='number'&&elevation>0?[{label:'Quota dichiarata',value:elevation.toLocaleString('it-IT')+' m'}]:[]),
-          ...(typeof beds==='number'&&beds>0?[{label:'Posti letto indicati',value:beds}]:[]),
+          ...(typeof beds==='number'&&beds>0?[{label:isShelter?'Posti indicati':'Posti letto indicati',value:beds}]:[]),
           ...(typeof refugeFact(place,'bedsWinter')==='number'&&Number(refugeFact(place,'bedsWinter'))>0
             ?[{label:'Posti invernali',value:Number(refugeFact(place,'bedsWinter'))}]:[]),
         ]}/>
         <div className="cb-refuge-actions">
           {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')} className="cb-refuge-action-primary"><FaIcon name="phone" size={15}/> Chiama</a>}
-          {bookingHref&&<a href={bookingHref} target="_blank" rel="noopener noreferrer" className="cb-refuge-action-primary"><FaIcon name="calendar-days" size={15}/> Prenota</a>}
+          {!isShelter&&bookingHref&&<a href={bookingHref} target="_blank" rel="noopener noreferrer" className="cb-refuge-action-primary"><FaIcon name="calendar-days" size={15}/> Prenota</a>}
           {place.website&&/^https:\/\//.test(place.website)&&<a href={place.website} target="_blank" rel="noopener noreferrer"><FaIcon name="globe" size={15}/> Sito ufficiale</a>}
           <button type="button" onClick={()=>scrollToDetailSection('cb-place-map')}><FaIcon name="map" size={15}/> Mappa</button>
         </div>
