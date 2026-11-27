@@ -211,50 +211,36 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
     </header>
     <AtlasDossierBlocks record={place} placement="alerts"/>
     <DetailJumpNav items={items}/>
-    <RefugeBlock id="cb-refuge-stay" kicker="PRIMA DI SALIRE" title="Ospitalità e informazioni pratiche" icon="bed">
-      {hasOpen&&<div className="cb-refuge-subsection"><h3><FaIcon name="clock" size={14}/> Apertura dichiarata</h3>
-        <FactLines place={place} keys={OPEN}/><p className="cb-refuge-disclaimer">La presenza di orari nel catalogo non certifica che il rifugio sia aperto oggi.</p></div>}
-      {hasStay&&<div className="cb-refuge-subsection"><h3><FaIcon name="bed" size={14}/> Pernottamento e capienza</h3>
-        <FactLines place={place} keys={STAY}/></div>}
-      {hasPrice&&<div className="cb-refuge-subsection"><h3><FaIcon name="coins" size={14}/> Tariffe dichiarate</h3>
+    <RefugeBlock id="cb-refuge-stay" kicker="PRIMA DI SALIRE"
+      title={isShelter?'Accesso, capienza e regole d’uso':'Ospitalità e informazioni pratiche'} icon={isShelter?'tent':'bed'}>
+      {isShelter&&hasRules&&<div className="cb-refuge-subsection"><h3>Regole e accesso</h3>
+        <FactLines place={place} keys={SHELTER_RULES}/></div>}
+      {!isShelter&&hasOpen&&<div className="cb-refuge-subsection"><h3><FaIcon name="clock" size={14}/> Apertura dichiarata</h3>
+        <FactLines place={place} keys={OPEN}/><p className="cb-refuge-disclaimer">Gli orari pubblicati non indicano l'apertura in tempo reale.</p></div>}
+      {hasStay&&<div className="cb-refuge-subsection"><h3><FaIcon name="bed" size={14}/> {isShelter?'Posti e ricovero':'Pernottamento e capienza'}</h3>
+        <FactLines place={place} keys={isShelter?SHELTER_STAY:STAY}/></div>}
+      {hasPrice&&<div className="cb-refuge-subsection"><h3><FaIcon name="coins" size={14}/> Tariffe</h3>
         <FactLines place={place} keys={PRICES}/>
-        {place.fee&&!PRICES.some(key=>value(place,key)!==null)&&<p>Indicazione tariffaria OSM: {place.fee}</p>}
-        <p className="cb-refuge-disclaimer">Verifica importi, disponibilità e validità con il gestore prima di prenotare.</p></div>}
-      {(hasContact||hasManager)&&<div className="cb-refuge-subsection"><h3><FaIcon name="phone" size={14}/> Contatti e gestione</h3>
+        {place.fee&&!PRICES.some(key=>value(place,key)!==null)&&<p>Tariffa indicata: {place.fee}</p>}
+        <p className="cb-refuge-disclaimer">Verifica importi e disponibilità prima di prenotare.</p></div>}
+      {(hasContact||hasManager)&&<div className="cb-refuge-subsection"><h3><FaIcon name="phone" size={14}/> {isShelter?'Riferimenti e manutenzione':'Contatti e gestione'}</h3>
         {hasContact&&<div className="cb-refuge-contact-links">
           {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}><FaIcon name="phone" size={13}/>{place.phone}</a>}
           {place.email&&<a href={'mailto:'+place.email}><FaIcon name="envelope" size={13}/>{place.email}</a>}
           {place.website&&/^https:\/\//.test(place.website)&&<a href={place.website} target="_blank" rel="noopener noreferrer"><FaIcon name="globe" size={13}/>Sito web</a>}
-          {bookingHref&&<a href={bookingHref} target="_blank" rel="noopener noreferrer"><FaIcon name="calendar-days" size={13}/>Prenotazione ufficiale</a>}
+          {!isShelter&&bookingHref&&<a href={bookingHref} target="_blank" rel="noopener noreferrer"><FaIcon name="calendar-days" size={13}/>Prenotazione ufficiale</a>}
         </div>}
-        {hasManager&&<FactLines place={place} keys={MANAGEMENT}/>}</div>}
-      {!hasStay&&!hasOpen&&!hasContact&&!hasManager&&!hasPrice&&
-        <p className="cb-refuge-disclaimer">Le informazioni pratiche non sono ancora documentate. Consulta la scheda della fonte o contatta direttamente la struttura prima di partire.</p>}
-
+        {hasManager&&<FactLines place={place} keys={isShelter?SHELTER_MANAGER:MANAGEMENT}/>}</div>}
+      {!hasStay&&!hasOpen&&!hasRules&&!hasContact&&!hasManager&&!hasPrice&&
+        <p className="cb-refuge-disclaimer">Informazioni pratiche non ancora disponibili. Verifica accesso e condizioni prima di salire.</p>}
     </RefugeBlock>
-    {knownServices.length>0&&<RefugeBlock id="cb-refuge-services" kicker="VITA IN RIFUGIO" title="Cosa trovi una volta arrivato">
-      <p className="cb-refuge-section-intro">Informazioni pratiche riportate nelle schede della struttura: ciò che non è indicato resta sconosciuto, non automaticamente assente.</p>
-      <div className="cb-refuge-service-chapters">
-        {serviceChapters.map(chapter=><section key={chapter.id} className="cb-refuge-service-chapter">
-          <span className="cb-refuge-chapter-counter">0{serviceChapters.indexOf(chapter)+1}</span>
-          <div className="cb-refuge-chapter-copy"><h3>{chapter.title}</h3>
-            <p>{chapter.description}</p>
-            {chapter.items.some(item=>item.value)&&<p className="cb-refuge-available-services">
-              <strong>Servizi indicati come disponibili:</strong>{' '}
-              {chapter.items.filter(item=>item.value).map(item=>item.label).join(', ')}.
-            </p>}
-            {chapter.items.some(item=>!item.value)&&<p className="cb-refuge-absent-services">
-              <strong>Servizi indicati esplicitamente come non disponibili:</strong>{' '}
-              {chapter.items.filter(item=>!item.value).map(item=>item.label).join(', ')}.
-              <span className="cb-refuge-service-qualifier"> Per queste voci il dato pubblicato è «No»; non si tratta di informazioni mancanti.</span>
-            </p>}
-          </div>
-        </section>)}
-      </div>
-      <p className="cb-refuge-disclaimer">La disponibilità d'acqua non ne certifica la potabilità: sono due informazioni distinte.</p>
+    {knownServices.length>0&&<RefugeBlock id="cb-refuge-services" kicker={isShelter?'DENTRO IL RICOVERO':'VITA IN RIFUGIO'}
+      title={isShelter?'Dotazioni del bivacco':'Cosa trovi una volta arrivato'}>
+      <HutServices place={place}/>
     </RefugeBlock>}
     <RefugeBlock id="cb-refuge-access" kicker="NEL TERRITORIO" title="Come arrivare e sentieri" icon="person-hiking">
-      {place.access&&<p className="cb-refuge-section-intro"><strong>Accesso riportato dalla fonte:</strong> {place.access}</p>}
+      {place.access&&<p className="cb-refuge-section-intro"><strong>Accesso:</strong> {place.access}</p>}
+      {hasAccessDetails&&<FactLines place={place} keys={['accessTrailRef','accessDifficultyOfficial','accessDurationOfficial']}/>}
       {arrival.length>0&&<div className="cb-refuge-route-list"><h3>Itinerari con relazione di partenza o arrivo</h3>{arrival.slice(0,12).map(route=><RouteLine key={route.slug} route={route}/>)}</div>}
       {pass.length>0&&<div className="cb-refuge-route-list"><h3>Altri itinerari collegati al luogo</h3>{pass.slice(0,8).map(route=><RouteLine key={route.slug} route={route}/>)}</div>}
       {inArea.length>0&&<details className="cb-refuge-more"><summary>Tracce vicine (non accessi verificati) · {inArea.length}</summary>
@@ -262,9 +248,10 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
       {loadingRoutes&&<p className="cb-refuge-disclaimer">Caricamento dei percorsi cartografati…</p>}
       {!loadingRoutes&&!routes.length&&<p className="cb-refuge-disclaimer">Nessuna traccia indicizzata nelle immediate vicinanze; questo non significa che non esistano sentieri di accesso.</p>}
       <p className="cb-refuge-disclaimer">La vicinanza a una traccia GPX non certifica che il sentiero conduca al rifugio né che sia percorribile.</p>
-      <button type="button" className="cb-refuge-map-link" onClick={()=>scrollToDetailSection('cb-place-map')}><FaIcon name="map" size={14}/> Vedi il rifugio sulla mappa</button>
+      <button type="button" className="cb-refuge-map-link" onClick={()=>scrollToDetailSection('cb-place-map')}><FaIcon name="map" size={14}/> Vedi sulla mappa</button>
     </RefugeBlock>
-    {(place.description||hasTerritory||hasHistory)&&<RefugeBlock id="cb-refuge-story" kicker="LUOGHI, NOMI E MEMORIA" title="Un rifugio, un territorio">
+    {(hasTerritory||hasHistory)&&<RefugeBlock id="cb-refuge-story" kicker="LUOGHI, NOMI E MEMORIA"
+      title={isShelter?'Il bivacco e il suo territorio':'Un rifugio, un territorio'}>
       {territoryLinks.length>0&&<aside className="cb-refuge-territory-feature">
         <span>IL RIFUGIO E I LUOGHI INTORNO</span>
         <p>{territoryLinks.map((item,index)=><span key={item.key}>
@@ -276,8 +263,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
           ? 'Collegamenti a località omonime individuate nell’Atlante e coerenti con la posizione. I nomi amministrativi restano dichiarazioni della fonte.'
           : 'Denominazioni dichiarate dalla fonte; collegamenti territoriali non ancora riconciliati.'}</small>
       </aside>}
-      {place.description&&<div className="cb-refuge-story-prose"><h3>Il luogo, secondo le fonti</h3>
-        <p className="cb-refuge-editorial">{place.description}</p></div>}
+}
       {hasTerritory&&<div className="cb-refuge-territory-details">
         <h3>Geografia e toponimi</h3>
         <FactLines place={place} keys={TERRITORY.filter(key=>!territoryLinks.some(item=>item.key===key))}/>
@@ -303,18 +289,21 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
     </RefugeBlock>}
     <NearbyAtlasPlaces items={nearbyPlaces}/>
     <AtlasDossierBlocks record={place} placement="connections"/>
-    {(hasSpecial||Object.keys(others).length>0||place.climate?.length||place.aliases?.length||place.administrativeHierarchy)&&
-      <section id="cb-refuge-archive" className="cb-refuge-archive cb-detail-group">
-        <details><summary>Altri approfondimenti, toponimi e dati tecnici</summary>
-          {hasSpecial&&<FactLines place={place} keys={SPECIAL}/>}
+    {hasArchive&&<section id="cb-refuge-archive" className="cb-refuge-archive cb-detail-group">
+      <details>
+        <summary><span>Altre informazioni</span><small>Geografia, caratteristiche tecniche e dati aggiuntivi</small></summary>
+        <div className="cb-hut-archive-contents">
+          {hasSpecial&&<section className="cb-hut-archive-category"><h3>Codici e classificazioni</h3>
+            <FactLines place={place} keys={SPECIAL}/></section>}
           <AtlasDossierBlocks record={extraRecord} placement="core"/>
-        </details>
-      </section>}
+        </div>
+      </details>
+    </section>
     <AtlasDossierBlocks record={place} placement="media" excludeImages/>
-    <RefugeBlock id="cb-refuge-community" kicker="CIMA BECCO / COMMUNITY" title="Conosci questo rifugio?">
-      <p>Se rappresenti la struttura, puoi richiedere la gestione della scheda e proporre informazioni aggiornate. Non mostriamo recensioni o valutazioni inventate.</p>
+    {!isShelter&&<RefugeBlock id="cb-refuge-community" kicker="CIMA BECCO / COMMUNITY" title="Conosci questo rifugio?">
+      <p>Se rappresenti la struttura, puoi richiedere la gestione della scheda e proporre aggiornamenti.</p>
       <HutClaimRequest place={place}/>
-    </RefugeBlock>
+    </RefugeBlock>}
     <div className="cb-refuge-credits">
       <p>Informazioni documentate e soggette ad aggiornamento. Apertura, disponibilità e condizioni dei sentieri vanno verificate prima di partire.</p>
       <a href={import.meta.env.BASE_URL+'fonti-e-crediti/'}>Fonti e crediti del progetto</a>
