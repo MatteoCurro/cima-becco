@@ -1,5 +1,5 @@
 /**
- * Permalink pubblici parlanti per i rifugi; l'ID sorgente rende il nome
+ * Permalink pubblici parlanti per rifugi e bivacchi; l'ID sorgente rende il nome
  * disambiguato senza cambiare gli slug interni usati dalle tappe GPX.
  * Applicabile sia in browser sia nel generatore statico SEO.
  */
@@ -11,8 +11,8 @@ export function atlasSlugPart(input) {
     .slice(0,73).replace(/-+$/,'');
 }
 export function canonicalAtlasSlug(place) {
-  if (place.kind !== 'rifugio') return place.slug;
-  const name=atlasSlugPart(place.name) || 'rifugio';
+  if (place.kind !== 'rifugio' && place.kind !== 'bivacco') return place.slug;
+  const name=atlasSlugPart(place.name) || (place.kind==='bivacco'?'bivacco':'rifugio');
   // L'ID è l'identità, NON il nome; CAI per i record riconciliati, OSM per gli altri.
   const cai=String(place.sourceIds?.cai || '').match(/^\d+$/)?.[0];
   const legacy=String(place.slug || '');

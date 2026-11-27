@@ -160,7 +160,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
         height="100%" caption={place.name}/>
     </section>}
   >
-    {place.kind==='rifugio' ? <RefugeProfile place={place} routes={nearby} loadingRoutes={loading} nearbyPlaces={nearbyPlaces} allPlaces={localAtlas} water={water}/> : <>
+    {(place.kind==='rifugio'||place.kind==='bivacco') ? <RefugeProfile place={place} routes={nearby} loadingRoutes={loading} nearbyPlaces={nearbyPlaces} allPlaces={localAtlas} water={water}/> : <>
     <header className="cb-location-hero">
       <div className="cb-location-hero-copy">
         <PlaceBadge place={place}/>
@@ -170,15 +170,15 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
         <AtlasDossierBlocks record={place} placement="alerts"/>
         <DetailMetrics label="Informazioni principali" items={[
           { label: 'Altitudine' + (place.elevationSource === 'dem' ? ' stimata' : ''), value: place.elevationM != null ? place.elevationM.toLocaleString('it-IT') + ' m' : 'n.d.' },
-          ...(place.capacity != null ? [{ label: place.kind === 'bivacco' ? 'Posti indicati' : 'Posti letto', value: place.capacity }] : []),
+          ...(place.capacity != null ? [{ label: 'Posti letto', value: place.capacity }] : []),
           { label: 'Sentieri vicini', value: loading ? '…' : nearby.length },
         ]}/>
         <div className="cb-location-actions">
           <button type="button" className="cb-location-action-primary cb-icon-link" onClick={()=>scrollToDetailSection('cb-place-map')}><FaIcon name="map" size={14}/> ESPLORA SULLA MAPPA</button>
-          {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>{place.kind==='bivacco'?'CHIAMA IL REFERENTE':'CHIAMA'}</a>}
+          {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>CHIAMA</a>}
           {place.email&&<a href={'mailto:'+place.email}>SCRIVI</a>}
         </div>
-        {place.kind==='bivacco'&&<p className="cb-location-alert">Bivacco o ricovero: struttura non necessariamente custodita. Verifica accesso, disponibilità, manutenzione e dotazioni prima di partire. I posti dichiarati non garantiscono una sistemazione libera; acqua segnalata non significa potabile.</p>}
+        
       </div>
       <figure className="cb-location-hero-media">
         <AlpinePlaceVisual key={place.slug} place={place}/>

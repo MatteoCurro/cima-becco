@@ -83,7 +83,7 @@ export function alpinePlaceLink(place: Pick<AlpinePlace, 'slug' | 'kind'> & Part
   // Le tappe GPX legacy conoscono solo lo slug OSM: l'alias pubblico le
   // indirizza alla scheda canonica, senza inventare nome o identità CAI.
   if(place.subtype==='italian_municipality') return `${import.meta.env.BASE_URL}comuni/${encodeURIComponent(place.slug)}/`;
-  const slug=place.kind==='rifugio'&&place.name ? canonicalAtlasSlug({
+  const slug=(place.kind==='rifugio'||place.kind==='bivacco')&&place.name ? canonicalAtlasSlug({
     kind:place.kind,name:place.name,slug:place.slug,sourceIds:place.sourceIds,
   }) : place.slug;
   return `${import.meta.env.BASE_URL}${atlasCategory(place.kind)}/${encodeURIComponent(slug)}/`;

@@ -172,3 +172,63 @@
   .cb-refuge-actions a,.cb-refuge-actions button{flex:1 1 auto}
 }
 @media(prefers-reduced-motion:reduce){.cb-refuge-gallery-stage>button{transition:none}}
+
+
+/* Rifugio e bivacco: sinonimi in apertura, non sepolti nell'archivio. */
+.cb-hut-aliases{margin:0 0 18px;padding-left:13px;border-left:3px solid #a50051}
+.cb-hut-aliases>span{display:block;color:#8a687b;font:800 10px/1.5 'Space Grotesk',sans-serif;
+  letter-spacing:.085em;text-transform:uppercase}
+.cb-hut-aliases p{margin:4px 0;color:#27543c;font:600 clamp(13px,1.25vw,16px)/1.6 'Space Grotesk',sans-serif}
+.cb-hut-aliases strong{font-weight:850;color:#214635}
+.cb-hut-aliases em{font:500 10px/1.4 'Space Grotesk',sans-serif;color:#7f8a7e}
+.cb-hut-aliases summary{cursor:pointer;color:#9b1558;font:750 11px/1.7 'Space Grotesk',sans-serif}
+.cb-refuge-intro{white-space:pre-line}
+.cb-hut-safety-notice{border-left:3px solid #c58b42;padding:9px 14px;background:#fbf7ee;
+  color:#72562e;font:550 12px/1.7 'Space Grotesk',sans-serif}
+/* Iconografia: una singola icona utile per voce; la diagonale sul simbolo
+   significa "no", mentre l'assenza del campo non genera alcuna voce. */
+.cb-hut-service-chapters{display:grid;gap:0}
+.cb-hut-service-chapter{padding:19px 0 23px;border-bottom:1px solid #dce8db}
+.cb-hut-service-chapter:first-child{padding-top:2px}
+.cb-hut-service-chapter>header{display:flex;align-items:baseline;gap:13px;margin-bottom:16px}
+.cb-hut-chapter-index{color:#b5005a;font:900 18px/1.2 'Bricolage Grotesque',sans-serif}
+.cb-hut-service-chapter h3{margin:0;color:#234b35;font:850 clamp(18px,1.6vw,23px)/1.25 'Bricolage Grotesque',sans-serif}
+.cb-hut-service-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 22px}
+.cb-hut-service{display:flex;align-items:flex-start;gap:11px;min-width:0;
+  color:#245b3b;font:700 13px/1.45 'Space Grotesk',sans-serif}
+.cb-hut-service-icon{position:relative;display:grid;place-items:center;flex:0 0 26px;
+  width:26px;height:26px;color:#28734d}
+.cb-hut-service-icon svg{display:block}
+.cb-hut-service-label{min-width:0;padding-top:3px;overflow-wrap:anywhere}
+.cb-hut-service.is-unavailable{color:#817c78}
+.cb-hut-service.is-unavailable .cb-hut-service-icon{color:#9a8588}
+.cb-hut-service.is-unavailable .cb-hut-service-icon::after{content:'';position:absolute;
+  height:3px;width:26px;left:0;top:12px;background:#a14d62;border-radius:2px;
+  transform:rotate(-40deg);box-shadow:0 0 0 1px #fff8}
+.cb-hut-service-label small{display:block;margin:1px 0 0;color:#9a5c66;
+  font:650 10px/1.4 'Space Grotesk',sans-serif}
+.cb-refuge-profile--bivacco .cb-refuge-kicker{color:#99475d}
+/* Accordion a capitoli: no tile di fonte o inventari senza gerarchia. */
+.cb-refuge-archive details>summary{display:flex;flex-direction:column;gap:4px;list-style:none;
+  color:#284c3c;font:850 16px/1.4 'Bricolage Grotesque',sans-serif}
+.cb-refuge-archive details>summary::-webkit-details-marker{display:none}
+.cb-refuge-archive details>summary::before{content:'+';float:right;align-self:end;
+  font:900 24px/1 'Space Grotesk',sans-serif;color:#a50053}
+.cb-refuge-archive details[open]>summary::before{content:'−'}
+.cb-refuge-archive details>summary small{color:#758676;font:500 12px/1.6 'Space Grotesk',sans-serif}
+.cb-hut-archive-contents{padding-top:20px;display:grid;gap:19px}
+.cb-hut-archive-category{min-width:0}
+.cb-hut-archive-category h3{color:#214c36;font:850 19px/1.3 'Bricolage Grotesque',sans-serif}
+.cb-refuge-archive .cb-dossier-section{margin:0;padding:15px 0 22px;border-top:0;border-bottom:1px solid #e1e9de}
+.cb-refuge-archive .cb-dossier-heading h2{font-size:20px}
+.cb-refuge-archive .cb-dossier-heading small{display:none}
+.cb-refuge-archive .cb-dossier-facts{gap:0 19px}
+.cb-refuge-archive .cb-dossier-fact{min-width:0;padding:12px 0;border:0;border-bottom:1px solid #e3e9e0;
+  border-radius:0;background:transparent}
+.cb-refuge-archive .cb-dossier-fact dt{font-size:10px;letter-spacing:.04em}
+.cb-refuge-archive .cb-dossier-fact dd{font-size:17px}
+.cb-refuge-archive .cb-dossier-namevariants{display:none}
+@container(max-width:465px){
+  .cb-hut-service-list{grid-template-columns:1fr;gap:12px}
+  .cb-refuge-archive .cb-dossier-facts{grid-template-columns:1fr}
+}

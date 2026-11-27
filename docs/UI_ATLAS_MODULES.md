@@ -200,3 +200,52 @@ ignoti e dati senza attribuzione verificano il contratto.
 
 Riferimenti: https://schema.org/LodgingBusiness e
 https://developers.google.com/search/docs/appearance/structured-data/local-business.
+
+
+## Bivacchi e rifugi — dossier condiviso (27/11/2026, fase UI)
+
+Il rendering specialistico `RefugeProfile` viene riutilizzato anche per
+`AlpinePlace.kind='bivacco'`, mantenendo l'involucro `DetailLayout` 42/58
+e la mappa laterale con i collegamenti GPX. Il sottotipo di ricovero
+(`fixed_bivouac`, `social_cabin`, `support_point`, OSM) è conservato:
+il bivacco non viene presentato come rifugio custodito o ricettività commerciale.
+Le regole d'accesso, le chiavi, l'utilizzo d'emergenza, la capienza e la
+manutenzione hanno posizioni dedicate, **solo se documentate**.
+
+`src/lib/hutEditorial.js` è il contratto comune fra pagina, dati strutturati
+e HTML SEO. `HutServices` usa Font Awesome SVG già distribuiti localmente e
+non introduce nuove dipendenze: i valori `true` hanno simbolo normale e
+descrizione, i `false` lo stesso simbolo barrato da una diagonale con la
+dicitura «Non disponibile», mentre `null`/mancante/non attribuito non viene
+mostrato. Le dotazioni specifiche del bivacco (materassi, coperte, stufa,
+gas, legna, servizi igienici) non vengono confuse con le caratteristiche di
+un rifugio custodito. Non aggiungere una frase fissa sulla potabilità:
+i valori di potabilità, se disponibili, rimangono campi distinti e il
+riferimento centrale mantiene i dettagli della fonte.
+
+Le descrizioni integrali, ove esistenti, compaiono **una sola volta in
+apertura**; si evita la ripetizione sotto il blocco territoriale. Subito
+sotto il titolo compaiono le varianti di nome documentate, con eventuale
+lingua o carattere storico. Il registro `/fonti-e-crediti/` conserva
+l'attribuzione integrale; le singole schede restano editoriali. Gli
+approfondimenti residuali si aprono in un accordion con sottosezioni,
+gruppi etichettati in italiano e righe tipografiche, non mini-card seriali.
+
+I permalink dei bivacchi diventano parlanti come quelli dei rifugi: per
+esempio `/bivacchi/bivacco-fiamme-gialle-cai-922005301/`; il percorso
+`/bivacchi/cai-922005301/` è conservato con pagina statica di
+trasferimento e `noindex,follow` (GitHub Pages non offre 301 diretti).
+L'identificativo `AlpinePlace.slug` resta intatto per GPX e cache.
+
+Lo schema SEO resta `Place` per bivacchi, con coordinate, tipologia
+dichiarata, `alternateName` e `amenityFeature` solo per valori espliciti;
+gli altri dati pertinenti vengono rappresentati tramite `PropertyValue`.
+`LodgingBusiness` resta riservato ai rifugi che documentano ricettività.
+La descrizione SEO completa compare all'inizio della pagina statica, come
+nel frontend; la meta-description può essere abbreviata. Non inventare
+apertura, prezzi, camere, occupazione, recensioni o servizi.
+
+Regressioni: frontend e SEO condividono i nomi alternativi, i bivacchi
+non perdono i vecchi URL, le schede OSM isolate non mostrano servizi
+inventati, layout e foto non invadono la mappa, il blocco dati non
+ripete descrizioni e gli extra sono strutturati per gruppo.

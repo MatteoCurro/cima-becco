@@ -58,7 +58,7 @@ for(const place of alpine){
        canonicalHtml.includes('/comuni/'+e.slug+'/') && canonicalHtml.includes('noindex,follow'));
     if(!authorized)throw Error('Canonical SEO del luogo assente: '+canonical);
   }
-  if(place.kind==='rifugio'&&canonicalAtlasSlug(place)!==place.slug){
+  if((place.kind==='rifugio'||place.kind==='bivacco')&&canonicalAtlasSlug(place)!==place.slug){
     const legacy=join(dist,section,place.slug,'index.html');
     if(!existsSync(legacy))throw Error('Permalink storico non conservato: '+section+'/'+place.slug);
     const html=readFileSync(legacy,'utf8');

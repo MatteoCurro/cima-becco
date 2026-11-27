@@ -25,6 +25,8 @@ import { makeCentralCredits } from './build_source_credits.mjs';
 import { atlasCanonicalPath,atlasLegacyPath,canonicalAtlasSlug } from '../src/lib/placePermalinks.js';
 import { resolveRefugeTerritory, relatedAtlasPlaces } from '../src/lib/atlasConnections.js';
 import { refugeFact, refugeOverview, refugeSeoDescription, refugeServiceFacts } from '../src/lib/refugeEditorial.js';
+import { hutAliases,hutServiceFacts,shelterSeoDescription } from '../src/lib/hutEditorial.js';
+import { shelterSchemaProperties } from '../src/lib/shelterStructuredData.js';
 import { refugeSchemaProperties } from '../src/lib/refugeStructuredData.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -192,6 +194,17 @@ footer{max-width:880px;margin:0 auto;padding:20px;border-top:1px solid var(--lin
 .cima-seo-refuge-facts li{padding:14px 15px 14px 0;border:0;border-bottom:1px solid #dde8d9;
   border-radius:0;background:transparent}
 .cima-seo-refuge-facts strong{font-size:clamp(22px,2.8vw,33px)}
+.cima-hut-aliases{margin:6px 0 15px;color:#315c45;font-size:14px;line-height:1.6}
+.cima-hut-aliases strong{font-weight:800}
+.cima-seo-amenities{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+  padding:0;margin:12px 0 22px;list-style:none}
+.cima-seo-amenities li{position:relative;padding:9px 12px 9px 35px;
+  border-bottom:1px solid #e0e9df;color:#28593d;font-size:13px;font-weight:700}
+.cima-seo-amenities li::before{content:'✓';position:absolute;top:9px;left:10px;color:#2c7b4d;font-weight:900}
+.cima-seo-amenities li.is-unavailable{color:#916a6d}
+.cima-seo-amenities li.is-unavailable::before{content:'✕';color:#a14b60}
+.cima-seo-amenities li small{display:block;color:#8a6066}
+@media(max-width:580px){.cima-seo-amenities{grid-template-columns:1fr}}
 .cima-seo-warning{font-size:13px;color:#6b6249;background:#f6f0e3;padding:12px 16px;border-radius:10px;margin-top:24px}
 .cima-seo-territory{margin:27px 0;padding:24px;border-radius:13px;background:#193f2e;color:#ecf6e7}
 .cima-seo-territory h2{margin:0 0 10px;font-size:27px}
@@ -367,7 +380,7 @@ for (const venue of venues) {
 // Write the place pages that fit: places with routes, a photo or a written
 // description first, then the tallest.
 const countFiles = (dir) => readdirSync(dir, { withFileTypes: true }).reduce((n, entry) => n + (entry.isDirectory() ? countFiles(join(dir, entry.name)) : 1), 0);
-const refugeAliases = alpinePlaces.filter(p=>p.kind==='rifugio' && canonicalAtlasSlug(p)!==p.slug).length;
+const refugeAliases = alpinePlaces.filter(p=>(p.kind==='rifugio'||p.kind==='bivacco') && canonicalAtlasSlug(p)!==p.slug).length;
 const reserved = countFiles(DIST) + Object.keys(index.byCountry).length + routes.length +
   alpinePlaces.length + refugeAliases + trekProjects.length + 12;
 const room = Math.max(0, MAX_FILES - reserved);
@@ -555,7 +568,7 @@ function writePlaceAlias(place){
     <link rel="canonical" href="${escape(url)}">
     <meta name="robots" content="noindex,follow">
     <meta http-equiv="refresh" content="0;url=${escape(url)}">
-    </head><body><p>La scheda del rifugio ha un nuovo indirizzo:
+    </head><body><p>La scheda della struttura ha un nuovo indirizzo:
     <a href="${escape(url)}">${escape(place.name)}</a>.</p></body></html>`);
 }
 
@@ -566,8 +579,10 @@ for (const place of alpinePlaces) {
   if (!/^(?:osm-[nwr]-\d+|cai-\d+)$/.test(place.slug)) continue;
   const related=(byStop.get(place.slug)||[]).slice(0,24);
   const canonicalPath=atlasCanonicalPath(place);
-  const territory=place.kind==='rifugio' ? resolveRefugeTerritory(place,alpinePlaces) : [];
-  const nearbyEntities=place.kind==='rifugio' ? relatedAtlasPlaces(place,alpinePlaces,8,5) : [];
+  const isHut=place.kind==='rifugio'||place.kind==='bivacco';
+  const territory=isHut ? resolveRefugeTerritory(place,alpinePlaces) : [];
+  const nearbyEntities=isHut ? relatedAtlasPlaces(place,alpinePlaces,8,5) : [];
+  const aliases=isHut ? hutAliases(place) : [];
   // Tutti i luoghi mostrati nel catalogo devono avere una pagina reale: niente link rotti.
   // I borghi poveri di metadati sono consultabili ma non indicizzabili finché non vengono arricchiti.
   const isCaiOnly = Boolean(place.sourceIds?.cai && !place.sourceIds?.osm);
@@ -577,12 +592,13 @@ for (const place of alpinePlaces) {
   const nearbyWater=alpineWater.filter(w=>Math.abs(w.lat-place.lat)<.017 && Math.abs(w.lng-place.lng)<.03 &&
     Math.hypot((w.lat-place.lat)*111195,(w.lng-place.lng)*111320*Math.cos(place.lat*Math.PI/180))<1400).slice(0,8);
   const description=place.kind==='rifugio' ? refugeSeoDescription(place) :
+    place.kind==='bivacco' ? shelterSeoDescription(place) :
     (place.description?`${place.description} `:'')+
     `${place.name} è ${kind==='località di montagna'?'una':'un'} ${kind} mappat${place.kind==='borgo'?'a':'o'} ${isCaiOnly?"nell'Atlante Cima Becco":"nelle Dolomiti"}${altitude}.`+
     (related.length?` Esplora ${related.length} sentieri collegati geograficamente e GPX.`:' Consulta posizione e sentieri nei dintorni.');
-  const refugeServices=place.kind==='rifugio'?refugeServiceFacts(place):[];
+  const refugeServices=isHut?hutServiceFacts(place):[];
   const refugeBeds=refugeFact(place,'bedsTotal') ?? place.capacity;
-  const knownCaiFacts=place.kind==='rifugio' ? Object.values(place.facts||{}).filter(f=>
+  const knownCaiFacts=isHut ? Object.values(place.facts||{}).filter(f=>
     f && f.value!==null && f.value!==undefined && (f.sourceId||f.sourceUrl)).length : 0;
   const additionalPhotos=(place.media||[]).filter(m=>
     (m.kind==='photo'||m.kind==='historical_photo') && m.url && m.url!==place.photo?.url &&
@@ -600,7 +616,15 @@ for (const place of alpinePlaces) {
     ['yearBuilt','Anno di costruzione'],['yearRebuilt','Anno di ricostruzione'],
     ['yearOpened','Anno di apertura'],['dedication','Intitolazione'],
   ];
-  const publishedDetails=place.kind==='rifugio'?refugeDetailKeys.map(([key,label])=>({
+  const shelterDetailKeys=[
+    ['bedsWinter','Posti indicati in inverno'],['winterRoomReported','Ricovero invernale'],
+    ['keysRequired','Chiavi necessarie'],['emergencyUseOnly','Solo uso d’emergenza'],
+    ['usageRules','Regole d’uso'],['reservationsRequired','Prenotazione richiesta'],
+    ['accessRestrictions','Limitazioni d’accesso'],['maintenanceProvider','Manutenzione'],
+    ['lastInspectionAt','Ultimo controllo indicato'],['owner','Proprietà'],
+    ['yearBuilt','Anno di costruzione'],
+  ];
+  const publishedDetails=isHut?(place.kind==='bivacco'?shelterDetailKeys:refugeDetailKeys).map(([key,label])=>({
     label,value:refugeFact(place,key),fact:place.facts?.[key]
   })).filter(entry=>entry.value!==null):[];
   const photo=place.photo?.url?.startsWith('https://') && place.photo?.license && place.photo?.sourceUrl ? place.photo : null;
@@ -613,36 +637,39 @@ for (const place of alpinePlaces) {
     image:photo?.url||null,
     jsonLd:{'@context':'https://schema.org','@graph':[
       {'@type':place.kind==='rifugio'&&hasDocumentedStay?'LodgingBusiness':'Place',
-        '@id':SITE+canonicalPath+'#luogo',name:place.name,description,
+        '@id':SITE+canonicalPath+'#luogo',name:place.name,
+        description:(isHut&&place.description)||description,
+        ...(aliases.length?{alternateName:aliases.map(item=>item.value)}:{}),
         url:SITE+canonicalPath,
         geo:{'@type':'GeoCoordinates',latitude:place.lat,longitude:place.lng,
           ...(place.elevationM?{elevation:place.elevationM}:{})},
         ...(imageUrls.length?{image:imageUrls.slice(0,12)}:{}),
-        ...(place.kind==='rifugio'?refugeSchemaProperties(place):{}),
+        ...(place.kind==='rifugio'?refugeSchemaProperties(place):
+          place.kind==='bivacco'?shelterSchemaProperties(place):{}),
         hasMap:place.osmUrl,
         ...(place.phone?{telephone:place.phone}:{}),
       },breadcrumbLd([[category==='rifugi'?'Rifugi':category==='bivacchi'?'Bivacchi':'Paesi',appLink(`#${category==='borghi'?'paesi':category}`)],[place.name,null]])]},
     body:`${crumbs([['Atlante',appLink(`#atlante/${category}`)],[place.name]])}
       <div class="cima-seo-eyebrow">CIMA BECCO · ${place.kind==='rifugio'?'RIFUGIO':place.kind==='bivacco'?'BIVACCO':'PAESE'} · ${isCaiOnly?'ITALIA':'DOLOMITI'}</div>
       <h1>${escape(place.name)}</h1>
-      <p class="cima-seo-lead">${escape(description)}</p>
+      ${aliases.length?`<p class="cima-hut-aliases">Conosciuto anche come: ${aliases.map(item=>`<strong>${escape(item.value)}</strong>${item.historical?' (nome storico)':''}`).join(' · ')}</p>`:''}
+      <p class="cima-seo-lead">${escape((isHut&&place.description)||description)}</p>
       ${photo?`<figure class="cima-seo-photo"><img src="${escape(photo.url)}" alt="${escape(place.name)}" loading="lazy"></figure>`:''}
-      ${place.kind==='rifugio'&&additionalPhotos.length?`<section aria-label="Archivio fotografico del rifugio"><h2>Fotografie del rifugio</h2>
+      ${isHut&&additionalPhotos.length?`<section aria-label="Archivio fotografico della struttura"><h2>Fotografie del luogo</h2>
         <div class="cima-seo-photo-grid">${additionalPhotos.slice(0,12).map(m=>`<figure><img src="${escape(m.url)}" alt="${escape((m.kind==='historical_photo'?'Fotografia storica di ':'Fotografia di ')+place.name+(m.caption?' – '+m.caption:''))}" loading="lazy">
-          <figcaption>${escape(m.caption||place.name)} · ${escape(m.author||'Autore non indicato')} · ${escape(m.licence)}
-            · <a href="${escape(m.sourceUrl)}" rel="noopener noreferrer">Fonte e licenza</a></figcaption></figure>`).join('')}</div>
+          <figcaption>${escape(m.caption||place.name)}</figcaption></figure>`).join('')}</div>
       </section>`:''}
-      <ul class="facts cima-seo-facts ${place.kind==='rifugio'?'cima-seo-refuge-facts':''}">
-        ${place.elevationM!=null?`<li><strong>${metres(place.elevationM)}</strong>${place.elevationSource==='dem'?'quota DEM stimata':place.elevationSource==='cai'?'quota dichiarata dal CAI':'quota indicata in OSM'}</li>`:''}
+      <ul class="facts cima-seo-facts ${isHut?'cima-seo-refuge-facts':''}">
+        ${place.elevationM!=null?`<li><strong>${metres(place.elevationM)}</strong>${place.elevationSource==='dem'?'quota stimata':'quota'}</li>`:''}
         <li><strong>${escape(place.lat.toFixed(4)+', '+place.lng.toFixed(4))}</strong>coordinate</li>
         <li><strong>${related.length}</strong>sentieri collegati</li>
-        ${hasDocumentedStay?`<li><strong>${refugeBeds}</strong>posti letto ${place.sourceIds?.cai?'dichiarati CAI':'indicati OSM'}</li>`:''}
+        ${hasDocumentedStay?`<li><strong>${refugeBeds}</strong>posti indicati</li>`:''}
         
       </ul>
       ${territory.length?`<section class="cima-seo-territory">
         <h2>Il rifugio e il suo territorio</h2>
         <p>${territory.map(item=>`${escape(item.label)}: ${item.href?`<a href="${SITE+item.href}">${escape(item.name)}</a>`:`<strong>${escape(item.name)}</strong>`}`).join(' · ')}</p>
-        <small>${territory.some(item=>item.href)?'Sono disponibili schede locali per denominazioni univoche e compatibili con la posizione; le attribuzioni amministrative restano quelle dichiarate dalla fonte.':'Toponimi dichiarati dalla fonte, non ancora collegati univocamente a una scheda locale.'}</small>
+
       </section>`:''}
       <div class="cima-seo-actions">
         <a class="cta" href="${escape(place.osmUrl)}" target="_blank" rel="noopener noreferrer">POSIZIONE SULLA MAPPA ↗</a>
@@ -659,14 +686,12 @@ for (const place of alpinePlaces) {
         ${place.address?`<div><dt>Indirizzo</dt><dd>${escape(place.address)}</dd></div>`:''}
         ${place.website?`<div><dt>Sito</dt><dd><a href="${escape(place.website)}" rel="noopener noreferrer">Sito della struttura</a></dd></div>`:''}
       </dl>`:''}
-      ${place.kind==='rifugio'&&publishedDetails.length?`<h2>Ospitalità, gestione e storia del rifugio</h2><dl class="cima-seo-details cima-seo-refuge-details">${publishedDetails.map(({label,value,fact})=>`<div><dt>${escape(label)}</dt><dd>${escape(typeof value==='boolean'?(value?'Sì':'No'):value)}
+      ${isHut&&publishedDetails.length?`<h2>${place.kind==='bivacco'?'Regole, utilizzo e caratteristiche':'Ospitalità, gestione e storia del rifugio'}</h2><dl class="cima-seo-details cima-seo-refuge-details">${publishedDetails.map(({label,value,fact})=>`<div><dt>${escape(label)}</dt><dd>${escape(typeof value==='boolean'?(value?'Sì':'No'):value)}
         ${fact?.unit?' '+escape(fact.unit):''}</dd></div>`).join('')}</dl>`:''}
-      ${place.kind==='rifugio'&&refugeServices.length?`<section><h2>Vivere il rifugio: servizi e dotazioni</h2>
-        ${refugeServices.some(item=>item.value)?`<p>Servizi indicati come disponibili: ${escape(refugeServices.filter(item=>item.value).map(item=>item.label).join(', '))}.</p>`:''}
-        ${refugeServices.some(item=>!item.value)?`<p><strong>Servizi indicati esplicitamente come non disponibili:</strong> ${escape(refugeServices.filter(item=>!item.value).map(item=>item.label).join(', '))}. Per queste voci il dato pubblicato è «No».</p>`:''}
-        <p>I servizi non documentati restano sconosciuti, non automaticamente assenti. L'acqua disponibile non implica potabilità.</p>
+      ${isHut&&refugeServices.length?`<section><h2>Servizi e dotazioni</h2>
+        <ul class="cima-seo-amenities">${refugeServices.map(item=>`<li class="${item.value?'is-available':'is-unavailable'}">${escape(item.label)}${item.value?'':'<small>Non disponibile</small>'}</li>`).join('')}</ul>
       </section>`:''}
-      ${place.kind==='rifugio'&&place.description?`<h2>Descrizione del rifugio e territorio</h2><p>${escape(place.description)}</p>`:''}
+
       ${nearbyEntities.length?`<section><h2>Altri luoghi da esplorare</h2>
         <p>Rifugi, bivacchi e località geograficamente vicini; la distanza in linea d'aria non descrive un percorso percorribile.</p>
         <div class="cima-seo-related">${nearbyEntities.map(({place:p,distanceKm})=>`<a href="${SITE+atlasCanonicalPath(p)}">
@@ -678,7 +703,7 @@ for (const place of alpinePlaces) {
       <p class="cima-seo-warning">Il dato geografico non prova accessibilità, stato della struttura, potabilità o percorribilità del sentiero. Verifica prima di partire.</p>
       <p class="sub">Dati e immagini con provenienza conservata nel <a href="${SITE}/fonti-e-crediti/">registro centralizzato delle fonti e dei crediti</a>.</p>`,
   });
-  if(place.kind==='rifugio')writePlaceAlias(place);
+  if(isHut)writePlaceAlias(place);
 }
 
 // Categoria SEO vera: un ingresso indicizzabile agli itinerari locali,

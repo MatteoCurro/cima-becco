@@ -45,7 +45,7 @@ export function RefugeGallery({place}:{place:AlpinePlace}){
   return <figure className="cb-refuge-gallery" aria-label={'Fotografie di '+place.name}>
     {selected ? <div className="cb-refuge-gallery-stage"
       role={valid.length>1?'region':undefined} aria-roledescription={valid.length>1?'carosello':undefined}
-      aria-label={valid.length>1?'Galleria fotografica del rifugio':undefined}
+      aria-label={valid.length>1?'Galleria fotografica della struttura':undefined}
       onKeyDown={event=>{
         if(valid.length<2)return;
         if(event.key==='ArrowRight'){event.preventDefault();go(currentIndex+1)}
@@ -65,7 +65,7 @@ export function RefugeGallery({place}:{place:AlpinePlace}){
       {selected.historical&&<span className="cb-refuge-gallery-historical">FOTO STORICA</span>}
     </div> : <AlpinePlaceVisual place={place}/>}
     {selected&&<figcaption className="cb-refuge-gallery-caption">
-      <span>{selected.caption || (selected.historical?'Immagine storica del rifugio':'Il rifugio in fotografia')}
+      <span>{selected.caption || (selected.historical?'Immagine storica del luogo':'La struttura in fotografia')}
         {selected.capturedAt?' · '+selected.capturedAt:''}</span>
 
     </figcaption>}
