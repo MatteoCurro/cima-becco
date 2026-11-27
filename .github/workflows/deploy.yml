@@ -44,13 +44,12 @@ jobs:
       - name: Site address
         id: site
         run: |
-          # A repository variable SITE_URL (Settings → Secrets and variables →
-          # Actions → Variables) wins, so this copy can point search engines
-          # at the main address (e.g. https://hillgpx.com on Cloudflare).
-          if [ -n "${{ vars.SITE_URL }}" ]; then
-            echo "url=${{ vars.SITE_URL }}" >> "$GITHUB_OUTPUT"
-          elif [ -f public/CNAME ]; then
+          # public/CNAME is the canonical source; stale SITE_URL variables must not override it.
+          # Settings > Pages > Custom domain is configured separately with GitHub Actions.
+          if [ -f public/CNAME ]; then
             echo "url=https://$(tr -d '[:space:]' < public/CNAME)" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ vars.SITE_URL }}" ]; then
+            echo "url=${{ vars.SITE_URL }}" >> "$GITHUB_OUTPUT"
           else
             owner="${{ github.repository_owner }}"
             echo "url=https://${owner,,}.github.io/${{ github.event.repository.name }}" >> "$GITHUB_OUTPUT"
