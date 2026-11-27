@@ -113,12 +113,16 @@ export function addAlpinePlaceLayers(map: MlMap, all: AlpinePlace[], options: Al
       .catch(()=>undefined);
   });
   const selected=(event:{features?:{properties?:Record<string,unknown>}[];originalEvent?:Event})=>{
-    const f=event.features?.[0];const slug=f?.properties?.slug;
-    const item=typeof slug==='string'?places.find(p=>p.slug===slug):undefined;
-    if(!item)return;
+    const f=event.features?.[0];
+    const slug=f?.properties?.slug, kind=f?.properties?.kind;
+    if(typeof slug!=='string'||(kind!=='rifugio'&&kind!=='borgo'))return;
     event.originalEvent?.stopPropagation();
-    if(options.onSelect)options.onSelect(item);
-    else window.location.hash=`#atlante/${item.kind==='rifugio'?'rifugi':'borghi'}/${item.slug}`;
+    // Non catturare la lista iniziale dei POI: l'atlante carica il JSON
+    // dopo la mappa, e i click devono usare i properties aggiornati del source.
+    if(options.onSelect){
+      const item=places.find(p=>p.slug===slug);
+      if(item)options.onSelect(item);
+    }else window.location.hash=`#atlante/${kind==='rifugio'?'rifugi':'borghi'}/${slug}`;
   };
   for(const layer of ['cb-atlas-poi-icons','cb-atlas-poi-label']){
     map.on('click',layer,selected);
