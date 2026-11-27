@@ -230,29 +230,65 @@ def municipality(row, cols, retrieved_at):
     require(region and province, "Comune ISTAT senza gerarchia " + code)
     source_id = "istat:municipality:" + code
     facts = {}
-    values = [
-        ("regionName", region, None),
-        ("provinceName", province, None),
-        ("italianName", field(row, cols, "denominazione in italiano"), None),
-        ("localName", field(row, cols, "denominazione altra lingua"), None),
+    # Registry is additive: retaining official identifiers for administrative,
+    # cadastral and NUTS reconciliation does not invent geography or chronology.
+    # Year-qualified legacy codes must remain strings, never numeric measures.
+    field_map = [
+        ("regionName", "denominazione regione"),
+        ("provinceName", "denominazione dell unita territoriale sovracomunale"),
+        ("italianName", "denominazione in italiano"),
+        ("fullOfficialName", "denominazione italiana e straniera"),
+        ("localName", "denominazione altra lingua"),
+        ("regionCodeISTAT", "codice regione"),
+        ("statisticalTerritorialUnitCode", "codice dell unita territoriale sovracomunale valida a fini statistici"),
+        ("provinceCodeHistorical", "codice provincia storico 1"),
+        ("municipalityProgressive", "progressivo del comune 2"),
+        ("geographicalMacroRegionCode", "codice ripartizione geografica"),
+        ("geographicalMacroRegionName", "ripartizione geografica"),
+        ("statisticalTerritorialUnitTypeCode", "tipologia di unita territoriale sovracomunale"),
+        ("vehicleRegistrationProvinceCode", "sigla automobilistica"),
+        ("municipalityNumericCode", "codice comune formato numerico"),
+        ("municipalityNumericCode2017to2025", "codice comune numerico con 107 province dal 2017 al 2025"),
+        ("municipalityNumericCode2010to2016", "codice comune numerico con 110 province dal 2010 al 2016"),
+        ("municipalityNumericCode2006to2009", "codice comune numerico con 107 province dal 2006 al 2009"),
+        ("municipalityNumericCode1995to2005", "codice comune numerico con 103 province dal 1995 al 2005"),
+        ("cadastralCode", "codice catastale del comune"),
+        ("nuts1_2021", "codice nuts1 2021"),
+        ("nuts2_2021", "codice nuts2 2021"),
+        ("nuts3_2021", "codice nuts3 2021"),
+        ("nuts1_2024", "codice nuts1 2024"),
+        ("nuts2_2024", "codice nuts2 2024"),
+        ("nuts3_2024", "codice nuts3 2024"),
+    ]
+    values = [(key, field(row, cols, candidate), None) for key, candidate in field_map]
+    values += [
         ("quotaCentroM", number(field(row, cols, "altitudine del centro metri", "altitudine del centro")), "m"),
         ("superficieKm2", number(field(row, cols, "superficie territoriale kmq", "superficie territoriale km2")), "km2"),
     ]
+    capital = field(row, cols, "flag comune capoluogo di provincia citta metropolitana libero consorzio")
+    if capital in ("0", "1"):
+        values.append(("provinceCapitalFlag", capital == "1", None))
     for key, value, unit in values:
         if value is not None:
             facts[key] = fact(value, source_id, ISTAT_URL, unit=unit, as_of=retrieved_at)
     region_code = field(row, cols, "codice regione")
     province_sigla = field(row, cols, "sigla automobilistica")
+    cadastral = field(row, cols, "codice catastale del comune")
+    local_name = field(row, cols, "denominazione altra lingua")
+    aliases = ([{"name": local_name, "language": None,
+                 "sourceId": source_id, "sourceUrl": ISTAT_URL}]
+               if local_name and header(local_name) != header(name) else [])
     return {
         "id": "municipality:" + str(uuid5(NAMESPACE, "IT/ISTAT/" + code)),
         "kind": "municipality", "subtype": "italian_municipality",
         "name": name, "slug": slugify(name), "slugAliases": [],
-        "sourceIds": {"istat": code}, "geo": {"point": None, "area": None},
+        "sourceIds": {"istat": code, **({"cadastral": cadastral} if cadastral else {})},
+        "geo": {"point": None, "area": None},
         "administrativeHierarchy": {"countryCode": "IT", "region": region, "province": province,
                                     "regionCodeISTAT": region_code, "provinceAbbreviation": province_sigla,
                                     "municipalityCodeISTAT": code},
         "facts": facts, "factsAlternatives": [], "relations": [], "media": [],
-        "aliases": [], "editorialStatus": "raw",
+        "aliases": aliases, "editorialStatus": "raw",
         "quality": {"gate": "G0", "seoIndexable": False, "reviewRequired": True},
     }
 
