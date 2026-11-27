@@ -1,0 +1,32 @@
+/* Cima Becco: planner aggiuntivo che conserva l'impostazione visiva di HillGPX. */
+.cb-page { min-height:100vh; background:#f7f9f7; }
+.cb-planner { display:grid; grid-template-columns:minmax(300px,390px) minmax(0,1fr); min-height:calc(100dvh - 70px); }
+.cb-side { padding:28px clamp(18px,3vw,36px); background:#fff; border-right:1px solid #e2e9e3; overflow-y:auto; max-height:calc(100dvh - 70px); }
+.cb-kicker { font-size:11px; font-weight:800; letter-spacing:.12em; color:#547968; }
+.cb-side h1 { margin:10px 0 12px; font-size:clamp(26px,2.5vw,34px); letter-spacing:-.04em; line-height:1.12; }
+.cb-side p { font-size:14px; color:#61746a; line-height:1.6; }
+.cb-label { display:block; font-size:12px; font-weight:700; margin:18px 0 8px; }
+.cb-input { box-sizing:border-box; width:100%; border-radius:11px; border:1px solid #d3ded6; font:inherit; padding:12px; color:#20392b; background:#fff; }
+.cb-map { min-height:560px; background:#e5ebe5; position:relative; }
+.cb-point { display:grid; place-items:center; width:28px; height:28px; border:3px solid white; border-radius:50%; color:#fff; background:#24705e; font-size:12px; font-weight:800; box-shadow:0 3px 12px #0004; cursor:grab; }
+.cb-point-list { padding-left:20px; margin:18px 0; }
+.cb-point-list li { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:8px 0; border-bottom:1px solid #e7eee8; font-size:12px; }
+.cb-point-list li span { font-weight:700; }
+.cb-point-list li small { color:#728177; }
+.cb-point-list li button { margin-left:auto; border:0; border-radius:50%; width:26px; height:26px; cursor:pointer; background:#ebf1ed; }
+.cb-empty { border:1px dashed #c0d0c4; padding:20px; border-radius:12px; font-size:13px; color:#5d7366; margin:18px 0; }
+.cb-buttons { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+.cb-action { display:inline-flex; align-items:center; justify-content:center; border:1px solid #d5dfd7; border-radius:10px; background:#fff; color:#305744; font:inherit; text-decoration:none; font-weight:700; font-size:12px; padding:10px 12px; cursor:pointer; }
+.cb-action.primary { background:#286a56; border-color:#286a56; color:white; }
+.cb-action:disabled { opacity:.45; cursor:not-allowed; }
+.cb-result { border-top:1px solid #e2e9e5; padding-top:18px; margin-top:22px; }
+.cb-result h2 { font-size:18px; margin:0 0 12px; }
+.cb-stats { display:flex; gap:24px; }
+.cb-stats div { display:flex; flex-direction:column; gap:3px; }
+.cb-stats strong { font-size:21px; }
+.cb-stats small { color:#748379; font-size:11px; }
+.cb-message { padding:12px; border-radius:10px; font-size:13px; background:#e8f3ed; color:#265c43; margin:12px 0; }
+.cb-message.error { background:#fff0ec; color:#9b462f; }
+.cb-side .cb-note { font-size:11px; color:#819088; line-height:1.55; }
+.cb-plan-link { text-decoration:none; }
+@media (max-width:780px) { .cb-planner { display:flex; flex-direction:column-reverse; } .cb-map { height:50dvh; min-height:300px; } .cb-side { max-height:none; padding:20px; border-right:none; } }
