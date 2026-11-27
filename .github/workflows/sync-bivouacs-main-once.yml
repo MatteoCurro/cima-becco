@@ -1,0 +1,31 @@
+name: Sync bivouac importer with latest main (one off)
+on:
+  push:
+    branches: [feat/bivouacs-shelters-canonical-import-v2]
+    paths:
+      - .github/workflows/sync-bivouacs-main-once.yml
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Merge main without replacing newer UI components
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-edit -X theirs origin/main
+          test -f src/components/RefugeProfile.tsx
+          test -f scripts/assemble_shelters_release_v1.py
+          test -f src/lib/shelterRelease.ts
+          test -f scripts/build_source_credits.mjs
+          test -s public/data/atlas/shelters-v1.json
+          git push origin "HEAD:${GITHUB_REF_NAME}"
