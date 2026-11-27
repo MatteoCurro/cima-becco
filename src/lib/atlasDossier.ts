@@ -190,10 +190,16 @@ export function formatAtlasFact(fact: AtlasFact): string {
     typeof fact.value === 'number' ? fact.value.toLocaleString('it-IT') : String(fact.value);
   return value + (fact.unit ? ' ' + fact.unit : '');
 }
+function alertDateBoundary(value: string, endOfDay: boolean): number {
+  // ISO data senza ora: il giorno di validità finale è incluso interamente.
+  const dateOnly=/^\d{4}-\d{2}-\d{2}$/.test(value);
+  const timestamp=Date.parse(dateOnly ? value+'T00:00:00Z' : value);
+  return dateOnly && endOfDay ? timestamp+86_400_000-1 : timestamp;
+}
 export function activeAtlasAlerts(alerts?: AtlasAlert[], today = new Date()) {
   return (alerts ?? []).filter(alert => Boolean(alert.id && alert.title && alert.message && alert.sourceUrl && alert.checkedAt) &&
-    (!alert.validFrom || Date.parse(alert.validFrom) <= today.getTime()) &&
-    (!alert.validUntil || Date.parse(alert.validUntil) >= today.getTime()));
+    (!alert.validFrom || alertDateBoundary(alert.validFrom,false) <= today.getTime()) &&
+    (!alert.validUntil || alertDateBoundary(alert.validUntil,true) >= today.getTime()));
 }
 export function authorizedAtlasMedia(media?: AtlasMedia[]) {
   return (media ?? []).filter(item => item.subjectVerified && item.reuseAllowed &&

@@ -36,3 +36,12 @@ describe('governo dei media e degli avvisi', () => {
     expect(usableAtlasClimate([{...base,values:[...base.values,{month:6,value:2}]}])).toHaveLength(1);
   });
 });
+
+describe('date-only: ultimo giorno dell’avviso incluso',()=>{
+  it('mantiene una restrizione documentata fino alla fine della data valida',()=>{
+    const base={id:'t',title:'Divieto',message:'Accesso vietato',checkedAt:'2026-11-25',
+      validFrom:'2026-11-25',validUntil:'2026-11-27',sourceUrl:'https://ente.example/avviso'};
+    expect(activeAtlasAlerts([base],new Date('2026-11-27T18:00:00Z'))).toHaveLength(1);
+    expect(activeAtlasAlerts([base],new Date('2026-11-28T00:00:00Z'))).toHaveLength(0);
+  });
+});

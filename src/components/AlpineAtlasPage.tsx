@@ -87,7 +87,14 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
   const [water,setWater]=useState<AlpineWaterPoint[]>([]);
   const [localAtlas,setLocalAtlas]=useState<AlpinePlace[]>([]);
   const mapPlaces=useMemo(()=>[place],[place]);
-  const nearbyPlaces=useMemo(()=>nearbyAtlasPlaces(place,localAtlas,{maxKm:8,limit:8}),[place,localAtlas]);
+  const nearbyPlaces=useMemo(()=>{
+    const linked=(place.relations??[]).map(relation=>relation.target);
+    return nearbyAtlasPlaces(place,localAtlas,{maxKm:8,limit:8}).filter(({place:other})=>{
+      const pathname=alpinePlaceLink(other);
+      return !linked.some(target=>target.id===other.slug ||
+        target.href===pathname || target.href?.replace(/^https?:\/\/[^/]+/,'')===pathname);
+    });
+  },[place,localAtlas]);
   useEffect(()=>{
     let alive=true;
     void loadAlpinePlaces().then(dataset=>{if(alive)setLocalAtlas(dataset.places);});
