@@ -29,7 +29,14 @@ const EMPTY_TREKS: TreksDataset = { generatedAt: null, projects: [] };
 type Section = 'rifugi' | 'bivacchi' | 'borghi' | 'trekking';
 
 function parseAtlas(hash: string): { section: Section; slug: string | null } {
-  // The initial part is a section name, not an empty prefix.
+  // Permalink progetto trekking oppure vecchio link dell'Atlante.
+  if(!hash){
+    const base=import.meta.env.BASE_URL;
+    if(window.location.pathname.startsWith(base)){
+      const parts=window.location.pathname.slice(base.length).split('/').filter(Boolean);
+      if(parts[0]==='trekking'&&parts[1])return {section:'trekking',slug:parts[1]};
+    }
+  }
   const path = hash.replace(/^#atlante\/?/, '').split('/').filter(Boolean);
   const section = path[0] === 'borghi' || path[0] === 'bivacchi' || path[0] === 'trekking' ? path[0] : 'rifugi';
   return { section, slug: path[1] ?? null };
@@ -57,7 +64,7 @@ function RouteGroup({title,items}:{title:string;items:Route[]}) {
     <h2>{title} <span>{items.length}</span></h2>
     <div className="cb-atlas-routes">{items.map(route=>{
       const mood=trailMood(route);
-      return <a key={route.slug} href={`#route/${route.slug}`}>
+      return <a key={route.slug} href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(route.slug)}/`}>
         <strong>{trailTitle(route)}</strong>
         <span>{(route.distanceM/1000).toLocaleString('it-IT',{maximumFractionDigits:1})} km · {mood.quip}
           <small> · {mood.label}</small>
@@ -228,12 +235,12 @@ function TrekDetail({ trek, onBack }: { trek: TrekProject; onBack: string }) {
     {trek.stages.length > 0 && <section className="cb-atlas-nearby"><h2>TAPPE IDENTIFICATE</h2>
       <div className="cb-atlas-routes">{trek.stages.map(stage =>
         <div key={stage.number}><strong>TAPPA {stage.number}</strong>
-          {stage.routeSlugs.map(slug => <a href={`#route/${slug}`} key={slug}>Apri il segmento {slug} ↗</a>)}
+          {stage.routeSlugs.map(slug => <a href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(slug)}/`} key={slug}>Apri il segmento {slug} ↗</a>)}
         </div>)}</div>
     </section>}
     {trek.routeSlugs.length>0 && <section className="cb-atlas-nearby"><h2>SEGMENTI COLLEGATI</h2>
       <div className="cb-atlas-routes">{trek.routeSlugs.slice(0,80).map(slug =>
-        <a key={slug} href={`#route/${slug}`}>Apri il segmento cartografico ↗ <small>{slug}</small></a>)}</div>
+        <a key={slug} href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(slug)}/`}>Apri il segmento cartografico ↗ <small>{slug}</small></a>)}</div>
     </section>}
     <p className="cb-atlas-warning">Non è ancora un trekking composto e percorribile end-to-end. Il collegamento in tappe richiede ordine, continuità geometrica e verifica delle condizioni.</p>
   </div>;
@@ -303,7 +310,7 @@ export function AlpineAtlasPage() {
             : <div className="cb-atlas-empty"><h2>{query?'Non c’è questo nome in archivio.':'Il catalogo di questa categoria non è ancora disponibile.'}</h2>
                 <p>Il catalogo usa località reali di OpenStreetMap; non mostriamo località inventate.</p><a href="#map">Intanto, esplora la mappa ↗</a></div>}
             {places.length>visible && <button type="button" className="cb-atlas-more" onClick={()=>setVisible(n=>n+36)}>ALTRI {Math.min(36,places.length-visible)} LUOGHI ↓</button>}
-          </> : <div className="cb-atlas-grid">{treks.projects.map(t=><a key={t.slug} className="cb-atlas-card cb-atlas-trek" href={`#atlante/trekking/${t.slug}`}>
+          </> : <div className="cb-atlas-grid">{treks.projects.map(t=><a key={t.slug} className="cb-atlas-card cb-atlas-trek" href={`${import.meta.env.BASE_URL}trekking/${encodeURIComponent(t.slug)}/`}>
             <span className="cb-atlas-kind cb-atlas-kind--trek">TREKKING A TAPPE</span>
             <h2>{t.title}</h2>
             <strong>{t.slogan}</strong>

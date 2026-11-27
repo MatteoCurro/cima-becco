@@ -81,8 +81,21 @@ type View = 'landing' | 'planner' | 'atlas' | 'explore' | 'insights' | 'public_p
 
 const INFO_PAGES: ReadonlySet<string> = new Set<InfoPageId>(['privacy', 'terms', 'community', 'data', 'contact']);
 
+type CleanEntity = {kind:'rifugi'|'bivacchi'|'paesi'|'route'|'trekking';slug:string};
+function cleanEntity():CleanEntity|null{
+  const path=window.location.pathname,base=import.meta.env.BASE_URL;
+  if(!path.startsWith(base))return null;
+  const parts=path.slice(base.length).split('/').filter(Boolean);
+  if(parts.length!==2)return null;
+  const [section,slug]=parts;
+  if(!/^[a-zA-Z0-9_-]{2,120}$/.test(slug))return null;
+  const kind=section==='borghi'?'paesi':section;
+  return kind==='rifugi'||kind==='bivacchi'||kind==='paesi'||kind==='route'||kind==='trekking'
+    ?{kind,slug}:null;
+}
 function viewFromHash(): View {
   const hash = window.location.hash;
+  if(!hash){const path=cleanEntity();if(path)return path.kind==='route'?'map':path.kind==='trekking'?'atlas':'explore';}
   if (hash === '#pianifica') return 'planner';
   if (hash === '#atlante' || hash.startsWith('#atlante/')) return 'atlas';
   if (/^#(rifugi|bivacchi|paesi)(\/|$)/.test(hash)) return 'explore';
@@ -122,6 +135,20 @@ export default function App() {
     return () => window.removeEventListener(ADD_PLACE_EVENT, open);
   }, []);
 
+  useEffect(()=>{
+    // I permalink SEO hanno un path vero; i vecchi link hash tornano alla home SPA.
+    const jump=(event:MouseEvent)=>{
+      if(!cleanEntity())return;
+      const target=event.target as Element|null;
+      const anchor=target?.closest?.('a[href^="#"]');
+      const hash=anchor?.getAttribute('href');
+      if(!hash || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)return;
+      event.preventDefault();
+      window.location.assign(import.meta.env.BASE_URL+hash);
+    };
+    document.addEventListener('click',jump);
+    return ()=>document.removeEventListener('click',jump);
+  },[]);
   useEffect(() => {
     const sync = () => setView(viewFromHash());
     window.addEventListener('hashchange', sync);
@@ -255,7 +282,7 @@ function MapApp() {
   const [peakLooked, setPeakLooked] = useState<string | null>(null);
   const [filters, setFilters] = useState<VenueFilters>(NO_FILTERS);
   const [mode, setMode] = useState<BrowseMode>(() =>
-    window.location.hash === '#routes' || routeSlugFromHash(window.location.hash) || sessionStorage.getItem('hillgpx:mode') === 'routes' ? 'routes' : 'climbs',
+    window.location.hash === '#routes' || routeSlugFromHash(window.location.hash) || cleanEntity()?.kind==='route' || sessionStorage.getItem('hillgpx:mode') === 'routes' ? 'routes' : 'climbs',
   );
   const [routeFilters, setRouteFilters] = useState<RouteFilters>(NO_ROUTE_FILTERS);
   const [selectedRouteSlug, setSelectedRouteSlug] = useState<string | null>(null);
@@ -569,7 +596,7 @@ function MapApp() {
   }, [dataset, allRoutes, selectRoute]);
 
   // A shared link (#route/<slug>) opens on that route, once the routes have loaded.
-  const [linkedRoute, setLinkedRoute] = useState<string | null>(() => routeSlugFromHash(window.location.hash));
+  const [linkedRoute, setLinkedRoute] = useState<string | null>(() => routeSlugFromHash(window.location.hash) || (cleanEntity()?.kind==='route'?cleanEntity()?.slug??null:null));
   useEffect(() => {
     const onHash = () => {
       const slug = routeSlugFromHash(window.location.hash);
@@ -581,16 +608,18 @@ function MapApp() {
   useEffect(() => {
     if (!linkedRoute || !dataset || !routesReady) return;
     setLinkedRoute(null);
-    history.replaceState(null, '', '#routes');
+    if(!cleanEntity())history.replaceState(null, '', '#routes');
     setMode('routes');
     if (allRoutes.some((route) => route.slug === linkedRoute)) {
       selectRoute(linkedRoute);
+      setDockedSlug(linkedRoute);
     } else {
       // Carica solo la cella a cui appartiene il percorso condiviso.
       void loadRouteBySlug(linkedRoute).then((found) => {
         if (found) {
           setTiledRoutes((previous) => [...previous.filter((route) => route.slug !== found.slug), found]);
           selectRoute(found.slug);
+          setDockedSlug(found.slug);
         } else {
           setLocateHint({ title: 'Percorso non disponibile', text: 'La traccia potrebbe essere stata rimossa. Esplora gli itinerari sulla mappa.', retry: null });
         }

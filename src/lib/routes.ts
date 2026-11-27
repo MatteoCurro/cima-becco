@@ -329,7 +329,7 @@ const ROUTE_HASH = '#route/';
  * tracking parameters, just the route's own slug.
  */
 export function routeLink(slug: string): string {
-  return `${window.location.origin}${import.meta.env.BASE_URL}${ROUTE_HASH}${encodeURIComponent(slug)}`;
+  return `${window.location.origin}${import.meta.env.BASE_URL}route/${encodeURIComponent(slug)}/`;
 }
 
 /** The route slug in a `#route/<slug>` hash, or null. Anything not shaped like a slug is refused. */

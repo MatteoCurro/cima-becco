@@ -18,7 +18,15 @@ const CONFIG: Record<Section,{kind:AlpinePlace['kind'];title:string;lead:string;
 const SECTIONS:Section[]=['rifugi','bivacchi','paesi'];
 function fromHash(){
   const match=/^#(rifugi|bivacchi|paesi)(?:\/([^/?]+))?/.exec(window.location.hash);
-  return {section:(match?.[1]||'rifugi') as Section,slug:match?.[2]||null};
+  if(match)return {section:match[1] as Section,slug:match[2]||null};
+  const base=import.meta.env.BASE_URL;
+  if(window.location.pathname.startsWith(base)){
+    const parts=window.location.pathname.slice(base.length).split('/').filter(Boolean);
+    const section=parts[0]==='borghi'?'paesi':parts[0];
+    if(parts.length===2&&(section==='rifugi'||section==='bivacchi'||section==='paesi'))
+      return {section,slug:parts[1]};
+  }
+  return {section:'rifugi' as Section,slug:null};
 }
 function score(p:AlpinePlace){
   return Number(Boolean(p.photo))*110+Number(Boolean(p.description))*20+Number(Boolean(p.phone||p.email))*14+
@@ -65,7 +73,7 @@ export function AlpineExplorePage(){
   useEffect(()=>{setLimit(24);setSelected(null);},[query,sort,onlyPhoto,onlyContacts]);
   const onSelect=(p:AlpinePlace)=>{setSelected(p.slug);setMobileTab('map');};
   const count=filtered.length.toLocaleString('it-IT');
-  const detailHref=(p:AlpinePlace)=>'#'+nav.section+'/'+p.slug;
+  const detailHref=(p:AlpinePlace)=>import.meta.env.BASE_URL+(nav.section==='paesi'?'borghi':nav.section)+'/'+encodeURIComponent(p.slug)+'/';
   return <div className="cb-explore-page">
     <SiteHeader sticky/>
     {nav.slug ? <main className="cb-explore-detail-shell">
