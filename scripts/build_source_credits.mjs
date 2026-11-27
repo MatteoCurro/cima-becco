@@ -2,6 +2,9 @@
 export const SOURCE_PROVIDERS = Object.freeze([
   {id:'osm',name:'OpenStreetMap contributors',category:'Geografia, sentieri e punti d’interesse',
    url:'https://www.openstreetmap.org/copyright',licence:'ODbL 1.0'},
+  {id:'istat',name:'ISTAT',category:'Comuni, codici territoriali e statistiche amministrative',url:'https://www.istat.it/',licence:'Licenza della risorsa originale'},
+  {id:'dait',name:'Ministero dell’Interno · DAIT',category:'Amministrazione comunale e titolari delle cariche',url:'https://dait.interno.gov.it/',licence:'Fonte istituzionale con data di estrazione'},
+  {id:'wikipedia',name:'Wikipedia in italiano',category:'Testi territoriali e approfondimenti documentati',url:'https://it.wikipedia.org/',licence:'CC BY-SA 4.0 per gli estratti usati'},
   {id:'cai',name:'Club Alpino Italiano · Unico Rifugi',category:'Rifugi, bivacchi, capanne e punti d’appoggio',
    url:'https://rifugi.cai.it/',licence:'Riuso confermato dal titolare Cima Becco'},
   {id:'sat',name:'Società degli Alpinisti Tridentini (SAT)',category:'Rifugi, bivacchi, sentieri e riferimenti ufficiali',
@@ -22,7 +25,7 @@ export const SOURCE_PROVIDERS = Object.freeze([
    url:'https://github.com/StarlightsJourney/HillGPX',licence:'MIT e altre licenze nelle dipendenze'},
 ]);
 
-export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedAt='') {
+export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedAt='',municipalities=[]) {
   const records=[];
   const dedup=new Set();
   const add=(kind,slug,name,src,author,licence,mediaUrl)=>{
@@ -33,7 +36,7 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
     // SAME detail page: uniqueness must include each individual media URL.
     const key=[kind,slug,src,mediaUrl||''].join('\x1f');
     if(dedup.has(key))return; dedup.add(key);
-    const path=kind==='route'?'route':kind==='peak'?'place':
+    const path=kind==='route'?'route':kind==='peak'?'place':kind==='municipality'?'comuni':
       kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'borghi';
     records.push({
       kind,slug,name:String(name||slug).slice(0,180),
@@ -49,6 +52,24 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
       if((m.kind==='photo'||m.kind==='historical_photo'||m.kind==='logo') &&
          m.reuseAllowed && m.subjectVerified)
         add(p.kind,p.slug,p.name,m.sourceUrl,m.author||'Archivio della fonte',m.licence,m.url);
+  }
+  const textCredits=[];
+  for(const municipality of municipalities) {
+    if(!municipality?.slug || municipality.kind!=='municipality')continue;
+    const name=municipality.name;
+    for(const m of municipality.media||[]) {
+      if((m.kind==='photo'||m.kind==='historical_photo'||m.kind==='logo') &&
+         m.reuseAllowed && m.subjectVerified && m.author && m.licence && m.sourceUrl)
+        add('municipality',municipality.slug,name,m.sourceUrl,m.author,m.licence,m.url);
+    }
+    for(const source of municipality.textSources||[]) {
+      if(source.text && source.sourceUrl?.startsWith('https://') && source.licence) {
+        textCredits.push({kind:'municipality',slug:municipality.slug,name,
+          entityUrl:'/comuni/'+encodeURIComponent(municipality.slug)+'/',
+          sourceUrl:source.sourceUrl,author:'Contributori di Wikipedia',licence:source.licence,
+          sourceId:source.sourceId,sourceUpdatedAt:source.sourceUpdatedAt||null});
+      }
+    }
   }
   for(const r of routes) {
     if(!r?.slug)continue;
@@ -68,8 +89,10 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
     provenancePolicy:'Source IDs, URLs, licences and authors remain within facts and media objects',
     providers:SOURCE_PROVIDERS,
     photoCredits:records,
+    textCredits,
     counts:{
       total:records.length,
+      textTotal:textCredits.length,
       byType:Object.fromEntries([...new Set(records.map(x=>x.kind))].sort().map(k=>
         [k,records.filter(x=>x.kind===k).length])),
     },
