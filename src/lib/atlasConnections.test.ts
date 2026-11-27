@@ -15,9 +15,9 @@ describe('permalink parlanti e legami territoriali dell’Atlante',()=>{
     const cai=place('Rifugio alle Torri','cai-1234','rifugio',46,11);
     expect(atlasCanonicalPath(cai)).toBe('/rifugi/rifugio-alle-torri-cai-1234/');
   });
-  it('non cambia gli URL delle altre tipologie durante questo rilascio',()=>{
+  it('estende gli URL leggibili ai bivacchi, senza cambiare i borghi',()=>{
     expect(atlasCanonicalPath(place('Canazei','osm-n-999','borgo',46.4,11.7))).toBe('/borghi/osm-n-999/');
-    expect(atlasCanonicalPath(place('Bivacco rosso','osm-w-22','bivacco',46.4,11.7))).toBe('/bivacchi/osm-w-22/');
+    expect(atlasCanonicalPath(place('Bivacco rosso','osm-w-22','bivacco',46.4,11.7))).toBe('/bivacchi/bivacco-rosso-osm-w-22/');
     expect(atlasSlugPart('Rifugio Àlpë ß')).toBe('rifugio-alpe-ss');
   });
   const refuge:AlpinePlace={...place('Rifugio Lagorai','cai-98','rifugio',46.30,11.60),
