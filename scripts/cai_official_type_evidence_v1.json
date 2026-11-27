@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0",
+  "scope": "Manual source-type verification from official public CAI shelter pages, without copying descriptions or media; classification evidence only.",
+  "verifiedAt": "2026-11-27",
+  "records": [
+    {
+      "caiId": "921800106",
+      "officialType": "Rifugio custodito",
+      "officialPage": "https://rifugi.cai.it/shelters/921800106",
+      "classification": "refuge",
+      "notes": "CAI page lists Type: Rifugio custodito; candidate Boé"
+    },
+    {
+      "caiId": "922001801",
+      "officialType": "Rifugio custodito",
+      "officialPage": "https://rifugi.cai.it/shelters/922001801",
+      "classification": "refuge",
+      "notes": "CAI page lists Type: Rifugio custodito; candidate Torrani"
+    },
+    {
+      "caiId": "922005301",
+      "officialType": "Bivacco",
+      "officialPage": "https://rifugi.cai.it/shelters/922005301",
+      "classification": "bivouac",
+      "notes": "Official bivouac; OSM candidate had been grouped as rifugio, queue category disagreement for later separate bivouac review"
+    }
+  ]
+}
