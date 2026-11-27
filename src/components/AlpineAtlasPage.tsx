@@ -11,7 +11,7 @@ import { AlpinePlaceVisual } from './AlpinePlaceVisual';
 import { AlpineAtlasMap } from './AlpineAtlasMap';
 import { AlpineWeatherPanel } from './AlpineWeatherPanel';
 import { HutClaimRequest } from './HutClaimRequest';
-import { DetailFacts, DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
+import { DetailFacts, DetailLayout, DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
 import { loadAlpineWater, alpineWaterNear, potabilityLabel, type AlpineWaterPoint } from '../lib/alpineWater';
 import { track } from '../lib/analytics';
 import '../alpineAtlas.css';
@@ -29,6 +29,7 @@ interface TrekProject {
 type TreksDataset = { generatedAt: string | null; projects: TrekProject[] };
 const EMPTY: AlpinePlacesDataset = { generatedAt: null, source: 'OpenStreetMap · ODbL 1.0', coverage: 'Dolomiti', places: [] };
 const EMPTY_TREKS: TreksDataset = { generatedAt: null, projects: [] };
+const EMPTY_PLACES: AlpinePlace[] = [];
 type Section = 'rifugi' | 'bivacchi' | 'borghi' | 'trekking';
 
 function parseAtlas(hash: string): { section: Section; slug: string | null } {
@@ -120,12 +121,29 @@ export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onB
     {label:'Coordinate WGS84',value:`${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`},
     ...(place.elevationSource?[{label:'Fonte della quota',value:place.elevationSource==='dem'?'Stima del modello altimetrico DEM':'Quota registrata in OpenStreetMap'}]:[]),
   ];
-  return <article className="cb-location-profile">
-    <a className="cb-location-back" href={onBack}>← Esplora {place.kind==='rifugio'?'i rifugi':place.kind==='bivacco'?'i bivacchi':'i paesi'}</a>
+  return <DetailLayout
+    backHref={onBack}
+    backLabel={`Esplora ${place.kind==='rifugio'?'i rifugi':place.kind==='bivacco'?'i bivacchi':'i paesi'}`}
+    sidebarLabel="Posizione e contatti"
+    sidebar={<>
 
-
-    <div className="cb-location-body">
-      <div className="cb-location-content">
+        <section id="cb-place-map" className="cb-location-side-map">
+          <div className="cb-location-sidebar-heading"><span>POSIZIONE</span><strong>DOVE SI TROVA.</strong></div>
+          <AlpineAtlasMap places={places} kind={place.kind} selected={place} routes={nearby} water={water.map(w=>({lng:w.lng,lat:w.lat,potable:w.potable==='yes'}))} height="100%"/>
+          <p>Coordinate: {place.lat.toFixed(5)}, {place.lng.toFixed(5)} · Mappa TOPO / satellite</p>
+        </section>
+        <section className="cb-location-contact-card">
+          <div className="cb-location-sidebar-heading"><span>INFO OPERATIVE</span><strong>CONTATTI &amp; ACCESSO.</strong></div>
+          {place.operator&&<div className="cb-location-contact-row"><small>Gestore / ente</small><strong>{place.operator}</strong></div>}
+          {place.openingHours&&<div className="cb-location-contact-row"><small>Orari dichiarati</small><strong>{place.openingHours}</strong></div>}
+          {place.phone&&<a className="cb-location-contact-link" href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>☎ {place.phone}</a>}
+          {place.email&&<a className="cb-location-contact-link" href={'mailto:'+place.email}>✉ {place.email}</a>}
+          {place.website&&<a className="cb-location-contact-link cb-location-site-link" href={place.website} target="_blank" rel="noopener noreferrer">Sito della struttura ↗</a>}
+          {!place.phone&&!place.email&&!place.website&&<p className="cb-location-muted-note">Contatti non ancora presenti nei dati disponibili.</p>}
+        </section>
+        <div className="cb-location-safety"><strong>IN MONTAGNA SERVE LA TESTA.</strong><p>Posizione, meteo e sentieri sono indicativi. Prima di partire verifica apertura, condizioni, eventuali chiusure e bollettino valanghe.</p></div>
+    </>}
+  >
     <header className="cb-location-hero">
       <div className="cb-location-hero-copy">
         <div className="cb-location-avatar">{place.logo?<img src={place.logo.url} alt={'Logo ufficiale di '+place.name}/>:<AlpinePlaceIcon kind={place.kind} size={39}/>}</div>
@@ -193,27 +211,7 @@ export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onB
           {place.wikidata&&<> <a href={'https://www.wikidata.org/wiki/'+place.wikidata} target="_blank" rel="noopener noreferrer">Wikidata</a>.</>}
           {' '}Meteo da modello, dati e condizioni del territorio possono cambiare.
         </footer>
-      </div>
-
-      <aside className="cb-location-sidebar" aria-label="Posizione e contatti">
-        <section id="cb-place-map" className="cb-location-side-map">
-          <div className="cb-location-sidebar-heading"><span>POSIZIONE</span><strong>DOVE SI TROVA.</strong></div>
-          <AlpineAtlasMap places={places} kind={place.kind} selected={place} routes={nearby} water={water.map(w=>({lng:w.lng,lat:w.lat,potable:w.potable==='yes'}))} height="100%"/>
-          <p>Coordinate: {place.lat.toFixed(5)}, {place.lng.toFixed(5)} · Mappa TOPO / satellite</p>
-        </section>
-        <section className="cb-location-contact-card">
-          <div className="cb-location-sidebar-heading"><span>INFO OPERATIVE</span><strong>CONTATTI &amp; ACCESSO.</strong></div>
-          {place.operator&&<div className="cb-location-contact-row"><small>Gestore / ente</small><strong>{place.operator}</strong></div>}
-          {place.openingHours&&<div className="cb-location-contact-row"><small>Orari dichiarati</small><strong>{place.openingHours}</strong></div>}
-          {place.phone&&<a className="cb-location-contact-link" href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>☎ {place.phone}</a>}
-          {place.email&&<a className="cb-location-contact-link" href={'mailto:'+place.email}>✉ {place.email}</a>}
-          {place.website&&<a className="cb-location-contact-link cb-location-site-link" href={place.website} target="_blank" rel="noopener noreferrer">Sito della struttura ↗</a>}
-          {!place.phone&&!place.email&&!place.website&&<p className="cb-location-muted-note">Contatti non ancora presenti nei dati disponibili.</p>}
-        </section>
-        <div className="cb-location-safety"><strong>IN MONTAGNA SERVE LA TESTA.</strong><p>Posizione, meteo e sentieri sono indicativi. Prima di partire verifica apertura, condizioni, eventuali chiusure e bollettino valanghe.</p></div>
-      </aside>
-    </div>
-  </article>;
+  </DetailLayout>;
 }
 
 function TrekDetail({ trek, onBack }: { trek: TrekProject; onBack: string }) {
@@ -234,10 +232,25 @@ function TrekDetail({ trek, onBack }: { trek: TrekProject; onBack: string }) {
     return () => { active = false; };
   }, [trek]);
 
-  return <article className="cb-location-profile cb-trek-profile">
-    <a className="cb-location-back" href={onBack}>← Tutti i trekking</a>
-    <div className="cb-location-body">
-      <div className="cb-location-content">
+  return <DetailLayout
+    backHref={onBack}
+    backLabel="Tutti i trekking"
+    sidebarLabel="Cartografia del trekking"
+    className="cb-trek-profile"
+    sidebar={<>
+
+        <section id="cb-place-map" className="cb-location-side-map">
+          <div className="cb-location-sidebar-heading"><span>CARTOGRAFIA</span><strong>ANTEPRIMA DELLE TAPPE.</strong></div>
+          {previewRoutes.length ? <AlpineAtlasMap places={EMPTY_PLACES} kind="borgo" routes={previewRoutes} caption="SEGMENTI REALI (ANTEPRIMA)" height="100%"/> :
+            <div className="cb-trek-empty-map">{loading ? 'Caricamento anteprima cartografica…' : 'Nessun segmento disponibile per l’anteprima cartografica.'}</div>}
+        </section>
+        <section className="cb-location-contact-card">
+          <div className="cb-location-sidebar-heading"><span>COME LEGGERE LA MAPPA</span><strong>NON È UNA TRACCIA COMPLETA.</strong></div>
+          <p className="cb-location-muted-note">Sono rappresentati al massimo tre segmenti esistenti, non un itinerario unificato. Apri i singoli segmenti per quote, distanze, dislivelli e GPX.</p>
+        </section>
+        <div className="cb-location-safety"><strong>LA MONTAGNA NON È UN VIDEOGIOCO.</strong><p>Prima di partire verifica continuità del percorso, difficoltà e condizioni sul posto.</p></div>
+    </>}
+  >
         <header className="cb-location-hero">
           <div className="cb-location-hero-copy">
             <span className="cb-atlas-kind cb-atlas-kind--trek">TREKKING A TAPPE</span>
@@ -265,21 +278,7 @@ function TrekDetail({ trek, onBack }: { trek: TrekProject; onBack: string }) {
             <a key={slug} href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(slug)}/`}>Apri il segmento cartografico ↗ <small>{slug}</small></a>)}</div>
         </section>}
         <footer className="cb-location-credits">Dati escursionistici e geometrie dei singoli segmenti: verifica sempre fonti, segnaletica e condizioni prima della partenza.</footer>
-      </div>
-      <aside className="cb-location-sidebar" aria-label="Cartografia del trekking">
-        <section id="cb-place-map" className="cb-location-side-map">
-          <div className="cb-location-sidebar-heading"><span>CARTOGRAFIA</span><strong>ANTEPRIMA DELLE TAPPE.</strong></div>
-          {previewRoutes.length ? <AlpineAtlasMap places={[]} kind="borgo" routes={previewRoutes} caption="SEGMENTI REALI (ANTEPRIMA)" height="100%"/> :
-            <div className="cb-trek-empty-map">{loading ? 'Caricamento anteprima cartografica…' : 'Nessun segmento disponibile per l’anteprima cartografica.'}</div>}
-        </section>
-        <section className="cb-location-contact-card">
-          <div className="cb-location-sidebar-heading"><span>COME LEGGERE LA MAPPA</span><strong>NON È UNA TRACCIA COMPLETA.</strong></div>
-          <p className="cb-location-muted-note">Sono rappresentati al massimo tre segmenti esistenti, non un itinerario unificato. Apri i singoli segmenti per quote, distanze, dislivelli e GPX.</p>
-        </section>
-        <div className="cb-location-safety"><strong>LA MONTAGNA NON È UN VIDEOGIOCO.</strong><p>Prima di partire verifica continuità del percorso, difficoltà e condizioni sul posto.</p></div>
-      </aside>
-    </div>
-  </article>;
+  </DetailLayout>;
 }
 
 export function AlpineAtlasPage() {

@@ -23,3 +23,23 @@ export function DetailSectionHeading({ kicker, title, description, id }: { kicke
     <span>{kicker}</span><h2 id={id}>{title}</h2>{description && <p>{description}</p>}
   </div>;
 }
+
+/** Un unico contenitore editoriale/mappa, con sezioni e dati variabili per tipologia. */
+export function DetailLayout({
+  children, sidebar, backHref, backLabel, sidebarLabel, className = '',
+}: {
+  children: ReactNode;
+  sidebar: ReactNode;
+  backHref: string;
+  backLabel: string;
+  sidebarLabel: string;
+  className?: string;
+}) {
+  return <article className={`cb-location-profile${className ? ' ' + className : ''}`}>
+    <a className="cb-location-back" href={backHref}>← {backLabel}</a>
+    <div className="cb-location-body">
+      <div className="cb-location-content">{children}</div>
+      <aside className="cb-location-sidebar" aria-label={sidebarLabel}>{sidebar}</aside>
+    </div>
+  </article>;
+}
