@@ -101,6 +101,11 @@ jobs:
           assert all(rel['type']=='near' and not rel['accessVerified'] for x in e for rel in x['relations'])
           assert all('population' not in x['facts'] for x in e)
           assert r['indexed']==0
+          if r['daitInputAvailable']:
+            assert r['mayorsMatched'] >= 7500, ('DAIT ISTAT crosswalk: copertura anomala', r['mayorsMatched'])
+            assert r['daitRowsOfficialCrosswalkRejected'] <= 100
+            assert r['daitOfficialCrosswalkType'] == 'ISTAT_REGION_PLUS_PROVINCE_SIGLA_PLUS_EXACT_NAME'
+            assert all('dait' in x['sourceIds'] for x in e if 'sindacoNome' in x['facts'])
           print('Comuni',len(e),'Sindaci',r['mayorsMatched'],'OSM match',r['osmLinkedByVerifiedIds'],
                 'Relazioni near',r['nearbyRefugesAndShelters'])
           PY
