@@ -222,7 +222,23 @@ def main():
         for x in osm_report["quarantine"]
     })
     write(args.out,release)
-    write(args.report/"report.json",{**osm_report,**report})
+    final_report = {
+        **osm_report, **report,
+        "publicRecords": report["totalRefuges"],
+        "publicPhotoCount": report["photos"],
+        "publicCAIFields": sum(
+            1 for entity in release["entities"] for fact in entity.get("facts", {}).values()
+            if isinstance(fact, dict) and str(fact.get("sourceId", "")).startswith("cai:shelter:")
+        ),
+        "publicWebcamCount": sum(len(entity.get("webcams", [])) for entity in release["entities"]),
+        "qualityGate": "G0_OSM_G1_CAI_with_reviewed_joins",
+        "qualityNotes": [
+            "CAI e OSM hanno provenance individuale; rifugi CAI-only non hanno ID OSM inventato",
+            "Lo stato CAI non è una conferma di apertura in tempo reale",
+            "I dati dei bivacchi sono conservati nel catalogo CAI ma non pubblicati come rifugi",
+        ],
+    }
+    write(args.report/"report.json",final_report)
     write(args.report/"match-review.json",review)
     print(json.dumps(report,sort_keys=True,ensure_ascii=False))
 
