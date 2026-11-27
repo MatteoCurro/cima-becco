@@ -54,3 +54,40 @@ test('home: hero utilizzabile senza illustrazioni e con navigazione responsive',
     expect(overflow).toBe(false);
   }
 });
+
+for(const section of ['rifugi','bivacchi','paesi'] as const){
+  test('scheda '+section+': layout condiviso e larghezza corretta',async({page})=>{
+    await page.setViewportSize({width:390,height:844});
+    await page.goto('/#'+section);
+    const first=page.locator('.cb-explore-card-detail').first();
+    await expect(first).toBeVisible({timeout:20000});
+    await first.click();
+    await expect(page.locator('.cb-location-profile h1')).toBeVisible();
+    await expect(page.locator('.cb-detail-metrics')).toBeVisible();
+    await expect(page.locator('.cb-detail-facts')).toBeVisible();
+    for(const width of [320,375,390,768,1024,1440]){
+      await page.setViewportSize({width,height:844});
+      const sizes=await page.evaluate(()=>({
+        viewport:window.innerWidth,
+        scroll:document.documentElement.scrollWidth,
+        content:document.querySelector('.cb-location-content')?.getBoundingClientRect().width ?? 0,
+      }));
+      expect(sizes.scroll).toBeLessThanOrEqual(sizes.viewport+2);
+      expect(sizes.content).toBeGreaterThan(0);
+      expect(sizes.content).toBeLessThanOrEqual(sizes.viewport+1);
+    }
+  });
+}
+test('trekking: scheda condivisa senza overflow',async({page})=>{
+  await page.setViewportSize({width:375,height:812});
+  await page.goto('/#atlante/trekking');
+  const first=page.locator('.cb-atlas-trek').first();
+  await expect(first).toBeVisible({timeout:20000});
+  await first.click();
+  await expect(page.locator('.cb-trek-profile h1')).toBeVisible();
+  await expect(page.locator('.cb-trek-profile .cb-detail-metrics')).toBeVisible();
+  for(const width of [320,375,768,1024]){
+    await page.setViewportSize({width,height:812});
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2)).toBe(false);
+  }
+});

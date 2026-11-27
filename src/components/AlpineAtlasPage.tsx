@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Route } from '../types';
 import { SiteFooter, SiteHeader } from './SiteChrome';
 import { loadAlpinePlaces, alpinePlaceLink, atlasCategory, placeBounds, type AlpinePlace, type AlpinePlacesDataset } from '../lib/alpinePlaces';
-import { loadRoutesInBounds } from '../lib/routeTiles';
+import { loadRouteBySlug, loadRoutesInBounds } from '../lib/routeTiles';
 import { routesNear } from '../lib/routes';
 import { trailMood, trailTitle } from '../lib/routeEditorial';
 import { usePageTitle } from '../lib/pageTitle';
@@ -11,6 +11,7 @@ import { AlpinePlaceVisual } from './AlpinePlaceVisual';
 import { AlpineAtlasMap } from './AlpineAtlasMap';
 import { AlpineWeatherPanel } from './AlpineWeatherPanel';
 import { HutClaimRequest } from './HutClaimRequest';
+import { DetailFacts, DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
 import { loadAlpineWater, alpineWaterNear, potabilityLabel, type AlpineWaterPoint } from '../lib/alpineWater';
 import { track } from '../lib/analytics';
 import '../alpineAtlas.css';
@@ -133,11 +134,11 @@ export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onB
         <p className="cb-location-lead">{placeLine}</p>
         {place.description&&<p className="cb-location-story">{place.description}</p>}
         {wikiUrl&&<a className="cb-location-wiki" href={wikiUrl} target="_blank" rel="noopener noreferrer">Storia e approfondimenti enciclopedici ↗</a>}
-        <div className="cb-location-metrics" aria-label="Informazioni principali">
-          <div><strong>{place.elevationM!=null?place.elevationM.toLocaleString('it-IT')+' m':'n.d.'}</strong><span>Altitudine{place.elevationSource==='dem'?' stimata':''}</span></div>
-          {place.capacity!=null&&<div><strong>{place.capacity}</strong><span>{place.kind==='bivacco'?'Posti indicati':'Posti letto'}</span></div>}
-          <div><strong>{loading?'…':nearby.length}</strong><span>Sentieri vicini</span></div>
-        </div>
+        <DetailMetrics label="Informazioni principali" items={[
+          { label: 'Altitudine' + (place.elevationSource === 'dem' ? ' stimata' : ''), value: place.elevationM != null ? place.elevationM.toLocaleString('it-IT') + ' m' : 'n.d.' },
+          ...(place.capacity != null ? [{ label: place.kind === 'bivacco' ? 'Posti indicati' : 'Posti letto', value: place.capacity }] : []),
+          { label: 'Sentieri vicini', value: loading ? '…' : nearby.length },
+        ]}/>
         {place.kind!=='borgo'&&place.fee&&<div className="cb-location-cost">
           <span>PREZZI / ACCESSO</span>
           {/^\s*(yes|no)\s*$/i.test(place.fee)?<strong>{place.fee.toLowerCase()==='no'?'Accesso indicato gratuito':'Tariffa presente, importo da verificare'}</strong>:
@@ -156,23 +157,15 @@ export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onB
       </figure>
     </header>
         <section className="cb-location-section cb-location-dossier" aria-labelledby="cb-location-info-heading">
-          <div className="cb-location-section-heading">
-            <span>01 / DATI ESSENZIALI</span>
-            <h2 id="cb-location-info-heading">PRIMA DI PARTIRE.</h2>
-            <p>Informazioni disponibili nelle fonti cartografiche, da verificare con la struttura quando necessario.</p>
-          </div>
-          <dl className="cb-location-dl">{detailRows.map(row=><div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>)}</dl>
+          <DetailSectionHeading kicker="01 / DATI ESSENZIALI" title="PRIMA DI PARTIRE." id="cb-location-info-heading" description="Informazioni disponibili nelle fonti cartografiche, da verificare con la struttura quando necessario."/>
+          <DetailFacts rows={detailRows}/>
           {place.kind==='rifugio'&&!place.phone&&!place.email&&<p className="cb-location-muted-note">Non abbiamo ancora recapiti verificati per questa struttura: dato mancante non significa che sia chiusa.</p>}
         </section>
 
         <AlpineWeatherPanel lat={place.lat} lng={place.lng} name={place.name}/>
 
         <section className="cb-location-section cb-location-itineraries" aria-label="Sentieri vicini">
-          <div className="cb-location-section-heading">
-            <span>03 / ESCURSIONI E ACCESSI</span>
-            <h2>SENTIERI NEI DINTORNI.</h2>
-            <p>Tracce disponibili in zona: la vicinanza geometrica al percorso non certifica un accesso diretto.</p>
-          </div>
+          <DetailSectionHeading kicker="03 / ESCURSIONI E ACCESSI" title="SENTIERI NEI DINTORNI." description="Tracce disponibili in zona: la vicinanza geometrica al percorso non certifica un accesso diretto."/>
           {loading?<p className="cb-atlas-loading">Recupero i sentieri cartografati…</p>:<>
             <RouteGroup title="PARTONO DA QUI" items={departures}/>
             <RouteGroup title="ARRIVANO QUI" items={arrivals}/>
@@ -183,17 +176,14 @@ export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onB
         </section>
 
         {water.length>0&&<section className="cb-location-section cb-location-water">
-          <div className="cb-location-section-heading"><span>04 / RISORSE IN ZONA</span>
-            <h2>ACQUA NEI DINTORNI.</h2>
-            <p>Fonti mappate entro circa 1,8 km in linea d'aria. La potabilità, l'accessibilità e la disponibilità vanno verificate sul posto.</p>
-          </div>
+          <DetailSectionHeading kicker="04 / RISORSE IN ZONA" title="ACQUA NEI DINTORNI." description="Fonti mappate entro circa 1,8 km in linea d'aria. La potabilità, l'accessibilità e la disponibilità vanno verificate sul posto."/>
           <div className="cb-location-water-grid">{water.slice(0,8).map(w=><div key={w.slug}>
             <AlpinePlaceIcon kind="acqua" size={22}/><div><strong>{w.name}</strong><small>{w.kind} · {potabilityLabel(w.potable)}{w.seasonal?' · stagionale':''}</small></div>
           </div>)}</div>
         </section>}
 
         {place.kind==='rifugio'&&<section className="cb-location-community">
-          <div className="cb-location-section-heading"><span>05 / COMUNITÀ</span><h2>PARLA CON CHI CONOSCE IL POSTO.</h2></div>
+          <DetailSectionHeading kicker="05 / COMUNITÀ" title="PARLA CON CHI CONOSCE IL POSTO."/>
           <p>Domande ai gestori verificati e recensioni moderate sono previste, ma non ancora disponibili. Non vengono mostrati giudizi o risposte fittizi.</p>
           <HutClaimRequest place={place}/>
         </section>}
@@ -227,28 +217,69 @@ export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onB
 }
 
 function TrekDetail({ trek, onBack }: { trek: TrekProject; onBack: string }) {
-  return <div className="cb-atlas-detail">
-    <a className="cb-atlas-back" href={onBack}>← Tutti i trekking</a>
-    <span className="cb-atlas-kind cb-atlas-kind--trek">PROGETTO A TAPPE</span>
-    <h1>{trek.title}</h1>
-    <strong className="cb-atlas-trek-slogan">{trek.slogan}</strong>
-    <p className="cb-atlas-lead">{trek.description}</p>
-    <div className="cb-atlas-facts">
-      <span><strong>{trek.routeSlugs.length}</strong>segmenti identificati</span>
-      <span><strong>{trek.stages.length}</strong>tappe esplicite nei dati</span>
+  const [previewRoutes, setPreviewRoutes] = useState<Route[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let active = true;
+    setPreviewRoutes([]);
+    setLoading(true);
+    // Anteprima di pochi segmenti reali: non si inventano collegamenti tra tracce.
+    const candidates = trek.stages.length ? trek.stages.flatMap(stage => stage.routeSlugs) : trek.routeSlugs;
+    const slugs = [...new Set(candidates)].slice(0, 3);
+    void Promise.allSettled(slugs.map(loadRouteBySlug)).then(results => {
+      if (!active) return;
+      setPreviewRoutes(results.flatMap(result => result.status === 'fulfilled' && result.value ? [result.value] : []));
+      setLoading(false);
+    });
+    return () => { active = false; };
+  }, [trek]);
+
+  return <article className="cb-location-profile cb-trek-profile">
+    <a className="cb-location-back" href={onBack}>← Tutti i trekking</a>
+    <div className="cb-location-body">
+      <div className="cb-location-content">
+        <header className="cb-location-hero">
+          <div className="cb-location-hero-copy">
+            <span className="cb-atlas-kind cb-atlas-kind--trek">TREKKING A TAPPE</span>
+            <h1>{trek.title}</h1>
+            <p className="cb-location-lead">{trek.slogan}</p>
+            <p className="cb-location-story">{trek.description}</p>
+            <DetailMetrics label="Dati del trekking" items={[
+              { label: 'Segmenti identificati', value: trek.routeSlugs.length },
+              { label: 'Tappe esplicite', value: trek.stages.length },
+              { label: 'Segmenti in anteprima', value: loading ? '…' : previewRoutes.length },
+            ]}/>
+            <p className="cb-location-alert">Il tracciato completo non è verificato: i segmenti cartografici non dimostrano da soli continuità, accessibilità o percorribilità.</p>
+          </div>
+        </header>
+        {trek.stages.length > 0 && <section className="cb-location-section cb-location-dossier">
+          <DetailSectionHeading kicker="01 / PERCORSO" title="TAPPE IDENTIFICATE." description="Tappe esplicitamente associate nei dati, senza inferire collegamenti mancanti."/>
+          <div className="cb-atlas-routes">{trek.stages.map(stage =>
+            <div key={stage.number}><strong>TAPPA {stage.number}</strong>
+              {stage.routeSlugs.map(slug => <a href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(slug)}/`} key={slug}>Apri il segmento {slug} ↗</a>)}
+            </div>)}</div>
+        </section>}
+        {trek.routeSlugs.length > 0 && <section className="cb-location-section cb-location-itineraries">
+          <DetailSectionHeading kicker="02 / DATI CARTOGRAFICI" title="SEGMENTI COLLEGATI." description="Elementi realmente censiti, consultabili singolarmente sulla mappa."/>
+          <div className="cb-atlas-routes">{trek.routeSlugs.slice(0, 80).map(slug =>
+            <a key={slug} href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(slug)}/`}>Apri il segmento cartografico ↗ <small>{slug}</small></a>)}</div>
+        </section>}
+        <footer className="cb-location-credits">Dati escursionistici e geometrie dei singoli segmenti: verifica sempre fonti, segnaletica e condizioni prima della partenza.</footer>
+      </div>
+      <aside className="cb-location-sidebar" aria-label="Cartografia del trekking">
+        <section id="cb-place-map" className="cb-location-side-map">
+          <div className="cb-location-sidebar-heading"><span>CARTOGRAFIA</span><strong>ANTEPRIMA DELLE TAPPE.</strong></div>
+          {previewRoutes.length ? <AlpineAtlasMap places={[]} kind="borgo" routes={previewRoutes} caption="SEGMENTI REALI (ANTEPRIMA)" height="100%"/> :
+            <div className="cb-trek-empty-map">{loading ? 'Caricamento anteprima cartografica…' : 'Nessun segmento disponibile per l’anteprima cartografica.'}</div>}
+        </section>
+        <section className="cb-location-contact-card">
+          <div className="cb-location-sidebar-heading"><span>COME LEGGERE LA MAPPA</span><strong>NON È UNA TRACCIA COMPLETA.</strong></div>
+          <p className="cb-location-muted-note">Sono rappresentati al massimo tre segmenti esistenti, non un itinerario unificato. Apri i singoli segmenti per quote, distanze, dislivelli e GPX.</p>
+        </section>
+        <div className="cb-location-safety"><strong>LA MONTAGNA NON È UN VIDEOGIOCO.</strong><p>Prima di partire verifica continuità del percorso, difficoltà e condizioni sul posto.</p></div>
+      </aside>
     </div>
-    {trek.stages.length > 0 && <section className="cb-atlas-nearby"><h2>TAPPE IDENTIFICATE</h2>
-      <div className="cb-atlas-routes">{trek.stages.map(stage =>
-        <div key={stage.number}><strong>TAPPA {stage.number}</strong>
-          {stage.routeSlugs.map(slug => <a href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(slug)}/`} key={slug}>Apri il segmento {slug} ↗</a>)}
-        </div>)}</div>
-    </section>}
-    {trek.routeSlugs.length>0 && <section className="cb-atlas-nearby"><h2>SEGMENTI COLLEGATI</h2>
-      <div className="cb-atlas-routes">{trek.routeSlugs.slice(0,80).map(slug =>
-        <a key={slug} href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(slug)}/`}>Apri il segmento cartografico ↗ <small>{slug}</small></a>)}</div>
-    </section>}
-    <p className="cb-atlas-warning">Non è ancora un trekking composto e percorribile end-to-end. Il collegamento in tappe richiede ordine, continuità geometrica e verifica delle condizioni.</p>
-  </div>;
+  </article>;
 }
 
 export function AlpineAtlasPage() {

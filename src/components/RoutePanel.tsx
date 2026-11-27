@@ -1,3 +1,4 @@
+import { DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { endpointIconMarkup } from '../map/endpoints';
@@ -552,21 +553,13 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
         <span className="cima-trail-area">{region}{route.loop ? ' · Anello' : ''}</span>
       </div>
       <p className="cima-route-description">{trailDescription(route)}</p>
-      <div className="gpx-stats">
-        {[
-          ['Distanza', units.distance(route.distanceM)],
-          ['Dislivello positivo', hasElevation ? units.height(elevation.gainM) : unavailable],
-          ['Dislivello negativo', hasElevation ? units.height(elevation.lossM) : unavailable],
-          ['Tempo stimato', formatEstimate(estimate.minutes * 60)],
-          // Community routes only: curated files have no counter.
-          ...(route.downloads !== undefined ? [['Download', String(route.downloads)]] : []),
-        ].map(([label, value]) => (
-          <div className="gpx-stat" key={label} title={label === 'Tempo stimato' ? estimate.caption : undefined}>
-            <strong>{value}</strong>
-            <span>{label}</span>
-          </div>
-        ))}
-      </div>
+      <DetailMetrics label="Dati principali del percorso" items={[
+        { label: 'Distanza', value: units.distance(route.distanceM) },
+        { label: 'Dislivello positivo', value: hasElevation ? units.height(elevation.gainM) : unavailable },
+        { label: 'Dislivello negativo', value: hasElevation ? units.height(elevation.lossM) : unavailable },
+        { label: 'Tempo stimato', value: formatEstimate(estimate.minutes * 60), title: estimate.caption },
+        ...(route.downloads !== undefined ? [{ label: 'Download', value: String(route.downloads) }] : []),
+      ]}/>
 
       {hasElevation ? (
         <ElevationProfile points={elevation.points} height={sidebar ? 132 : 72} hoverIndex={hoverIndex} onHoverIndex={onHoverIndex} />
@@ -638,7 +631,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
         <div className="route-more-inner">
           {(route.trailRef || route.caiDifficulty || route.viaFerrataScale || route.sacScale || route.officialDescriptionUrl || route.sourceUrl) && (
             <section className="route-official-data" aria-label="Segnavia e dati tecnici">
-              <strong>Segnavia e dati tecnici</strong>
+              <DetailSectionHeading kicker="03 / DETTAGLI TECNICI" title="Segnavia e dati tecnici"/>
               <p className="route-meta muted">
                 {[
                   route.caiTrailNumber ? `Sentiero CAI ${route.caiTrailNumber}` : route.trailRef ? `Segnavia ${route.trailRef}` : null,
@@ -651,18 +644,11 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
               {routeActivity(route) === 'ferrata' && <p className="route-meta muted">Via ferrata: la sola traccia GPX non indica condizioni, difficoltà effettiva né tempi tecnici. Verifica sempre la relazione ufficiale e l'attrezzatura necessaria.</p>}
             </section>
           )}
-          <div className="gpx-stats">
-            {[
-              ['Quota massima', hasElevation ? units.height(maxM) : unavailable],
-              ['Quota minima', hasElevation ? units.height(minM) : unavailable],
-              ['Salita per km', hasElevation ? units.height(elevation.gainM / km) : unavailable],
-            ].map(([label, value]) => (
-              <div className="gpx-stat" key={label}>
-                <strong>{value}</strong>
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
+          <DetailMetrics label="Quote e pendenze del percorso" items={[
+            { label: 'Quota massima', value: hasElevation ? units.height(maxM) : unavailable },
+            { label: 'Quota minima', value: hasElevation ? units.height(minM) : unavailable },
+            { label: 'Salita per km', value: hasElevation ? units.height(elevation.gainM / km) : unavailable },
+          ]}/>
 
           {touches.length > 0 && (
             <div className="gpx-touches route-passes">

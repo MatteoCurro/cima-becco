@@ -33,13 +33,6 @@
 .cb-atlas-trek h2{font-size:clamp(26px,3vw,36px);color:white;flex:none}
 .cb-atlas-trek>strong{font:900 21px 'Bricolage Grotesque',sans-serif;color:#ff78a4}
 .cb-atlas-trek p{font-size:13px;color:#e3eede;line-height:1.55;flex:1}
-.cb-atlas-detail{max-width:940px;background:#fff;padding:35px;border-radius:14px}
-.cb-atlas-back{display:block;margin-bottom:24px;color:#eb176a;font:900 12px 'Space Grotesk',sans-serif;text-decoration:none}
-.cb-atlas-detail h1{font:900 clamp(36px,6vw,65px)/.97 'Bricolage Grotesque',sans-serif;letter-spacing:-.055em;margin:18px 0}
-.cb-atlas-lead{font-size:17px;color:#466051;max-width:650px;line-height:1.7}
-.cb-atlas-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:28px 0}
-.cb-atlas-facts>span{background:#f3f7ef;border-radius:9px;padding:16px;font-size:11px;font-weight:700;color:#7a887a;min-width:0}
-.cb-atlas-facts strong{display:block;font-size:16px;color:#28513c;margin-bottom:6px;overflow-wrap:anywhere}
 .cb-atlas-actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
 .cb-atlas-actions a{font-weight:800;color:#1e6646}
 .cb-atlas-primary{padding:16px 21px;color:#fff!important;background:#ff2879;border-radius:7px;font:900 13px 'Space Grotesk',sans-serif;text-decoration:none}
@@ -55,8 +48,6 @@
 .cb-atlas-routes>a small{color:#728678;font-weight:500}
 .cb-atlas-sourcing{font-size:11px;color:#849082;margin-top:36px}
 .cb-atlas-sourcing a{color:#4e7b5f}
-.cb-atlas-warning{background:#fff0d8;border-left:4px solid #ff2879;padding:14px 18px;border-radius:7px}
-.cb-atlas-trek-slogan{font:900 21px 'Bricolage Grotesque',sans-serif;color:#f32776}
 @media(max-width:800px){.cb-atlas-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cb-atlas-intro{grid-template-columns:1fr auto;padding:26px}.cb-atlas-intro-symbol{font-size:140px}.cb-atlas-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.cb-atlas-shell{width:calc(100% - 26px);padding-top:18px}.cb-atlas-tabs a{font-size:11px;padding:11px}.cb-atlas-intro{grid-template-columns:1fr;padding:22px;border-radius:10px 26px 10px 10px}.cb-atlas-intro-symbol{display:none}.cb-atlas-grid{grid-template-columns:1fr}.cb-atlas-card{min-height:160px}.cb-atlas-detail{padding:22px}.cb-atlas-facts,.cb-atlas-routes{grid-template-columns:1fr}}
 
@@ -70,10 +61,6 @@
 .cb-atlas-cover img{display:block;width:100%;height:clamp(190px,33vw,350px);object-fit:cover;border-radius:11px;background:#e3ebdb}
 .cb-atlas-card-photo{width:calc(100% + 42px);margin:-7px -21px 2px;height:110px;object-fit:cover;border-radius:8px 8px 0 0;background:#e7eee2}
 .cb-atlas-card-photo~h2{margin-top:1px}
-.cb-atlas-facts{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
-.cb-atlas-facts>span{background:#f0f5ea;border:1px solid #e1eade;font-weight:700}
-.cb-atlas-facts>span strong{color:#1e4433!important}
-.cb-atlas-detail .cb-atlas-actions{margin:22px 0 31px}
 .cb-atlas-section-top{margin:28px 0 14px}
 .cb-atlas-section-top>span{font:900 11px 'Space Grotesk',sans-serif;color:#d70059;letter-spacing:.14em}
 .cb-atlas-section-top h2{font:900 clamp(23px,3vw,34px)/1 'Bricolage Grotesque',sans-serif;letter-spacing:-.05em;color:#173c2e;margin:7px 0 8px}

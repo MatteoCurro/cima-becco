@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Map as MapLibreMap, Marker, NavigationControl, type GeoJSONSource } from 'maplibre-gl';
 import type { Route } from '../types';
 import { MAP_STYLE_URL } from '../map/constants';
@@ -14,6 +14,7 @@ interface Props {
   height?: number | string;
   onSelect?: (place: AlpinePlace) => void;
   water?: {lng:number;lat:number;potable:boolean}[];
+  caption?: string;
 }
 const EMPTY_LINE = {type:'FeatureCollection' as const,features:[]};
 
@@ -28,7 +29,8 @@ function routeGeometry(routes: Route[]) {
 }
 
 /** Mappa riusabile per listati rifugi, paesi e singole pagine locali. */
-export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,water=[],onSelect}:Props) {
+const NO_ROUTES: Route[] = [];
+export function AlpineAtlasMap({places,kind,selected=null,routes=NO_ROUTES,height=380,water=[],onSelect,caption}:Props) {
   const container=useRef<HTMLDivElement>(null);
   const mapRef=useRef<MapLibreMap | null>(null);
   const onSelectRef=useRef(onSelect);
@@ -38,7 +40,15 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
   const markerRef=useRef<Marker | null>(null);
   const initialized=useRef(false);
   const [ready,setReady]=useState(false);
-  const [showTrails,setShowTrails]=useState(Boolean(selected));
+  const [showTrails,setShowTrails]=useState(Boolean(selected || routes.length));
+  const routeExtent=useMemo(() => {
+    let west=Infinity,east=-Infinity,south=Infinity,north=-Infinity;
+    for(const route of routes) for(const [lng,lat] of route.coordinates){
+      west=Math.min(west,lng);east=Math.max(east,lng);south=Math.min(south,lat);north=Math.max(north,lat);
+    }
+    return Number.isFinite(west) ? [[west,south],[east,north]] as [[number,number],[number,number]] : null;
+  },[routes]);
+  useEffect(()=>{if(routes.length && !places.length) setShowTrails(true);},[routes.length,places.length]);
   const [showWater,setShowWater]=useState(false);
 
   useEffect(()=>{
@@ -120,12 +130,12 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
       map.easeTo({center:[selected.lng,selected.lat],zoom:13,duration:400});
     }else{
       const list=places.filter(p=>p.kind===kind);
-      if(!list.length)return;
+      if(!list.length){if(routeExtent) map.fitBounds(routeExtent,{padding:45,maxZoom:11,duration:300});return;}
       const west=Math.min(...list.map(p=>p.lng)),east=Math.max(...list.map(p=>p.lng));
       const south=Math.min(...list.map(p=>p.lat)),north=Math.max(...list.map(p=>p.lat));
       map.fitBounds([[west,south],[east,north]],{padding:45,maxZoom:11,duration:300});
     }
-  },[selected,kind,places,ready]);
+  },[selected,kind,places,routeExtent,ready]);
 
   useEffect(()=>{
     const map=mapRef.current;if(!map||!ready)return;
@@ -140,11 +150,11 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
 
   return <div className="cb-atlas-map-wrap">
     <div className="cb-map-layer-switches" role="group" aria-label="Livelli sulla mappa">
-      {selected&&<button type="button" aria-pressed={showTrails} onClick={()=>setShowTrails(value=>!value)}>Sentieri {showTrails?'✓':'+'}</button>}
+      {(selected || routes.length>0)&&<button type="button" aria-pressed={showTrails} onClick={()=>setShowTrails(value=>!value)}>Sentieri {showTrails?'✓':'+'}</button>}
       {water.length>0&&<button type="button" aria-pressed={showWater} onClick={()=>setShowWater(value=>!value)}>Punti acqua {showWater?'✓':'+'}</button>}
     </div>
     <div ref={container} className="cb-atlas-map" style={{height}} role="application"
-      aria-label={selected? `Mappa topografica di ${selected.name} con sentieri vicini` : `Mappa topografica dedicata a ${kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'paesi di montagna'}`}/>
-    <span className="cb-atlas-map-caption">TOPO / SAT · {selected?.name ?? (kind==='rifugio'?'RIFUGI':kind==='bivacco'?'BIVACCHI':'PAESI')} · + / − PER ZOOMARE</span>
+      aria-label={caption ? `Mappa topografica: ${caption}` : selected? `Mappa topografica di ${selected.name} con sentieri vicini` : `Mappa topografica dedicata a ${kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'paesi di montagna'}`}/>
+    <span className="cb-atlas-map-caption">TOPO / SAT · {caption ?? selected?.name ?? (kind==='rifugio'?'RIFUGI':kind==='bivacco'?'BIVACCHI':'PAESI')} · + / − PER ZOOMARE</span>
   </div>;
 }

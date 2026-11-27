@@ -40,12 +40,26 @@
 .cb-local-water-grid>div{padding:12px 15px;border:1px solid var(--cb-line);border-radius:8px;background:#fff;display:flex;flex-direction:column;gap:5px}
 .cb-local-water-grid>div strong{font:800 13px var(--cb-body);color:var(--cb-ink)}
 .cb-local-water-grid>div small{font:500 11px var(--cb-body);color:var(--cb-muted)}
+/* Schema comune delle schede; nessuna larghezza rigida ereditata dal viewport. */
+.cb-detail-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,105px),1fr));gap:9px;margin:16px 0;min-width:0;max-width:100%}
+.cb-detail-metric{display:flex;flex-direction:column;gap:6px;min-width:0;padding:13px 10px;border:1px solid var(--cb-line);border-radius:9px;background:#edf5e8}
+.cb-detail-metric strong{font:900 clamp(18px,2.1vw,27px)/1.1 var(--cb-display);color:var(--cb-ink);overflow-wrap:anywhere}
+.cb-detail-metric span{font:700 10px/1.35 var(--cb-body);color:var(--cb-muted);overflow-wrap:anywhere}
+.cb-detail-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:9px;min-width:0;max-width:100%;margin:0}
+.cb-detail-facts>div{padding:12px;min-width:0;border:1px solid #e0ecdc;border-radius:8px;background:#f2f7ed}
+.cb-detail-facts dt{font:850 10px/1.45 var(--cb-body);letter-spacing:.025em;color:#6f8170}
+.cb-detail-facts dd{font:750 13px/1.5 var(--cb-body);color:var(--cb-ink);overflow-wrap:anywhere;margin:5px 0 0}
+.cb-detail-section-heading{margin:0 0 14px;min-width:0}
+.cb-detail-section-heading>span{display:block;font:900 10px/1.4 var(--cb-body);color:#bc0052;letter-spacing:.12em}
+.cb-detail-section-heading h2{font:900 clamp(22px,2.3vw,32px)/1.1 var(--cb-display);color:var(--cb-ink);letter-spacing:-.048em;margin:7px 0 9px;overflow-wrap:anywhere}
+.cb-detail-section-heading>p{font:500 12px/1.65 var(--cb-body);color:#5f7965;margin:0}
+.route-panel .cb-detail-section-heading h2{font-size:20px}
+.route-panel .cb-detail-metrics{grid-template-columns:repeat(auto-fit,minmax(min(100%,95px),1fr))}
+.route-panel .cb-detail-metric{text-align:center}
+.cb-location-profile,.cb-atlas-card,.cb-atlas-routes>*{min-width:0;max-width:100%}
+.cb-atlas-routes a,.cb-detail-section-heading,.cb-location-profile a{overflow-wrap:anywhere}
 /* Un'unica scala per anteprime e schede: titolo > metriche > descrizione > dettagli. */
 .gpx-panel-head h2,.route-panel .route-name{font:850 clamp(20px,2.2vw,26px)/1.14 var(--cb-display);letter-spacing:-.03em;color:var(--cb-ink)}
-.route-panel .gpx-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:8px;margin:17px 0 16px}
-.route-panel .gpx-stat{padding:12px 8px;min-width:0;background:#f0f5ec;border:1px solid var(--cb-line);border-radius:8px;text-align:center}
-.route-panel .gpx-stat strong{font:900 clamp(20px,2.4vw,28px)/1 var(--cb-display);color:var(--cb-ink)}
-.route-panel .gpx-stat span{font:650 11px/1.4 var(--cb-body);color:var(--cb-muted);margin-top:6px}
 .route-panel .cima-trail-mood{margin-top:15px;gap:8px}
 .route-panel .cima-mood-pill{font-size:clamp(18px,2.1vw,23px)!important;line-height:1.05!important;padding:7px 10px!important;box-shadow:2px 2px 0 #173d2d!important}
 .route-panel .cima-mood-technical{font-size:11px!important}

@@ -16,10 +16,6 @@
 .cb-location-hero h1{font:900 clamp(31px,3.4vw,52px)/1.05 'Bricolage Grotesque',sans-serif;letter-spacing:-.057em;overflow-wrap:anywhere;color:#193f30;margin:7px 0 9px}
 .cb-location-lead{font:600 clamp(14px,1.35vw,17px)/1.55 'Space Grotesk',sans-serif;color:#3e6349;margin:0 0 8px}
 .cb-location-story{font:500 13px/1.7 'Space Grotesk',sans-serif;color:#486b53;margin:8px 0 15px}
-.cb-location-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:16px 0 16px}
-.cb-location-metrics>div{border:1px solid #d6e5d0;background:#edf5e8;border-radius:9px;padding:14px 10px;display:flex;flex-direction:column;gap:6px;min-width:0}
-.cb-location-metrics strong{font:900 clamp(18px,2.1vw,27px)/1.06 'Bricolage Grotesque',sans-serif;white-space:normal;overflow-wrap:anywhere;color:#1e4532}
-.cb-location-metrics span{font:700 10px/1.3 'Space Grotesk',sans-serif;color:#57705b}
 .cb-location-cost{border:1px solid #efdbb3;background:#fff9e9;padding:12px 15px;border-radius:9px;margin:10px 0 18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .cb-location-cost>span:first-child{font:850 10px/1.2 'Space Grotesk',sans-serif;color:#8b7037;letter-spacing:.06em}
 .cb-location-cost>strong{font:850 14px/1.3 'Bricolage Grotesque',sans-serif;color:#5f4a25}
@@ -31,15 +27,7 @@
 .cb-location-actions a:hover,.cb-location-actions button:hover{border-color:#c90053}
 .cb-location-alert{padding:13px 15px;border-left:4px solid #b7863b;background:#fff4dd;border-radius:6px;font:600 12px/1.6 'Space Grotesk',sans-serif;color:#654c23;margin:8px 0}
 .cb-location-section{margin:20px 0 31px}
-.cb-location-section-heading{margin:0 0 14px}
-.cb-location-section-heading>span{font:900 10px/1.4 'Space Grotesk',sans-serif;color:#bc0052;letter-spacing:.12em}
-.cb-location-section-heading h2{font:900 clamp(22px,2.3vw,32px)/1.1 'Bricolage Grotesque',sans-serif;color:#1c4332;letter-spacing:-.048em;margin:7px 0 9px}
-.cb-location-section-heading>p{font:500 12px/1.65 'Space Grotesk',sans-serif;color:#5f7965;margin:0}
 .cb-location-dossier{border-top:1px solid #dce8d9;padding-top:22px}
-.cb-location-dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:0;min-width:0}
-.cb-location-dl>div{background:#f2f7ed;border:1px solid #e0ecdc;border-radius:8px;padding:12px;min-width:0}
-.cb-location-dl dt{font:850 10px/1.45 'Space Grotesk',sans-serif;letter-spacing:.025em;color:#6f8170}
-.cb-location-dl dd{font:750 13px/1.5 'Space Grotesk',sans-serif;color:#1a4431;overflow-wrap:anywhere;margin:5px 0 0}
 .cb-location-muted-note{font:500 12px/1.6 'Space Grotesk',sans-serif;color:#687b6c}
 .cb-location-itineraries .cb-atlas-nearby{margin:12px 0}
 .cb-location-itineraries .cb-atlas-nearby h2{font:850 14px/1.3 'Bricolage Grotesque',sans-serif;color:#234837}
@@ -79,7 +67,6 @@
 .cb-location-content>.cb-location-community,
 .cb-location-content>.cb-location-credits{max-width:780px;margin-left:auto;margin-right:auto}
 .cb-location-hero-copy,.cb-location-dossier,.cb-location-itineraries{min-width:0}
-.cb-location-metrics>div{min-width:0}
 .cb-location-map-actions{max-width:100%}
 .cb-location-sidebar .cb-atlas-map-wrap{min-width:0}
 .cb-location-contact-row strong{max-width:65%;white-space:normal}
@@ -96,12 +83,12 @@
   .cb-atlas-routes{grid-template-columns:1fr}
 }
 @container (max-width:410px){
-  .cb-location-metrics{gap:6px}
-  .cb-location-metrics>div{padding:12px 8px}
-  .cb-location-metrics strong{font-size:clamp(18px,4vw,25px)}
-  .cb-location-metrics span{font-size:9px}
-  .cb-location-dl{gap:7px}
-  .cb-location-dl>div{padding:10px}
+  .cb-detail-metrics{gap:6px}
+  .cb-detail-metrics>div{padding:12px 8px}
+  .cb-detail-metrics strong{font-size:clamp(18px,4vw,25px)}
+  .cb-detail-metrics span{font-size:9px}
+  .cb-detail-facts{gap:7px}
+  .cb-detail-facts>div{padding:10px}
   .cb-location-water-grid{grid-template-columns:1fr}
   .cb-location-actions a,.cb-location-actions button{flex:1 1 auto}
 }
@@ -135,3 +122,13 @@
   .cb-location-contact-card{padding:14px}
   .cb-location-avatar{margin-top:-59px}
 }
+
+/* I trekking condividono la griglia dei luoghi: cartografia reale, non una traccia costruita. */
+.cb-trek-profile .cb-location-hero{margin-bottom:24px}
+.cb-trek-profile .cb-location-lead{font-weight:850;color:#b5004d}
+.cb-trek-empty-map{flex:1;display:grid;place-items:center;padding:80px 25px 25px;text-align:center;min-width:0;color:#436b51;font:750 13px/1.6 'Space Grotesk',sans-serif;background:#dfebdc}
+.cb-trek-profile .cb-atlas-routes{min-width:0}
+.cb-trek-profile .cb-atlas-routes a,.cb-trek-profile .cb-atlas-routes>div{min-width:0;overflow-wrap:anywhere}
+.cb-trek-profile .cb-atlas-routes>div a{display:block;margin-top:7px;color:#bc0052;font:750 12px/1.55 'Space Grotesk',sans-serif}
+.cb-location-side-map .cb-atlas-map-caption{overflow-wrap:anywhere}
+@media(max-width:900px){.cb-trek-empty-map{min-height:305px}}
