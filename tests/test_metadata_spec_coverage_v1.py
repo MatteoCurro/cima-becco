@@ -46,8 +46,8 @@ class MetadataCoverageTests(unittest.TestCase):
     def test_source_registry_traceability_reuses_pilot_and_fails_closed(self):
         by_id = {s["id"]: s for s in self.sources["sources"]}
         self.assertEqual(len(by_id), 26)
-        self.assertEqual(by_id["cai_refuges"]["status"], "tested_pilot")
-        self.assertEqual(by_id["cai_refuges"]["licenseGate"], "requires_review")
+        self.assertEqual(by_id["cai_refuges"]["status"], "release_adapter_implemented")
+        self.assertEqual(by_id["cai_refuges"]["licenseGate"], "user_confirmed_reuse")
         self.assertEqual(by_id["sat"]["status"], "tested_partial_live_failure")
         self.assertEqual(by_id["regional_meteo"]["status"], "portals_access_only")
         self.assertEqual(by_id["webcam_operator"]["licenseGate"], "permission_required")
