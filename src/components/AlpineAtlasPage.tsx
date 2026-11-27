@@ -138,14 +138,14 @@ export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onB
           {place.capacity!=null&&<div><strong>{place.capacity}</strong><span>{place.kind==='bivacco'?'Posti indicati':'Posti letto'}</span></div>}
           <div><strong>{loading?'…':nearby.length}</strong><span>Sentieri vicini</span></div>
         </div>
-        {place.kind!=='borgo'&&<div className="cb-location-cost">
+        {place.kind!=='borgo'&&place.fee&&<div className="cb-location-cost">
           <span>PREZZI / ACCESSO</span>
-          {!place.fee?<strong>Tariffa non disponibile: chiedi al gestore</strong>:/^\s*(yes|no)\s*$/i.test(place.fee)?<strong>{place.fee.toLowerCase()==='no'?'Accesso indicato gratuito':'Tariffa presente, importo da verificare'}</strong>:
+          {/^\s*(yes|no)\s*$/i.test(place.fee)?<strong>{place.fee.toLowerCase()==='no'?'Accesso indicato gratuito':'Tariffa presente, importo da verificare'}</strong>:
             <><strong>{place.fee}</strong>{/\d/.test(place.fee)&&<span className="cb-location-dobloni" title="Indicazione giocosa basata su una tariffa dichiarata; non è un rating">🪙 <small>Importo dichiarato · verifica con il gestore</small></span>}</>}
         </div>}
         <div className="cb-location-actions">
           <button type="button" className="cb-location-action-primary" onClick={()=>document.getElementById('cb-place-map')?.scrollIntoView({behavior:'smooth',block:'start'})}>ESPLORA SULLA MAPPA <span aria-hidden="true">↗</span></button>
-          {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>CHIAMA IL RIFUGIO</a>}
+          {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>{place.kind==='rifugio'?'CHIAMA IL RIFUGIO':place.kind==='bivacco'?'CHIAMA IL REFERENTE':'CHIAMA'}</a>}
           {place.email&&<a href={'mailto:'+place.email}>SCRIVI</a>}
         </div>
         {place.kind==='bivacco'&&<p className="cb-location-alert">Bivacco non custodito: verifica accesso, dotazioni e condizioni prima di partire. La capienza indicata non garantisce posto disponibile.</p>}

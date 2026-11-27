@@ -75,16 +75,20 @@ export function AlpineExplorePage(){
   const count=filtered.length.toLocaleString('it-IT');
   const detailHref=(p:AlpinePlace)=>import.meta.env.BASE_URL+(nav.section==='paesi'?'borghi':nav.section)+'/'+encodeURIComponent(p.slug)+'/';
   return <div className="cb-explore-page">
-    <SiteHeader sticky/>
-    {nav.slug ? <main className="cb-explore-detail-shell">
-      {detail?<PlaceDetail place={detail} onBack={'#'+nav.section} places={places}/>:
+    {nav.slug ? <>
+      <SiteHeader sticky/>
+      <main className="cb-explore-detail-shell">
+      {detail?<PlaceDetail place={detail} onBack={import.meta.env.BASE_URL+'#'+nav.section} places={places}/>:
       <div className="cb-explore-no-data"><h1>{loaded?'Luogo non trovato':'Caricamento in corso…'}</h1><a href={'#'+nav.section}>Torna all'elenco</a></div>}
-    </main>:<>
+      </main>
+    </> : <div className="cb-explore-screen">
+      <SiteHeader sticky/>
       <div className="cb-explore-overview">
-        <div className="cb-explore-overline">CIMA BECCO / ESPLORA I LUOGHI</div>
         <div className="cb-explore-overview-inner">
-          <div><span className="cb-explore-kicker">{config.kicker}</span><h1>{config.title}</h1></div>
-          <p>{config.lead}</p>
+          <div className="cb-explore-heading">
+            <h1>{config.title}</h1>
+            <p>{config.lead}</p>
+          </div>
           <div className="cb-explore-count"><strong>{loaded?places.length.toLocaleString('it-IT'):'…'}</strong><span>LUOGHI IN ARCHIVIO</span></div>
         </div>
         <nav className="cb-explore-categories" aria-label="Categorie da esplorare">
@@ -147,7 +151,7 @@ export function AlpineExplorePage(){
           <button type="button" aria-pressed={mobileTab==='map'} onClick={()=>setMobileTab('map')}>Mappa</button>
         </div>
       </main>
-    </>}
+    </div>}
     <SiteFooter/>
   </div>;
 }
