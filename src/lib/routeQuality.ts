@@ -65,6 +65,8 @@ export const QUALITY_LIMITS = {
   spikeReturnM: 100,
   speedWindowS: 60,
   maxFootKmh: 25,
+  maxHikeKmh: 15,
+  maxFerrataKmh: 12,
   minDistanceM: 300,
   minPoints: 10,
   // Temporarily disabled: Infinity never trips. Restore to 5 to re-enable.
@@ -82,7 +84,7 @@ function flag(id: QualityFlagId, value: number, threshold: number, unit: Quality
 }
 
 export function assessRoute(input: QualityInput): QualityAssessment {
-  const { points, times = [], hasElevation, deviceElevation, spacing = 'raw' } = input;
+  const { points, times = [], activity, hasElevation, deviceElevation, spacing = 'raw' } = input;
   const flags: QualityFlag[] = [];
 
   const steps = points.slice(1).map((p, i) => haversineM(points[i][0], points[i][1], p[0], p[1]));
@@ -125,7 +127,7 @@ export function assessRoute(input: QualityInput): QualityAssessment {
   }
 
   // Sustained speed: over the shortest run of steps spanning a full window, so one noisy fix does not trip it.
-  const limit = QUALITY_LIMITS.maxFootKmh;
+  const limit = activity === 'ferrata' ? QUALITY_LIMITS.maxFerrataKmh : activity === 'trail' ? QUALITY_LIMITS.maxFootKmh : QUALITY_LIMITS.maxHikeKmh;
   let worst = 0;
   let worstAt = 0;
   let lo = 0;
