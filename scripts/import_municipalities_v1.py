@@ -338,13 +338,44 @@ def reconcile_osm(entities, places, qid_map):
         entity["geo"]["point"] = {"lat": lat, "lng": lng}
         entity["geo"]["method"] = "osm_settlement_point_not_administrative_centroid"
         entity["geo"]["sourceUrl"] = place.get("osmUrl")
-        entity["relations"].append({"type": "related_osm_place", "target": {"slug": place["slug"],
-            "kind": "locality", "name": place["name"]}, "method": "wikidata_istat_id_verified",
-            "sourceId": "wikidata:" + qid, "verified": True})
         entity["quality"].update({"gate": "G1", "reviewRequired": False})
         entity["editorialStatus"] = "linked"
         linked += 1
     return {"osmLinkedByVerifiedIds": linked, "osmIdentityReview": review}
+
+def near_links(entities, resources, max_km=20, limit=6):
+    """Proximity from an OSM settlement point, NOT municipal inclusion or access."""
+    linked = 0
+    for entity in entities:
+        origin = entity["geo"].get("point")
+        if not origin:
+            continue
+        results = []
+        for target in resources:
+            point = target.get("geo", {}).get("point")
+            if not point or target.get("kind") not in ("refuge", "bivouac", "shelter"):
+                continue
+            a = math.radians(origin["lat"])
+            b = math.radians(point["lat"])
+            dlat = b - a
+            dlng = math.radians(point["lng"] - origin["lng"])
+            hav = math.sin(dlat / 2) ** 2 + math.cos(a) * math.cos(b) * math.sin(dlng / 2) ** 2
+            km = 6371.0088 * 2 * math.asin(min(1.0, math.sqrt(max(0, hav))))
+            if km <= max_km:
+                results.append((km, target))
+        results.sort(key=lambda x: (x[0], x[1]["id"]))
+        for km, target in results[:limit]:
+            entity["relations"].append({
+                "type": "near",
+                "target": {"id": target["id"], "kind": target["kind"],
+                           "name": target["name"], "slug": target["slug"]},
+                "straightLineKm": round(km, 2), "method": "haversine",
+                "verified": False, "accessVerified": False,
+                "sourceUrl": entity["geo"]["sourceUrl"],
+                "notes": "Distanza dal punto OSM dell'abitato, non dal confine comunale",
+            })
+            linked += 1
+    return linked
 
 def slug_uniqueness(entities, previous=None):
     previous_map = {e["sourceIds"]["istat"]: e for e in (previous or {}).get("entities", [])}
@@ -369,7 +400,7 @@ def slug_uniqueness(entities, previous=None):
             "Slug omonimi ancora ambigui: revisione necessaria (nessun ID pubblico)")
 
 def build(istat_raw, dait_raw=None, *, retrieved_at, osm_places=None, qid_map=None, previous=None,
-          min_municipalities=7800):
+          nearby_entities=None, min_municipalities=7800):
     rows, cols, _ = rows_istat(istat_raw)
     entities = []
     codes = set()
@@ -393,6 +424,7 @@ def build(istat_raw, dait_raw=None, *, retrieved_at, osm_places=None, qid_map=No
         dait_rows, dait_cols, _ = rows_dait(dait_raw)
         mayors.update(attach_mayors(entities, dait_rows, dait_cols, retrieved_at))
     links = reconcile_osm(entities, osm_places or [], qid_map or [])
+    links["nearbyRefugesAndShelters"] = near_links(entities, nearby_entities or [])
     slug_uniqueness(entities, previous)
     entities.sort(key=lambda e: e["sourceIds"]["istat"])
     report = {
@@ -403,7 +435,7 @@ def build(istat_raw, dait_raw=None, *, retrieved_at, osm_places=None, qid_map=No
         "missingMunicipalGeometry": sum(e["geo"]["point"] is None for e in entities),
         "indexed": sum(e["quality"]["seoIndexable"] for e in entities),
         "rejectedUnknownPopulationOrMandate": True,
-        "removedComparedWithPrevious": sorted(set((previous or {}).get("sourceIds", [])) - codes),
+        "removedComparedWithPrevious": sorted({e["sourceIds"]["istat"] for e in (previous or {}).get("entities", [])} - codes),
     }
     result = {"schemaVersion": "1.0", "releaseChannel": "ISTAT_DAIT_MUNICIPALITIES_STAGING",
               "isPublished": False, "retrievedAt": retrieved_at,
@@ -419,6 +451,8 @@ def main():
     parser.add_argument("--osm-places", type=Path)
     parser.add_argument("--qid-map", type=Path, help="Mappe QID/ISTAT con P635 verificato; mai match per nome")
     parser.add_argument("--previous", type=Path)
+    parser.add_argument("--refuges-file", type=Path)
+    parser.add_argument("--shelters-file", type=Path)
     parser.add_argument("--out", type=Path, default=ROOT / "build/import-municipalities-v1")
     parser.add_argument("--retrieved-at", default=datetime.now(timezone.utc).isoformat(timespec="seconds"))
     parser.add_argument("--min-municipalities", type=int, default=7800)
@@ -427,10 +461,16 @@ def main():
     raw_dait = args.dait_file.read_bytes() if args.dait_file else None
     osm = load(args.osm_places).get("places", []) if args.osm_places else None
     qid_map = load(args.qid_map) if args.qid_map else None
+    if isinstance(qid_map, dict):
+        qid_map = qid_map.get("associations", [])
+    nearby = []
+    for data_file in (args.refuges_file, args.shelters_file):
+        if data_file:
+            nearby.extend(load(data_file).get("entities", []))
     previous = load(args.previous) if args.previous else None
     result, report = build(raw_istat, raw_dait, retrieved_at=args.retrieved_at,
                            osm_places=osm, qid_map=qid_map, previous=previous,
-                           min_municipalities=args.min_municipalities)
+                           nearby_entities=nearby, min_municipalities=args.min_municipalities)
     # Immutable raw inputs identified by content digest; no overwrite on collision.
     raw_dir = args.out / "raw"
     for name, content in (("istat", raw_istat), ("dait", raw_dait)):
