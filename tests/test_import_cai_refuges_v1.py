@@ -131,6 +131,16 @@ class CAIReleaseTests(unittest.TestCase):
         self.assertEqual(len(r),1)
         self.assertEqual(r[0]["kind"],"photo")
 
+    def test_cai_http_images_upgrade_to_https_on_official_host_only(self):
+        sample=detail()
+        sample["media"][0]["original_url"]="http://rifugi.cai.it/media/refuge.jpg"
+        r=cai.media_from_detail(sample)
+        self.assertEqual(r[0]["url"],"https://rifugi.cai.it/media/refuge.jpg")
+        sample["media"][0]["original_url"]="http://untrusted.example/refuge.jpg"
+        self.assertEqual(cai.media_from_detail(sample),[])
+        hut=cai.normalize_detail(fixture(),detail(),MAPPING,PROPOSALS)
+        self.assertEqual(hut["mediaNormalizationVersion"],"https-cai-2026-11")
+
     def test_empty_geo_skipped(self):
         r=fixture()
         r["geo"]={"type":"Point","coordinates":[999,46.5]}
