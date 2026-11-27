@@ -63,6 +63,13 @@ class CAIResolverTests(unittest.TestCase):
         self.assertEqual(r["summary"]["candidatePairs"], 0)
         self.assertEqual(r["unmatched"][0]["reason"], "non_refuge_type")
 
+    def test_unpublished_records_do_not_generate_candidates(self):
+        source = cai(100, "BOE", category="rifugio custodito")
+        source["published"] = False
+        r = linker.identity_candidates([source], [hut("1", "Rifugio Boé")])
+        self.assertEqual(r["summary"]["candidatePairs"], 0)
+        self.assertEqual(r["unmatched"][0]["reason"], "not_public_or_deleted")
+
     def test_unknown_category_is_not_treated_as_verified_refuge(self):
         r = linker.identity_candidates([cai(100, "BOE")], [hut("1", "Boé")])
         self.assertEqual(r["candidateMatches"][0]["typeReview"], "unverified")
