@@ -113,8 +113,15 @@ def csv_matrix(raw):
             continue
     variants = []
     for delimiter in (";", ",", "\t"):
-        rows = list(csv.reader(io.StringIO(text), delimiter=delimiter))
-        variants.append(rows)
+        try:
+            rows = list(csv.reader(io.StringIO(text, newline=""), delimiter=delimiter))
+        except csv.Error:
+            # DAIT usa righe introduttive e campi citati: un separatore sbagliato
+            # puo' fallire. Provare gli altri anziche' abortire lo snapshot.
+            continue
+        if rows:
+            variants.append(rows)
+    require(variants, "CSV ufficiale senza un separatore decodificabile")
     return variants
 
 def xlsx_matrices(raw):
