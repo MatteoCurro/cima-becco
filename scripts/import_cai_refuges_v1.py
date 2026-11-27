@@ -39,6 +39,19 @@ KNOWN_TYPES = {
     "punto d'appoggio": ("other", "punto_appoggio"),
 }
 RISKY_FIELD_PREFIXES = ("taxCode_", "pec_", "contract_", "user_", "role_")
+MEDIA_NORMALIZATION_VERSION = "https-cai-2026-11"
+SHELTER_MEDIA_NORMALIZATION_VERSION = "https-cai-noncustodial-2026-11"
+
+
+def desired_media_normalization_version(kind):
+    return MEDIA_NORMALIZATION_VERSION if kind == "rifugio" else SHELTER_MEDIA_NORMALIZATION_VERSION
+
+
+def can_reuse_normalized_record(old, revision):
+    return bool(old and old.get("revision") == revision and
+                old.get("mediaNormalizationVersion") ==
+                desired_media_normalization_version(old.get("kind")))
+
 HISTORY_HTML_RE = re.compile(r"<[^>]+>")
 VALID_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/avif"}
 SAFE_ID = re.compile(r"^\d{1,20}$")
@@ -244,7 +257,7 @@ def normalize_detail(row, detail, mapping, proposals):
         "description": description,
         "openingScheduleStructured": schedule,
         "media": photos,
-        "mediaNormalizationVersion": "https-cai-2026-11",
+        "mediaNormalizationVersion": desired_media_normalization_version(kind),
         "webcams": [], "quality": {"gate": "G1", "seoIndexable": False},
         "unmappedFieldNames": unknown,
     }
@@ -331,10 +344,7 @@ def build_catalogue(rows, details_by_id, mapping, proposals, previous=None, *, c
             continue
         key = str(row["id_cai"])
         old = previous_by_id.get(key)
-        if old and old.get("revision") == row.get("updated_at") and (
-            old.get("kind") != "rifugio" or
-            old.get("mediaNormalizationVersion") == "https-cai-2026-11"
-        ):
+        if can_reuse_normalized_record(old, row.get("updated_at")):
             records.append(old)
             continue
         doc = details_by_id.get(key)
@@ -371,13 +381,8 @@ def collect(previous=None, *, limit=None, api=fetch_json, workers=5):
         rows = rows[:limit]
     previous_by_id = {r.get("caiId"): r for r in (previous or {}).get("records", [])}
     fetch_rows = [r for r in rows if r.get("published") and r.get("deleted_at") in (None, "")
-                  and not (
-                      previous_by_id.get(str(r["id_cai"]), {}).get("revision") == r.get("updated_at")
-                      and (
-                          previous_by_id.get(str(r["id_cai"]), {}).get("kind") != "rifugio"
-                          or previous_by_id.get(str(r["id_cai"]), {}).get("mediaNormalizationVersion") ==
-                             "https-cai-2026-11"
-                      )
+                  and not can_reuse_normalized_record(
+                      previous_by_id.get(str(r["id_cai"])), r.get("updated_at")
                   )]
     details = {}
     with ThreadPoolExecutor(max_workers=workers) as pool:
