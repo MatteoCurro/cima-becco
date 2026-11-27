@@ -84,3 +84,21 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Controlla il dominio pubblico (diagnostica non bloccante)
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Risoluzione DNS:"
+          getent ahosts www.cimabecco.it | head -n 5 || true
+          echo "Homepage:"
+          status="$(curl --location --silent --show-error --max-time 25 --output /tmp/cimabecco-home.html --write-out '%{http_code}' https://www.cimabecco.it/)"
+          echo "HTTP $status"
+          test "$status" = "200"
+          grep -Fq 'https://www.cimabecco.it/' /tmp/cimabecco-home.html
+          echo "Sitemap:"
+          status="$(curl --location --silent --show-error --max-time 25 --output /tmp/cimabecco-sitemap.xml --write-out '%{http_code}' https://www.cimabecco.it/sitemap.xml)"
+          echo "HTTP $status"
+          test "$status" = "200"
+          grep -Fq 'https://www.cimabecco.it/' /tmp/cimabecco-sitemap.xml
