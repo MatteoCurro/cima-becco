@@ -43,6 +43,17 @@ jobs:
           python -m unittest discover -s tests -p 'test_import_cai_refuges_v1.py' -v
           python -m unittest discover -s tests -p 'test_publish_refuges_v1.py' -v
           python -m unittest discover -s tests -p 'test_assemble_refuges_release_v1.py' -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Verifica preventiva TypeScript e test prima delle API CAI
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npm run test
       - name: Normalizza i rifugi dello snapshot OSM
         run: python scripts/import_refuges_v1.py --strict
       - name: Aggiorna il catalogo CAI completo solo per i record modificati
@@ -54,10 +65,14 @@ jobs:
         run: |
           set -euo pipefail
           python -c "import json; from pathlib import Path; p=Path('public/data/atlas/refuges-v1.json'); d=json.loads(p.read_text()); e=d['entities']; assert d['schemaVersion']=='1.1'; assert len(e)>=400; assert len(set(x['id'] for x in e))==len(e); assert len(set(x['slug'] for x in e))==len(e); assert all(x['kind']=='refuge' for x in e); assert all('caiCatalogueStatus' not in x.get('facts',{}) or x['facts']['caiCatalogueStatus']['value']!='Aperto ora' for x in e); print('Refuges validated:',len(e))"
-      - uses: actions/setup-node@v4
+      - name: Preserva per QA il catalogo CAI gia acquisito
+        uses: actions/upload-artifact@v4
         with:
-          node-version: '22'
-          cache: npm
+          name: cima-refuges-normalized-cai-cache
+          path: |
+            public/data/atlas/cai-refuges-v1.json
+            public/data/atlas/refuges-v1.json
+          retention-days: 5
       - name: Build e regressioni frontend/SEO su dati CAI reali
         shell: bash
         env:
@@ -66,9 +81,6 @@ jobs:
           VITE_SITE_URL: https://www.cimabecco.it
         run: |
           set -euo pipefail
-          npm ci
-          npm run typecheck
-          npm run test
           npm run build
           node scripts/check_permalinks.mjs
           test -s dist/data/atlas/refuges-v1.json
