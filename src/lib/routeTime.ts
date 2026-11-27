@@ -19,11 +19,11 @@ import { routeActivity } from './routeAnalysis';
  *    6 h, 15 min beyond.
  */
 
-/** Base speed on flat ground, km/h. A trail is about 17% slower than the road: rougher ground, more scrambling. */
-export const BASE_SPEED_KMH: Record<RouteActivity, number> = { run: 9, trail: 7.5, cycle: 22.5 };
+/** Velocità indicativa a piedi, km/h. Le ferrate richiedono valutazione specifica delle difficoltà. */
+export const BASE_SPEED_KMH: Record<RouteActivity, number> = { hike: 4.5, trail: 7.5, ferrata: 2.0 };
 
-/** The run planner's default pace, s per km: the running base speed (9 km/h). */
-export const DEFAULT_PACE_S_PER_KM = 3600 / BASE_SPEED_KMH.run;
+/** Passo predefinito del pianificatore, in secondi/km. */
+export const DEFAULT_PACE_S_PER_KM = 3600 / BASE_SPEED_KMH.hike;
 
 const BUCKET_M = 75;
 const DEADBAND_M = 3;
@@ -34,7 +34,7 @@ const FATIGUE_FROM_KM = 10;
 const FATIGUE_EXPONENT = 0.09;
 
 /** What the estimate rests on, shown with it. */
-export const ESTIMATE_CAPTION = 'Realistic average time based on distance, climbing, and endurance fatigue.';
+export const ESTIMATE_CAPTION = 'Stima indicativa basata su distanza e dislivello: non considera meteo, soste o passaggi tecnici. Per le ferrate non sostituisce tempi e difficoltà ufficiali.';
 
 /** A route reduced to what the duration needs: flat distance, and climbing split by steepness. */
 export interface ClimbProfile {
@@ -135,14 +135,14 @@ export function formatDuration(minutes: number): string {
 }
 
 /**
- * Estimated moving time of a profile. A route with no activity reads as a run.
+ * Estimated moving time of a profile. A route without activity uses hiking pace.
  * `paceScale` stretches the whole time for a runner slower or quicker than the
  * default (1 is the base speed).
  */
 export function estimateProfile(profile: ClimbProfile, activity: RouteActivity | undefined, paceScale = 1): RouteDurationEstimate {
   const effectiveKm = profile.distanceKm + profile.gentleM / 100 + (STEEP_WEIGHT * profile.steepM) / 100;
   const fatigue = Math.max(1, effectiveKm / FATIGUE_FROM_KM) ** FATIGUE_EXPONENT;
-  const hours = (effectiveKm / BASE_SPEED_KMH[activity ?? 'run']) * fatigue * paceScale;
+  const hours = (effectiveKm / BASE_SPEED_KMH[activity ?? 'hike']) * fatigue * paceScale;
   const minutes = roundDurationMinutes(hours * 60);
   return {
     minutes,
@@ -160,7 +160,7 @@ export function estimateTrackDuration(points: readonly RoutePoint[], activity: R
 /**
  * Estimated moving time in seconds from a distance and total climb alone, for
  * when there is no track to read the steepness from: the climb counts as
- * gentle. A route with no activity reads as a run.
+ * gentle. A route without activity uses hiking pace.
  */
 export function estimateRouteTimeS(distanceM: number, gainM: number, activity: RouteActivity | undefined, paceScale = 1): number {
   const profile = { distanceKm: distanceM / 1000, gentleM: Math.max(0, gainM), steepM: 0 };
