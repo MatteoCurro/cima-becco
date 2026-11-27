@@ -12,6 +12,8 @@ interface Props {
   places: AlpinePlace[];
   kind: AlpinePlace['kind'];
   selected?: AlpinePlace | null;
+  /** Punto geografico generico: per cime, falesie e future risorse senza anagrafica AlpinePlace. */
+  selectedPoint?: {lat:number;lng:number;name:string} | null;
   routes?: Route[];
   height?: number | string;
   onSelect?: (place: AlpinePlace) => void;
@@ -32,7 +34,7 @@ function routeGeometry(routes: Route[]) {
 
 /** Mappa riusabile per listati rifugi, paesi e singole pagine locali. */
 const NO_ROUTES: Route[] = [];
-export function AlpineAtlasMap({places,kind,selected=null,routes=NO_ROUTES,height=380,water=[],onSelect,caption}:Props) {
+export function AlpineAtlasMap({places,kind,selected=null,selectedPoint=null,routes=NO_ROUTES,height=380,water=[],onSelect,caption}:Props) {
   const container=useRef<HTMLDivElement>(null);
   const mapRef=useRef<MapLibreMap | null>(null);
   const onSelectRef=useRef(onSelect);
@@ -57,8 +59,8 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=NO_ROUTES,heigh
     if(!container.current||mapRef.current)return;
     const map=new MapLibreMap({
       container:container.current,style:MAP_STYLE_URL,
-      center:selected?[selected.lng,selected.lat]:[12.05,46.62],
-      zoom:selected?13:8.6,minZoom:4,attributionControl:{compact:false},
+      center:selected?[selected.lng,selected.lat]:selectedPoint?[selectedPoint.lng,selectedPoint.lat]:[12.05,46.62],
+      zoom:selected||selectedPoint?13:8.6,minZoom:4,attributionControl:{compact:false},
     });
     mapRef.current=map;
     map.addControl(new MountainBasemapControl(),'top-right');
@@ -139,14 +141,15 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=NO_ROUTES,heigh
     const map=mapRef.current;if(!map||!initialized.current)return;
     markerRef.current?.remove();
     markerRef.current=null;
-    if(selected){
+    const target=selected??selectedPoint;
+    if(target){
       const pin=document.createElement('span');
       pin.className='cb-atlas-selected-pin';
-      pin.setAttribute('aria-label',selected.name);
-      pin.textContent=kind==='rifugio'?'⌂':kind==='bivacco'?'△':'◆';
+      pin.setAttribute('aria-label',target.name);
+      pin.textContent=selectedPoint?'▲':kind==='rifugio'?'⌂':kind==='bivacco'?'△':'◆';
       markerRef.current=new Marker({element:pin,anchor:'bottom'})
-        .setLngLat([selected.lng,selected.lat]).addTo(map);
-      map.easeTo({center:[selected.lng,selected.lat],zoom:13,duration:400});
+        .setLngLat([target.lng,target.lat]).addTo(map);
+      map.easeTo({center:[target.lng,target.lat],zoom:13,duration:400});
     }else{
       const list=places.filter(p=>p.kind===kind);
       if(!list.length){if(routeExtent) map.fitBounds(routeExtent,{padding:45,maxZoom:11,duration:300});return;}
@@ -154,7 +157,7 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=NO_ROUTES,heigh
       const south=Math.min(...list.map(p=>p.lat)),north=Math.max(...list.map(p=>p.lat));
       map.fitBounds([[west,south],[east,north]],{padding:45,maxZoom:11,duration:300});
     }
-  },[selected,kind,places,routeExtent,ready]);
+  },[selected,selectedPoint,kind,places,routeExtent,ready]);
 
   useEffect(()=>{
     const map=mapRef.current;if(!map||!ready)return;
@@ -173,7 +176,7 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=NO_ROUTES,heigh
       {water.length>0&&<button type="button" aria-pressed={showWater} onClick={()=>setShowWater(value=>!value)}>Punti acqua {showWater?'✓':'+'}</button>}
     </div>
     <div ref={container} className="cb-atlas-map" style={{height}} role="application"
-      aria-label={caption ? `Mappa topografica: ${caption}` : selected? `Mappa topografica di ${selected.name} con sentieri vicini` : `Mappa topografica dedicata a ${kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'paesi di montagna'}`}/>
-    <span className="cb-atlas-map-caption">TOPO / SAT · {caption ?? selected?.name ?? (kind==='rifugio'?'RIFUGI':kind==='bivacco'?'BIVACCHI':'PAESI')} · + / − PER ZOOMARE</span>
+      aria-label={caption ? `Mappa topografica: ${caption}` : selected||selectedPoint ? `Mappa topografica di ${(selected??selectedPoint)!.name} con sentieri vicini` : `Mappa topografica dedicata a ${kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'paesi di montagna'}`}/>
+    <span className="cb-atlas-map-caption">TOPO / SAT · {caption ?? selected?.name ?? selectedPoint?.name ?? (kind==='rifugio'?'RIFUGI':kind==='bivacco'?'BIVACCHI':'PAESI')} · + / − PER ZOOMARE</span>
   </div>;
 }

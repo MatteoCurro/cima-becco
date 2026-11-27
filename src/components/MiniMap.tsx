@@ -1,67 +1,13 @@
-import { useEffect, useRef } from 'react';
-import { Map, Marker, NavigationControl } from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Venue } from '../types';
-import { formatHeight } from '../lib/units';
-import { venueHeight } from '../lib/venues';
-import { glyphSvg } from '../lib/venueGlyphs';
-import { parseSvg, textSpan } from '../lib/dom';
-import '../map/worker';
-import { MAP_STYLE_URL } from '../map/constants';
-import { MountainBasemapControl } from '../map/mountainBasemap';
-import { useUnits } from './UnitsContext';
+import { AlpineAtlasMap } from './AlpineAtlasMap';
+import type { AlpinePlace } from '../lib/alpinePlaces';
 
-export function MiniMap({ venue }: { venue: Venue }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { units } = useUnits();
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const map = new Map({
-      container: containerRef.current,
-      style: MAP_STYLE_URL,
-      center: [venue.lng, venue.lat],
-      // Built climbs need street level; a mountain needs its massif around it.
-      zoom: venue.type === 'hill' ? 12 : 15,
-      interactive: true,
-      attributionControl: { compact: true },
-    });
-    map.addControl(new MountainBasemapControl(),'top-right');
-    map.addControl(new NavigationControl({showCompass:true}),'top-right');
-    // The detail page animates in, so the container can still be zero-sized
-    // when the map is created; without a resize the canvas stays blank.
-    const observer = new ResizeObserver(() => map.resize());
-    observer.observe(containerRef.current);
-    map.once('load', () => map.resize());
-    const collapseAttribution = () => {
-      const element = map.getContainer().querySelector('.maplibregl-ctrl-attrib');
-      if (element instanceof HTMLDetailsElement) element.open = false;
-      element?.classList.remove('maplibregl-compact-show');
-    };
-    collapseAttribution();
-    map.on('load', collapseAttribution);
-    const height = venueHeight(venue);
-    const label = height ? formatHeight(height.value, units) : venue.name;
-    const anchor = document.createElement('div');
-    anchor.className = 'pin-anchor';
-    const marker = document.createElement('div');
-    marker.className = 'pin is-selected';
-    marker.setAttribute('aria-label', `${venue.name}, ${label}`);
-    const glyph = document.createElement('span');
-    glyph.className = 'pin-glyph';
-    glyph.appendChild(parseSvg(glyphSvg(venue.type)));
-    marker.appendChild(glyph);
-    marker.appendChild(textSpan(label, 'pin-label'));
-    anchor.appendChild(marker);
-    const venueMarker = new Marker({ element: anchor, anchor: 'center' })
-      .setLngLat([venue.lng, venue.lat])
-      .addTo(map);
-    return () => {
-      observer.disconnect();
-      venueMarker.remove();
-      map.remove();
-    };
-  }, [venue, units]);
-
-  return <div ref={containerRef} className="mini-map" role="img" aria-label={`Map showing ${venue.name}`} />;
+/** Stesso motore MapLibre, stesso punto selezionato, nessun renderer duplicato per le cime. */
+const NO_PLACES: AlpinePlace[] = [];
+export function MiniMap({venue}:{venue:Venue}){
+  return <div className="mini-map">
+    <AlpineAtlasMap places={NO_PLACES} kind="borgo"
+      selectedPoint={{lat:venue.lat,lng:venue.lng,name:venue.name}}
+      caption={venue.name} height="100%"/>
+  </div>;
 }
