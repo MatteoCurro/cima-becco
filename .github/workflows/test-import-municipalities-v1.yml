@@ -1,0 +1,126 @@
+name: Test importatore comuni ISTAT/DAIT (blocco 3, staging)
+on:
+  push:
+    branches: [feat/municipalities-istat-dait-pilot-v1]
+    paths:
+      - scripts/import_municipalities_v1.py
+      - scripts/resolve_wikidata_istat_v1.py
+      - tests/test_import_municipalities_v1.py
+      - .github/workflows/test-import-municipalities-v1.yml
+  pull_request:
+    paths:
+      - scripts/import_municipalities_v1.py
+      - scripts/resolve_wikidata_istat_v1.py
+      - tests/test_import_municipalities_v1.py
+      - .github/workflows/test-import-municipalities-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Same group for branch push and its PR: avoid duplicate API calls and 429s.
+  group: cima-becco-municipalities-staging-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test unita e contratti offline
+        run: python -m unittest discover -s tests -p 'test_import_municipalities_v1.py' -v
+      - name: Snapshot ufficiali ISTAT e DAIT
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/import-municipalities-v1/input
+          curl --fail --location --silent --show-error --retry 3 --retry-delay 4 \
+            --connect-timeout 15 --max-time 100 \
+            -A 'CimaBecco-OpenDataPilot/1.0 (https://www.cimabecco.it)' \
+            'https://www.istat.it/storage/codici-unita-amministrative/Elenco-comuni-italiani.xlsx' \
+            -o build/import-municipalities-v1/input/istat.xlsx
+          if curl --fail --location --silent --show-error --retry 3 --retry-delay 4 \
+            --connect-timeout 15 --max-time 100 \
+            -A 'CimaBecco-OpenDataPilot/1.0 (https://www.cimabecco.it)' \
+            'https://dait.interno.gov.it/documenti/sindaciincarica.csv' \
+            -o build/import-municipalities-v1/input/dait.csv; then
+            echo 'DAIT acquisito.'
+          else
+            echo 'DAIT non disponibile: niente sindaci nel pilot.'
+            rm -f build/import-municipalities-v1/input/dait.csv
+          fi
+          test -s build/import-municipalities-v1/input/istat.xlsx
+      - name: Verifica QID Wikidata P635 dei luoghi OSM
+        shell: bash
+        run: |
+          set -euo pipefail
+          if python scripts/resolve_wikidata_istat_v1.py --osm public/data/alpine-places.json \
+            --out build/import-municipalities-v1/wikidata-resolver.json; then
+            echo 'QID_READY=true' >> "$GITHUB_ENV"
+          else
+            echo 'QID_READY=false' >> "$GITHUB_ENV"
+            echo 'Wikidata parziale: link esclusi dal pilota.'
+          fi
+      - name: Normalizzazione e join conservativo su fonti reali
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--istat-file build/import-municipalities-v1/input/istat.xlsx
+                --osm-places public/data/alpine-places.json
+                --refuges-file public/data/atlas/refuges-v1.json
+                --shelters-file public/data/atlas/shelters-v1.json
+                --out build/import-municipalities-v1
+                --min-municipalities 7800)
+          if [ -f build/import-municipalities-v1/input/dait.csv ]; then
+            args+=(--dait-file build/import-municipalities-v1/input/dait.csv)
+          fi
+          if [ "${QID_READY:-false}" = true ]; then
+            args+=(--qid-map build/import-municipalities-v1/wikidata-resolver.json)
+          fi
+          python scripts/import_municipalities_v1.py "${args[@]}"
+      - name: Quality gate entita, relazioni, dedup e noindex
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('build/import-municipalities-v1/municipalities.json').read_text())
+          r=json.loads(Path('build/import-municipalities-v1/report.json').read_text())
+          e=d['entities']
+          assert not d['isPublished'] and len(e)>=7800
+          assert len(e)==len({x['id'] for x in e})
+          assert len(e)==len({x['slug'] for x in e})
+          assert len(e)==len({x['sourceIds']['istat'] for x in e})
+          assert all(x['kind']=='municipality' and not x['quality']['seoIndexable'] for x in e)
+          assert all(len(x['sourceIds']['istat'])==6 for x in e)
+          assert all(rel['type']=='near' and not rel['accessVerified'] for x in e for rel in x['relations'])
+          assert all('population' not in x['facts'] for x in e)
+          assert r['indexed']==0
+          if r['daitInputAvailable']:
+            assert r['mayorsMatched'] >= 7500, ('DAIT ISTAT crosswalk: copertura anomala', r['mayorsMatched'])
+            assert r['daitRowsOfficialCrosswalkRejected'] <= 100
+            assert r['daitOfficialCrosswalkType'] == 'ISTAT_REGION_PLUS_PROVINCE_SIGLA_PLUS_EXACT_NAME'
+            assert all('dait' in x['sourceIds'] for x in e if 'sindacoNome' in x['facts'])
+          print('Comuni',len(e),'Sindaci',r['mayorsMatched'],'OSM match',r['osmLinkedByVerifiedIds'],
+                'Relazioni near',r['nearbyRefugesAndShelters'])
+          PY
+      - name: Artefatti del pilota (mai nella directory pubblica)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-block3-municipalities-pilot
+          # Keep full DAIT CSV (which includes birth dates and political lists)
+          # and immutable raw payloads inside the job only: do not upload them
+          # to public-repo Action artifacts. SHA256 stays in report.json.
+          path: |
+            build/import-municipalities-v1/municipalities.json
+            build/import-municipalities-v1/report.json
+            build/import-municipalities-v1/wikidata-resolver.json
+          retention-days: 14
+          if-no-files-found: warn
