@@ -1,0 +1,84 @@
+/* SiteChrome è l'unico proprietario dei bordi viewport, header, logo e footer.
+   Non applicare max-width qui: gli spazi editoriali appartengono ai figli. */
+.site-header,.site-footer{box-sizing:border-box;display:block;width:100%;min-width:0;max-width:none;margin:0;flex:none}
+.site-header{position:relative;z-index:50;background:#f9fcf5;border-bottom:2px solid #d5e4d6}
+.site-header.sticky,.venue-detail>.site-header{position:sticky;top:0}
+.site-header-row{box-sizing:border-box;position:relative;display:grid;align-items:center;
+  grid-template-columns:max-content minmax(0,1fr) max-content;gap:clamp(9px,1.1vw,18px);
+  width:100%;min-width:0;max-width:none;min-height:64px;padding:8px clamp(14px,2.2vw,32px);margin:0}
+.site-header-left,.site-header-right,.site-header-center{display:flex;align-items:center;min-width:0;gap:8px}
+.site-header-right{justify-content:flex-end}
+.site-header-center{justify-content:center;width:100%}
+.site-header-center>.header-search,.site-header-center>.home-search{min-width:0;width:100%;max-width:none}
+.site-header .home-search{width:100%;max-width:none;height:44px;margin:0}
+.site-header .home-search-field{--field-pad:22px;padding-left:22px}
+.site-header .home-search-go{width:36px;min-width:36px;padding:0;gap:0;right:5px;height:35px}
+.site-header .home-search-go span{display:none}
+.site-header .home-search-list{top:calc(100% + 8px)}
+.wordmark{display:inline-flex;align-items:center;flex:none;min-width:0;gap:9px;text-decoration:none;
+  color:#143d2f;white-space:nowrap}
+.wordmark .mark{border-radius:20%;box-shadow:3px 3px 0 #c4d9ba;transform:rotate(-5deg)}
+.wordmark:hover .mark{transform:rotate(2deg);box-shadow:4px 4px 0 #ff2677}
+.wordmark-text{display:flex;gap:4px;align-items:baseline;font:900 clamp(22px,2.5vw,32px)/.9 'Barlow Condensed',Impact,sans-serif;
+  letter-spacing:-.035em;text-transform:uppercase;color:#143d2f}
+.wordmark-text b{font-weight:900}
+.wordmark-text em{font:inherit;color:#ff2677;font-weight:900;transform:rotate(-3deg)}
+.site-header-cta{box-sizing:border-box;display:inline-flex;gap:7px;align-items:center;justify-content:center;
+  min-height:38px;min-width:38px;border:1px solid #d4e2d5;border-radius:7px;padding:0 11px;
+  background:#fff;color:#174631;text-decoration:none;white-space:nowrap;
+  font:800 12px/1.2 'Space Grotesk',sans-serif;cursor:pointer}
+.site-header-cta:hover,.site-header-cta:focus-visible{border-color:#cf0053;color:#ab0046}
+.site-header-cta.cb-plan-link{background:#ff2677;color:white;border-color:#ff2677;box-shadow:2px 2px 0 #264c39}
+.site-header-cta.cb-plan-link:hover{background:#db0056}
+.site-header .hdr-btn{width:38px;height:38px}
+.cb-explore-trigger{flex:none}
+.cb-explore-menu{position:absolute;top:100%;left:0;right:0;z-index:45;box-sizing:border-box;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));
+  gap:16px;padding:18px clamp(16px,4vw,48px);width:100%;background:#fff;
+  border-bottom:1px solid #d7e5d5;box-shadow:0 8px 22px #102d222b;max-height:65dvh;overflow:auto}
+.cb-explore-menu section{display:grid;align-content:start;min-width:0;gap:8px}
+.cb-explore-menu a,.cb-explore-menu span{font-size:13px;overflow-wrap:anywhere}
+.cb-explore-menu span{color:#829588}
+.site-footer{position:relative;border-top:1px solid #d9e3d7;background:#eff3ed;color:#385343}
+.site-footer-inner{box-sizing:border-box;width:100%;min-width:0;max-width:none;margin:0;padding:0 clamp(16px,2.4vw,36px)}
+.site-footer-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(16px,3vw,45px);
+  padding:clamp(26px,3vw,42px) 0;border-bottom:1px solid #d3dfd1}
+.site-footer-cols>div{min-width:0}
+.site-footer-cols h3{margin:0 0 12px;color:#193c2c;font:850 16px/1.25 'Bricolage Grotesque',sans-serif}
+.site-footer-cols a,.site-footer-link{display:block;width:max-content;max-width:100%;padding:5px 0;border:0;
+  background:none;color:#3f614b;text-align:left;text-decoration:none;font:600 13px/1.5 'Space Grotesk',sans-serif;cursor:pointer;overflow-wrap:anywhere}
+.site-footer-cols a:hover,.site-footer-link:hover{color:#c90053;text-decoration:underline}
+.site-footer-base{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px 22px;align-items:center;
+  padding:17px 0 24px;color:#5b7264;font:600 11px/1.5 'Space Grotesk',sans-serif}
+.site-footer-base a{color:#245641;font-weight:800}
+.home .site-footer,.venue-detail .site-footer,.map-page .site-footer,.training-page .site-footer,.info-page .site-footer{padding-bottom:64px}
+@media(max-width:900px){
+  .site-header-row{grid-template-columns:max-content minmax(0,1fr) max-content}
+  .site-header-cta-label{display:none}
+  .site-footer-cols{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:743px){
+  .site-header-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand actions" "search search";
+    gap:7px 8px;min-height:0;padding:8px 12px}
+  .site-header-left{grid-area:brand}.site-header-right{grid-area:actions;gap:5px}
+  .site-header-center{grid-area:search}.site-header-center:empty{display:none}
+  .site-header .home-search{height:40px}
+  .site-header .home-search-label{display:none}
+  .site-header .home-search-field{--field-pad:40px;padding-left:40px}
+  .site-header .home-search-field input{font-size:14px;padding:0;text-overflow:ellipsis}
+  .site-header .header-search{position:relative;gap:0;width:100%}
+  .site-header .header-search .locate-btn{position:absolute;z-index:2;top:50%;left:4px;
+    width:34px;height:34px;transform:translateY(-50%);background:transparent;border:0}
+  .site-header .home-search .home-search-go{width:34px;min-width:34px}
+  .site-header .home-search-list,.site-header .searchbar-results{left:0;right:0;width:100%;max-width:none}
+  .site-header .hdr-btn{width:34px;height:34px}
+  .site-header-cta{min-height:34px;min-width:34px;padding:0 8px;font-size:11px}
+  .site-header-right .cb-plan-link{display:none}
+  .wordmark-text{font-size:clamp(20px,5.6vw,27px)}
+  .wordmark .mark{width:30px;height:30px}
+  .cb-explore-menu{grid-template-columns:1fr;gap:10px}
+}
+@media(max-width:520px){
+  .site-footer-cols{grid-template-columns:1fr;gap:20px}
+  .site-footer-base{display:grid;gap:8px}
+}

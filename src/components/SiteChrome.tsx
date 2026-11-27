@@ -1,4 +1,7 @@
 import { useState, type ReactNode } from 'react';
+import './siteChrome.css';
+import './fontAwesome.css';
+import { FaIcon } from './FaIcon';
 import { openImportHere, requestAddPlace } from '../lib/contribute';
 import { AccountMenu } from './AccountMenu';
 import { SUPABASE_CONFIGURED } from '../lib/api';
@@ -33,12 +36,10 @@ export function SiteHeader({ center = <SiteSearch />, sticky = false }: { center
         </div>
         <div className="site-header-center">{center}</div>
         <div className="site-header-right">
-          <button type="button" className="site-header-cta cb-explore-trigger" aria-expanded={exploreOpen} onClick={() => setExploreOpen(v => !v)}>Esplora</button>
-          <a className="site-header-cta cb-plan-link" href="/#pianifica" aria-label="Pianifica un percorso">Pianifica</a>
+          <button type="button" className="site-header-cta cb-explore-trigger" aria-expanded={exploreOpen} onClick={() => setExploreOpen(v => !v)}><FaIcon name="compass" size={14}/> Esplora</button>
+          <a className="site-header-cta cb-plan-link" href="/#pianifica" aria-label="Pianifica un percorso"><FaIcon name="route" size={14}/> Pianifica</a>
           <a className="site-header-cta" href="/#import" onClick={openImportHere} aria-label="Carica GPX" data-tip="Carica GPX">
-            <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <path d="M8 3v10M3 8h10" />
-            </svg>
+            <FaIcon name="arrow-up-right-from-square" size={14}/>
             <span className="site-header-cta-label" aria-hidden="true">Carica GPX</span>
           </a>
           <HeaderControls />
