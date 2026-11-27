@@ -44,10 +44,21 @@ L'elenco verificato delle sorgenti, i dettagli di import e le regole di qualità
 
 Le tracce pianificate automaticamente non costituiscono una certificazione di percorribilità o sicurezza in montagna.
 
+## Import automatico e stato
+
+La pipeline incrementale [Import OSM routes](.github/workflows/import-osm-routes.yml) è configurata per due esecuzioni quotidiane (03:17 e 15:47 UTC) e acquisisce due celle italiane per esecuzione. Il piano conta **107 celle**; al completamento del primo passaggio rinnova quelle scadute dopo 45 giorni. Le tracce sono suddivise in file per area con al massimo 200 itinerari ciascuno, distribuiti dal sito soltanto al bisogno.
+
+- [Checkpoint import](public/data/import-status.json) — ultime celle elaborate, aree e date.
+- [Manifest itinerari](public/data/routes-manifest.json) — conteggi, parti disponibili e lookup dei permalink.
+- [Guida pipeline e ripresa dagli errori](docs/IMPORT_PIPELINE.md) — configurazione, limiti e manutenzione.
+- Il catalogo pilota routes.json contiene i primi 80 percorsi; il totale effettivo include anche i file routes-tiles/ prodotti progressivamente.
+
+L'esecuzione iniziale del nuovo processo non è da considerare riuscita fino alla comparsa di celle completate nel checkpoint e di un workflow GitHub Actions verde.
+
 ## Roadmap
 
-1. Concludere il test di deployment e pulire riferimenti non pertinenti all'Italia.
-2. Attivare il nostro Supabase, con account, percorsi pubblici/privati e moderazione.
-3. Importare i dataset CAI/SAT/OSM, con deduplicazione e provenienza.
-4. Aggiungere il follow GPS, i pacchetti mappa offline e gli avvisi di deviazione.
-5. Arricchire cime e località con Wikidata, Wikipedia e Commons e pubblicare pagine SEO di qualità.
+1. Collaudare il primo batch automatico e il deploy Pages, controllando i risultati cartografici.
+2. Ampliare la copertura nazionale con la pipeline incrementale, poi passare a estratti Geofabrik per importazioni massive.
+3. Collegare le schede CAI/SAT, qualità del tracciato, dislivelli, cime e rifugi ai percorsi.
+4. Arricchire fotografie/descrizioni con metadati Wikidata e Wikimedia e attribuzioni.
+5. Attivare Supabase per la community, il follow GPS e le funzioni di condivisione avanzate.
