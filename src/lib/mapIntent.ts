@@ -1,3 +1,4 @@
+import { navigateHome, routeHref } from './navigation';
 import type { Bounds } from './venues';
 
 /**
@@ -22,8 +23,12 @@ const KEY = 'hillgpx:mapIntent';
 export const NEAR_ME_HASH = '#map/near-me';
 
 export function openMapWith(intent: MapIntent) {
+  if (intent.kind === 'route' && !intent.edit && !intent.slug.startsWith('local')) {
+    window.location.assign(routeHref(intent.slug));
+    return;
+  }
   if (intent.kind === 'near-me') {
-    window.location.hash = NEAR_ME_HASH;
+    navigateHome(NEAR_ME_HASH);
     return;
   }
   try {
@@ -31,7 +36,7 @@ export function openMapWith(intent: MapIntent) {
   } catch {
     // Storage blocked: the map still opens, just without the search.
   }
-  window.location.hash = '#map';
+  navigateHome('#map');
 }
 
 /** The pending intent, if any, cleared as it is read so it runs once. */
@@ -50,7 +55,7 @@ export function takeMapIntent(): MapIntent | null {
   if (!raw) return null;
   try {
     const intent = JSON.parse(raw) as MapIntent;
-    return intent.kind === 'area' || intent.kind === 'place' || intent.kind === 'route' || intent.kind === 'saved' ? intent : null;
+    return intent.kind === 'area' || intent.kind === 'place' || intent.kind === 'venue' || intent.kind === 'route' || intent.kind === 'saved' ? intent : null;
   } catch {
     return null;
   }

@@ -1,5 +1,5 @@
 /* Home 2026: un solo messaggio, gerarchia forte e navigazione utile. */
-.home .site-header-row,.home .home-main.home-shell{max-width:1440px}
+.home .home-main.home-shell{max-width:1440px}
 .home .home-main.home-shell{padding-inline:clamp(16px,3.8vw,56px)}
 .cb-hero-v3{
   --hero-ink:#143d30;--hero-accent:#f5acc8;

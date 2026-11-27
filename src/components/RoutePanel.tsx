@@ -1,3 +1,4 @@
+import { routeHref } from '../lib/navigation';
 import { DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -74,6 +75,7 @@ interface RoutePanelProps {
   hoverIndex: number | null;
   onHoverIndex: (index: number | null) => void;
   onClose: () => void;
+  fullDetail?: boolean;
   /**
    * `map`: a card over the map (the expanded map, or a narrow screen).
    * `sidebar`: the left column of a split page, in place of the list, with every
@@ -411,12 +413,12 @@ function RouteEditForm({ route, venues, username, trim, onTrimChange, hoverIndex
  * rests. Its size changes never re-frame the map: framing reads the panel
  * only when the app itself moves the camera.
  */
-export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlug, allRoutes, hoverIndex, onHoverIndex, onClose, folded = false, onUnfold, spotlightSlug, onShowVenue, onShowRoute, routePhotos, onFocusPhoto, onPhotoAdded, editing = false, editTrim = null, onEditTrimChange, onEditStart, onEditEnd }: RoutePanelProps) {
+export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false, route, venuesBySlug, allRoutes, hoverIndex, onHoverIndex, onClose, folded = false, onUnfold, spotlightSlug, onShowVenue, onShowRoute, routePhotos, onFocusPhoto, onPhotoAdded, editing = false, editTrim = null, onEditTrimChange, onEditStart, onEditEnd }: RoutePanelProps) {
   const [adding, setAdding] = useState(false);
   const [reporting, setReporting] = useState(false);
   const sidebar = placement === 'sidebar';
   const [expandedByHand, setExpanded] = useState(false);
-  const expanded = sidebar || expandedByHand;
+  const expanded = fullDetail || sidebar || expandedByHand;
   const user = useAuthUser();
   const { routes: myUploads } = useMyRoutes();
   // Only the owner may edit a community route; the upload list is the
@@ -710,12 +712,12 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
       <button
         type="button"
         className="route-more-toggle"
-        onClick={() => (onToggleDock ? onToggleDock() : setExpanded((value) => !value))}
+        onClick={() => (!fullDetail && shareable ? window.location.assign(routeHref(route.slug)) : onToggleDock ? onToggleDock() : setExpanded((value) => !value))}
         aria-expanded={expanded}
         aria-controls={`route-more-${route.slug}`}
         aria-label={expanded ? 'Show fewer route details' : 'Show more route details'}
       >
-        <span>{expanded ? 'Meno dettagli' : 'Scheda completa'}</span>
+        <span>{fullDetail ? 'Scheda completa' : expanded ? 'Meno dettagli' : 'Scheda completa'}</span>
         <ChevronRightIcon size={13} />
       </button>
         </>

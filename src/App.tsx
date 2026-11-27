@@ -1,3 +1,4 @@
+import { homeHref, routeHref } from './lib/navigation';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Landing } from './components/Landing';
 import { ResultsList } from './components/ResultsList';
@@ -95,7 +96,7 @@ function cleanEntity():CleanEntity|null{
 }
 function viewFromHash(): View {
   const hash = window.location.hash;
-  if(!hash){const path=cleanEntity();if(path)return path.kind==='route'?'map':path.kind==='trekking'?'atlas':'explore';}
+  const path=cleanEntity();if(path && !hash)return path.kind==='route'?'map':path.kind==='trekking'?'atlas':'explore';
   if (hash === '#pianifica') return 'planner';
   if (hash === '#atlante' || hash.startsWith('#atlante/')) return 'atlas';
   if (/^#(rifugi|bivacchi|paesi)(\/|$)/.test(hash)) return 'explore';
@@ -608,7 +609,7 @@ function MapApp() {
   useEffect(() => {
     if (!linkedRoute || !dataset || !routesReady) return;
     setLinkedRoute(null);
-    if(!cleanEntity())history.replaceState(null, '', '#routes');
+    if(!cleanEntity())history.replaceState(null, '', routeHref(linkedRoute));
     setMode('routes');
     if (allRoutes.some((route) => route.slug === linkedRoute)) {
       selectRoute(linkedRoute);
@@ -1060,13 +1061,14 @@ function MapApp() {
     !droppedGpx && selectedRoute ? (
     <RoutePanel
                     placement={sidebarRoute ? 'sidebar' : 'map'}
-                onToggleDock={canDock ? () => setDockedSlug(sidebarRoute ? null : selectedRouteSlug) : undefined}
+                onToggleDock={canDock && !cleanEntity() ? () => setDockedSlug(sidebarRoute ? null : selectedRouteSlug) : undefined}
+                    fullDetail={cleanEntity()?.kind === 'route'}
                     route={selectedRoute}
                     venuesBySlug={venueBySlug}
                     allRoutes={allRoutes}
                     hoverIndex={routeHoverIndex}
                     onHoverIndex={setRouteHoverIndex}
-                    onClose={() => selectRoute(null)}
+                    onClose={() => { if (cleanEntity()?.kind === 'route') window.location.assign(homeHref('routes')); else selectRoute(null); }}
                     folded={!sidebarRoute && panelFold.folded}
                     onUnfold={panelFold.unfold}
                     spotlightSlug={spotlight?.slug ?? null}

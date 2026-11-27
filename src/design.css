@@ -3033,7 +3033,8 @@
   grid-template-columns: 1fr minmax(0, auto) 1fr;
   align-items: center;
   gap: 16px;
-  max-width: 1120px;
+  width: 100%;
+  max-width: 1440px;
   height: 64px;
   margin: 0 auto;
   padding: 0 20px;
@@ -9531,10 +9532,10 @@ html,body{font-family:'Space Grotesk',var(--font-sans);color:var(--cima-ink)}
 @media(max-width:560px){.cb-home-atlas{padding:23px 18px;margin:22px 0 30px}.cb-home-atlas-grid{grid-template-columns:1fr}.cb-home-atlas-grid a:nth-child(3){grid-column:auto}.cb-home-atlas-grid a{min-height:145px}.cb-home-atlas-head h2{font-size:30px}.cb-hero-topo-stamp{font-size:12px;right:5%;bottom:4%}}
 
 /* Global navigation: one extensible catalogue, independent of map filters. */
-.site-header{position:relative;min-width:0;width:100%}
+.site-header{min-width:0;width:100%}
 .cb-explore-trigger{flex:none;cursor:pointer}
 .cb-explore-menu{position:absolute;top:100%;right:0;left:0;z-index:45;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:16px;padding:18px clamp(16px,4vw,48px);background:#fff;border-bottom:1px solid var(--border);box-shadow:0 8px 20px #0002;max-height:65dvh;overflow:auto}
 .cb-explore-menu section{display:grid;gap:8px;align-content:start;min-width:0}
 .cb-explore-menu a,.cb-explore-menu span{overflow-wrap:anywhere;font-size:14px}
 .cb-explore-menu span{color:var(--muted)}
-@media(max-width:743px){.cb-explore-trigger{font-size:12px;padding-inline:8px}.site-header-right .cb-plan-link{display:none}.cb-explore-menu{grid-template-columns:1fr}}
+@media(max-width:743px){.site-header .site-header-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand actions" "search search";height:auto;min-height:60px;gap:8px;padding:8px 12px}.site-header-left{grid-area:brand}.site-header-right{grid-area:actions}.site-header-center{grid-area:search}.site-header-center:empty{display:none}.cb-explore-trigger{width:auto;font-size:12px;padding-inline:8px}.site-header-right .cb-plan-link{display:none}.cb-explore-menu{grid-template-columns:1fr}}

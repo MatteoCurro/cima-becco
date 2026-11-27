@@ -1,3 +1,4 @@
+import { navigateHome } from '../lib/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Route, Venue } from '../types';
 import {
@@ -328,7 +329,7 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
 
   const pickAlpine = (place: AlpinePlace) => {
     reset();
-    window.location.hash = alpinePlaceLink(place);
+    window.location.assign(alpinePlaceLink(place));
   };
 
   const pickRoute = (slug: string) => {
@@ -562,6 +563,6 @@ export function SiteSearch() {
     };
   }, []);
   return (
-    <SearchBar venues={venues} routes={routes} {...SEARCH_OPENS_MAP} onEmptySubmit={() => (window.location.hash = '#map')} />
+    <SearchBar venues={venues} routes={routes} {...SEARCH_OPENS_MAP} onEmptySubmit={() => (navigateHome('#map'))} />
   );
 }

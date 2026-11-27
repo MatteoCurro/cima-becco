@@ -44,7 +44,7 @@ export function SiteHeader({ center, sticky = false }: { center?: ReactNode; sti
           {SUPABASE_CONFIGURED && <AccountMenu />}
         </div>
       </div>
-      {exploreOpen && <nav className="cb-explore-menu" aria-label="Esplora Cima Becco">{exploreGroups.map(group => <section key={group.title}><strong>{group.title}</strong>{group.items.map(item => item.href ? <a key={item.label} href={item.href} onClick={() => setExploreOpen(false)}>{item.label}</a> : <span key={item.label}>{item.label} · prossimamente</span>)}</section>)}</nav>}
+      {exploreOpen && <nav className="cb-explore-menu" aria-label="Esplora Cima Becco">{exploreGroups.map(group => <section key={group.title}><strong>{group.title}</strong>{group.items.map(item => item.href ? <a key={item.label} href={item.href} onClick={() => setExploreOpen(false)}>{item.label}</a> : <span key={item.label}>{item.label} · prossimamente</span>)}</section>)}<section><strong>Strumenti</strong><a href="/#pianifica" onClick={() => setExploreOpen(false)}>Pianifica un percorso</a></section></nav>}
     </header>
   );
 }
