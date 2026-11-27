@@ -1,4 +1,5 @@
 import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
+import { mergeSheltersForSeo } from './merge_shelters_for_seo.mjs';
 import { canonicalAtlasSlug, atlasCanonicalPath } from '../src/lib/placePermalinks.js';
 /** Verifica prerender SEO + hydration delle URL profonde sulla build reale. */
 import {readFileSync,readdirSync,existsSync} from 'node:fs';
