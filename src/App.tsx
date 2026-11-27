@@ -100,6 +100,11 @@ function cleanEntity():CleanEntity|null{
 }
 function viewFromHash(): View {
   const hash = window.location.hash;
+  const base = import.meta.env.BASE_URL;
+  const pathWithoutBase = window.location.pathname.startsWith(base)
+    ? '/' + window.location.pathname.slice(base.length).replace(/^\/+/, '').replace(/\/+$/, '')
+    : window.location.pathname.replace(/\/+$/, '');
+  if (pathWithoutBase === '/fonti-e-crediti' && (!hash || hash === '#data')) return 'data';
   const path=cleanEntity();if(path && !hash)return path.kind==='route'?'map':path.kind==='trekking'?'atlas':'explore';
   if (hash === '#pianifica') return 'planner';
   if (hash === '#atlante' || hash.startsWith('#atlante/')) return 'atlas';
