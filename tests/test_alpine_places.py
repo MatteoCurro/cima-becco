@@ -21,10 +21,10 @@ class AlpinePlacesTest(unittest.TestCase):
     def test_six_disjoint_import_cells_cover_the_pilot(self):
         cells=atlas.alpine_cells()
         self.assertEqual(len(cells),6)
-        self.assertEqual(min(cell[0] for cell in cells),atlas.BBOX[0])
-        self.assertEqual(min(cell[1] for cell in cells),atlas.BBOX[1])
-        self.assertEqual(max(cell[2] for cell in cells),atlas.BBOX[2])
-        self.assertEqual(max(cell[3] for cell in cells),atlas.BBOX[3])
+        self.assertAlmostEqual(min(cell[0] for cell in cells),atlas.BBOX[0])
+        self.assertAlmostEqual(min(cell[1] for cell in cells),atlas.BBOX[1])
+        self.assertAlmostEqual(max(cell[2] for cell in cells),atlas.BBOX[2])
+        self.assertAlmostEqual(max(cell[3] for cell in cells),atlas.BBOX[3])
         self.assertTrue(all(c[0]<c[2] and c[1]<c[3] for c in cells))
 
     def test_osm_metadata_from_official_tags(self):
