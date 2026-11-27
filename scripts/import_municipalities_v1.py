@@ -260,7 +260,14 @@ def municipality(row, cols, retrieved_at):
         ("nuts2_2024", "codice nuts2 2024"),
         ("nuts3_2024", "codice nuts3 2024"),
     ]
-    values = [(key, field(row, cols, candidate), None) for key, candidate in field_map]
+    numeric_code_keys = {
+        "municipalityNumericCode", "municipalityNumericCode2017to2025",
+        "municipalityNumericCode2010to2016", "municipalityNumericCode2006to2009",
+        "municipalityNumericCode1995to2005",
+    }
+    values = [(key, code6(v) if key in numeric_code_keys else v, None)
+              for key, candidate in field_map
+              for v in [field(row, cols, candidate)]]
     values += [
         ("quotaCentroM", number(field(row, cols, "altitudine del centro metri", "altitudine del centro")), "m"),
         ("superficieKm2", number(field(row, cols, "superficie territoriale kmq", "superficie territoriale km2")), "km2"),
