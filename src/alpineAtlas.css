@@ -138,3 +138,20 @@
 .cb-hut-claim-form textarea{background:#fff;color:#153f2e;padding:12px;border:2px solid #cbe3c4;border-radius:7px;resize:vertical;font:500 13px 'Space Grotesk',sans-serif}
 .cb-hut-claim-form button,.cb-hut-claim-form a{align-self:flex-start}
 @media(max-width:720px){.cb-weather-days,.cb-weather-seasons{grid-template-columns:repeat(2,minmax(0,1fr))}.cb-atlas-map-caption{font-size:9px}.cb-atlas-detail-wide{padding:18px}}
+
+.cb-insights-page>h1{font:900 clamp(36px,6vw,70px)/.95 'Bricolage Grotesque',sans-serif;letter-spacing:-.07em;color:#194333;max-width:880px;margin:20px 0}
+.cb-insights-totals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:30px 0}
+.cb-insights-totals>div{display:flex;flex-direction:column;gap:6px;padding:21px;background:#193e2e;border-radius:9px;color:white}
+.cb-insights-totals>div:nth-child(even){background:#e1ffca;color:#1a4030}
+.cb-insights-totals strong{font:900 clamp(30px,4vw,49px)/.95 'Barlow Condensed',sans-serif}
+.cb-insights-totals span{font:900 11px 'Space Grotesk',sans-serif;letter-spacing:.05em}
+.cb-insights-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.cb-insights-rank{padding:22px;background:#fff;border:1px solid #d8e6d6;border-radius:9px}
+.cb-insights-rank h2{font:900 clamp(20px,3vw,25px)/1.03 'Bricolage Grotesque',sans-serif;letter-spacing:-.045em;color:#1b4332;margin:0 0 14px}
+.cb-insights-row{display:grid;grid-template-columns:1fr auto;gap:6px 14px;margin:0 0 14px;font:600 12px 'Space Grotesk',sans-serif;color:#244837}
+.cb-insights-row>strong{color:#db0057}
+.cb-insights-track{grid-column:1/-1;height:6px;border-radius:5px;background:#e4eee0;overflow:hidden}
+.cb-insights-track span{display:block;background:#ff2677;height:100%;min-width:2px}
+.cb-insights-rank>p{font:500 13px/1.5 'Space Grotesk',sans-serif;color:#718074}
+.cb-insights-note{font:500 12px/1.5 'Space Grotesk',sans-serif;color:#758474;margin:26px 0}
+@media(max-width:700px){.cb-insights-grid{grid-template-columns:1fr}.cb-insights-totals{grid-template-columns:repeat(2,minmax(0,1fr))}.cb-insights-totals>div{padding:15px}}
