@@ -118,3 +118,71 @@ test('navbar: stessa larghezza in home, catalogo e permalink', async ({page}) =>
     }
   }
 });
+
+
+test('permalink: scheda sentiero completa, mappa responsive e un solo titolo', async ({page}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/route/osm-hiking-13956722/');
+  const panel=page.locator('.route-panel.in-sidebar.is-full-detail');
+  await expect(panel).toBeVisible({timeout:45_000});
+  await expect(panel.locator('h1.route-title-heading')).toBeVisible();
+  await expect(panel.locator('.cb-detail-metrics')).toBeVisible();
+  await expect(panel.locator('.route-more-toggle')).toHaveCount(0);
+  await expect(page.locator('.site-header input[type=search]')).toBeVisible();
+  for(const width of [320,375,390,768,1024,1440]){
+    await page.setViewportSize({width,height:844});
+    const sizes=await page.evaluate(()=>{
+      const stage=document.querySelector('.map-page .stage')!.getBoundingClientRect();
+      const panel=document.querySelector('.route-panel.in-sidebar')!.getBoundingClientRect();
+      const map=document.querySelector('.map-page .map-wrap')!.getBoundingClientRect();
+      return {scroll:document.documentElement.scrollWidth,viewport:innerWidth,stage:stage.width,panel:panel.width,map:map.width};
+    });
+    expect(sizes.scroll).toBeLessThanOrEqual(width+2);
+    expect(sizes.stage).toBeGreaterThanOrEqual(width-2);
+    expect(sizes.panel).toBeGreaterThan(width<900?width*.9:width*.35);
+    expect(sizes.map).toBeGreaterThan(width<900?width*.9:width*.35);
+  }
+});
+
+test('esplorazione sentieri: la scheda completa apre un permalink reale', async ({page}) => {
+  test.setTimeout(80_000);
+  await page.setViewportSize({width:1280,height:850});
+  await page.goto('/#routes');
+  const first=page.locator('.result-item.route-item .result-card').first();
+  await expect(first).toBeVisible({timeout:45_000});
+  await first.click();
+  const panel=page.locator('.map-wrap .route-panel');
+  await expect(panel).toBeVisible({timeout:20_000});
+  const link=panel.locator('a.route-more-toggle');
+  await expect(link).toBeVisible();
+  const href=await link.getAttribute('href');
+  expect(href).toMatch(/^\/(?:route\/|#route\/)/);
+  await link.click();
+  await expect(page.locator('.route-panel.in-sidebar.is-full-detail')).toBeVisible({timeout:45_000});
+  expect(new URL(page.url()).pathname + new URL(page.url()).hash).toContain('route/');
+});
+
+test('ricerca da URL con parametri: collegamento assoluto alla scheda locale', async ({page}) => {
+  test.setTimeout(80_000);
+  await page.goto('/?utm_source=regressione#routes');
+  const search=page.getByRole('searchbox',{name:/Cerca una cima, un sentiero/});
+  await expect(search).toBeVisible();
+  await search.fill('Bivacco Comici');
+  const suggestion=page.locator('.searchbar-results button').filter({hasText:'Bivacco Comici'}).first();
+  await expect(suggestion).toBeVisible({timeout:30_000});
+  await suggestion.click();
+  await expect(page).toHaveURL(/\/bivacchi\/osm-w-152273223\/$/,{timeout:30_000});
+  await expect(page.locator('.cb-location-profile h1')).toBeVisible();
+});
+
+test('navbar: la ricerca globale resta disponibile in tutte le sezioni', async ({page})=>{
+  for(const path of ['/', '/#rifugi', '/#paesi', '/#atlante/trekking', '/route/osm-hiking-13956722/']){
+    await page.setViewportSize({width:390,height:844});
+    await page.goto(path);
+    await expect(page.locator('.site-header input[type=search]')).toBeVisible();
+    const header=await page.locator('.site-header').boundingBox();
+    expect(header!.width).toBeGreaterThanOrEqual(388);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
+  }
+});
