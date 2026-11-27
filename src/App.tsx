@@ -105,6 +105,7 @@ function viewFromHash(): View {
     ? '/' + window.location.pathname.slice(base.length).replace(/^\/+/, '').replace(/\/+$/, '')
     : window.location.pathname.replace(/\/+$/, '');
   if (pathWithoutBase === '/fonti-e-crediti' && (!hash || hash === '#data')) return 'data';
+  if(pathWithoutBase==='/comuni' && !hash) return 'atlas';
   const path=cleanEntity();if(path && !hash)return path.kind==='route'?'map':path.kind==='trekking'||window.location.pathname.includes('/comuni/')?'atlas':'explore';
   if (hash === '#pianifica') return 'planner';
   if (hash === '#atlante' || hash.startsWith('#atlante/')) return 'atlas';
