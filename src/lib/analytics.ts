@@ -87,7 +87,11 @@ export type TrackedEvent =
   | 'route_bookmarked'
   | 'route_edit'
   | 'ghealth_connect'
-  | 'ghealth_import';
+  | 'ghealth_import'
+  | 'atlas_place_view'
+  | 'atlas_place_search'
+  | 'hut_claim_request'
+  | 'water_source_open';
 
 /** Record one product action (and an optional short label, e.g. the route). */
 export function track(event: TrackedEvent, label?: string): void {
