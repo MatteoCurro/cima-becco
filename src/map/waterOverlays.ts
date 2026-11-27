@@ -33,7 +33,6 @@ export function addAlpineWaterLayers(map:MlMap,water:AlpineWaterPoint[]):void{
  map.on('click','cb-water-clusters',event=>{
    const id=event.features?.[0]?.properties?.cluster_id;
    if(typeof id!=='number')return;
-   void import('maplibre-gl').then(()=>undefined); // no JS navigation needed for clusters
    const source=map.getSource('cb-water');
    if(source&&'getClusterExpansionZoom' in source){
      void (source as import('maplibre-gl').GeoJSONSource).getClusterExpansionZoom(id).then(zoom=>{
