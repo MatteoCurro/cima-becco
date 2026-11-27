@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, type PointerEvent } from 'react';
 import { prefersReducedMotion } from '../lib/dom';
 import { openMapWith } from '../lib/mapIntent';
 import { LocateIcon, SearchIcon } from './icons';
