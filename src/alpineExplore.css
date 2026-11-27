@@ -15,7 +15,7 @@
 .cb-explore-categories a[aria-current=page]{background:#153e2f;color:#fff}
 .cb-explore-categories a[aria-current=page] svg{filter:brightness(1.5)}
 .cb-explore-categories a:hover:not([aria-current=page]){background:#dcead5;border-color:#c5d8bd}
-.cb-explore-workspace{flex:1;display:grid;grid-template-columns:minmax(0,min(49%,760px)) minmax(0,1fr);height:auto;min-height:0;min-width:0;width:100%;overflow:hidden}
+.cb-explore-workspace{flex:1;display:grid;grid-template-columns:minmax(0,42%) minmax(0,1fr);height:auto;min-height:0;min-width:0;width:100%;overflow:hidden}
 .cb-explore-list{min-width:0;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:auto;container-type:inline-size;background:#fcfdf9;padding:14px clamp(12px,1.8vw,27px) 26px;border-right:1px solid #d9e5d6;scrollbar-color:#c6d9c5 transparent}
 .cb-explore-list-head{display:grid;gap:8px;margin:0 0 12px;min-width:0}
 .cb-explore-search{display:flex;flex-direction:column;gap:4px;color:#40604e;font:750 10px/1.2 'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:.03em;min-width:0}

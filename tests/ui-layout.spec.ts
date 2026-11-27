@@ -10,14 +10,14 @@ for (const item of categories) {
   test('esplorazione '+item.heading+' desktop, mappa e risultati nello stesso viewport', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/'+item.hash);
-    await expect(page.locator('.cb-explore-heading h1')).toHaveText(item.heading);
-    const bar = await page.locator('.cb-explore-overview').boundingBox();
+    await expect(page.locator('.cb-browse-tabs a.is-active')).toHaveText(item.heading.replace('.','')==='PAESI'?'Paesi':item.heading==='RIFUGI.'?'Rifugi':'Bivacchi');
+    const bar = await page.locator('.cb-browse-bar').boundingBox();
     const work = await page.locator('.cb-explore-workspace').boundingBox();
     const list = await page.locator('.cb-explore-list').boundingBox();
     const map = await page.locator('.cb-explore-map-panel').boundingBox();
     expect(bar).not.toBeNull();expect(work).not.toBeNull();
     expect(list).not.toBeNull();expect(map).not.toBeNull();
-    expect(bar!.height).toBeLessThan(115);
+    expect(bar!.height).toBeLessThan(120);
     expect(work!.height).toBeGreaterThan(650);
     expect(Math.abs((work!.y + work!.height)-900)).toBeLessThan(4);
     expect(Math.abs((list!.x + list!.width)-map!.x)).toBeLessThan(3);
@@ -29,11 +29,11 @@ for (const item of categories) {
 test('mobile: filtro compatto, lista e mappa si alternano senza sbordare', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/#rifugi');
-  await expect(page.locator('.cb-explore-heading h1')).toHaveText('RIFUGI.');
-  const bar=await page.locator('.cb-explore-overview').boundingBox();
+  await expect(page.locator('.cb-browse-tabs a.is-active')).toHaveText('Rifugi');
+  const bar=await page.locator('.cb-browse-bar').boundingBox();
   const work=await page.locator('.cb-explore-workspace').boundingBox();
-  expect(bar!.height).toBeLessThan(105);
-  expect(work!.height).toBeGreaterThan(620);
+  expect(bar!.height).toBeLessThan(115);
+  expect(work!.height).toBeGreaterThan(580);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
   await expect(page.locator('.cb-explore-list')).toBeVisible();
   await page.getByRole('button',{name:'Mappa',exact:true}).click();

@@ -1,5 +1,5 @@
 /* Home 2026: un solo messaggio, gerarchia forte e navigazione utile. */
-.home .home-main.home-shell{max-width:1440px}
+.home .home-main.home-shell{max-width:none}
 .home .home-main.home-shell{padding-inline:clamp(16px,3.8vw,56px)}
 .cb-hero-v3{
   --hero-ink:#143d30;--hero-accent:#f5acc8;
@@ -7,7 +7,7 @@
   border-bottom:1px solid #bed4bd;
 }
 .cb-hero-v3,.cb-hero-v3 *{box-sizing:border-box}
-.cb-hero-v3-inner{display:grid;grid-template-columns:minmax(0,1.24fr) minmax(300px,.76fr);max-width:1440px;margin-inline:auto}
+.cb-hero-v3-inner{display:grid;grid-template-columns:minmax(0,1.24fr) minmax(300px,.76fr);max-width:none;margin-inline:auto}
 .cb-hero-v3-intro{
   display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
   min-width:0;padding:clamp(28px,4vw,57px) clamp(24px,4.6vw,74px);

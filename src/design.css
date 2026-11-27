@@ -3034,7 +3034,7 @@
   align-items: center;
   gap: 16px;
   width: 100%;
-  max-width: 1440px;
+  max-width: none;
   height: 64px;
   margin: 0 auto;
   padding: 0 20px;
