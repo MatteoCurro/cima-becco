@@ -90,13 +90,13 @@ export function SiteFooter({ openSourcePill = false }: { openSourcePill?: boolea
         </div>
         <div className="site-footer-base">
           {openSourcePill && <OpenSourceInline />}
-          <span>© Cima Becco · Basato su HillGPX (MIT) · Codice MIT · Routes and reviews CC BY 4.0 · Photos CC BY-SA 4.0</span>
+          <span>© Cima Becco · Codice MIT · Dati OSM/CAI ODbL · Contributi degli utenti con licenza indicata nelle schede</span>
           <span className="site-footer-credits">
-            Data: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>,{' '}
+            Dati: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>,{' '}
             <a href="https://www.geonames.org" target="_blank" rel="noreferrer">GeoNames</a>,{' '}
             <a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a>,{' '}
             <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noreferrer">AWS Terrain</a>,{' '}
-            <a href="https://data.gov.sg" target="_blank" rel="noreferrer">data.gov.sg</a>,{' '}
+            <a href="https://www.cai.it/sentieri-e-rifugi/infomont/" target="_blank" rel="noreferrer">CAI INFOMONT</a>,{' '}
             <a href="https://commons.wikimedia.org" target="_blank" rel="noreferrer">Wikimedia</a>,{' '}
             <a href="https://www.mapillary.com" target="_blank" rel="noreferrer">Mapillary</a>
           </span>
