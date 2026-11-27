@@ -1,4 +1,5 @@
 import { routeDetailHref } from '../lib/navigation';
+import { alpinePlaceLink } from '../lib/alpinePlaces';
 import { DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -580,7 +581,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
           <p>Questi luoghi sono stati trovati vicino alla traccia. Il sentiero non garantisce accesso diretto.</p>
           <div className="cb-route-destination-list">
             {route.stops.slice(0, 7).map((stop) => (
-              <a key={stop.slug} href={`#${stop.kind === 'rifugio' ? 'rifugi' : stop.kind === 'bivacco' ? 'bivacchi' : 'paesi'}/${stop.slug}`}>
+              <a key={stop.slug} href={alpinePlaceLink({kind:stop.kind,slug:stop.slug})}>
                 <strong>{stop.name}</strong>
                 <small>{stop.kind === 'rifugio' ? 'RIFUGIO' : stop.kind === 'bivacco' ? 'BIVACCO' : 'PAESE'} · {stop.relation === 'arrivo' ? 'ZONA ARRIVO' : stop.relation === 'partenza' ? 'ZONA PARTENZA' : 'LUNGO IL TRACCIATO'} ↗</small>
               </a>
