@@ -6,6 +6,7 @@ import { HeaderControls } from './HeaderControls';
 import { CoverageModal, useCoverage } from './Coverage';
 import { Mark } from './icons';
 import { exploreGroups } from '../lib/exploreNavigation';
+import { SiteSearch } from './SearchBar';
 
 /** Identità Cima Becco: cresta e becco stilizzati, tipografia dal carattere editoriale. */
 export function Wordmark({ size = 36, href = '/#' }: { size?: number; href?: string }) {
@@ -22,7 +23,7 @@ export function Wordmark({ size = 36, href = '/#' }: { size?: number; href?: str
  * (search) in the centre, and the same actions on the right. It keeps one
  * fixed size, so a sticky header never resizes on scroll.
  */
-export function SiteHeader({ center, sticky = false }: { center?: ReactNode; sticky?: boolean }) {
+export function SiteHeader({ center = <SiteSearch />, sticky = false }: { center?: ReactNode; sticky?: boolean }) {
   const [exploreOpen, setExploreOpen] = useState(false);
   return (
     <header className={`site-header${sticky ? ' sticky' : ''}`}>

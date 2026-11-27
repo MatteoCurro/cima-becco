@@ -1,0 +1,109 @@
+/* Un solo layout per il documento di un sentiero, sia SEO sia URL runtime.
+   La stessa RoutePanel vive nell'anteprima e nella scheda, senza duplicazioni. */
+.map-page.is-route-detail .map-filters,
+.map-page.is-route-detail .map-wrap .map-expand-ctrl,
+.map-page.is-route-detail .view-toggle{display:none}
+.map-page.is-route-detail .stage{
+  display:grid;
+  grid-template-columns:minmax(0,50%) minmax(0,50%);
+  align-items:stretch;
+  width:100%;
+  min-width:0;
+  height:auto;
+}
+.map-page.is-route-detail .stage .list-pane{
+  display:block;
+  position:relative;
+  inset:auto;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  height:auto;
+  min-height:0;
+  overflow:visible;
+  visibility:visible;
+}
+.map-page.is-route-detail .stage .list-pane > .route-panel.in-sidebar{
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  inset:auto;
+  width:100%;
+  max-width:100%;
+  height:auto;
+  max-height:none;
+  margin:0;
+  padding:clamp(18px,3vw,42px);
+  overflow:visible;
+  border-radius:0;
+  box-shadow:none;
+  animation:none;
+  background:#fff;
+}
+.map-page.is-route-detail .stage .map-wrap{
+  position:sticky;
+  inset:auto;
+  top:var(--map-top,0px);
+  width:100%;
+  min-width:0;
+  height:calc(100dvh - var(--map-top,0px));
+  min-height:320px;
+  visibility:visible;
+  pointer-events:auto;
+}
+.map-page.is-route-detail .stage .map-wrap > .map{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  border-radius:0!important;
+}
+.map-page.is-route-detail .route-panel .route-title-heading{
+  font:900 clamp(27px,3vw,42px)/1.08 var(--cb-display);
+  letter-spacing:-.045em;
+  color:var(--cb-ink);
+  margin:0;
+  overflow-wrap:anywhere;
+  white-space:normal;
+}
+.map-page.is-route-detail .route-panel .route-name{
+  display:block;
+  -webkit-line-clamp:unset;
+  line-clamp:unset;
+}
+.cb-route-detail-loading{
+  padding:35px 24px;
+  font:700 14px/1.5 var(--cb-body);
+  color:var(--cb-muted);
+}
+@media(max-width:899px){
+  .map-page.is-route-detail .stage{
+    display:flex;
+    flex-direction:column;
+    height:auto;
+    min-height:0;
+  }
+  .map-page.is-route-detail .stage .list-pane{
+    position:relative;
+    display:block;
+    flex:none;
+    width:100%;
+    height:auto;
+    min-height:0;
+    overflow:visible;
+  }
+  .map-page.is-route-detail .stage .list-pane > .route-panel.in-sidebar{
+    padding:20px clamp(15px,4vw,25px) 30px;
+    height:auto;
+  }
+  .map-page.is-route-detail .stage .map-wrap{
+    position:relative;
+    inset:auto;
+    top:auto;
+    flex:none;
+    height:clamp(320px,55dvh,480px);
+    min-height:320px;
+  }
+  .map-page.is-route-detail .stage .map-wrap > .map{inset:0}
+  .map-page.is-route-detail .stage:not(.list-open) ~ .site-footer{display:block}
+}

@@ -5,6 +5,7 @@ import './styles.css';
 import './design.css';
 import './cimaPolish.css';
 import './cimaSystem.css';
+import './routeDetail.css';
 import { initAnalytics } from './lib/analytics';
 
 const container = document.getElementById('root');

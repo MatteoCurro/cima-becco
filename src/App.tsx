@@ -59,7 +59,7 @@ import { AddPlaceModal } from './components/AddPlaceModal';
 import { SetPasswordModal } from './components/AuthModal';
 import { clearPasswordRecovery, usePasswordRecovery } from './lib/auth';
 import { track } from './lib/analytics';
-import { takeMapIntent } from './lib/mapIntent';
+import { openMapWith, takeMapIntent } from './lib/mapIntent';
 import { countryArea, detectCountry } from './lib/country';
 import { formatRadius } from './lib/units';
 import { isWorldPeakSlug, peaksInView, worldPeakBySlug } from './lib/worldPeaks';
@@ -238,6 +238,8 @@ const NEARBY_ROUTES = 8;
 const PLACE_ROUTE_RADIUS_M = 10_000;
 
 function MapApp() {
+  // A permalink (static or a community hash) is a document, not a floating map card.
+  const isRouteDetail = cleanEntity()?.kind === 'route' || Boolean(routeSlugFromHash(window.location.hash));
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [elevationModel, setElevationModel] = useState<ElevationModel | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -609,15 +611,18 @@ function MapApp() {
   useEffect(() => {
     if (!linkedRoute || !dataset || !routesReady) return;
     setLinkedRoute(null);
-    if(!cleanEntity())history.replaceState(null, '', routeHref(linkedRoute));
     setMode('routes');
-    if (allRoutes.some((route) => route.slug === linkedRoute)) {
-      selectRoute(linkedRoute);
-      setDockedSlug(linkedRoute);
+    const known = allRoutes.find(route => route.slug === linkedRoute);
+    if (known) {
+      // Only committed routes have a static page on GitHub Pages.
+      if (!cleanEntity() && known.source === 'curated') history.replaceState(null, '', routeHref(known.slug));
+      selectRoute(known.slug);
+      setDockedSlug(known.slug);
     } else {
       // Carica solo la cella a cui appartiene il percorso condiviso.
       void loadRouteBySlug(linkedRoute).then((found) => {
         if (found) {
+          if (!cleanEntity() && found.source === 'curated') history.replaceState(null, '', routeHref(found.slug));
           setTiledRoutes((previous) => [...previous.filter((route) => route.slug !== found.slug), found]);
           selectRoute(found.slug);
           setDockedSlug(found.slug);
@@ -774,6 +779,7 @@ function MapApp() {
    */
   const pickFromSearch = useCallback(
     (slug: string, showMap = true) => {
+      if (isRouteDetail) { openMapWith({ kind: 'place', slug }); return; }
       // Routes first: a summit with routes around it opens on those routes,
       // framed with the summit; one without them opens on its own card.
       const venue = venueBySlug.get(slug);
@@ -790,16 +796,17 @@ function MapApp() {
       if (!venues.some((venue) => venue.slug === slug)) setFilters(NO_FILTERS);
       selectVenue(slug, true);
     },
-    [mode, venues, venueBySlug, filteredRoutes, showArea, selectVenue],
+    [isRouteDetail, mode, venues, venueBySlug, filteredRoutes, showArea, selectVenue],
   );
 
   /** A searched area opens on its routes when it has any, otherwise on its climbs. */
   const searchArea = useCallback(
     (bounds: Bounds, showMap = true) => {
+      if (isRouteDetail) { openMapWith({ kind: 'area', bounds }); return; }
       setMode(filteredRoutes.some((route) => routeIntersects(route, bounds)) ? 'routes' : 'climbs');
       showArea(bounds, showMap);
     },
-    [filteredRoutes, showArea],
+    [isRouteDetail, filteredRoutes, showArea],
   );
 
   const routeOpen = Boolean(droppedGpx || selectedRoute);
@@ -810,7 +817,7 @@ function MapApp() {
   // "Fewer details" or "All routes" ends it, and the next route starts as a card
   // again. The expanded map and narrow screens only ever show the card.
   const canDock = useMediaQuery('(min-width: 900px)') && !mapFullWidth;
-  const sidebarRoute = canDock && selectedRouteSlug !== null && dockedSlug === selectedRouteSlug;
+  const sidebarRoute = selectedRouteSlug !== null && (isRouteDetail || (canDock && dockedSlug === selectedRouteSlug));
   const hadSidebarRoute = useRef(false);
   useEffect(() => {
     const open = sidebarRoute && Boolean(selectedRouteSlug);
@@ -997,10 +1004,15 @@ function MapApp() {
   /** A route found by name in the search: open it in Routes mode. */
   const pickRouteFromSearch = useCallback(
     (slug: string) => {
+      if (isRouteDetail) {
+        const source=allRoutes.find(route => route.slug===slug)?.source;
+        window.location.assign(source === 'curated' ? routeHref(slug) : homeHref('route/' + encodeURIComponent(slug)));
+        return;
+      }
       setMode('routes');
       openRoute(slug);
     },
-    [openRoute],
+    [isRouteDetail, allRoutes, openRoute],
   );
 
   /** Select one place and frame it, as tapping its pin does. */
@@ -1061,15 +1073,15 @@ function MapApp() {
     !droppedGpx && selectedRoute ? (
     <RoutePanel
                     placement={sidebarRoute ? 'sidebar' : 'map'}
-                onToggleDock={canDock && !cleanEntity() ? () => setDockedSlug(sidebarRoute ? null : selectedRouteSlug) : undefined}
-                    fullDetail={cleanEntity()?.kind === 'route'}
+                onToggleDock={canDock && !isRouteDetail ? () => setDockedSlug(sidebarRoute ? null : selectedRouteSlug) : undefined}
+                    fullDetail={isRouteDetail}
                     route={selectedRoute}
                     venuesBySlug={venueBySlug}
                     allRoutes={allRoutes}
                     hoverIndex={routeHoverIndex}
                     onHoverIndex={setRouteHoverIndex}
-                    onClose={() => { if (cleanEntity()?.kind === 'route') window.location.assign(homeHref('routes')); else selectRoute(null); }}
-                    folded={!sidebarRoute && panelFold.folded}
+                    onClose={() => { if (isRouteDetail) window.location.assign(homeHref('routes')); else selectRoute(null); }}
+                    folded={!isRouteDetail && !sidebarRoute && panelFold.folded}
                     onUnfold={panelFold.unfold}
                     spotlightSlug={spotlight?.slug ?? null}
                     onShowVenue={showPassedVenue}
@@ -1094,14 +1106,14 @@ function MapApp() {
     ) : null;
 
   return (
-    <div className={`app map-page${mapFullWidth ? ' is-expanded' : ''}${routeOpen && mapFullWidth ? ' bar-folded' : ''}`} ref={pageRef}>
+    <div className={`app map-page${isRouteDetail ? ' is-route-detail' : ''}${mapFullWidth ? ' is-expanded' : ''}${routeOpen && mapFullWidth ? ' bar-folded' : ''}`} ref={pageRef}>
       {/* Header and category bar stay put while the page scrolls the list. */}
       {/* The page's one heading (the place page has its own). */}
-      {!detailSlug && <h1 className="visually-hidden">{mapHeading}</h1>}
+      {!detailSlug && !isRouteDetail && <h1 className="visually-hidden">{mapHeading}</h1>}
       <div className="map-top" ref={topRef}>
         <SiteHeader center={<SearchBar venues={allVenues} routes={allRoutes} onPick={pickFromSearch} onPickRoute={pickRouteFromSearch} onFitBounds={searchArea} onLocate={handleLocate} />} />
 
-        <div className={`map-filters${routeOpen && mapFullWidth ? ' folded' : ''}`} aria-hidden={routeOpen && mapFullWidth ? true : undefined}>
+        {!isRouteDetail && <div className={`map-filters${routeOpen && mapFullWidth ? ' folded' : ''}`} aria-hidden={routeOpen && mapFullWidth ? true : undefined}>
         <div>
         <FilterBar
           types={venueTypes}
@@ -1135,7 +1147,7 @@ function MapApp() {
           }}
         />
         </div>
-        </div>
+        </div>}
       </div>
 
       <main className={`stage${mapFullWidth ? ' map-expanded' : ''}${listOpen ? ' list-open' : ''}`}>
@@ -1143,7 +1155,8 @@ function MapApp() {
         <div className={`list-pane${listOpen ? ' open' : ''}`}>
           {!dataset && !loadError && <ListSkeleton />}
           {sidebarRoute && routePanel}
-          {!(sidebarRoute && routePanel) && dataset && mode === 'climbs' && (
+          {isRouteDetail && !selectedRoute && dataset && <p className="cb-route-detail-loading" role="status">Caricamento del percorso e della traccia cartografica…</p>}
+          {!isRouteDetail && !(sidebarRoute && routePanel) && dataset && mode === 'climbs' && (
             <ResultsList
               venues={venues}
               bounds={viewport}
@@ -1158,7 +1171,7 @@ function MapApp() {
               }}
             />
           )}
-          {!(sidebarRoute && routePanel) && dataset && mode === 'routes' && (
+          {!isRouteDetail && !(sidebarRoute && routePanel) && dataset && mode === 'routes' && (
             <>
             <RunNeedsBar
               whereLabel={planner.whereLabel}
@@ -1294,7 +1307,7 @@ function MapApp() {
           </div>
         )}
 
-        {!(selectedVenue && !listOpen) && !((droppedGpx || selectedRoute) && !listOpen) && (
+        {!isRouteDetail && !(selectedVenue && !listOpen) && !((droppedGpx || selectedRoute) && !listOpen) && (
           <button type="button" className="view-toggle" onClick={() => setListOpen((v) => !v)}>
             {listOpen ? (
               <>

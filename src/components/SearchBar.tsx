@@ -34,7 +34,7 @@ interface SearchBarProps {
   /** Every route (committed, community, on this device), searched by name. */
   routes?: Route[];
   /** Open one route. Without it a route pick opens the map on that route. */
-  onPickRoute?: (slug: string) => void;
+  onPickRoute?: (slug: string, source?: Route['source']) => void;
   /**
    * Send the camera to a box rather than to a point — a whole country, a town,
    * or every match for a street name.
@@ -50,7 +50,7 @@ interface SearchBarProps {
  * Search on a page without the map: every pick opens the map, which shows
  * the routes there (or the climbs, when there are none).
  */
-const openRouteOnMap = (slug: string) => openMapWith({ kind: 'route', slug });
+const openRouteOnMap = (slug: string, source?: Route['source']) => openMapWith({ kind: 'route', slug, source });
 
 export const SEARCH_OPENS_MAP: Pick<SearchBarProps, 'onPick' | 'onPickRoute' | 'onFitBounds'> = {
   onPick: (slug) => openMapWith({ kind: 'place', slug }),
@@ -333,7 +333,7 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
   };
 
   const pickRoute = (slug: string) => {
-    onPickRoute(slug);
+    onPickRoute(slug, routes.find(route => route.slug === slug)?.source);
     reset();
   };
 

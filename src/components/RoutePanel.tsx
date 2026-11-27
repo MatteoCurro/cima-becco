@@ -1,4 +1,4 @@
-import { routeHref } from '../lib/navigation';
+import { routeDetailHref } from '../lib/navigation';
 import { DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -37,7 +37,7 @@ import { RouteReviews } from './RouteReviews';
  * ends in "…", and then it is a button that opens the whole name (and closes it again). Short
  * names are plain text. Everyone, screen readers included, always has the full name.
  */
-function RouteTitle({ name }: { name: string }) {
+function RouteTitle({ name, headingLevel = 2 }: { name: string; headingLevel?: 1 | 2 }) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const [cut, setCut] = useState(false);
   const [open, setOpen] = useState(false);
@@ -55,8 +55,9 @@ function RouteTitle({ name }: { name: string }) {
     return () => observer.disconnect();
   }, [name, open]);
   const text = <span className={`route-name${open ? ' open' : ''}`}>{name}</span>;
+  const Heading = headingLevel === 1 ? 'h1' : 'h2';
   return (
-    <h2 ref={headingRef} title={name}>
+    <Heading ref={headingRef} title={name} className="route-title-heading">
       {cut || open ? (
         <button type="button" className="route-name-toggle" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
           {text}
@@ -64,7 +65,7 @@ function RouteTitle({ name }: { name: string }) {
       ) : (
         text
       )}
-    </h2>
+    </Heading>
   );
 }
 
@@ -467,7 +468,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
   const unavailable = elevation.pending ? 'Calcolo…' : 'Non disponibile';
 
   return (
-    <section className={`gpx-panel route-panel ${expanded ? 'expanded' : 'compact'}${folded ? ' folded' : ''}${sidebar ? ' in-sidebar' : ''}`} aria-label={`Route: ${route.name}`} key={route.slug}>
+    <section className={`gpx-panel route-panel ${expanded ? 'expanded' : 'compact'}${folded ? ' folded' : ''}${sidebar ? ' in-sidebar' : ''}${fullDetail ? ' is-full-detail' : ''}`} aria-label={`Route: ${route.name}`} key={route.slug}>
       {sidebar ? (
         <button type="button" className="route-back" onClick={onClose}>
           <ArrowLeftIcon size={16} />
@@ -482,7 +483,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
       )}
       <header className="gpx-panel-head">
         <div className="route-panel-title">
-          <RouteTitle name={displayTitle} />
+          <RouteTitle name={displayTitle} headingLevel={fullDetail ? 1 : 2} />
           <InfoTip>
             <RecordedLine recordedAt={route.recordedAt} />
             {hasElevation && <ElevationSourceLine source={elevation.fromTerrain ? 'terrain' : route.elevationSource ?? 'gps'} />}
@@ -709,17 +710,18 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
         </div>
       </div>
 
-      <button
-        type="button"
-        className="route-more-toggle"
-        onClick={() => (!fullDetail && shareable ? window.location.assign(routeHref(route.slug)) : onToggleDock ? onToggleDock() : setExpanded((value) => !value))}
-        aria-expanded={expanded}
-        aria-controls={`route-more-${route.slug}`}
-        aria-label={expanded ? 'Show fewer route details' : 'Show more route details'}
-      >
-        <span>{fullDetail ? 'Scheda completa' : expanded ? 'Meno dettagli' : 'Scheda completa'}</span>
-        <ChevronRightIcon size={13} />
-      </button>
+      {!fullDetail && (shareable ? (
+        <a className="route-more-toggle" href={routeDetailHref(route.slug, route.source)}
+          aria-label={`Apri la scheda completa di ${displayTitle}`}>
+          <span>VEDI SCHEDA COMPLETA</span><ChevronRightIcon size={13} />
+        </a>
+      ) : (
+        <button type="button" className="route-more-toggle"
+          onClick={() => (onToggleDock ? onToggleDock() : setExpanded(value => !value))}
+          aria-expanded={expanded} aria-controls={`route-more-${route.slug}`}>
+          <span>{expanded ? 'Meno dettagli' : 'Più dettagli'}</span><ChevronRightIcon size={13} />
+        </button>
+      ))}
         </>
       )}
 

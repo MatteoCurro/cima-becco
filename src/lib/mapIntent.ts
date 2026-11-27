@@ -1,5 +1,6 @@
-import { navigateHome, routeHref } from './navigation';
+import { navigateHome, routeDetailHref } from './navigation';
 import type { Bounds } from './venues';
+import type { Route } from '../types';
 
 /**
  * What a search, or "near me", on a page without the map (landing, venue,
@@ -13,7 +14,7 @@ export type MapIntent =
   /** One place, selected and framed as if its pin had been tapped (the account's Saved list). */
   | { kind: 'venue'; slug: string }
   /** One route, opened on the map; `edit` lands in the panel's edit mode (the owner's own upload). */
-  | { kind: 'route'; slug: string; edit?: boolean }
+  | { kind: 'route'; slug: string; edit?: boolean; source?: Route['source'] }
   | { kind: 'near-me' }
   | { kind: 'saved'; what: 'routes' | 'places' };
 
@@ -23,8 +24,8 @@ const KEY = 'hillgpx:mapIntent';
 export const NEAR_ME_HASH = '#map/near-me';
 
 export function openMapWith(intent: MapIntent) {
-  if (intent.kind === 'route' && !intent.edit && !intent.slug.startsWith('local')) {
-    window.location.assign(routeHref(intent.slug));
+  if (intent.kind === 'route' && !intent.edit && intent.source && intent.source !== 'local') {
+    window.location.assign(routeDetailHref(intent.slug, intent.source));
     return;
   }
   if (intent.kind === 'near-me') {

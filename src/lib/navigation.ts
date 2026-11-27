@@ -8,3 +8,8 @@ export function routeHref(slug: string): string {
 export function navigateHome(hash: string): void {
   window.location.assign(homeHref(hash));
 }
+
+/** Solo i percorsi importati nella build hanno un file SEO su GitHub Pages. */
+export function routeDetailHref(slug: string, source: 'curated' | 'community' | 'local'): string {
+  return source === 'curated' ? routeHref(slug) : homeHref('route/' + encodeURIComponent(slug));
+}
