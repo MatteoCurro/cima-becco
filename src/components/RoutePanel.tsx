@@ -577,7 +577,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
             {' '}{route.waterSources.filter(w=>w.potable==='yes').length} con indicazione OSM di potabilità; per gli altri non darla per scontata.</p>
           <div className="cb-route-water-points">
             {route.waterSources.slice(0,8).map(w=>{
-              const parts=/^osm-([nwr])-(\\d+)$/.exec(w.slug);
+              const parts=/^osm-([nwr])-(\d+)$/.exec(w.slug);
               const typ=parts?({'n':'node','w':'way','r':'relation'} as const)[parts[1] as 'n'|'w'|'r']:null;
               const href=typ?`https://www.openstreetmap.org/${typ}/${parts![2]}`:null;
               return href?<a key={w.slug} href={href} target="_blank" rel="noopener noreferrer">
