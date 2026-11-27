@@ -334,7 +334,7 @@ def reconcile_osm(entities, places, qid_map):
         if header(place.get("name")) != header(entity["name"]):
             review.append({"qid": qid, "reason": "name_discrepancy", "istatCode": code})
             continue
-        osm_match = re.fullmatch(r"https://www\\.openstreetmap\\.org/(node|way|relation)/([1-9]\\d*)", str(place.get("osmUrl") or ""))
+        osm_match = re.fullmatch(r"https://www[.]openstreetmap[.]org/(node|way|relation)/([1-9][0-9]*)", str(place.get("osmUrl") or ""))
         if not osm_match:
             review.append({"qid": qid, "reason": "invalid_osm_source", "istatCode": code})
             continue
