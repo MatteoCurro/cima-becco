@@ -6,13 +6,13 @@
 export interface MountainWeather {
   updated: string;
   current: { temp: number; feels: number; wind: number; precipitation: number; code: number; isDay: boolean };
-  next: { date: string; tempMin: number; tempMax: number; rainMm: number; snowCm: number; precipitationChance: number }[];
+  next: { date: string; tempMin: number; tempMax: number; rainMm: number; snowCm: number; precipitationChance: number; code?: number }[];
 }
 export interface SeasonalWeather { period: string; seasons: {season:'inverno'|'primavera'|'estate'|'autunno';averageC:number;days:number}[] }
 type CacheRecord<T> = {time:number;value:T};
 const memory = new Map<string,CacheRecord<unknown>>();
 const pending = new Map<string,Promise<unknown>>();
-const CACHE_VERSION = 'cb-weather-v2';
+const CACHE_VERSION = 'cb-weather-v3';
 
 function inRange(value:unknown):value is number{return typeof value==='number' && Number.isFinite(value);}
 function rounded(n:number){return Math.round(n*10)/10;}
@@ -51,7 +51,7 @@ export function loadMountainWeather(lat:number,lng:number):Promise<MountainWeath
   return cached(key,20*60*1000,async()=>{
     const u=weatherUrl(lat,lng,'forecast');
     u.searchParams.set('current','temperature_2m,apparent_temperature,precipitation,wind_speed_10m,weather_code,is_day');
-    u.searchParams.set('daily','temperature_2m_min,temperature_2m_max,precipitation_sum,snowfall_sum,precipitation_probability_max');
+    u.searchParams.set('daily','temperature_2m_min,temperature_2m_max,precipitation_sum,snowfall_sum,precipitation_probability_max,weather_code');
     u.searchParams.set('forecast_days','4');
     const d=await getJson(u);const now=d.current,days=d.daily;
     if(!now||!days||!inRange(now.temperature_2m))throw new Error('Dati meteo parziali o mancanti.');
@@ -63,6 +63,7 @@ export function loadMountainWeather(lat:number,lng:number):Promise<MountainWeath
         date,tempMin:days.temperature_2m_min?.[i],tempMax:days.temperature_2m_max?.[i],
         rainMm:days.precipitation_sum?.[i]??0,snowCm:days.snowfall_sum?.[i]??0,
         precipitationChance:days.precipitation_probability_max?.[i]??0,
+        code:inRange(days.weather_code?.[i])?days.weather_code[i]:undefined,
       })).filter((v:{tempMin:number;tempMax:number})=>inRange(v.tempMin)&&inRange(v.tempMax)),
     };
   });
