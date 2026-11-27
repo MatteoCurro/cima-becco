@@ -86,6 +86,23 @@ def parse_item(row):
         **({"wikidata": tags["wikidata"]} if re.fullmatch(r"Q\d+", tags.get("wikidata","")) else {}),
         **({"website": sanitize_url(tags.get("website"))} if sanitize_url(tags.get("website")) else {}),
         **({"operator": clean_name(tags["operator"])} if tags.get("operator") else {}),
+        **({"description": clean_name(tags.get("description:it") or tags["description"])[:320]}
+            if (tags.get("description:it") or tags.get("description")) else {}),
+        **({"openingHours": clean_name(tags["opening_hours"])} if tags.get("opening_hours") else {}),
+        **({"phone": clean_name(tags.get("contact:phone") or tags.get("phone"))[:48]}
+            if (tags.get("contact:phone") or tags.get("phone")) else {}),
+        **({"email": clean_name(tags.get("contact:email") or tags.get("email"))[:120]}
+            if (tags.get("contact:email") or tags.get("email")) else {}),
+        **({"address": ", ".join(str(tags[key]).strip() for key in
+            ("addr:street", "addr:housenumber", "addr:city") if tags.get(key))[:200]}
+            if any(tags.get(k) for k in ("addr:street","addr:housenumber","addr:city")) else {}),
+        **({"commonsFile": clean_name(tags["wikimedia_commons"])[5:]}
+            if tags.get("wikimedia_commons","").startswith("File:") else {}),
+        **({"wikipedia": clean_name(tags["wikipedia"])}
+            if re.fullmatch(r"[a-z]{2,3}:.+", tags.get("wikipedia","")) else {}),
+        **({"capacity": int(tags["beds"])}
+            if tags.get("beds","").isdigit() and 0<int(tags["beds"])<2000 else {}),
+
     }
 
 
@@ -182,6 +199,14 @@ def run(write,link_only):
             item=parse_item(row)
             if item:unique[item["slug"]]=item
         places=sorted(unique.values(),key=lambda p:(p["kind"],p["name"].casefold(),p["slug"]))
+        old_places={p["slug"]:p for p in read_json(OUT,{"places":[]}).get("places",[])}
+        # L'aggiornamento settimanale OSM non deve cancellare foto già verificate,
+        # né informazioni editoriali approvate da un eventuale gestore.
+        for place in places:
+            former=old_places.get(place["slug"],{})
+            for field in ("photo","photoCheckedAt"):
+                if field in former and field not in place:
+                    place[field]=former[field]
         if write:write_json(OUT,{"generatedAt":datetime.now(timezone.utc).date().isoformat(),"source":"OpenStreetMap · ODbL 1.0",
                                "coverage":"Dolomiti (pilota)", "places":places})
     counts={"rifugi":sum(p["kind"]=="rifugio" for p in places),
