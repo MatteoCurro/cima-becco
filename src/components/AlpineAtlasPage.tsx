@@ -14,6 +14,7 @@ import { AlpineAtlasMap } from './AlpineAtlasMap';
 import { MapContextLabel } from './MapContextLabel';
 import { AlpineWeatherPanel } from './AlpineWeatherPanel';
 import { HutClaimRequest } from './HutClaimRequest';
+import { RefugeProfile } from './RefugeProfile';
 import { DetailFacts, DetailLayout, DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
 import { AtlasDossierBlocks } from './AtlasDossierBlocks';
 import { DetailJumpNav } from './DetailJumpNav';
@@ -150,6 +151,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
         height="100%" caption={place.name}/>
     </section>}
   >
+    {place.kind==='rifugio' ? <RefugeProfile place={place} routes={nearby} loadingRoutes={loading} nearbyPlaces={nearbyPlaces} water={water}/> : <>
     <header className="cb-location-hero">
       <div className="cb-location-hero-copy">
         <PlaceBadge place={place}/>
@@ -251,6 +253,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
           {' '}Meteo da modello, dati e condizioni del territorio possono cambiare.
         </footer>
         <p className="cb-location-safety"><strong>IN MONTAGNA SERVE LA TESTA.</strong> Posizione, meteo, apertura e condizioni possono cambiare. Verifica con le fonti ufficiali prima di partire.</p>
+    </>}
   </DetailLayout>;
 }
 

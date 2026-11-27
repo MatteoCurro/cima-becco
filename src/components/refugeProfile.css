@@ -1,0 +1,117 @@
+/* Dossier specialistico rifugi. Nessuna regola di chrome o griglia 42/58.
+   Le dimensioni editoriali dipendono dalla colonna DetailLayout esistente. */
+.cb-refuge-profile{min-width:0;color:#204735}
+.cb-refuge-hero{display:grid;gap:20px;min-width:0;margin:0 0 23px}
+.cb-refuge-hero-media{position:relative;min-width:0}
+.cb-refuge-gallery{margin:0;min-width:0}
+.cb-refuge-gallery-stage{position:relative;overflow:hidden;height:clamp(205px,25vw,360px);
+  background:#d9e8d5;border-radius:12px;outline-offset:3px}
+.cb-refuge-gallery-stage>img{display:block;width:100%;height:100%;object-fit:cover}
+.cb-refuge-gallery-stage>button{position:absolute;z-index:2;top:50%;transform:translateY(-50%);
+  display:grid;place-items:center;width:39px;height:43px;padding:0;border:1px solid #ffffffa8;
+  background:#153e2ed9;color:#fff;cursor:pointer;border-radius:8px}
+.cb-refuge-gallery-stage>button:hover,.cb-refuge-gallery-stage>button:focus-visible{background:#b7004a}
+.cb-refuge-gallery-prev{left:11px}.cb-refuge-gallery-next{right:11px}
+.cb-refuge-gallery-count{position:absolute;bottom:12px;right:13px;background:#183e2de8;color:#fff;
+  border-radius:5px;padding:5px 8px;font:750 11px 'Space Grotesk',sans-serif}
+.cb-refuge-gallery-historical{position:absolute;top:13px;left:14px;padding:6px 9px;border-radius:4px;
+  background:#224531ed;color:#fff;font:800 10px 'Space Grotesk',sans-serif;letter-spacing:.08em}
+.cb-refuge-gallery-caption{display:grid;gap:3px;padding-top:8px;color:#526c59;
+  font:600 11px/1.5 'Space Grotesk',sans-serif;overflow-wrap:anywhere}
+.cb-refuge-gallery-caption small{color:#768b7a;overflow-wrap:anywhere}
+.cb-refuge-gallery-caption a{color:#af0051}
+.cb-refuge-gallery-thumbs{display:flex;gap:8px;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;
+  scrollbar-width:thin;padding:10px 1px 3px}
+.cb-refuge-gallery-thumbs button{flex:0 0 76px;height:57px;padding:0;overflow:hidden;border:2px solid transparent;
+  border-radius:6px;background:#edf3e9;opacity:.62;cursor:pointer}
+.cb-refuge-gallery-thumbs button.is-active,.cb-refuge-gallery-thumbs button:focus-visible{border-color:#c10052;opacity:1}
+.cb-refuge-gallery-thumbs img{width:100%;height:100%;object-fit:cover}
+.cb-refuge-gallery .cb-place-visual{min-height:0;height:clamp(205px,25vw,360px);border-radius:12px}
+.cb-refuge-avatar{position:absolute;z-index:4;top:13px;right:13px;display:grid;place-items:center;
+  width:60px;height:60px;border:3px solid #fff;border-radius:11px;background:#ecf8e5;
+  box-shadow:0 4px 14px #173d3440;color:#194d34;overflow:hidden}
+.cb-refuge-avatar img{width:100%;height:100%;object-fit:contain}
+.cb-refuge-kicker{display:flex;align-items:center;gap:7px;color:#a2004b;
+  font:850 11px 'Space Grotesk',sans-serif;letter-spacing:.085em}
+.cb-refuge-hero h1{margin:8px 0 12px;color:#19412e;letter-spacing:-.045em;
+  font:900 clamp(31px,3vw,48px)/1.03 'Bricolage Grotesque',sans-serif;overflow-wrap:anywhere}
+.cb-refuge-intro{margin:0 0 15px;font:550 14px/1.75 'Space Grotesk',sans-serif;
+  color:#405d49;overflow-wrap:anywhere}
+.cb-refuge-hero .cb-detail-metrics{margin:14px 0 15px}
+.cb-refuge-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 10px}
+.cb-refuge-actions a,.cb-refuge-actions button,.cb-refuge-map-link{
+  display:inline-flex;justify-content:center;align-items:center;gap:8px;min-height:41px;
+  padding:9px 12px;border:1px solid #c8d8c3;border-radius:6px;background:#f0f6ec;
+  color:#20523c;text-decoration:none;font:800 12px/1.4 'Space Grotesk',sans-serif;
+  cursor:pointer;overflow-wrap:anywhere}
+.cb-refuge-actions .cb-refuge-action-primary{color:#fff;background:#b90052;border-color:#b90052}
+.cb-refuge-actions a:hover,.cb-refuge-actions button:hover,.cb-refuge-map-link:hover{border-color:#b90052}
+.cb-refuge-source-label{margin:10px 0 0;color:#758777;font:600 11px/1.6 'Space Grotesk',sans-serif}
+.cb-refuge-block{min-width:0;padding:26px 0 30px}
+.cb-refuge-block-heading{display:flex;align-items:center;gap:12px;margin:0 0 19px}
+.cb-refuge-block-icon{flex:none;display:grid;place-items:center;width:43px;height:43px;border:1px solid #d5e6d2;
+  border-radius:9px;background:#eaf4e5;color:#2a5e43}
+.cb-refuge-block-heading>div{min-width:0}
+.cb-refuge-block-heading span:not(.cb-refuge-block-icon){display:block;margin:0 0 5px;color:#a7004c;
+  font:850 10px/1.3 'Space Grotesk',sans-serif;letter-spacing:.075em}
+.cb-refuge-block-heading h2{margin:0;color:#1d4633;line-height:1.12;letter-spacing:-.03em;
+  font:850 clamp(22px,2.2vw,30px)/1.15 'Bricolage Grotesque',sans-serif;overflow-wrap:anywhere}
+.cb-refuge-subsection{padding:14px 0;border-top:1px solid #e2eadd}
+.cb-refuge-subsection:first-of-type{border-top:0;padding-top:0}
+.cb-refuge-subsection h3,.cb-refuge-route-list h3{display:flex;align-items:center;gap:8px;
+  margin:0 0 13px;color:#284c37;font:850 14px/1.35 'Bricolage Grotesque',sans-serif}
+.cb-refuge-fact-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:0}
+.cb-refuge-fact-list>div{min-width:0;display:grid;align-content:start;gap:5px;padding:12px 13px;
+  border:1px solid #dce8d8;border-radius:7px;background:#f7faf4}
+.cb-refuge-fact-list dt{color:#697c6e;font:750 11px/1.45 'Space Grotesk',sans-serif}
+.cb-refuge-fact-list dd{margin:0;color:#214733;font:850 15px/1.35 'Bricolage Grotesque',sans-serif;
+  overflow-wrap:anywhere}
+.cb-refuge-fact-list dd small{display:block;font:600 10px/1.5 'Space Grotesk',sans-serif;color:#748778}
+.cb-refuge-fact-list dd a{display:inline-flex;align-items:center;gap:4px;margin-left:4px;
+  color:#a8004d;font:700 10px 'Space Grotesk',sans-serif;text-decoration:none}
+.cb-refuge-disclaimer,.cb-refuge-section-intro{color:#5e7566;font:600 12px/1.7 'Space Grotesk',sans-serif}
+.cb-refuge-service-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.cb-refuge-service{display:flex;align-items:center;gap:10px;padding:12px;min-width:0;
+  border:1px solid #dce6d8;border-radius:8px;background:#f8fbf5}
+.cb-refuge-service-icon{flex:none;display:grid;place-items:center;width:35px;height:35px;border-radius:7px;
+  background:#e3f0dc;color:#2b6741}
+.cb-refuge-service>span:nth-child(2){display:grid;gap:3px;flex:1;min-width:0}
+.cb-refuge-service strong{color:#284b37;font:800 12px/1.4 'Space Grotesk',sans-serif;overflow-wrap:anywhere}
+.cb-refuge-service small{color:#718675;font:600 10px/1.4 'Space Grotesk',sans-serif}
+.cb-refuge-service>.cb-fa-icon{color:#367f4f}
+.cb-refuge-service.is-no{background:#f5f6f3;border-color:#e2e3de}
+.cb-refuge-service.is-no .cb-refuge-service-icon{background:#eceeea;color:#8a998d}
+.cb-refuge-service.is-no>.cb-fa-icon{color:#a18c93}
+.cb-refuge-route-list{display:grid;gap:7px;margin:12px 0 18px}
+.cb-refuge-route{display:flex;gap:11px;align-items:center;min-width:0;padding:12px 11px;
+  background:#f3f8ef;border:1px solid #dbe8d7;border-radius:8px;color:#27553b;text-decoration:none}
+.cb-refuge-route>.cb-fa-icon:first-child{color:#a4004b;flex:none}
+.cb-refuge-route>span{display:grid;gap:4px;min-width:0;flex:1}
+.cb-refuge-route strong{font:800 13px 'Bricolage Grotesque',sans-serif;overflow-wrap:anywhere}
+.cb-refuge-route small{font:600 11px 'Space Grotesk',sans-serif;color:#6f806f}
+.cb-refuge-more{margin:14px 0}.cb-refuge-more summary{cursor:pointer;font:750 12px 'Space Grotesk',sans-serif}
+.cb-refuge-editorial{font:500 14px/1.85 'Space Grotesk',sans-serif;color:#476452;white-space:pre-line;overflow-wrap:anywhere}
+.cb-refuge-contact-links{display:flex;flex-wrap:wrap;gap:9px;padding:0 0 9px}
+.cb-refuge-contact-links a{display:inline-flex;align-items:center;gap:7px;padding:7px 9px;
+  border-radius:5px;background:#f1f6ee;color:#a9004d;font:750 12px/1.4 'Space Grotesk',sans-serif;
+  text-decoration:none;overflow-wrap:anywhere}
+.cb-refuge-water-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.cb-refuge-water-list>div{display:flex;align-items:center;gap:10px;min-width:0;padding:11px;
+  border:1px solid #dce8da;border-radius:7px;background:#f5f9f2}
+.cb-refuge-water-list strong,.cb-refuge-water-list small{display:block;overflow-wrap:anywhere}
+.cb-refuge-water-list small{font:600 10px/1.5 'Space Grotesk',sans-serif;color:#637a68}
+.cb-refuge-water-list>.cb-fa-icon{flex:none}
+.cb-refuge-credits{margin:24px 0 0;padding:17px 0;border-top:1px solid #dce8da;
+  color:#6e806e;font:600 11px/1.8 'Space Grotesk',sans-serif}
+.cb-refuge-credits a{color:#a80050}
+.cb-refuge-profile .cb-dossier-modules{gap:0}
+.cb-refuge-profile .cb-dossier-section{margin:12px 0}
+@container(max-width:520px){
+  .cb-refuge-gallery-stage,.cb-refuge-gallery .cb-place-visual{height:clamp(205px,57vw,310px)}
+  .cb-refuge-service-grid,.cb-refuge-water-list{grid-template-columns:1fr}
+}
+@container(max-width:370px){
+  .cb-refuge-fact-list{grid-template-columns:1fr}
+  .cb-refuge-actions a,.cb-refuge-actions button{flex:1 1 auto}
+}
+@media(prefers-reduced-motion:reduce){.cb-refuge-gallery-stage>button{transition:none}}

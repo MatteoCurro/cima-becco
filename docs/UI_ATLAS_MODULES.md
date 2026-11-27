@@ -85,3 +85,43 @@ Record senza metadati, record con facts positivi/null/false, metadati conflittua
 webcam senza licenza still, rifugio con service flags, borgo con amministrazione
 documentata, foto e loghi con permessi per singolo file. Le faccette devono
 scomparire quando nessun dato disponibile le giustifica.
+
+
+## Rifugi CAI — profilo territoriale ricco e SEO (27/11/2026)
+
+Componenti specialistici senza cambiare né il modello canonico né la griglia 42/58:
+
+- `RefugeProfile.tsx` è l'adapter di presentazione per `AlpinePlace.kind === 'rifugio'`.
+  Usa il `DetailLayout` comune; borghi, bivacchi, sentieri e trekking restano invariati.
+- `RefugeGallery.tsx` usa `media[]` (fotografie correnti e storiche) e la foto
+  legacy come fallback. Più immagini, miniature e crediti per singolo scatto,
+  navigazione tastiera, niente auto-rotazione, deduplica per URL. Logo distinto
+  dai media fotografici. Se manca una foto usa solo il fallback topografico.
+- `refugeProfile.css` contiene esclusivamente componenti del profilo rifugio:
+  nessun override di SiteChrome, nessuna seconda griglia mappa.
+- `src/lib/refugeEditorial.js` è un modulo **puro condiviso** fra pagina React
+  e `scripts/build_seo.mjs`. Compone testi coerenti da dati normalizzati
+  e con provenienza documentata: quota, capienza, letti invernali, servizi.
+  Non inventa storia, prezzi, disponibilità, accessi o apertura odierna.
+- Sequenza: gallery → nome e riepilogo → apertura/pernottamento/contatti
+  → servizi → itinerari con relazione vs semplicemente vicini → storia e geografia
+  → meteo/acqua → dintorni → archivio dati residuali e fonti.
+- I metadati presenti in `facts{}` vengono distribuiti nelle sezioni tematiche;
+  il restante catalogo documentato resta consultabile nel dossier aggiuntivo,
+  senza pubblicare tre volte lo stesso valore.
+- Servizi `true`/ `false` restano distinti; `null` o senza fonte sono ignoti.
+  `waterAvailableReported` NON prova `drinkingWater`.
+- Le pagine SEO statiche leggono il medesimo release `refuges-v1.json`
+  e aggiungono descrizione fattuale, servizi, letti invernali, foto secondarie,
+  provenienza, eventuali dati storici. `LodgingBusiness` solo per rifugi
+  con capienza documentata, altrimenti `Place`. Dati non documentati omessi.
+  Nessuna garanzia di rich result Google.
+- Il filtro `noindex` continua a proteggere le pagine CAI prive di sostanza
+  editoriale, ma accetta dossier con almeno cinque fatti attribuiti anche senza foto.
+- Verifica visiva a 320/390/768/1280 e CSS ownership. Non duplicare lo stato
+  dell'app con testo SEO inventato: HTML statico e frontend usano un solo helper.
+
+Riferimenti: W3C/WAI carousel APG
+(https://www.w3.org/WAI/ARIA/apg/patterns/carousel/) e
+Google Search Central immagini
+(https://developers.google.com/search/docs/appearance/google-images).

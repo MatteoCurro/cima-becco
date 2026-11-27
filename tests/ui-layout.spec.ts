@@ -510,3 +510,31 @@ test('Font Awesome: simboli inline SVG, nessun emoji di fallback nelle schede',a
   expect(computed.viewBox).toMatch(/^0 0 /);
   expect(computed.width).toBeGreaterThan(5);
 });
+
+
+test('scheda rifugio: profilo completo CAI, mappa non ridimensionata e sezioni navigabili',async({page})=>{
+  test.setTimeout(90_000);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#rifugi');
+  await expect(page.locator('.cb-explore-card-detail').first()).toBeVisible({timeout:20000});
+  await page.locator('.cb-explore-card-detail').first().click();
+  await expect(page.locator('.cb-refuge-profile h1')).toBeVisible();
+  await expect(page.locator('.cb-refuge-gallery')).toBeVisible();
+  await expect(page.locator('#cb-refuge-stay')).toBeVisible();
+  await expect(page.locator('#cb-refuge-access')).toBeAttached();
+  const original=page.url();
+  const nav=page.getByRole('navigation',{name:'Naviga questa scheda'});
+  await nav.getByRole('button',{name:/Ospitalità/}).click();
+  expect(page.url()).toBe(original);
+  const top=await page.locator('#cb-refuge-stay').evaluate(el=>el.getBoundingClientRect().top);
+  const header=await page.locator('.site-header').evaluate(el=>el.getBoundingClientRect().bottom);
+  expect(top).toBeGreaterThanOrEqual(header-4);
+  expect(top).toBeLessThan(header+80);
+  for(const width of [320,390,768,1280]){
+    await page.setViewportSize({width,height:850});
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
+    const map=await page.locator('.cb-location-sidebar').boundingBox();
+    expect(map?.width ?? 0).toBeGreaterThan(width>900?width*.55:width-3);
+  }
+});

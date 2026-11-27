@@ -20,6 +20,7 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
+import { refugeFact, refugeOverview, refugeSeoDescription, refugeServiceFacts } from '../src/lib/refugeEditorial.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
@@ -512,23 +513,54 @@ for (const place of alpinePlaces) {
   const altitude=Number.isFinite(place.elevationM)?` a ${metres(place.elevationM)} di quota`:'';
   const nearbyWater=alpineWater.filter(w=>Math.abs(w.lat-place.lat)<.017 && Math.abs(w.lng-place.lng)<.03 &&
     Math.hypot((w.lat-place.lat)*111195,(w.lng-place.lng)*111320*Math.cos(place.lat*Math.PI/180))<1400).slice(0,8);
-  const description=(place.description?`${place.description} `:'')+
+  const description=place.kind==='rifugio' ? refugeSeoDescription(place) :
+    (place.description?`${place.description} `:'')+
     `${place.name} è ${kind==='località di montagna'?'una':'un'} ${kind} mappat${place.kind==='borgo'?'a':'o'} ${isCaiOnly?"nell'Atlante Cima Becco":"nelle Dolomiti"}${altitude}.`+
     (related.length?` Esplora ${related.length} sentieri collegati geograficamente e GPX.`:' Consulta posizione e sentieri nei dintorni.');
+  const refugeServices=place.kind==='rifugio'?refugeServiceFacts(place):[];
+  const refugeBeds=refugeFact(place,'bedsTotal') ?? place.capacity;
+  const knownCaiFacts=place.kind==='rifugio' ? Object.values(place.facts||{}).filter(f=>
+    f && f.value!==null && f.value!==undefined && (f.sourceId||f.sourceUrl)).length : 0;
+  const additionalPhotos=(place.media||[]).filter(m=>
+    (m.kind==='photo'||m.kind==='historical_photo') && m.url && m.url!==place.photo?.url &&
+    m.subjectVerified && m.reuseAllowed && m.licence && m.sourceUrl);
+  const imageUrls=[...(place.photo?.url?.startsWith('https://')&&place.photo?.license&&place.photo?.sourceUrl?[place.photo.url]:[]),
+    ...additionalPhotos.map(m=>m.url)].filter(url=>url.startsWith('https://'));
+  const hasDocumentedStay=typeof refugeBeds==='number' && refugeBeds>0;
+  const refugeDetailKeys=[
+    ['bedsWinter','Posti letto invernali'],['winterRoom','Locale invernale'],['dormitories','Camerate'],
+    ['openingHoursReported','Orari dichiarati'],['openingStatus','Stato indicato dalla fonte (non in tempo reale)'],
+    ['seasonality','Stagionalità'],['accessRules','Condizioni di accesso'],
+    ['owner','Proprietà'],['manager','Gestione'],
+    ['nightlyPrice','Prezzo per notte'],['halfBoardPrice','Mezza pensione'],
+    ['memberDiscount','Agevolazioni soci'],['priceValidUntil','Prezzi validi fino a'],
+    ['yearBuilt','Anno di costruzione'],['yearRebuilt','Anno di ricostruzione'],
+    ['yearOpened','Anno di apertura'],['dedication','Intitolazione'],
+  ];
+  const publishedDetails=place.kind==='rifugio'?refugeDetailKeys.map(([key,label])=>({
+    label,value:refugeFact(place,key),fact:place.facts?.[key]
+  })).filter(entry=>entry.value!==null):[];
   const photo=place.photo?.url?.startsWith('https://') && place.photo?.license && place.photo?.sourceUrl ? place.photo : null;
   page({
     path:`${category}/${place.slug}/`,
     noindex:(place.kind==='borgo' && !related.length && !place.website && !place.description && !place.photo) ||
-      (isCaiOnly && (!place.description || place.description.length < 100) && !photo),
+      (isCaiOnly && knownCaiFacts<5 && (!place.description || place.description.length < 100) && !photo),
     title:`${place.name} · ${place.kind==='rifugio'?'Rifugio':place.kind==='bivacco'?'Bivacco':'Paese'}, altitudine, sentieri e meteo | Cima Becco`,
     description:description.slice(0,285),
     image:photo?.url||null,
     jsonLd:{'@context':'https://schema.org','@graph':[
-      {'@type':'Place',name:place.name,description,
+      {'@type':place.kind==='rifugio'&&hasDocumentedStay?'LodgingBusiness':'Place',name:place.name,description,
         url:`${SITE}/${category}/${place.slug}/`,
         geo:{'@type':'GeoCoordinates',latitude:place.lat,longitude:place.lng,
           ...(place.elevationM?{elevation:place.elevationM}:{})},
-        ...(photo?{image:photo.url}:{}),
+        ...(imageUrls.length?{image:imageUrls.slice(0,12)}:{}),
+        ...(place.kind==='rifugio'&&hasDocumentedStay?{
+          additionalProperty:[{'@type':'PropertyValue',name:'Posti letto dichiarati',value:refugeBeds}],
+          ...(refugeServices.length?{amenityFeature:refugeServices.map(item=>({
+            '@type':'LocationFeatureSpecification',name:item.label,value:item.value
+          }))}:{}),
+        }:{}),
+        ...(place.kind==='rifugio'&&place.officialUrl?.startsWith('https://')?{sameAs:place.officialUrl}:{}),
         hasMap:place.osmUrl,
         ...(place.phone?{telephone:place.phone}:{}),
       },breadcrumbLd([[category==='rifugi'?'Rifugi':category==='bivacchi'?'Bivacchi':'Paesi',appLink(`#${category==='borghi'?'paesi':category}`)],[place.name,null]])]},
@@ -537,15 +569,20 @@ for (const place of alpinePlaces) {
       <h1>${escape(place.name)}</h1>
       <p class="cima-seo-lead">${escape(description)}</p>
       ${photo?`<figure class="cima-seo-photo"><img src="${escape(photo.url)}" alt="${escape(place.name)}" loading="lazy"></figure>`:''}
+      ${place.kind==='rifugio'&&additionalPhotos.length?`<section aria-label="Archivio fotografico del rifugio"><h2>Fotografie del rifugio</h2>
+        <div class="cima-seo-photo-grid">${additionalPhotos.slice(0,12).map(m=>`<figure><img src="${escape(m.url)}" alt="${escape((m.kind==='historical_photo'?'Fotografia storica di ':'Fotografia di ')+place.name+(m.caption?' – '+m.caption:''))}" loading="lazy">
+          <figcaption>${escape(m.caption||place.name)} · ${escape(m.author||'Autore non indicato')} · ${escape(m.licence)}
+            · <a href="${escape(m.sourceUrl)}" rel="noopener noreferrer">Fonte e licenza</a></figcaption></figure>`).join('')}</div>
+      </section>`:''}
       <ul class="facts cima-seo-facts">
         ${place.elevationM!=null?`<li><strong>${metres(place.elevationM)}</strong>${place.elevationSource==='dem'?'quota DEM stimata':place.elevationSource==='cai'?'quota dichiarata dal CAI':'quota indicata in OSM'}</li>`:''}
         <li><strong>${escape(place.lat.toFixed(4)+', '+place.lng.toFixed(4))}</strong>coordinate</li>
         <li><strong>${related.length}</strong>sentieri collegati</li>
-        ${place.capacity?`<li><strong>${place.capacity}</strong>posti letto ${place.sourceIds?.cai?'dichiarati CAI':'indicati OSM'}</li>`:''}
+        ${hasDocumentedStay?`<li><strong>${refugeBeds}</strong>posti letto ${place.sourceIds?.cai?'dichiarati CAI':'indicati OSM'}</li>`:''}
         
       </ul>
       <div class="cima-seo-actions">
-        <a class="cta" href="${SITE}/${category}/${place.slug}/#cb-place-map">MAPPA E SENTIERI ↗</a>
+        <a class="cta" href="${escape(place.osmUrl)}" target="_blank" rel="noopener noreferrer">POSIZIONE SULLA MAPPA ↗</a>
         ${place.phone?`<a class="cima-seo-secondary" href="tel:${escape(place.phone.replace(/[^+\d]/g,''))}">Chiama la struttura</a>`:''}
         ${place.email?`<a class="cima-seo-secondary" href="mailto:${escape(place.email)}">Scrivi alla struttura</a>`:''}
       </div>
@@ -559,9 +596,16 @@ for (const place of alpinePlaces) {
         ${place.address?`<div><dt>Indirizzo</dt><dd>${escape(place.address)}</dd></div>`:''}
         ${place.website?`<div><dt>Sito</dt><dd><a href="${escape(place.website)}" rel="noopener noreferrer">Sito della struttura</a></dd></div>`:''}
       </dl>`:''}
+      ${place.kind==='rifugio'&&publishedDetails.length?`<h2>Ospitalità, gestione e storia del rifugio</h2><dl class="cima-seo-details">${publishedDetails.map(({label,value,fact})=>`<div><dt>${escape(label)}</dt><dd>${escape(typeof value==='boolean'?(value?'Sì':'No'):value)}
+        ${fact?.unit?' '+escape(fact.unit):''}${fact?.sourceUpdatedAt?`<small> · Fonte aggiornata: ${escape(fact.sourceUpdatedAt)}</small>`:''}</dd></div>`).join('')}</dl>`:''}
+      ${place.kind==='rifugio'&&refugeServices.length?`<h2>Servizi e dotazioni dichiarati</h2>
+        <p>I servizi sono riportati come presenti o non presenti secondo la fonte; l'assenza del dato non equivale a un servizio mancante.</p>
+        <ul class="list">${refugeServices.map(s=>`<li>${escape(s.label)}: <strong>${s.value?'dichiarato presente':'dichiarato non presente'}</strong></li>`).join('')}</ul>
+        <p>L'acqua in rifugio non è necessariamente potabile: la potabilità deve essere documentata separatamente.</p>`:''}
+      ${place.kind==='rifugio'&&place.description?`<h2>Descrizione del rifugio e territorio</h2><p>${escape(place.description)}</p>`:''}
       ${related.length?`<h2>Sentieri e itinerari collegati</h2><ul class="list">${related.map(route=>`<li><a href="${SITE}/route/${route.slug}/">${escape(trailName(route))}</a> · ${km(route.distanceM)}</li>`).join('')}</ul>`:''}
-      ${nearbyWater.length?`<h2>Acqua sulla cartografia del luogo</h2><p>${nearbyWater.length} fonti censite: posizione e indicazioni di potabilità sono visibili sulla mappa interattiva, non costituiscono una garanzia di sicurezza.</p><p><a class="cta" href="${SITE}/${category}/${place.slug}/#cb-place-map">Apri la mappa con i punti acqua</a></p>`:''}
-      <h2>Meteo attuale e temperature stagionali</h2><p>Apri la scheda interattiva per consultare le condizioni attuali, le previsioni neve e pioggia e le medie stagionali 2021–2025 da Open-Meteo.</p>
+      ${nearbyWater.length?`<h2>Acqua sulla cartografia del luogo</h2><p>${nearbyWater.length} fonti censite: posizione e indicazioni di potabilità sono visibili sulla mappa interattiva, non costituiscono una garanzia di sicurezza.</p><p><a class="cta" href="${escape(place.osmUrl)}" target="_blank" rel="noopener noreferrer">Posizione sulla cartografia</a></p>`:''}
+      <h2>Previsioni meteo e condizioni in quota</h2><p>La scheda interattiva presenta previsioni e informazioni meteorologiche disponibili per le coordinate del luogo. Le condizioni possono cambiare rapidamente.</p>
       <p class="cima-seo-warning">Il dato geografico non prova accessibilità, stato della struttura, potabilità o percorribilità del sentiero. Verifica prima di partire.</p>
       <p class="sub">Fonti:
       ${place.sourceIds?.osm||!place.sourceIds?.cai?` <a href="${escape(place.osmUrl)}" target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>`:''}
