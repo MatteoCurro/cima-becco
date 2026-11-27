@@ -1,7 +1,7 @@
 import kluangGpx from '../../data/routes/kluang-district-trail-run.gpx?raw';
 import ridgesGpx from '../../data/routes/southern-ridges-walk.gpx?raw';
 import { describe, expect, it } from 'vitest';
-import type { RoutePoint } from '../types';
+import type { RouteActivity, RoutePoint } from '../types';
 import { parseGpx } from './gpx';
 import { NO_ROUTE_FILTERS, filterRoutes, mixByDifficulty, nearestPointOnRoute, radiusBounds, routeEndpoints, routeFromPoints, routeLink, routeSlugFromHash, routesBounds, routesNear, routesWithin } from './routes';
 
@@ -120,6 +120,15 @@ describe('filterRoutes: distance and gain bounds', () => {
   it('drops routes without elevation once a gain bound is set', () => {
     expect(slugs(filterRoutes(pool, { ...NO_ROUTE_FILTERS, maxGainM: 500 }))).toEqual(['short', 'mid']);
     expect(slugs(filterRoutes(pool, NO_ROUTE_FILTERS))).toContain('no-elev');
+  });
+});
+
+describe('ambito esclusivamente escursionistico', () => {
+  it('esclude le vecchie tracce ciclistiche dai risultati anche dopo una migrazione', () => {
+    const walk = { ...kluang, slug: 'hiking-test', activity: 'hike' as const };
+    const legacyBike = { ...kluang, slug: 'legacy-bike', activity: 'cycle' as unknown as RouteActivity };
+    const legacyRoadRun = { ...kluang, slug: 'legacy-road-run', activity: 'run' as unknown as RouteActivity };
+    expect(filterRoutes([legacyBike, walk, legacyRoadRun], NO_ROUTE_FILTERS).map((route) => route.slug)).toEqual(['hiking-test']);
   });
 });
 
