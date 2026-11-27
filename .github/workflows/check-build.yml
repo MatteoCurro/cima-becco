@@ -6,6 +6,10 @@ on:
     paths:
       - .github/workflows/check-build.yml
       - src/**
+      - public/CNAME
+      - vite.config.ts
+      - .github/workflows/deploy.yml
+      - scripts/check_permalinks.mjs
       - scripts/build_seo.mjs
       - package.json
       - package-lock.json
@@ -50,7 +54,7 @@ jobs:
             echo "Dipendenze npm non installate" > /tmp/cimabecco-tests.log
           fi
           if [ "$typecheck" -eq 0 ]; then
-            VITE_BASE=/cima-becco/ VITE_SITE_URL=https://matteocurro.github.io/cima-becco SITE_URL=https://matteocurro.github.io/cima-becco npm run build > /tmp/cimabecco-build.log 2>&1
+            VITE_BASE=/ VITE_SITE_URL=https://www.cimabecco.it SITE_URL=https://www.cimabecco.it npm run build > /tmp/cimabecco-build.log 2>&1
             build=$?
           else
             build=99
