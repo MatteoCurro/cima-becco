@@ -117,7 +117,7 @@ def save_tile(cell, elements, status, now):
     previous = status.get('tiles', {}).get(tile_id, {})
     old_count = previous.get('count', 0)
     # Guard against an incomplete but technically valid upstream answer.
-    if old_count >= 10 and len(listed) < old_count * 0.4:
+    if old_count and (not listed or (old_count >= 10 and len(listed) < old_count * 0.4)):
         raise RuntimeError(f'{tile_id}: upstream count collapsed from {old_count} to {len(listed)}; keep existing data')
 
     old_files = previous.get('files', [])
@@ -149,6 +149,7 @@ def save_tile(cell, elements, status, now):
     status.setdefault('tiles', {})[tile_id] = {
         'area': cell['area'], 'bbox': bbox, 'lastSuccess': now,
         'count': len(listed), 'files': new_files,
+        'slugs': [row['slug'] for row in listed],
         'sourceRelations': len(elements),
     }
     return len(listed)
@@ -172,9 +173,15 @@ def build_manifest(status, now):
             'count': state['count'],
             'updatedAt': state['lastSuccess'],
         })
-        for path in paths:
-            for route in read_json(DATA / path, {'routes': []}).get('routes', []):
-                by_slug[route['slug']] = key
+        slugs = state.get('slugs')
+        if slugs is None:  # Retrocompatibilità con checkpoint precedenti.
+            slugs = [
+                route['slug']
+                for path in paths
+                for route in read_json(DATA / path, {'routes': []}).get('routes', [])
+            ]
+        for slug in slugs:
+            by_slug[slug] = key
     return {
         'version': 1, 'generatedAt': now, 'tiles': tiles,
         'routeCount': len(by_slug), 'completedTiles': len(status.get('tiles', {})),
