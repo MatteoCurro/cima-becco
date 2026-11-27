@@ -6,9 +6,12 @@ Atlante collaborativo delle montagne italiane, con mappe, cime e itinerari GPX. 
 
 - Interfaccia React/TypeScript e cartografia MapLibre derivate da HillGPX, adattate al nome **Cima Becco**.
 - Catalogo geografico GeoNames di cime italiane e parte delle aree alpine confinanti, distribuito in tile JSON.
-- Pianificatore `#pianifica` con punti sulla mappa, richiesta di routing BRouter, GPX e directions per la partenza.
+- Pianificatore `#pianifica` con punti sulla mappa, routing BRouter, GPX e indicazioni per raggiungere la partenza.
+- Catalogo pilota Dolomiti: 80 relazioni escursionistiche OSM importate (76 escursioni e 4 ferrate) al 27/11/2026. Il tracciato non certifica la sicurezza o percorribilità.
+- Tre tipi di percorsi: **escursioni**, **trail running**, **vie ferrate**; ciclismo e MTB esclusi da UI, import e filtri.
+- Schede itinerario predisposte per numero sentiero, difficoltà CAI/SAC/ferrata, gestore, fonti originali, foto e crediti.
 - Percorsi salvati nel browser: **non sono ancora pubblicati** nella community.
-- I dati CAI/SAT, la navigazione GPS follow e il backend collaborativo Cima Becco **non sono ancora attivi**.
+- L'import diretto dei cataloghi INFOMONT CAI/SAT, le fotografie specifiche dei percorsi, la navigazione GPS follow e il backend collaborativo **non sono ancora attivi**. I dati CAI presenti in OSM non sostituiscono un import certificato del catasto originale.
 
 ## Pubblicazione GitHub Pages
 
@@ -30,6 +33,8 @@ Le app sono distribuite staticamente; il routing richiede un endpoint BRouter ra
 La connessione alla community originale HillGPX è **disattivata**. Non viene utilizzato il Supabase dell'autore. Per abilitare registrazioni, profili e pubblicazione condivisa è necessario creare un **nostro** progetto Supabase, configurare Auth e applicare le migrazioni RLS dopo verifica. Usare nel frontend solo la chiave publishable, mai `service_role`.
 
 ## Provenienza e licenze
+
+L'elenco verificato delle sorgenti, i dettagli di import e le regole di qualità sono in [docs/FONTI_ESCURSIONISTICHE.md](docs/FONTI_ESCURSIONISTICHE.md). La mappa e le relazioni OSM/INFOMONT utilizzano ODbL, i contributi degli utenti hanno licenze distinte. Non considerare tutte le tracce CC BY 4.0.
 
 - Software originale: HillGPX, MIT. Copyright e avvisi originali in [LICENSE](LICENSE).
 - Cime: GeoNames (CC BY 4.0), dataset geografico indicativo, con possibili toponimi e quote da verificare.
