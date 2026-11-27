@@ -14,9 +14,11 @@ from import_municipalities_v1 import (build, rows_istat, rows_dait, municipality
 
 ISTAT_COLS = ["Codice Comune formato alfanumerico", "Denominazione in italiano",
               "Denominazione Regione", "Denominazione dell'Unità territoriale sovracomunale",
+              "Codice Regione", "Sigla automobilistica",
               "Altitudine del centro (metri)", "Superficie territoriale (kmq)"]
-DAIT_COLS = ["Codice Comune", "Comune", "Provincia", "Cognome", "Nome",
-             "Carica", "Data Elezione"]
+DAIT_COLS = ["Codice Regione", "Codice Provincia", "Codice Comune",
+             "Denominazione Comune", "Sigla Provincia", "Cognome", "Nome",
+             "Descrizione Carica", "Data Elezione", "Data Entrata in Carica"]
 
 def csv_data(cols, data, delimiter=";"):
     file = io.StringIO()
@@ -52,17 +54,17 @@ def xlsx_data(cols, data):
 class MunicipalitiesContracts(unittest.TestCase):
     def sample_istat(self):
         return csv_data(ISTAT_COLS, [
-            ["022039", "Canazei", "Trentino-Alto Adige", "Trento", "1465", "67,55"],
-            ["025013", "Cortina d'Ampezzo", "Veneto", "Belluno", "1224", "254,51"],
-            ["025001", "Agordo", "Veneto", "Belluno", "-1", ""],
+            ["022039", "Canazei", "Trentino-Alto Adige", "Trento", "04", "TN", "1465", "67,55"],
+            ["025013", "Cortina d'Ampezzo", "Veneto", "Belluno", "05", "BL", "1224", "254,51"],
+            ["025001", "Agordo", "Veneto", "Belluno", "05", "BL", "-1", ""],
         ])
 
     def sample_dait(self):
-        return b"Aggiornato al 24/08/2026\n" + csv_data(DAIT_COLS, [
-            ["022039", "Canazei", "Trento", "Bernard", "Giovanni", "Sindaco", "08/05/2025"],
-            ["025013", "Cortina d'Ampezzo", "Belluno", "Lorenzi", "Gianluca", "Sindaco", "12/06/2022"],
-            ["025001", "Agordo", "Belluno", "Rossi", "Mario", "Consigliere", "01/01/2024"],
-        ]).replace(b"\xef\xbb\xbf", b"")
+        return b'Aggiornato al 24/08/2026\n' + csv_data(DAIT_COLS, [
+            ["04", "015", "0390", "CANAZEI", "TN", "Bernard", "Giovanni", "Sindaco", "08/05/2025", "09/05/2025"],
+            ["05", "002", "0130", "CORTINA D'AMPEZZO", "BL", "Lorenzi", "Gianluca", "Sindaco", "12/06/2022", "14/06/2022"],
+            ["05", "002", "0010", "AGORDO", "BL", "Rossi", "Mario", "Consigliere", "01/01/2024", ""],
+        ]).replace(b'\xef\xbb\xbf', b'')
 
     def test_codes_preserve_zero_and_sentinels(self):
         self.assertEqual(code6("22039"), "022039")
@@ -76,8 +78,8 @@ class MunicipalitiesContracts(unittest.TestCase):
         csv_rows, _, _ = rows_istat(self.sample_istat())
         self.assertEqual(len(csv_rows), 3)
         raw = xlsx_data(ISTAT_COLS, [
-            [22039, "Canazei", "Trentino-Alto Adige", "Trento", 1465, 67.55],
-            [25013, "Cortina d'Ampezzo", "Veneto", "Belluno", 1224, 254.51],
+            [22039, "Canazei", "Trentino-Alto Adige", "Trento", "04", "TN", 1465, 67.55],
+            [25013, "Cortina d'Ampezzo", "Veneto", "Belluno", "05", "BL", 1224, 254.51],
         ])
         rows, cols, _ = rows_istat(raw)
         self.assertEqual(len(rows), 2)
@@ -90,11 +92,16 @@ class MunicipalitiesContracts(unittest.TestCase):
                             min_municipalities=3)
         self.assertEqual(report["municipalities"], 3)
         self.assertEqual(report["mayorsMatched"], 2)
+        self.assertEqual(report["daitRowsOfficialCrosswalkRejected"], 0)
+        self.assertEqual(report["daitOfficialCrosswalkType"], "ISTAT_REGION_PLUS_PROVINCE_SIGLA_PLUS_EXACT_NAME")
         self.assertEqual(report["indexed"], 0)
         by_code = {e["sourceIds"]["istat"]: e for e in doc["entities"]}
         canazei = by_code["022039"]
         self.assertEqual(canazei["facts"]["sindacoNome"]["value"], "Giovanni Bernard")
         self.assertEqual(canazei["facts"]["dataElezione"]["value"], "2025-05-08")
+        self.assertEqual(canazei["facts"]["mandatoInizio"]["value"], "2025-05-09")
+        self.assertEqual(canazei["sourceIds"]["dait"], "04/015/0390")
+        self.assertNotEqual(canazei["sourceIds"]["dait"], canazei["sourceIds"]["istat"])
         self.assertNotIn("population", canazei["facts"])
         self.assertNotIn("sindacoNome", by_code["025001"]["facts"])
         self.assertEqual(canazei["quality"]["gate"], "G0")
@@ -124,10 +131,32 @@ class MunicipalitiesContracts(unittest.TestCase):
                                          "lat": 46.47, "lng": 11.77, "slug": "osm-n-1"}])
         self.assertEqual(report["osmLinkedByVerifiedIds"], 0)
 
+    def test_dait_code_is_not_istat_and_ambiguous_name_stays_unmatched(self):
+        mismatched = csv_data(DAIT_COLS, [
+            ["04", "015", "0010", "CANAZEI", "BL", "Neri", "Leo", "Sindaco", "", ""],
+            ["05", "002", "0130", "CORTINA D'AMPEZZO", "BL", "Lorenzi", "Gianluca", "Sindaco", "", ""],
+        ])
+        doc, report = build(self.sample_istat(), mismatched, retrieved_at="2026-11-27",
+                            min_municipalities=3)
+        self.assertEqual(report["mayorsMatched"], 1)
+        self.assertEqual(report["daitRowsOfficialCrosswalkRejected"], 1)
+        canazei = next(x for x in doc["entities"] if x["sourceIds"]["istat"] == "022039")
+        self.assertNotIn("sindacoNome", canazei["facts"])
+        self.assertNotIn("dait", canazei["sourceIds"])
+
+    def test_real_dait_format_separate_register_id(self):
+        data = b'"Sindaci - elenco completo Italia"\n"Aggiornato al 24/08/2026"\n' + csv_data(
+            DAIT_COLS, [["04", "015", "0390", "CANAZEI", "TN", "BERNARD",
+                          "GIOVANNI", "Sindaco", "08/05/2025", "09/05/2025"]]).replace(b"\xef\xbb\xbf", b"")
+        doc, report = build(self.sample_istat(), data, retrieved_at="2026-11-27",
+                            min_municipalities=3)
+        self.assertEqual(report["mayorsMatched"], 1)
+        self.assertEqual(report["daitRowsOfficialCrosswalkRejected"], 0)
+
     def test_duplicate_istat_is_hard_error(self):
         source = csv_data(ISTAT_COLS, [
-            ["022039", "Canazei", "Trentino-Alto Adige", "Trento", "", ""],
-            ["022039", "Canazei", "Trentino-Alto Adige", "Trento", "", ""],
+            ["022039", "Canazei", "Trentino-Alto Adige", "Trento", "04", "TN", "", ""],
+            ["022039", "Canazei", "Trentino-Alto Adige", "Trento", "04", "TN", "", ""],
         ])
         with self.assertRaisesRegex(ValueError, "duplicati"):
             build(source, retrieved_at="2026-11-27", min_municipalities=1)
@@ -138,8 +167,8 @@ class MunicipalitiesContracts(unittest.TestCase):
 
     def test_mayor_ambiguity_does_not_publish_any_value(self):
         dait = csv_data(DAIT_COLS, [
-            ["022039", "Canazei", "Trento", "Rossi", "Mario", "Sindaco", ""],
-            ["022039", "Canazei", "Trento", "Bianchi", "Luigi", "Sindaco", ""],
+            ["04", "015", "0390", "CANAZEI", "TN", "Rossi", "Mario", "Sindaco", "", ""],
+            ["04", "015", "0390", "CANAZEI", "TN", "Bianchi", "Luigi", "Sindaco", "", ""],
         ])
         doc, report = build(self.sample_istat(), dait, retrieved_at="2026-11-27",
                             min_municipalities=3)
