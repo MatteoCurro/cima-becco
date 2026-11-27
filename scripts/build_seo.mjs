@@ -482,6 +482,69 @@ for (const route of routes) {
   });
 }
 
+// Atlante SEO: rifugi e borghi OSM con coordinate e percorsi verificati vicini.
+// Evita pagine seriali prive di contenuto: i borghi senza sentieri o fonte propria
+// restano consultabili nell'app ma non vengono generati come pagine indicizzabili.
+for (const place of alpinePlaces) {
+  if (!/^osm-[nwr]-\d+$/.test(place.slug)) continue;
+  const related=(byStop.get(place.slug)||[]).slice(0,24);
+  if (place.kind==='borgo' && !related.length && !place.website) continue;
+  const category=place.kind==='rifugio'?'rifugi':'borghi';
+  const kind=place.kind==='rifugio'?'rifugio alpino':'borgo di montagna';
+  const altitude=Number.isFinite(place.elevationM)?` a ${metres(place.elevationM)} di quota`:'';
+  const description=`${place.name} è un ${kind} mappato nelle Dolomiti${altitude}. ${related.length? `Scopri ${related.length} sentieri collegati geograficamente e scarica i GPX.`:'Consulta la posizione nella mappa topografica e individua i sentieri vicini.'}`;
+  page({
+    path:`${category}/${place.slug}/`,
+    title:`${place.name} · ${place.kind==='rifugio'?'Rifugio':'Borgo'} e sentieri | Cima Becco`,
+    description,
+    jsonLd: {'@context':'https://schema.org','@graph':[
+      {'@type':'Place',name:place.name,description,
+        url:`${SITE}/${category}/${place.slug}/`,
+        geo:{'@type':'GeoCoordinates',latitude:place.lat,longitude:place.lng,
+          ...(place.elevationM?{elevation:place.elevationM}:{})},
+        hasMap:place.osmUrl,
+      },breadcrumbLd([[category==='rifugi'?'Rifugi':'Borghi',appLink(`#atlante/${category}`)],[place.name,null]])]},
+    body:`${crumbs([['Atlante',appLink(`#atlante/${category}`)],[place.name]])}
+      <div class="cima-seo-eyebrow">CIMA BECCO · ${place.kind==='rifugio'?'RIFUGIO':'BORGO'} · DOLOMITI</div>
+      <h1>${escape(place.name)}</h1>
+      <p class="cima-seo-lead">${escape(description)}</p>
+      <ul class="facts cima-seo-facts"><li><strong>${escape(place.lat.toFixed(4)+', '+place.lng.toFixed(4))}</strong>coordinate</li>
+       ${place.elevationM!=null?`<li><strong>${metres(place.elevationM)}</strong>quota nei dati OSM</li>`:''}
+       <li><strong>${related.length}</strong>sentieri vicino alla traccia</li></ul>
+      <div class="cima-seo-actions"><a class="cta" href="${appLink(`#atlante/${category}/${place.slug}`)}">ESPLORA SULLA MAPPA ↗</a>
+      ${place.website?`<a class="cima-seo-secondary" href="${escape(place.website)}" target="_blank" rel="noopener noreferrer">Sito indicato dalla fonte ↗</a>`:''}</div>
+      ${related.length?`<h2>SENTIERI E ITINERARI VICINI</h2><ul class="list">${related.map(route=>`<li><a href="${SITE}/route/${route.slug}/">${escape(trailName(route))}</a> · ${km(route.distanceM)}</li>`).join('')}</ul>`:''}
+      <p class="cima-seo-warning">Il dato geografico non prova accessibilità, stato del rifugio o percorribilità del sentiero. Verifica prima di partire.</p>
+      <p class="sub">Posizione: <a href="${escape(place.osmUrl)}" target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a></p>`,
+  });
+}
+
+// Le Alte Vie sono progetti contenitore; la lista delle tappe deriva soltanto
+// da riferimenti espliciti OSM, non da distanze arbitrarie.
+for (const trek of trekProjects) {
+  const members=trek.routeSlugs.map(slug=>routeIndex.get(slug)).filter(Boolean);
+  page({
+    path:`trekking/${trek.slug}/`,
+    title:`${trek.title} · Tappe e percorsi GPX | Cima Becco`,
+    description:`${trek.description} Esplora segmenti, tappe confermate e collegamenti alle tracce cartografiche.`,
+    jsonLd:{'@context':'https://schema.org','@graph':[
+      {'@type':'CollectionPage',name:trek.title,description:trek.description,
+       url:`${SITE}/trekking/${trek.slug}/`,
+       mainEntity:{'@type':'ItemList',itemListElement:members.map((r,i)=>({
+         '@type':'ListItem',position:i+1,url:`${SITE}/route/${r.slug}/`,name:trailName(r)}))}},
+      breadcrumbLd([['Trekking',appLink('#atlante/trekking')],[trek.title,null]])]},
+    body:`${crumbs([['Trekking',appLink('#atlante/trekking')],[trek.title]])}
+      <div class="cima-seo-eyebrow">CAMMINI XXL · PROGETTO A TAPPE</div>
+      <h1>${escape(trek.title)}</h1>
+      <p class="cima-seo-lead">${escape(trek.description)}</p>
+      <div class="cima-seo-tags"><span class="fun">${escape(trek.slogan)}</span><span>${members.length} segmenti mappati · ${trek.stages.length} tappe esplicite</span></div>
+      <p><a class="cta" href="${appLink(`#atlante/trekking/${trek.slug}`)}">ESPLORA IL PROGETTO ↗</a></p>
+      ${trek.stages.length?`<h2>TAPPE CON NUMERO ESPLICITO</h2><ul class="list">${trek.stages.map(stage=>`<li>Tappa ${stage.number}: ${stage.routeSlugs.map(slug=>`<a href="${SITE}/route/${slug}/">${escape(routeIndex.get(slug)?.name||slug)}</a>`).join(' · ')}</li>`).join('')}</ul>`:''}
+      ${members.length?`<h2>TRACCE IDENTIFICATE</h2><ul class="list">${members.slice(0,80).map(route=>`<li><a href="${SITE}/route/${route.slug}/">${escape(trailName(route))}</a> · ${km(route.distanceM)}</li>`).join('')}</ul>`:''}
+      <p class="cima-seo-warning">Il progetto non implica una traccia continua: le tappe devono essere connesse e verificate prima di pianificare un trekking end-to-end.</p>`,
+  });
+}
+
 // The address list for search engines, the rules for crawlers, and a plain
 // summary for AI assistants.
 const urls = [`${SITE}/`, ...pages];
