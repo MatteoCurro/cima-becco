@@ -1,0 +1,162 @@
+{
+  "schemaVersion": "1.0",
+  "source": "Società degli Alpinisti Tridentini",
+  "indexUrl": "https://www.sat.tn.it/elenco-bivacchi/",
+  "retrievedAt": "2026-11-27",
+  "status": "official_sources_to_reconcile",
+  "description": "18 schede SAT individuate e URL verificati nell'elenco ufficiale. La presenza in elenco non prova apertura, attuale agibilità né identità CAI/OSM. Non creare doppie schede automaticamente.",
+  "records": [
+    {
+      "sourceId": "sat:bivacco-casina-dosson",
+      "zone": "Ovest",
+      "name": "Casina Dosson",
+      "officialUrl": "https://www.sat.tn.it/bivacco-casina-dosson/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:il-centro-glaciologico-julius-payer",
+      "zone": "Ovest",
+      "name": "Centro Glaciologico Julius Payer",
+      "officialUrl": "https://www.sat.tn.it/il-centro-glaciologico-julius-payer/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-cima-presanella-orobica",
+      "zone": "Ovest",
+      "name": "Cima Presanella - Orobica",
+      "officialUrl": "https://www.sat.tn.it/bivacco-cima-presanella-orobica/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-cima-sassara-fratelli-bonvecchio",
+      "zone": "Ovest",
+      "name": "Cima Sassara - Fratelli Bonvecchio",
+      "officialUrl": "https://www.sat.tn.it/bivacco-cima-sassara-fratelli-bonvecchio/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-crozzon-e-castiglioni",
+      "zone": "Ovest",
+      "name": "Crozzon - E. Castiglioni",
+      "officialUrl": "https://www.sat.tn.it/bivacco-crozzon-e-castiglioni/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-cunella",
+      "zone": "Ovest",
+      "name": "Cunella - G. B. Cova",
+      "officialUrl": "https://www.sat.tn.it/bivacco-cunella/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-pozze",
+      "zone": "Ovest",
+      "name": "Maddalene - Pozze",
+      "officialUrl": "https://www.sat.tn.it/bivacco-pozze/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-passo-delle-vacche-e-segalla",
+      "zone": "Ovest",
+      "name": "Passo delle Vacche - E. Segalla",
+      "officialUrl": "https://www.sat.tn.it/bivacco-passo-delle-vacche-e-segalla/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-pra-castron-c-costanzi",
+      "zone": "Ovest",
+      "name": "Pra Castron - C. Costanzi",
+      "officialUrl": "https://www.sat.tn.it/bivacco-pra-castron-c-costanzi/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-presanella-v-roberti",
+      "zone": "Ovest",
+      "name": "Presanella - V. Roberti",
+      "officialUrl": "https://www.sat.tn.it/bivacco-presanella-v-roberti/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-d-marinelli",
+      "zone": "Ovest",
+      "name": "Vegaia-Tremenesca - D. Marinelli",
+      "officialUrl": "https://www.sat.tn.it/bivacco-d-marinelli/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-casetta-forestale-raffaele-bailoni",
+      "zone": "Est",
+      "name": "Casetta Forestale Raffaele Bailoni",
+      "officialUrl": "https://www.sat.tn.it/bivacco-casetta-forestale-raffaele-bailoni/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-cima-dasta-g-cavinato",
+      "zone": "Est",
+      "name": "Cima d'Asta - G. Cavinato",
+      "officialUrl": "https://www.sat.tn.it/bivacco-cima-dasta-g-cavinato/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-forcella-grande-m-rigatti",
+      "zone": "Est",
+      "name": "Forcella Grande - M. Rigatti",
+      "officialUrl": "https://www.sat.tn.it/bivacco-forcella-grande-m-rigatti/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-latemar-a-sieff",
+      "zone": "Est",
+      "name": "Latemar - A. Sieff",
+      "officialUrl": "https://www.sat.tn.it/bivacco-latemar-a-sieff/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-sinel-g-pedrinolla",
+      "zone": "Est",
+      "name": "Sinel - G. Pedrinolla",
+      "officialUrl": "https://www.sat.tn.it/bivacco-sinel-g-pedrinolla/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-vallaccia-d-zeni",
+      "zone": "Est",
+      "name": "Vallaccia - D. Zeni",
+      "officialUrl": "https://www.sat.tn.it/bivacco-vallaccia-d-zeni/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    },
+    {
+      "sourceId": "sat:bivacco-vigolana-alla-madonnina",
+      "zone": "Est",
+      "name": "Vigolana - Alla Madonnina",
+      "officialUrl": "https://www.sat.tn.it/bivacco-vigolana-alla-madonnina/",
+      "matchedAtlasEntityId": null,
+      "identityReviewRequired": true
+    }
+  ],
+  "safetyNotices": [
+    {
+      "subject": "Bivacco Ernesto Begey",
+      "url": "https://www.sat.tn.it/bivacco-begey-inagibile/",
+      "status": "official_notice_requires_date_and_identity_review",
+      "note": "Avviso SAT di inagibilità; non inferire condizioni attuali né pubblicare un warning senza verifica temporale"
+    }
+  ]
+}

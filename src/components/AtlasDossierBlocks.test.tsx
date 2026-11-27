@@ -26,6 +26,23 @@ describe('dossier condizionale',()=>{
     expect(html).toContain('Canazei');
     expect(html).toContain('Trentino-Alto Adige');
   });
+  it('mantiene fatti e fotografie ma non stampa attribuzioni nelle singole schede',()=>{
+    const record = {facts:{bedsTotal:{value:8,sourceId:'cai:shelter:123',
+      sourceUrl:'https://rifugi.cai.it/shelters/123',licence:'CAI original'}},
+      media:[{id:'m1',kind:'photo' as const,
+        url:'https://rifugi.cai.it/media/123.jpg',
+        sourceUrl:'https://rifugi.cai.it/shelters/123',
+        author:'Autore fotografo',licence:'Archivio ufficiale',
+        subjectVerified:true,reuseAllowed:true}]};
+    const core=renderToStaticMarkup(<AtlasDossierBlocks record={record} placement="core"/>);
+    const media=renderToStaticMarkup(<AtlasDossierBlocks record={record} placement="media"/>);
+    expect(core).toContain('beds Total');
+    expect(core).not.toContain('https://rifugi.cai.it/shelters/123');
+    expect(media).toContain('https://rifugi.cai.it/media/123.jpg');
+    expect(media).not.toContain('Autore fotografo');
+    expect(media).not.toContain('Archivio ufficiale');
+    expect(renderToStaticMarkup(<AtlasDossierBlocks record={record} placement="credits"/>)).toBe('');
+  });
   it('non pubblica fotografie senza permessi o restrizioni scadute',()=>{
     const record={media:[{id:'m',kind:'photo' as const,url:'https://example.org/a.jpg',
       sourceUrl:'https://example.org/license',licence:'CC BY',subjectVerified:true,reuseAllowed:false}],

@@ -1,0 +1,768 @@
+{
+  "schemaVersion": "2.0",
+  "model": "Cima Becco canonical metadata §7 — bivacchi / ricoveri / capanne",
+  "validSince": "2026-11-27",
+  "description": "Slots planned; presence in registry does not mean provider supplied a value. Null, zero, false and stale are distinct. CAI full raw-normalized fields stay at cai-refuges-v1.json.",
+  "typeOntology": [
+    {
+      "kind": "bivouac",
+      "subtype": "fixed_bivouac",
+      "source": "CAI Bivacco"
+    },
+    {
+      "kind": "shelter",
+      "subtype": "social_cabin",
+      "source": "CAI Capanna sociale"
+    },
+    {
+      "kind": "shelter",
+      "subtype": "support_point",
+      "source": "CAI Punto d'appoggio"
+    },
+    {
+      "kind": "bivouac",
+      "subtype": "osm_bivouac_or_basic_hut",
+      "source": "OSM tourism=wilderness_hut or amenity=shelter+shelter_type=basic_hut"
+    }
+  ],
+  "fields": [
+    {
+      "name": "id",
+      "group": "identity",
+      "priority": "P0",
+      "candidateSources": [
+        "CAI",
+        "OSM"
+      ]
+    },
+    {
+      "name": "kind",
+      "group": "entity_type",
+      "priority": "P0",
+      "candidateSources": [
+        "CAI",
+        "OSM"
+      ]
+    },
+    {
+      "name": "subtype",
+      "group": "entity_type",
+      "priority": "P0",
+      "candidateSources": [
+        "CAI",
+        "OSM"
+      ]
+    },
+    {
+      "name": "name",
+      "group": "name",
+      "priority": "P0",
+      "candidateSources": [
+        "CAI",
+        "OSM",
+        "SAT"
+      ]
+    },
+    {
+      "name": "displayName",
+      "group": "name",
+      "priority": "P0",
+      "candidateSources": [
+        "CAI",
+        "SAT"
+      ]
+    },
+    {
+      "name": "aliases",
+      "group": "names",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "OSM",
+        "SAT"
+      ]
+    },
+    {
+      "name": "localNames",
+      "group": "names",
+      "priority": "P2",
+      "candidateSources": [
+        "OSM",
+        "Wikidata"
+      ]
+    },
+    {
+      "name": "slug",
+      "group": "identity",
+      "priority": "P0",
+      "candidateSources": [
+        "CimaBecco"
+      ]
+    },
+    {
+      "name": "slugAliases",
+      "group": "identity",
+      "priority": "P0",
+      "candidateSources": [
+        "CimaBecco"
+      ]
+    },
+    {
+      "name": "sourceIds",
+      "group": "provenance",
+      "priority": "P0",
+      "candidateSources": [
+        "CAI",
+        "OSM",
+        "SAT"
+      ]
+    },
+    {
+      "name": "geo.point",
+      "group": "geography",
+      "priority": "P0",
+      "candidateSources": [
+        "CAI",
+        "OSM",
+        "SAT"
+      ]
+    },
+    {
+      "name": "geo.area",
+      "group": "geography",
+      "priority": "P2",
+      "candidateSources": [
+        "OSM"
+      ]
+    },
+    {
+      "name": "geo.precisionM",
+      "group": "geography",
+      "priority": "P2",
+      "candidateSources": [
+        "CAI",
+        "OSM"
+      ]
+    },
+    {
+      "name": "elevationM",
+      "group": "geography",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "OSM",
+        "DEM"
+      ]
+    },
+    {
+      "name": "elevationMethod",
+      "group": "geography",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "OSM",
+        "DEM"
+      ]
+    },
+    {
+      "name": "administrativeHierarchy",
+      "group": "geography",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "OSM",
+        "Wikidata"
+      ]
+    },
+    {
+      "name": "mountainGroupNameReported",
+      "group": "geography",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "SAT"
+      ]
+    },
+    {
+      "name": "valleyName",
+      "group": "geography",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "SAT"
+      ]
+    },
+    {
+      "name": "protectedAreaName",
+      "group": "geography",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "OSM"
+      ]
+    },
+    {
+      "name": "owner",
+      "group": "management",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "SAT",
+        "OFF"
+      ]
+    },
+    {
+      "name": "operatorReported",
+      "group": "management",
+      "priority": "P1",
+      "candidateSources": [
+        "OSM"
+      ]
+    },
+    {
+      "name": "maintenanceProvider",
+      "group": "management",
+      "priority": "P1",
+      "candidateSources": [
+        "SAT",
+        "OFF"
+      ]
+    },
+    {
+      "name": "maintenanceCheckedAt",
+      "group": "management",
+      "priority": "P1",
+      "candidateSources": [
+        "SAT",
+        "OFF"
+      ]
+    },
+    {
+      "name": "lastInspectionAt",
+      "group": "management",
+      "priority": "P1",
+      "candidateSources": [
+        "SAT",
+        "OFF"
+      ]
+    },
+    {
+      "name": "bedsTotal",
+      "group": "capacity",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "SAT",
+        "OSM"
+      ]
+    },
+    {
+      "name": "bedsWinter",
+      "group": "capacity",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "SAT",
+        "OFF"
+      ]
+    },
+    {
+      "name": "mattressAvailableReported",
+      "group": "capacity",
+      "priority": "P1",
+      "candidateSources": [
+        "SAT",
+        "OFF"
+      ]
+    },
+    {
+      "name": "blanketAvailableReported",
+      "group": "capacity",
+      "priority": "P1",
+      "candidateSources": [
+        "SAT",
+        "OFF"
+      ]
+    },
+    {
+      "name": "sleepingBagLiner",
+      "group": "capacity",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI"
+      ]
+    },
+    {
+      "name": "winterRoomReported",
+      "group": "capacity",
+      "priority": "P1",
+      "candidateSources": [
+        "OSM",
+        "CAI"
+      ]
+    },
+    {
+      "name": "waterAvailableReported",
+      "group": "services",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "SAT",
+        "OSM"
+      ]
+    },
+    {
+      "name": "drinkingWater",
+      "group": "services",
+      "priority": "P0",
+      "candidateSources": [
+        "OSM",
+        "OFF"
+      ]
+    },
+    {
+      "name": "waterSourceTypeReported",
+      "group": "services",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI"
+      ]
+    },
+    {
+      "name": "outsideWater",
+      "group": "services",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI"
+      ]
+    },
+    {
+      "name": "stoveAvailableReported",
+      "group": "services",
+      "priority": "P1",
+      "candidateSources": [
+        "SAT",
+        "OFF",
+        "OSM"
+      ]
+    },
+    {
+      "name": "heatingTypeReported",
+      "group": "services",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI"
+      ]
+    },
+    {
+      "name": "firewoodAvailableReported",
+      "group": "services",
+      "priority": "P1",
+      "candidateSources": [
+        "SAT",
+        "OFF"
+      ]
+    },
+    {
+      "name": "gasAvailableReported",
+      "group": "services",
+      "priority": "P1",
+      "candidateSources": [
+        "SAT",
+        "OFF"
+      ]
+    },
+    {
+      "name": "electricity",
+      "group": "services",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "OSM"
+      ]
+    },
+    {
+      "name": "solarPower",
+      "group": "services",
+      "priority": "P2",
+      "candidateSources": [
+        "CAI"
+      ]
+    },
+    {
+      "name": "generatorPower",
+      "group": "services",
+      "priority": "P2",
+      "candidateSources": [
+        "CAI"
+      ]
+    },
+    {
+      "name": "kitchen",
+      "group": "services",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "OSM"
+      ]
+    },
+    {
+      "name": "toiletAvailableReported",
+      "group": "services",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "OSM"
+      ]
+    },
+    {
+      "name": "accessibleToilets",
+      "group": "services",
+      "priority": "P2",
+      "candidateSources": [
+        "CAI"
+      ]
+    },
+    {
+      "name": "pets",
+      "group": "services",
+      "priority": "P2",
+      "candidateSources": [
+        "CAI",
+        "OSM"
+      ]
+    },
+    {
+      "name": "currentOpenStatus",
+      "group": "safety",
+      "priority": "P0",
+      "candidateSources": [
+        "OFF"
+      ]
+    },
+    {
+      "name": "availabilityCheckedAt",
+      "group": "safety",
+      "priority": "P0",
+      "candidateSources": [
+        "OFF"
+      ]
+    },
+    {
+      "name": "accessRestrictions",
+      "group": "safety",
+      "priority": "P0",
+      "candidateSources": [
+        "OFF",
+        "SAT"
+      ]
+    },
+    {
+      "name": "reservationsRequired",
+      "group": "rules",
+      "priority": "P1",
+      "candidateSources": [
+        "OFF",
+        "SAT"
+      ]
+    },
+    {
+      "name": "usageRules",
+      "group": "rules",
+      "priority": "P1",
+      "candidateSources": [
+        "OFF",
+        "SAT"
+      ]
+    },
+    {
+      "name": "keysRequired",
+      "group": "rules",
+      "priority": "P1",
+      "candidateSources": [
+        "OFF",
+        "SAT"
+      ]
+    },
+    {
+      "name": "emergencyUseOnly",
+      "group": "rules",
+      "priority": "P1",
+      "candidateSources": [
+        "OFF",
+        "SAT"
+      ]
+    },
+    {
+      "name": "phone",
+      "group": "contact",
+      "priority": "P2",
+      "candidateSources": [
+        "CAI",
+        "OFF"
+      ]
+    },
+    {
+      "name": "email",
+      "group": "contact",
+      "priority": "P2",
+      "candidateSources": [
+        "CAI",
+        "OFF"
+      ]
+    },
+    {
+      "name": "website",
+      "group": "contact",
+      "priority": "P2",
+      "candidateSources": [
+        "CAI",
+        "OFF"
+      ]
+    },
+    {
+      "name": "officialUrl",
+      "group": "contact",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "OFF"
+      ]
+    },
+    {
+      "name": "accessRoutes",
+      "group": "access",
+      "priority": "P1",
+      "candidateSources": [
+        "SAT",
+        "OFF",
+        "OSM"
+      ]
+    },
+    {
+      "name": "accessTrailRef",
+      "group": "access",
+      "priority": "P1",
+      "candidateSources": [
+        "SAT",
+        "OFF",
+        "OSM"
+      ]
+    },
+    {
+      "name": "accessDifficultyOfficial",
+      "group": "access",
+      "priority": "P1",
+      "candidateSources": [
+        "SAT",
+        "OFF"
+      ]
+    },
+    {
+      "name": "accessDurationOfficial",
+      "group": "access",
+      "priority": "P1",
+      "candidateSources": [
+        "SAT",
+        "OFF"
+      ]
+    },
+    {
+      "name": "nearRoutes",
+      "group": "relations",
+      "priority": "P1",
+      "candidateSources": [
+        "OSM",
+        "CimaBecco"
+      ]
+    },
+    {
+      "name": "nearPeaks",
+      "group": "relations",
+      "priority": "P1",
+      "candidateSources": [
+        "OSM",
+        "GeoNames"
+      ]
+    },
+    {
+      "name": "nearLocalities",
+      "group": "relations",
+      "priority": "P1",
+      "candidateSources": [
+        "OSM",
+        "CimaBecco"
+      ]
+    },
+    {
+      "name": "nearOtherShelters",
+      "group": "relations",
+      "priority": "P1",
+      "candidateSources": [
+        "CimaBecco"
+      ]
+    },
+    {
+      "name": "stageOfTrek",
+      "group": "relations",
+      "priority": "P2",
+      "candidateSources": [
+        "SAT",
+        "CAI",
+        "CimaBecco"
+      ]
+    },
+    {
+      "name": "yearBuilt",
+      "group": "history",
+      "priority": "P2",
+      "candidateSources": [
+        "CAI",
+        "SAT"
+      ]
+    },
+    {
+      "name": "yearRebuilt",
+      "group": "history",
+      "priority": "P2",
+      "candidateSources": [
+        "CAI",
+        "SAT"
+      ]
+    },
+    {
+      "name": "dedication",
+      "group": "history",
+      "priority": "P2",
+      "candidateSources": [
+        "CAI",
+        "SAT"
+      ]
+    },
+    {
+      "name": "history",
+      "group": "history",
+      "priority": "P2",
+      "candidateSources": [
+        "CAI",
+        "SAT"
+      ]
+    },
+    {
+      "name": "description",
+      "group": "content",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "SAT",
+        "OFF"
+      ]
+    },
+    {
+      "name": "shortSummary",
+      "group": "content",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "SAT"
+      ]
+    },
+    {
+      "name": "photos",
+      "group": "media",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "OSM",
+        "Commons",
+        "SAT"
+      ]
+    },
+    {
+      "name": "historicalPhotos",
+      "group": "media",
+      "priority": "P2",
+      "candidateSources": [
+        "Commons",
+        "SAT"
+      ]
+    },
+    {
+      "name": "webcams",
+      "group": "media",
+      "priority": "P2",
+      "candidateSources": [
+        "OFF",
+        "SAT"
+      ]
+    },
+    {
+      "name": "checkedAt",
+      "group": "provenance",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "OSM",
+        "SAT"
+      ]
+    },
+    {
+      "name": "sourceUpdatedAt",
+      "group": "provenance",
+      "priority": "P1",
+      "candidateSources": [
+        "CAI",
+        "OSM",
+        "SAT"
+      ]
+    },
+    {
+      "name": "factsAlternatives",
+      "group": "provenance",
+      "priority": "P1",
+      "candidateSources": [
+        "CimaBecco"
+      ]
+    },
+    {
+      "name": "quality",
+      "group": "quality",
+      "priority": "P0",
+      "candidateSources": [
+        "CimaBecco"
+      ]
+    },
+    {
+      "name": "warnings",
+      "group": "safety",
+      "priority": "P0",
+      "candidateSources": [
+        "OFF",
+        "SAT"
+      ]
+    },
+    {
+      "name": "weatherRef",
+      "group": "weather",
+      "priority": "P2",
+      "candidateSources": [
+        "OpenMeteo"
+      ]
+    },
+    {
+      "name": "snowForecastRef",
+      "group": "weather",
+      "priority": "P2",
+      "candidateSources": [
+        "OpenMeteo",
+        "ARPA"
+      ]
+    }
+  ],
+  "qualityGates": {
+    "G0": "OSM-only: position and operator-reported values; no verified opening/access",
+    "G1": "Official CAI type and provenance; no live confirmation",
+    "G2": "Independently reconciled operator/steward record with dated and verifiable restrictions/operational status"
+  },
+  "creditPolicy": "Metadata retain their source; all visible attribution and media credits in /fonti-e-crediti/."
+}

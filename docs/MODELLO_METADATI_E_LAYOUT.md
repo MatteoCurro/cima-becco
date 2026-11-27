@@ -9,7 +9,7 @@
 ## 0. Come leggere questa specifica
 
 **Priorità dei campi**: **P0** = identità/sicurezza/struttura indispensabile; **P1** = informazioni caratteristiche per una scheda di qualità; **P2** = arricchimento distintivo. Non equivale a disponibilità del dato.  
-**Collocazione UI**: **H** hero/titolo; **K** metriche rapide; **B** contenuti editoriali; **T** tabella/dati strutturati; **G** grafici; **M** mappa e relazioni; **V** media; **F** filtri; **C** accordion Fonti e crediti.  
+**Collocazione UI**: **H** hero/titolo; **K** metriche rapide; **B** contenuti editoriali; **T** tabella/dati strutturati; **G** grafici; **M** mappa e relazioni; **V** media; **F** filtri; **C** pagina centralizzata **/fonti-e-crediti/**. Crediti e provenienza restano nel modello di ogni elemento, ma si presentano nella pagina centrale (decisione editoriale 27/11/2026).  
 **Fonti**: **OSM**, **WD** Wikidata, **WC** Wikimedia Commons, **WP** Wikipedia/archivi, **CAI**, **SAT**, **ISTAT**, **DAIT**, **METEO** Open-Meteo/ARPA/Meteotrentino, **OB** OpenBeta, **OFF** sito/ente ufficiale, **USR** dato verificato da community.
 
 I nomi tecnici proposti sono *chiavi canoniche*, non una migrazione già implementata. Ogni campo opzionale rimane assente se non verificato. **null ≠ 0 ≠ false ≠ dato non aggiornato**. Le grandezze numeriche hanno unità esplicite; le date includono contesto e, se necessario, fuso orario.
@@ -57,7 +57,15 @@ Title e meta description si basano su fatti specifici; schema.org selezionato se
 
 Conservare il contratto di [ARCHITECTURE.md](ARCHITECTURE.md): dettaglio desktop **42% contenuti / 58% mappa**, senza larghezze globali arbitrarie; mobile con sezioni full-width. Gli stessi componenti **DetailLayout, DetailMetrics, DetailFacts, media gallery, weather charts, RelatedEntities, CreditsAccordion** ricevono adapter diversi secondo kind. Mappa e ricerca condivise, filtri faccettati per categoria. Non riprodurre header, navbar, map engine o CSS strutturali per ogni tipologia.
 
-**Ordine modulare**: hero verificata + titolo → metriche essenziali → contenuto descrittivo → blocco specialistico primario → informazioni operative/servizi → storia e approfondimenti → media/grafici → entità vicine/collegate → Fonti e crediti. Un alert effettivo e datato è visibile in alto senza essere nascosto nell'accordion.
+**Ordine modulare**: hero verificata + titolo → metriche essenziali → contenuto descrittivo → blocco specialistico primario → informazioni operative/servizi → storia e approfondimenti → media/grafici → entità vicine/collegate. Le attribuzioni si consultano nella pagina centrale, non nel dossier. Un alert effettivo e datato è visibile in alto senza essere nascosto nei moduli.
+
+### 1.5 Politica unificata di fonti e crediti (decisione editoriale vincolante)
+
+L'attribuzione visibile di **dati, immagini, testi e fotografie** è in una pagina dedicata, `/fonti-e-crediti/`, raggiungibile nel menu/footer e indicizzata. Non inserire crediti fotografici, nomi di autori, licenze, collegamenti alla singola fonte o accordion di crediti all'interno del dossier di ogni luogo. Fanno eccezione i collegamenti **operativi indispensabili** a fonti ufficiali di avvisi/chiusure/restrizioni, il cui contenuto deve essere immediatamente verificabile per ragioni di sicurezza.
+
+La centralizzazione riguarda **soltanto la visualizzazione**, non la conservazione: i campi `facts{}`, `factsAlternatives[]`, `media[]`, `geo`, `relations[]` e `sourceIds{}` devono **continuare a contenere fonte, URL, autore, licenza, validità, timestamp, metodo e identità originali**. L'indice pubblico `credits-v1.json` è derivato dagli stessi dati pubblicati, non una seconda verità o una tabella compilata a mano. I contenuti provenienti da CAI conservano gli identificativi ufficiali e il riuso dichiarato dall'utente titolare del progetto; non servono verifiche ripetute sui permessi CAI.
+
+Per le fotografie, la pagina attribuisce ogni media visibile alla sua **scheda concreta**, con autore/licenza/URL originali, filtri di ricerca e limite di caricamento iniziale. Eventuali casi con metadati incompleti vanno revisionati, non mascherati.
 
 ---
 

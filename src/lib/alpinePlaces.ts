@@ -2,6 +2,7 @@ import { DATA_BASE, type Bounds } from './venues';
 import type { AtlasEntityMetadata } from './atlasDossier';
 import { canonicalAtlasSlug } from './placePermalinks';
 import { mergeRefugeRelease } from './refugeRelease';
+import { mergeShelterRelease } from './shelterRelease';
 
 export interface AlpinePlace extends AtlasEntityMetadata {
   slug: string;
@@ -18,6 +19,8 @@ export interface AlpinePlace extends AtlasEntityMetadata {
   osmUrl: string;
   /** Scheda della fonte CAI, dove presente. */
   officialUrl?: string;
+  /** Sottotipo dichiarato (Bivacco, Capanna sociale, Punto d'appoggio). */
+  shelterTypeLabel?: string;
   elevationM?: number;
   /** OSM = quota indicata dal mappatore; DEM = terreno stimato. */
   elevationSource?: 'osm' | 'dem' | 'cai';
@@ -58,8 +61,12 @@ export function loadAlpinePlaces(): Promise<AlpinePlacesDataset> {
     fetch(`${DATA_BASE}/atlas/refuges-v1.json`)
       .then(response => response.ok ? response.json() as Promise<unknown> : null)
       .catch(() => null),
+    fetch(`${DATA_BASE}/atlas/shelters-v1.json`)
+      .then(response => response.ok ? response.json() as Promise<unknown> : null)
+      .catch(() => null),
   ])
-    .then(([legacy, release]) => mergeRefugeRelease(legacy, release))
+    .then(([legacy, refuges, shelters]) => mergeShelterRelease(
+      mergeRefugeRelease(legacy, refuges), shelters))
     .catch(() => { pending = null; return empty; });
   return pending;
 }
