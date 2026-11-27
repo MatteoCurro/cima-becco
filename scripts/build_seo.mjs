@@ -171,7 +171,7 @@ const APP_SHELL=readFileSync(join(DIST,'index.html'),'utf8');
 const APP_ASSETS=[
   ...(APP_SHELL.match(/<script\b[^>]*\btype=["']module["'][^>]*><\/script>/gi)||[]),
   ...(APP_SHELL.match(/<link\b[^>]*\brel=["']stylesheet["'][^>]*>/gi)||[])
-].filter(tag=>/\b(?:src|href)=["']\/[^"']*\/assets\//.test(tag)).join('\n');
+].filter(tag=>/\b(?:src|href)=["']\/(?:[^"']*\/)?assets\//.test(tag)).join('\n');
 const MARK = '<svg viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="25" fill="#143d2f"/><path d="M18 18 Q18 54 42 57 L51 31 L68 55 Q96 50 99 19" fill="none" stroke="#ff2677" stroke-width="13" stroke-linecap="square"/><path d="M30 66 L54 42 L78 62 L69 90 L39 90Z" fill="#e4ffbe"/><path d="M77 63 L108 73 L74 79Z" fill="#ff2677"/><circle cx="57" cy="65" r="3.7" fill="#143d2f"/></svg>';const pages = [];
 
 function page({ path, title, description, image, jsonLd, body }) {
