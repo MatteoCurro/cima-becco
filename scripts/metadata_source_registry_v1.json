@@ -20,12 +20,12 @@
       "label": "Unico Rifugi CAI",
       "url": "https://rifugi.cai.it/api/documentation",
       "format": "REST JSON list, search, detail fields[], media[]",
-      "rights": "diritti di riutilizzo e licenze media NON confermati: nessun bulk publish",
+      "rights": "Riutilizzo per Cima Becco confermato direttamente dall'utente responsabile il 27/11/2026. Conservare attribuzione CAI e provenienza per fatto/immagine. La licenza non blocca più il rilascio.",
       "evidence": "PR8 80/764 list + 4 detail; bounded detail 4/4: 125 names/119 nonempty, union 127. Offline 3 CAI-OSM candidate links, 0 approved. UpdatedAt one-off probe 27 Nov 2026: JSON object 764 numeric internal keys and 764 timezone-naive ISO strings. Media 7 entries in four details, no licence confirmed.",
-      "status": "tested_pilot",
-      "licenseGate": "requires_review",
-      "refresh": "No schedule. updatedAt provides revision strings but ALL 764 tested timestamps were timezone-naive; must verify provider timezone before UTC comparisons/checkpoint. Internal key not id_cai: establish explicit mapping; no deletes on absent keys. Test offline delta planner before any refresh.",
-      "operations": "Reuse PR8 scripts; latest source info scripts/cai_pilot_field_inventory_v1.json (127 names), scripts/cai_unmapped_fields_review_plan_v1.json (50 fields), scripts/normalize_cai_refuge_v1.py, scripts/reconcile_cai_osm_refuges_v1.py, scripts/plan_cai_refuge_delta_v1.py, scripts/normalize_cai_media_v1.py. CAI live media source URLs lack per-file licence, hold candidates, do not publish."
+      "status": "release_adapter_implemented",
+      "licenseGate": "user_confirmed_reuse",
+      "refresh": "Ogni giorno: 10 pagine di elenco CAI; dettaglio recuperato solo per nuovi ID o updated_at modificato. Nessun bulk completo successivo salvo necessità tecnica.",
+      "operations": "Importer effettivo scripts/import_cai_refuges_v1.py: 80/page, dettagli solo quando updated_at cambia, campi sanitizzati con 47 mapping + 50 piani, media CAI legate al codice soggetto, bivacchi separati, fail-closed su errori e no cancellazioni. Assembler scripts/assemble_refuges_release_v1.py. Le 764 chiavi interne updatedAt non sono usate: il feed paginato espone updated_at ISO con offset esplicito."
     },
     {
       "id": "sat",
