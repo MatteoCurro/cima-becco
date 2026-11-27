@@ -55,24 +55,6 @@ jobs:
           npm ci
           npm run typecheck
           npm run test
-      - name: Recupera il catalogo CAI gia normalizzato nella PR (solo branch di collaudo)
-        if: github.ref_name == 'feat/refuges-canonical-import-v1'
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: cima-refuges-normalized-cai-cache
-          run-id: 46055634397
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: build/previous-cai-release
-      - name: Ripristina il catalogo precedente per aggiornare soltanto i dettagli necessari
-        if: github.ref_name == 'feat/refuges-canonical-import-v1'
-        shell: bash
-        run: |
-          if test -s build/previous-cai-release/cai-refuges-v1.json; then
-            mkdir -p public/data/atlas
-            cp build/previous-cai-release/cai-refuges-v1.json public/data/atlas/cai-refuges-v1.json
-            echo 'Snapshot di collaudo ripristinato: aggiornamento incrementale CAI'
-          fi
       - name: Normalizza i rifugi dello snapshot OSM
         run: python scripts/import_refuges_v1.py --strict
       - name: Aggiorna il catalogo CAI completo solo per i record modificati
