@@ -41,19 +41,26 @@ def normalize(data):
             raw_bolts = route.get("boltsCount")
             bolts = raw_bolts if isinstance(raw_bolts, int) and not isinstance(raw_bolts,bool) and raw_bolts>=0 else None
             name = route.get("name")
+            types = route.get("type") or {}
+            kind = ("boulder_problem" if types.get("bouldering") else
+                    "climbing_route" if types.get("sport") or types.get("trad") or types.get("alpine") or types.get("tr") else
+                    "route_type_unknown")
+            raw_length = route.get("length")
+            length = (raw_length if isinstance(raw_length, (int, float)) and not isinstance(raw_length, bool)
+                      and 0 < raw_length <= 3000 else None)
             records.append({
                 "id": f"openbeta:{route.get('uuid')}",
-                "name": name, "type": "climbing_route",
+                "name": name, "kind": kind,
                 "areaId": f"openbeta:{area.get('uuid')}",
                 "areaName": area.get("area_name"),
                 "pathTokens": route.get("pathTokens") or area.get("pathTokens") or [],
                 "geo": {"lat":location.get("lat"),"lon":location.get("lng")},
                 "metadata":{
                     "grades": grade,
-                    "lengthM": route.get("length"),
+                    "lengthM": length,
                     "boltsCount": bolts,
                     "firstAscent": route.get("fa") or None,
-                    "routeTypes": {k:v for k,v in (route.get("type") or {}).items() if v},
+                    "routeTypes": {k:v for k,v in types.items() if v},
                     "sourceDescription": (route.get("content") or {}).get("description") or None,
                     "safetyText": route.get("safety") or None,
                     "quickdrawsRecommended": None,
@@ -95,7 +102,10 @@ def main():
     report={
         "generatedAt":datetime.now(timezone.utc).isoformat(),
         "provider":"OpenBeta","countryFilter":args.country,
-        "areaCount":len(areas),"routeCount":len(records),
+        "areaCount":len(areas),"recordsTotal":len(records),
+        "classCounts":dict(Counter(r["kind"] for r in records)),
+        "lengthKnownCount":sum(r["metadata"]["lengthM"] is not None for r in records),
+        "boltsKnownCount":sum(r["metadata"]["boltsCount"] is not None for r in records),
         "metadataPresence":dict(coverage),
         "note":"Sample of first leaf areas, NOT representative of all Italy. No pitch-level data or quickdraws inferred.",
         "examples":[{"name":r["name"],"area":r["areaName"],"metadata":r["metadata"]} for r in records[:20]],
