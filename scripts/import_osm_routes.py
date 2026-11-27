@@ -9,6 +9,9 @@ import argparse
 from datetime import datetime, timezone
 import json
 import math
+import random
+import time
+from urllib.error import HTTPError, URLError
 from pathlib import Path
 import sys
 from urllib.parse import urlencode
@@ -29,8 +32,8 @@ def haversine(a, b):
     return 12742000 * math.asin(min(1, math.sqrt(h)))
 
 
-def fetch_relations():
-    s, w, n, e = BBOX
+def fetch_relations(bbox=None, retries=3):
+    s, w, n, e = bbox or BBOX
     # Solo itinerari a piedi; include relazioni ferrata autonome. Niente MTB/bike.
     # Le geometrie delle way membri arrivano insieme ai metadati relazione.
     query = (f'[out:json][timeout:80];('
@@ -42,8 +45,24 @@ def fetch_relations():
         'User-Agent': 'CimaBecco/0.1 (+https://github.com/MatteoCurro/cima-becco)',
         'Accept': 'application/json',
     })
-    with urlopen(req, timeout=110) as res:
-        return json.load(res)
+    for attempt in range(retries):
+        try:
+            with urlopen(req, timeout=115) as res:
+                result = json.load(res)
+            if not isinstance(result.get('elements'), list) or result.get('remark'):
+                raise RuntimeError('Overpass ha restituito una risposta incompleta')
+            return result
+        except (HTTPError, URLError, TimeoutError, RuntimeError) as exc:
+            status = getattr(exc, 'code', None)
+            # Gli errori di query permanenti non devono essere ripetuti.
+            if status is not None and status not in (429, 502, 503, 504):
+                raise
+            if attempt == retries - 1:
+                raise
+            delay = min(100, 15 * (2 ** attempt)) + random.uniform(0, 2)
+            print(f'Overpass non disponibile ({exc}), riprovo tra {delay:.0f} s', file=sys.stderr)
+            time.sleep(delay)
+    raise RuntimeError('Impossibile interrogare Overpass')
 
 
 def segment_points(member):
