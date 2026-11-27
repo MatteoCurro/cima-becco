@@ -68,3 +68,10 @@ L'esecuzione iniziale del nuovo processo non è da considerare riuscita fino all
 3. Collegare le schede CAI/SAT, qualità del tracciato, dislivelli, cime e rifugi ai percorsi.
 4. Arricchire fotografie/descrizioni con metadati Wikidata e Wikimedia e attribuzioni.
 5. Attivare Supabase per la community, il follow GPS e le funzioni di condivisione avanzate.
+
+
+## Specifica funzionale e memoria del progetto
+
+La documentazione canonica per i futuri sviluppi è [Dizionario dei metadati e dei layout](docs/MODELLO_METADATI_E_LAYOUT.md): elenca per tipologia tutti i campi da raccogliere, le fonti, il grado di attendibilità, le relazioni con le altre schede e i moduli UX/UI previsti. La [memoria operativa per gli sviluppatori](AGENTS.md) riassume le decisioni progettuali da rispettare e rimanda alle specifiche e all'[architettura dei componenti](docs/ARCHITECTURE.md).
+
+Le importazioni di arricchimento e i dati sperimentali delle PR #7 e #8 **non** sono automaticamente inclusi nel catalogo pubblico: per ogni fonte occorre verificare la licenza, la qualità dei valori e l'assenza di duplicati prima dell'integrazione.
