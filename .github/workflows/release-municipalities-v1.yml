@@ -1,0 +1,146 @@
+name: Release Comuni con Wikimedia (G2)
+on:
+  push:
+    branches: [feat/municipalities-istat-dait-pilot-v1]
+    paths:
+      - .github/workflows/release-municipalities-v1.yml
+      - scripts/enrich_municipalities_v1.py
+      - tests/test_enrich_municipalities_v1.py
+  schedule:
+    - cron: '40 4 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: cima-becco-comuni-g2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  import-quality-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test offline e licenze
+        run: |
+          python -m unittest discover -s tests -p 'test_import_municipalities_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_municipalities_v1.py' -v
+      - name: Scarica ISTAT e DAIT ufficiali
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/import-municipalities-v1/input
+          curl --fail --location --silent --show-error --retry 3 --connect-timeout 15 --max-time 100 \
+            -A 'CimaBecco-OpenData/1.0 (https://www.cimabecco.it)' \
+            'https://www.istat.it/storage/codici-unita-amministrative/Elenco-comuni-italiani.xlsx' \
+            -o build/import-municipalities-v1/input/istat.xlsx
+          curl --fail --location --silent --show-error --retry 3 --connect-timeout 15 --max-time 100 \
+            -A 'CimaBecco-OpenData/1.0 (https://www.cimabecco.it)' \
+            'https://dait.interno.gov.it/documenti/sindaciincarica.csv' \
+            -o build/import-municipalities-v1/input/dait.csv
+      - name: Wikidata P635 OSM QIDs (fallback senza join euristici)
+        shell: bash
+        run: |
+          if python scripts/resolve_wikidata_istat_v1.py --osm public/data/alpine-places.json \
+            --out build/import-municipalities-v1/wikidata-resolver.json; then
+            echo 'QID_READY=true' >> "$GITHUB_ENV"
+          else
+            echo 'QID_READY=false' >> "$GITHUB_ENV"
+          fi
+      - name: Normalizza i 7894 comuni e il crosswalk DAIT
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--istat-file build/import-municipalities-v1/input/istat.xlsx
+            --dait-file build/import-municipalities-v1/input/dait.csv
+            --osm-places public/data/alpine-places.json
+            --refuges-file public/data/atlas/refuges-v1.json
+            --shelters-file public/data/atlas/shelters-v1.json
+            --out build/import-municipalities-v1 --min-municipalities 7800)
+          if [ "${QID_READY:-false}" = true ]; then args+=(--qid-map build/import-municipalities-v1/wikidata-resolver.json); fi
+          if [ -f public/data/atlas/municipalities-v1.json ]; then args+=(--previous public/data/atlas/municipalities-v1.json); fi
+          python scripts/import_municipalities_v1.py "${args[@]}"
+      - name: Arricchisci da Commons e Wikipedia via QID verificato
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--archive build/import-municipalities-v1/municipalities.json
+            --out public/data/atlas/municipalities-v1.json
+            --report build/import-municipalities-v1/enrichment-report.json
+            --max-new 48)
+          if [ "${QID_READY:-false}" = true ]; then args+=(--qid-map build/import-municipalities-v1/wikidata-resolver.json); fi
+          if [ -f public/data/atlas/municipalities-v1.json ]; then
+            cp public/data/atlas/municipalities-v1.json build/import-municipalities-v1/previous.json
+            args+=(--previous build/import-municipalities-v1/previous.json)
+          fi
+          python scripts/enrich_municipalities_v1.py "${args[@]}"
+      - name: Quality gate reale dei documenti pubblicabili
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('public/data/atlas/municipalities-v1.json').read_text())
+          r=json.loads(Path('build/import-municipalities-v1/report.json').read_text())
+          e=d['entities']
+          assert r['municipalities']>=7800 and r['mayorsMatched']>=7500
+          assert r['daitRowsOfficialCrosswalkRejected']<=100
+          assert e and len(e)==len({x['id'] for x in e})==len({x['slug'] for x in e})
+          for x in e:
+              assert x['kind']=='municipality' and x['quality']['gate']=='G2'
+              assert x['sourceIds'].get('wikidataVerifiedBy')=='P635'
+              assert x['geo']['point'] and x['quality']['seoIndexable']
+              assert x.get('textSources') and len(x.get('description',''))>=120
+              assert all(t['licence']=='CC BY-SA 4.0' and t['sourceUrl'].startswith('https://it.wikipedia.org/wiki/') for t in x['textSources'])
+              assert any(m['kind']=='photo' and m.get('author') and m.get('licence') and
+                m.get('subjectVerified') and m.get('reuseAllowed') and
+                m['sourceUrl'].startswith('https://commons.wikimedia.org/') for m in x['media'])
+          print('Comuni G2:',len(e))
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Test TypeScript, build, SEO e crediti
+        shell: bash
+        env:
+          VITE_BASE: /
+          SITE_URL: https://www.cimabecco.it
+          VITE_SITE_URL: https://www.cimabecco.it
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npm run test
+          npm run build
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
+      - name: Report QA (nessun raw amministrativo)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-comuni-g2
+          path: |
+            build/import-municipalities-v1/report.json
+            build/import-municipalities-v1/enrichment-report.json
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Commit dei soli comuni dopo i gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/data/atlas/municipalities-v1.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'data(atlas): update source-verified municipality dossiers'
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
