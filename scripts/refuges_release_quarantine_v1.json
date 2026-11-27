@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0",
+  "policy": "Versioned release quarantine. These are OSM identity keys, not CAI values. No automatic reclassification, merge or loss of source snapshot.",
+  "sourceKeys": [
+    {
+      "sourceKey": "osm:node:14344305435",
+      "reason": "official_type_conflict_bivouac_not_refuge",
+      "evidenceUrl": "https://rifugi.cai.it/shelters/922005301",
+      "review": "Fiamme Gialle: legacy OSM snapshot classifies refuge; official CAI public page classifies bivacco. Hold until dedicated bivouac importer or verified OSM correction.",
+      "verifiedAt": "2026-11-27"
+    }
+  ]
+}
