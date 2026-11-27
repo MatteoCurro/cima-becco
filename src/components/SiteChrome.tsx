@@ -77,7 +77,7 @@ export function SiteFooter({ openSourcePill = false }: { openSourcePill?: boolea
             <a href="/#community">Il progetto</a>
             <a href="/#atlante/rifugi">Atlante completo</a>
             <a href="/#statistiche">Statistiche del laboratorio</a>
-            <a href="/#data">Fonti e crediti</a>
+            <a href="/fonti-e-crediti/">Fonti e crediti</a>
             <a href="/#privacy">Privacy</a>
             <a href="/#contact">Contatti</a>
           </div>
