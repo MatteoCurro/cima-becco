@@ -520,7 +520,7 @@ for (const place of alpinePlaces) {
       ${photo?`<figure class="cima-seo-photo"><img src="${escape(photo.url)}" alt="${escape(place.name)}" loading="lazy"></figure>`:''}
       <ul class="facts cima-seo-facts">
         <li><strong>${escape(place.lat.toFixed(4)+', '+place.lng.toFixed(4))}</strong>coordinate</li>
-        ${place.elevationM!=null?`<li><strong>${metres(place.elevationM)}</strong>quota registrata OSM</li>`:''}
+        ${place.elevationM!=null?`<li><strong>${metres(place.elevationM)}</strong>${place.elevationSource==='dem'?'quota DEM stimata':'quota indicata in OSM'}</li>`:''}
         <li><strong>${related.length}</strong>sentieri collegati</li>
         ${place.capacity?`<li><strong>${place.capacity}</strong>posti letto OSM</li>`:''}
         ${nearbyWater.length?`<li><strong>${nearbyWater.length}</strong>punti acqua entro 1,4 km</li>`:''}
