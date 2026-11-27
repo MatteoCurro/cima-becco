@@ -83,7 +83,7 @@ class MunicipalitiesContracts(unittest.TestCase):
         self.assertEqual(len(rows), 2)
         entity = municipality(rows[0], cols, "2026-11-27T12:00:00+00:00")
         self.assertEqual(entity["sourceIds"]["istat"], "022039")
-        self.assertEqual(entity["facts"]["surfaceKm2"]["value"], 67.55)
+        self.assertEqual(entity["facts"]["superficieKm2"]["value"], 67.55)
 
     def test_official_identity_and_dait_join_only_by_code(self):
         doc, report = build(self.sample_istat(), self.sample_dait(), retrieved_at="2026-11-27",
@@ -93,13 +93,13 @@ class MunicipalitiesContracts(unittest.TestCase):
         self.assertEqual(report["indexed"], 0)
         by_code = {e["sourceIds"]["istat"]: e for e in doc["entities"]}
         canazei = by_code["022039"]
-        self.assertEqual(canazei["facts"]["mayorNameReported"]["value"], "Giovanni Bernard")
-        self.assertEqual(canazei["facts"]["mayorElectionDate"]["value"], "2025-05-08")
+        self.assertEqual(canazei["facts"]["sindacoNome"]["value"], "Giovanni Bernard")
+        self.assertEqual(canazei["facts"]["dataElezione"]["value"], "2025-05-08")
         self.assertNotIn("population", canazei["facts"])
-        self.assertNotIn("mayorNameReported", by_code["025001"]["facts"])
+        self.assertNotIn("sindacoNome", by_code["025001"]["facts"])
         self.assertEqual(canazei["quality"]["gate"], "G0")
-        self.assertEqual(canazei["facts"]["elevationM"]["unit"], "m")
-        self.assertIsNone(canazei["facts"]["elevationM"]["licence"])
+        self.assertEqual(canazei["facts"]["quotaCentroM"]["unit"], "m")
+        self.assertIsNone(canazei["facts"]["quotaCentroM"]["licence"])
 
     def test_qid_join_is_explicit_unique_and_not_name_guess(self):
         rows = json.loads(canonical_bytes(build(self.sample_istat(), retrieved_at="2026-11-27",
@@ -116,7 +116,7 @@ class MunicipalitiesContracts(unittest.TestCase):
         self.assertEqual(chosen["quality"]["gate"], "G1")
         self.assertEqual(chosen["sourceIds"]["wikidata"], "Q123")
         self.assertFalse(chosen["quality"]["seoIndexable"])
-        self.assertNotIn("mayorNameReported", osm[0])
+        self.assertNotIn("sindacoNome", osm[0])
 
     def test_same_name_does_not_create_link(self):
         doc, report = build(self.sample_istat(), retrieved_at="2026-11-27", min_municipalities=3,
@@ -145,7 +145,7 @@ class MunicipalitiesContracts(unittest.TestCase):
                             min_municipalities=3)
         self.assertEqual(report["mayorsAmbiguous"], 1)
         canazei = next(e for e in doc["entities"] if e["sourceIds"]["istat"] == "022039")
-        self.assertNotIn("mayorNameReported", canazei["facts"])
+        self.assertNotIn("sindacoNome", canazei["facts"])
 
     def test_stable_id_and_noindex_with_previous(self):
         former, _ = build(self.sample_istat(), retrieved_at="2026-11-27",
