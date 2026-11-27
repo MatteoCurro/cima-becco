@@ -6,7 +6,7 @@ licenza esplicita compatibile, URL Commons e dimensioni adeguate.
 Niente foto generiche "nelle vicinanze"; nessuna foto è meglio di una foto falsa.
 """
 from __future__ import annotations
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import argparse
 import html
 import json
@@ -17,6 +17,7 @@ import sys
 import time
 import unicodedata
 from urllib.parse import urlencode
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 DATA = Path(__file__).resolve().parent.parent / 'public' / 'data'
@@ -61,11 +62,20 @@ def route_near(route, lng, lat):
     return min(distance_m([lng, lat], point) for point in pts[::stride]) <= 1000
 
 
+class RateLimited(RuntimeError):
+    pass
+
+
 def get(query):
     request = Request(API+'?'+urlencode({'format':'json','formatversion':2,**query}),
         headers={'User-Agent':'CimaBecco/0.2 (academic hiking map; github.com/MatteoCurro/cima-becco)'})
-    with urlopen(request, timeout=18) as res:
-        return json.load(res)
+    try:
+        with urlopen(request, timeout=18) as res:
+            return json.load(res)
+    except HTTPError as exc:
+        if exc.code == 429:
+            raise RateLimited('Wikimedia Commons ha applicato un limite temporaneo') from exc
+        raise
 
 
 def clean(text):
@@ -131,8 +141,27 @@ def run(limit, write):
     manifest = json.loads((DATA/'routes-manifest.json').read_text())
     status = json.loads(STATUS.read_text()) if STATUS.exists() else {'checked':{},'version':1}
     checked=status.setdefault('checked',{})
-    today = datetime.now(timezone.utc).date().isoformat()
-    attempted, found, errors = 0, 0, 0
+    now = datetime.now(timezone.utc)
+    pause = status.get('pausedUntil')
+    if pause:
+        try:
+            if now < datetime.fromisoformat(pause):
+                print(json.dumps({'status':'pausa Wikimedia','pausedUntil':pause,
+                                  'totalChecked':len(checked)}))
+                return
+        except (ValueError,TypeError):
+            pass
+    # La prima esecuzione ha rilevato HTTP 429: evita riavvii immediati su nuovi commit.
+    if status.get('errorsLastRun',0)>=5 and status.get('attemptedLastRun',0)>=5:
+        try:
+            last=datetime.fromisoformat(status['updatedAt'])
+            if now-last < timedelta(hours=48):
+                print(json.dumps({'status':'raffreddamento dopo HTTP 429','totalChecked':len(checked)}))
+                return
+        except (ValueError,KeyError,TypeError):
+            pass
+    today = now.date().isoformat()
+    attempted, found, errors, halted = 0, 0, 0, False
     for tile in manifest.get('tiles', []):
         for rel in tile.get('files', []):
             path=DATA/rel
@@ -154,14 +183,21 @@ def run(limit, write):
                         route['photos']=[photo]
                         changed=True
                         found+=1
+                except RateLimited as exc:
+                    errors+=1
+                    halted=True
+                    status['pausedUntil']=(datetime.now(timezone.utc)+timedelta(hours=48)).isoformat()
+                    print(f'Import foto sospeso per 48 ore: {exc}', file=sys.stderr)
                 except Exception as exc:
                     errors+=1
                     print(f'Commons {slug}: {exc}',file=sys.stderr)
-                time.sleep(1)
+                if halted: break
+                time.sleep(4)
             if changed and write:
                 save_json(path,data)
-            if attempted>=limit:break
-        if attempted>=limit:break
+            if attempted>=limit or halted:break
+        if attempted>=limit or halted:break
+    if not halted: status.pop('pausedUntil',None)
     status.update({'version':1,'updatedAt':datetime.now(timezone.utc).isoformat(timespec='seconds'),
                    'attemptedLastRun':attempted,'matchedLastRun':found,'errorsLastRun':errors})
     if write:
