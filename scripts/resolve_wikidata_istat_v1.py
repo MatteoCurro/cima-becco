@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import time
 from urllib.parse import urlencode
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -49,18 +50,27 @@ def query_codes(qids, request=None):
                             "method": "reported"})
     return records
 
-def resolve(data, batch=80, pause=0.75, request=None):
+def resolve(data, batch=120, pause=2.5, request=None, retry_sleep=None):
     ids = qids_from_osm(data)
     found = []
     errors = []
     for offset in range(0, len(ids), batch):
         part = ids[offset:offset + batch]
-        try:
-            found.extend(query_codes(part, request=request))
-        except Exception as exc:
-            errors.append({"offset": offset, "count": len(part), "error": str(exc)[:220]})
+        for attempt in range(3):
+            try:
+                found.extend(query_codes(part, request=request))
+                break
+            except HTTPError as exc:
+                if exc.code != 429 or attempt == 2:
+                    errors.append({"offset": offset, "count": len(part), "error": str(exc)[:220]})
+                    break
+                delay = (12, 30)[attempt]
+                (retry_sleep or time.sleep)(delay)
+            except Exception as exc:
+                errors.append({"offset": offset, "count": len(part), "error": str(exc)[:220]})
+                break
         if pause and offset + batch < len(ids):
-            time.sleep(pause)
+            (retry_sleep or time.sleep)(pause)
     unique = {(r["wikidata"], r["istatCode"]): r for r in found}
     return {"source": API, "property": "P635", "qidsExamined": len(ids),
             "associations": sorted(unique.values(), key=lambda r: (r["istatCode"], r["wikidata"])),
@@ -70,7 +80,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--osm", type=Path, default=ROOT / "public/data/alpine-places.json")
     p.add_argument("--out", type=Path, default=ROOT / "build/import-municipalities-v1/wikidata-resolver.json")
-    p.add_argument("--batch", type=int, default=80)
+    p.add_argument("--batch", type=int, default=120)
     args = p.parse_args()
     if args.batch not in range(1, 121):
         p.error("batch 1..120")
