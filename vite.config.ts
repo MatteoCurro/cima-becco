@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 // The public address, for link previews and canonical links in index.html
 // (%VITE_SITE_URL%). The deploy workflow sets it from public/CNAME.
-process.env.VITE_SITE_URL ??= 'https://hillgpx.com';
+process.env.VITE_SITE_URL ??= 'https://matteocurro.github.io/cima-becco';
 
 export default defineConfig({
   plugins: [react()],

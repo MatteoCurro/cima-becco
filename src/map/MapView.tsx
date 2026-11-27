@@ -66,7 +66,7 @@ const VENUE_POPUP_OFFSET: Offset = {
 };
 
 /** Where the data currently is — the opening view, not a fence. */
-const SINGAPORE_CENTRE: [number, number] = [103.8198, 1.3521];
+const ITALY_CENTRE: [number, number] = [12.45, 42.7];
 
 function addUserLocationSource(map: MlMap) {
   map.addSource('user-location', {
@@ -600,7 +600,7 @@ export function MapView({
     const map = new MapLibreMap({
       container: containerRef.current,
       style: MAP_STYLE_URL,
-      center: SINGAPORE_CENTRE,
+      center: ITALY_CENTRE,
       zoom: 11,
       minZoom: 2,
       renderWorldCopies: false,

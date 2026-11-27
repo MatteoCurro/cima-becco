@@ -13,9 +13,9 @@ import { OpenSourceInline } from './OpenSourceNotice';
  */
 export function Wordmark({ size = 28, href = '#' }: { size?: number; href?: string }) {
   return (
-    <a className="wordmark" href={href} aria-label="hillGPX home">
+    <a className="wordmark" href={href} aria-label="Cima Becco — home">
       <Mark size={size} />
-      <span className="wordmark-text">hillGPX</span>
+      <span className="wordmark-text">Cima Becco</span>
     </a>
   );
 }
@@ -59,9 +59,10 @@ export function SiteFooter({ openSourcePill = false }: { openSourcePill?: boolea
       <div className="site-footer-inner">
         <div className="site-footer-cols">
           <div>
-            <h3>Explore</h3>
-            <a href="#map">Map of climbs</a>
-            <a href="#routes">Routes</a>
+            <h3>Esplora</h3>
+            <a href="#map">Cime e montagne</a>
+            <a href="#routes">Percorsi</a>
+            <a href="#pianifica">Pianifica</a>
             <button type="button" className="site-footer-link" aria-haspopup="dialog" onClick={() => setCoverageOpen(true)}>
               What's mapped
             </button>
@@ -87,7 +88,7 @@ export function SiteFooter({ openSourcePill = false }: { openSourcePill?: boolea
         </div>
         <div className="site-footer-base">
           {openSourcePill && <OpenSourceInline />}
-          <span>© hillGPX · Code MIT · Routes and reviews CC BY 4.0 · Photos CC BY-SA 4.0</span>
+          <span>© Cima Becco · Basato su HillGPX (MIT) · Codice MIT · Routes and reviews CC BY 4.0 · Photos CC BY-SA 4.0</span>
           <span className="site-footer-credits">
             Data: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>,{' '}
             <a href="https://www.geonames.org" target="_blank" rel="noreferrer">GeoNames</a>,{' '}

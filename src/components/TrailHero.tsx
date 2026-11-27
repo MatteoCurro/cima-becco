@@ -11,9 +11,9 @@ import { focusSiteSearch } from './SearchBar';
  * y in pixels, read off the path below at that x.
  */
 const STEPS = [
-  { x: 16.7, y: 72, title: 'Search a place', text: 'A town, a country or a summit, or use your location.' },
-  { x: 50, y: 40, title: 'Check the route', text: 'Distance, elevation gain and the full profile before you go.' },
-  { x: 83.3, y: 60, title: 'Take the GPX', text: "Download it to your watch, or share one you've run." },
+  { x: 16.7, y: 72, title: 'Scopri le cime', text: 'Cerca una montagna o una località in Italia.' },
+  { x: 50, y: 40, title: 'Consulta il percorso', text: 'Consulta lunghezza, dislivello e traccia prima di partire.' },
+  { x: 83.3, y: 60, title: 'Scarica il GPX', text: "Salva l'itinerario e condividi la tua escursione." },
 ];
 
 /** A ridge from the start (left, low) through the three steps to the summit flag (right, high). */
@@ -97,7 +97,7 @@ function useParallax() {
 }
 
 /**
- * "Search by Region": back to the top and into the header search, with its
+ * "Cerca una località": back to the top and into the header search, with its
  * suggestions open. The focus happens in this same click, so phones open the
  * keyboard; the scroll is instant under reduced motion.
  */
@@ -120,15 +120,15 @@ export function TrailHero() {
       <HeroMap mapRef={mapRef} />
       <div className="home-shell">
         <h1 className="trail-hero-title">
-          May the <span>trail</span> be with you
+          Ogni cima, <span>un percorso</span>
         </h1>
         <p className="trail-hero-lead">
-          Hills, mountains, stairs and tall blocks worldwide, with free GPX routes and honest elevation.
+          Scopri le montagne italiane, esplora i sentieri, pianifica un trekking e condividi i tuoi itinerari.
         </p>
         <div className="trail-hero-actions">
           <button type="button" className="btn btn-dark" onClick={() => openMapWith({ kind: 'near-me' })}>
             <LocateIcon size={16} />
-            Routes near me
+            Percorsi vicino a me
           </button>
           <button type="button" className="btn btn-light" onClick={searchByRegion}>
             <SearchIcon size={16} />
@@ -136,7 +136,7 @@ export function TrailHero() {
           </button>
           <a className="btn btn-light" href="#import" onClick={openImportHere}>
             <UploadIcon size={16} />
-            Upload GPX
+            Carica GPX
           </a>
         </div>
 

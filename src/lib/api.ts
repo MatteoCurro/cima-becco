@@ -19,8 +19,8 @@ import type { Route, RouteActivity, RoutePoint } from '../types';
 import { toGpx } from './gpx';
 import type { QualityFlag } from './routeQuality';
 
-export const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || 'https://dzpgnebkyubeptitzjlj.supabase.co';
-const SUPABASE_KEY = (import.meta.env.VITE_SUPABASE_KEY as string | undefined) || 'sb_publishable_invDmVPb4d4aKqTMTRp72w_hpFBZ0AI';
+export const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || 'https://unconfigured.invalid';
+const SUPABASE_KEY = (import.meta.env.VITE_SUPABASE_KEY as string | undefined) || 'unconfigured-public-key';
 
 /** Shared client: auth.js signs in and out through it, and its session
  *  token authenticates the REST and Storage calls below. */

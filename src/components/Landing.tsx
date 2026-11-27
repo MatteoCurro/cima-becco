@@ -90,7 +90,7 @@ export function Landing() {
         )}
         {!loadError && (
           <>
-            <Row title="Routes worth running" link={ROUTES_LINK} loading={!routes}>
+            <Row title="Itinerari da esplorare" link={ROUTES_LINK} loading={!routes}>
               {routes?.map((route, i) => <RouteTile key={route.slug} route={route} index={i} />)}
             </Row>
             {(rows ?? PLACEHOLDER_ROWS).slice(0, COUNTRY_ROWS).map(placeRow)}
@@ -109,7 +109,7 @@ export function Landing() {
             {rows && (
               <div className="home-more">
                 <a className="btn btn-light" href="#map" onClick={() => rememberMode('climbs')}>
-                  See every country on the map
+                  Esplora tutte le montagne
                 </a>
               </div>
             )}
@@ -136,7 +136,7 @@ function useCountries(): CountrySummary[] | null {
   return countries;
 }
 
-const WORLD_SKIP = new Set(['SG', 'MY', 'TW', 'HK']);
+const WORLD_SKIP = new Set<string>();
 /**
  * Country rows under "Routes worth running": with it, 8 rows in all. The page
  * is a taster; every other country is one search or one map away.
@@ -149,7 +149,7 @@ const WORLD_MIN_PEAKS = 6;
 
 /** The countries that get a "Highest peaks in …" row, in page order. */
 function worldRowCountries(countries: CountrySummary[] | null): CountrySummary[] {
-  return (countries ?? []).filter((c) => !WORLD_SKIP.has(c.code) && c.peaks.length >= WORLD_MIN_PEAKS).slice(0, WORLD_MAX);
+  return (countries ?? []).filter((c) => ['IT', 'CH', 'AT', 'FR', 'SI'].includes(c.code) && !WORLD_SKIP.has(c.code) && c.peaks.length >= WORLD_MIN_PEAKS).slice(0, WORLD_MAX);
 }
 
 /* ─── Search ──────────────────────────────────────────────────────────── */

@@ -60,7 +60,7 @@ function goHome(): void {
  * under Supabase → Authentication → URL Configuration → Redirect URLs.
  */
 function siteUrl(): string {
-  return (import.meta.env.VITE_SITE_URL as string | undefined) || 'https://hillgpx.com';
+  return (import.meta.env.VITE_SITE_URL as string | undefined) || (typeof window !== 'undefined' ? window.location.origin : 'https://matteocurro.github.io/cima-becco');
 }
 
 interface ProfileRow {
