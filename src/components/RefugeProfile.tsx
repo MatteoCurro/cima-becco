@@ -230,7 +230,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
         </section>)}
       </div>
       <p className="cb-refuge-disclaimer">L'acqua censita non è automaticamente potabile; la voce potabilità compare solo quando documentata in modo distinto.</p>
-    </RefugeBlock>
+    </RefugeBlock>}
     <RefugeBlock id="cb-refuge-access" kicker="NEL TERRITORIO" title="Come arrivare e sentieri" icon="person-hiking">
       {place.access&&<p className="cb-refuge-section-intro"><strong>Accesso riportato dalla fonte:</strong> {place.access}</p>}
       {arrival.length>0&&<div className="cb-refuge-route-list"><h3>Itinerari con relazione di partenza o arrivo</h3>{arrival.slice(0,12).map(route=><RouteLine key={route.slug} route={route}/>)}</div>}
@@ -269,7 +269,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
             <SourceLink url={place.historySourceUrl}>Fonte dell'approfondimento storico</SourceLink></>}
         </div>
       </div>}
-    </RefugeBlock>
+    </RefugeBlock>}
     <RefugeBlock id="cb-refuge-weather" kicker="CONDIZIONI DEL TERRITORIO" title="Meteo e montagna">
       <AlpineWeatherPanel lat={place.lat} lng={place.lng} name={place.name}/>
     </RefugeBlock>
