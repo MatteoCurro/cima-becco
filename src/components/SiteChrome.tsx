@@ -69,6 +69,7 @@ export function SiteFooter({ openSourcePill = false }: { openSourcePill?: boolea
           <div>
             <h3>Cima Becco</h3>
             <a href="#community">Il progetto</a>
+            <a href="#statistiche">Statistiche del laboratorio</a>
             <a href="#data">Fonti e crediti</a>
             <a href="#privacy">Privacy</a>
             <a href="#contact">Contatti</a>
