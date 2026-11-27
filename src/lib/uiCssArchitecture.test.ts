@@ -1,10 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-
-function source(path:string) {
-  return readFileSync(fileURLToPath(new URL(path, import.meta.url)), 'utf8');
-}
+import legacyDesign from '../design.css?raw';
+import legacyStyles from '../styles.css?raw';
+import systemCss from '../cimaSystem.css?raw';
+import polishCss from '../cimaPolish.css?raw';
+import workspaceCss from '../cimaWorkspace.css?raw';
+import routeCss from '../routeDetail.css?raw';
+import atlasCss from '../alpineAtlas.css?raw';
+import locationCss from '../locationProfile.css?raw';
+import chromeCss from '../components/siteChrome.css?raw';
+import jumpSource from '../components/DetailJumpNav.tsx?raw';
+import faSource from '../components/FaIcon.tsx?raw';
+import placeIconSource from '../components/AlpinePlaceIcon.tsx?raw';
+const SOURCE: Record<string,string>={
+  '../design.css':legacyDesign,'../styles.css':legacyStyles,
+  '../cimaSystem.css':systemCss,'../cimaPolish.css':polishCss,
+  '../cimaWorkspace.css':workspaceCss,'../routeDetail.css':routeCss,
+  '../alpineAtlas.css':atlasCss,'../locationProfile.css':locationCss,
+  '../components/siteChrome.css':chromeCss,
+  '../components/DetailJumpNav.tsx':jumpSource,
+  '../components/FaIcon.tsx':faSource,
+  '../components/AlpinePlaceIcon.tsx':placeIconSource,
+};
+function source(path:string) { return SOURCE[path] ?? ''; }
 describe('proprietà CSS del design system',()=>{
   it('impedisce la stratificazione di header/footer/wordmark nel legacy',()=>{
     const legacy=['../design.css','../styles.css','../cimaSystem.css','../cimaPolish.css',
