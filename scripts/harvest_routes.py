@@ -144,6 +144,19 @@ def save_tile(cell, elements, status, now):
         for key in ('photos',):
             if former.get(key) and not route.get(key):
                 route[key] = former[key]
+        # Il DEM viene calcolato da un job diverso: non perderlo ai refresh OSM
+        # se la geometria planimetrica non è cambiata.
+        old_pts = former.get('coordinates') or []
+        new_pts = route.get('coordinates') or []
+        if (former.get('elevationSource') == 'terrain' and len(old_pts) == len(new_pts)
+                and all(a[:2] == b[:2] for a, b in zip(old_pts, new_pts))):
+            route['coordinates'] = old_pts
+            route['gainM'] = former.get('gainM', 0)
+            route['lossM'] = former.get('lossM', 0)
+            route['elevationAvailable'] = True
+            route['elevationSource'] = 'terrain'
+            if former.get('elevationEstimatedAt'):
+                route['elevationEstimatedAt'] = former['elevationEstimatedAt']
     pieces = shard_files(tile_id, listed)
     for piece in pieces:
         target = DATA / piece['path']
