@@ -7,6 +7,12 @@ on:
       - tests/test_import_refuges_v1.py
       - docs/PIANO_IMPORTATORI.md
       - .github/workflows/test-import-refuges-v1.yml
+      - scripts/refuge_field_registry_v1.json
+      - scripts/metadata_source_registry_v1.json
+      - scripts/audit_metadata_spec_v1.py
+      - tests/test_metadata_spec_coverage_v1.py
+      - docs/MODELLO_METADATI_E_LAYOUT.md
+      - docs/MATRICE_ACQUISIZIONE_DATI.md
   workflow_dispatch:
 
 permissions:
@@ -27,6 +33,10 @@ jobs:
           python-version: "3.12"
       - name: Test offline dei contratti
         run: python -m unittest discover -s tests -p 'test_import_refuges_v1.py' -v
+      - name: Contratto metadati per tutte le tipologie
+        run: |
+          python -m unittest discover -s tests -p 'test_metadata_spec_coverage_v1.py' -v
+          python scripts/audit_metadata_spec_v1.py
       - name: Import pilota su snapshot esistente (senza rete)
         run: python scripts/import_refuges_v1.py --strict
       - name: 'Controlla idempotenza: secondo import byte-identico'
@@ -41,5 +51,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cima-refuges-v1-staging
-          path: build/import-refuges-v1/
+          path: |
+            build/import-refuges-v1/
+            build/metadata-audit/
           retention-days: 10
