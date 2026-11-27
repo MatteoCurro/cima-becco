@@ -24,7 +24,7 @@ function fromHash(){
     const parts=window.location.pathname.slice(base.length).split('/').filter(Boolean);
     const section=parts[0]==='borghi'?'paesi':parts[0];
     if(parts.length===2&&(section==='rifugi'||section==='bivacchi'||section==='paesi'))
-      return {section,slug:parts[1]};
+      return {section:section as Section,slug:parts[1]};
   }
   return {section:'rifugi' as Section,slug:null};
 }
