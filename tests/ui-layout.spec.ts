@@ -247,3 +247,65 @@ test('cima: hero nella colonna sinistra e mappa nel 58% destro',async({page})=>{
   const mobile=await page.locator('.cb-venue-map-pane').boundingBox();
   expect(mobile?.width||0).toBeGreaterThanOrEqual(388);
 });
+
+test('navbar e filtri: occupano l’intera larghezza e non hanno slot fissi',async({page})=>{
+  test.setTimeout(150_000);
+  for(const width of [1024,1440]){
+    await page.setViewportSize({width,height:900});
+    for(const path of ['/#routes','/#map','/#rifugi','/#paesi']){
+      await page.goto(path);
+      const bar=page.locator('.cb-browse-bar');
+      await expect(bar).toBeVisible({timeout:30000});
+      const rects=await page.evaluate(()=>{
+        const selectors=['.site-header','.site-header-row','.cb-browse-bar','.cb-browse-tabs','.cb-browse-facets'];
+        return selectors.map(selector=>{
+          const el=document.querySelector(selector)!;
+          const r=el.getBoundingClientRect();
+          return {selector,left:r.left,right:r.right,width:r.width};
+        });
+      });
+      for(const r of rects){
+        expect(r.left,JSON.stringify({path,width,r})).toBeGreaterThanOrEqual(-2);
+        expect(r.left,JSON.stringify({path,width,r})).toBeLessThanOrEqual(2);
+        expect(r.right,JSON.stringify({path,width,r})).toBeGreaterThanOrEqual(width-2);
+      }
+      if(width>=1050){
+        const last=page.locator('.cb-browse-tabs').locator('a,span.is-upcoming').last();
+        const r=await last.boundingBox();
+        expect((r?.x||0)+(r?.width||0)).toBeGreaterThan(width-48);
+      }
+    }
+  }
+});
+
+test('mappe: stesso canvas full-bleed e intestazione, senza barre che sottraggono altezza',async({page})=>{
+  test.setTimeout(100_000);
+  await page.setViewportSize({width:1440,height:900});
+  for(const config of [
+    {path:'/#routes',outer:'.map-page .map-wrap',canvas:'.map-page .map-wrap > .map'},
+    {path:'/#rifugi',outer:'.cb-explore-map-panel',canvas:'.cb-explore-map-panel .cb-atlas-map-wrap'},
+    {path:'/#paesi',outer:'.cb-explore-map-panel',canvas:'.cb-explore-map-panel .cb-atlas-map-wrap'},
+    {path:'/route/osm-hiking-13956722/',outer:'.map-page .map-wrap',canvas:'.map-page .map-wrap > .cb-atlas-map-wrap'},
+  ]){
+    await page.goto(config.path);
+    const outer=page.locator(config.outer);
+    const canvas=page.locator(config.canvas);
+    await expect(outer).toBeVisible({timeout:30000});
+    await expect(canvas).toBeVisible({timeout:30000});
+    await expect(outer.locator('.cb-map-context')).toBeVisible();
+    const box=await outer.boundingBox(), inner=await canvas.boundingBox();
+    expect(box).not.toBeNull();expect(inner).not.toBeNull();
+    expect(box!.x+box!.width,config.path).toBeGreaterThan(1438);
+    expect(Math.abs(box!.width-inner!.width),config.path).toBeLessThanOrEqual(3);
+    expect(Math.abs(box!.height-inner!.height),config.path).toBeLessThanOrEqual(3);
+    expect(await canvas.evaluate(el=>getComputedStyle(el).borderRadius)).toBe('0px');
+  }
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#rifugi');
+  await page.getByRole('button',{name:'Mappa',exact:true}).click();
+  const wrap=page.locator('.cb-explore-map-panel .cb-atlas-map-wrap');
+  await expect(wrap).toBeVisible();
+  const b=await wrap.boundingBox();
+  expect(b?.width||0).toBeGreaterThanOrEqual(388);
+  await expect(page.locator('.cb-explore-map-topline')).toHaveCount(0);
+});

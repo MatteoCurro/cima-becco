@@ -3,4 +3,3 @@
 .cb-atlas-selected-pin{display:grid;place-items:center;width:36px;height:36px;border:3px solid #fff;border-radius:50%;background:#d00058;color:#fff;font:900 20px/1 'Barlow Condensed',sans-serif;box-shadow:0 3px 12px #193b2d65}
 .cb-water-map-popover{display:grid;gap:5px;color:#234735;font:600 13px/1.4 'Space Grotesk',sans-serif}
 .cb-water-map-popover small{font:500 11px/1.4 'Space Grotesk',sans-serif;color:#637a68}
-}

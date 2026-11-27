@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 const files = [
   'src/styles.css','src/design.css','src/alpineExplore.css',
   'src/locationProfile.css','src/homeHeroV2.css',
+  'src/alpineMap.css','src/exploreNavigation.css','src/cimaWorkspace.css',
+  'src/routeDetail.css','src/cimaSystem.css','src/alpineAtlas.css',
 ];
 const cssByFile = new Map();
 for (const file of files) {
