@@ -125,6 +125,12 @@ def identity_candidates(cai_records, osm_entities):
         source_id = "cai:shelter:" + cai_source_id(row)
         kind_status = category(row)
         categories[kind_status] += 1
+        # Il listino API può includere elementi non pubblicati; non derivare
+        # candidati di pagina da record non visibili sul catalogo pubblico.
+        if row.get("published") is False or row.get("deletedAt") not in (None, ""):
+            unmatched.append({"sourceId": source_id, "reason": "not_public_or_deleted",
+                              "typeReview": kind_status})
+            continue
         if kind_status == "excluded_non_refuge":
             unmatched.append({"sourceId": source_id, "reason": "non_refuge_type",
                               "typeReview": "confirmed_non_refuge"})
