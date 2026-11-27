@@ -47,7 +47,7 @@ jobs:
           python scripts/audit_metadata_spec_v1.py
       - name: Mapping CAI offline sui campi campione (senza rete)
         run: python -m unittest discover -s tests -p 'test_normalize_cai_refuge_v1.py' -v
-      - name: Copertura delle 108 chiavi CAI gia osservate (senza rete)
+      - name: Copertura delle 127 chiavi CAI gia osservate (senza rete)
         run: python -m unittest discover -s tests -p 'test_cai_pilot_field_inventory_v1.py' -v
       - name: CAI↔OSM identity matching unitario (senza rete)
         run: python -m unittest discover -s tests -p 'test_reconcile_cai_osm_refuges_v1.py' -v
