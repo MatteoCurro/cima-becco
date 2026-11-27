@@ -46,14 +46,27 @@ def probe(name,url):
                 try:txt=raw.decode(enc);break
                 except UnicodeDecodeError:continue
             lines=txt.splitlines()
-            dialect=csv.Sniffer().sniff("\n".join(lines[:4]),delimiters=";,")
-            reader=csv.DictReader(io.StringIO(txt),dialect=dialect)
-            rows=list(reader)
+            dialect=csv.Sniffer().sniff("\n".join(lines[:8]),delimiters=";,")
+            parsed=list(csv.reader(io.StringIO(txt),dialect=dialect))
+            result["headerPreview"]=parsed[:3]
+            candidates=[i for i,row in enumerate(parsed[:10])
+                        if any("comun" in c.lower() for c in row)
+                        and any("cognome" in c.lower() for c in row)]
+            header_index=candidates[0] if candidates else None
+            result["headerRowIndex"]=header_index
+            result["columns"]=parsed[header_index] if header_index is not None else None
+            data_rows=parsed[header_index+1:] if header_index is not None else parsed[1:]
+            rows=[r for r in data_rows if len(r)>=13 and r[3].strip() and r[12].strip()]
             result["rowsParsed"]=len(rows)
-            result["columns"]=reader.fieldnames
-            picked=[r for r in rows if any(re.search(r"\b"+x+r"\b",str(r),re.I) for x in
-                       ["Canazei","Moena","Arabba"])][:6]
-            result["sampleRows"]=picked
+            picked=[r for r in rows if r[3].strip().upper() in ("CANAZEI","MOENA","CORTINA D'AMPEZZO")]
+            # Positional field extraction is only a staging hint; consult the original
+            # CSV header before considering official names or dates authoritative.
+            result["sampleMunicipalities"]=[{
+              "municipality":r[3],"municipalityCodeRaw":r[2],
+              "provinceRaw":r[4],"mayorSurnameCandidate":r[6],
+              "mayorGivenNameCandidate":r[7],"roleRaw":r[12],
+              "electedAtRaw":r[13] if len(r)>13 else None
+            } for r in picked[:6]]
             result["licenceToVerify"]=True
         elif status==200 and "dataset" in name:
             data=json.loads(raw)
