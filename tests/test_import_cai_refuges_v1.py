@@ -112,9 +112,13 @@ class CAIReleaseTests(unittest.TestCase):
         rows=cai.fetch_catalogue(api,page_size=2)
         self.assertEqual([x["id_cai"] for x in rows],[100,101,200])
         def dup(url):
-            return {"total":2,"data":[{"id_cai":1},{"id_cai":1}]}
-        with self.assertRaisesRegex(ValueError,"duplicati"):
-            cai.fetch_catalogue(dup)
+            return {"total":2,"data":[{"id_cai":1,"id":5,"title":"Same"},
+                                      {"id_cai":1,"id":5,"title":"Same"}]}
+        self.assertEqual([x["id_cai"] for x in cai.fetch_catalogue(dup)], [1])
+        def collision(url):
+            return {"total":2,"data":[{"id_cai":1,"id":5,"title":"A"},
+                                      {"id_cai":1,"id":7,"title":"B"}]}
+        self.assertEqual(cai.fetch_catalogue(collision), [])
 
     def test_media_no_unsafe_urls_and_dedup(self):
         d=detail()
