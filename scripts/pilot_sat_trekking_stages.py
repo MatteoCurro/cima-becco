@@ -60,7 +60,7 @@ def parse(html):
         items[code]=item
     return list(items.values())
 def main():
-    errors=[];stages=[];diagnostics={}
+    errors=[];stages=[];diagnostics={};method="live_SAT_page"
     try:
         req=Request(URL,headers={"User-Agent":"CimaBecco-Research/0.1 (https://www.cimabecco.it)"})
         with urlopen(req,timeout=45) as r:html=r.read(4_000_000).decode("utf-8","replace")
@@ -68,7 +68,16 @@ def main():
         stages=parse(html)
         if not stages:errors.append("No summary table rows matched. Inspect SAT HTML structure.")
     except Exception as ex:errors.append(str(ex)[:300])
-    report={"at":datetime.now(timezone.utc).isoformat(),"source":URL,
+    live_count=len(stages)
+    if not stages:
+        # Live SAT page returns bot challenge from GitHub runner: do not falsely report
+        # automated import. Fall back to a carefully labelled, open-data fact snapshot.
+        snapshot=ROOT/"fixtures"/"sat-sentiero-italia-trentino-2026.json"
+        if snapshot.exists():
+            stages=json.loads(snapshot.read_text(encoding="utf-8"))["stages"]
+            method="official_SAT_ODbL_snapshot_transcribed_not_live"
+    report={"at":datetime.now(timezone.utc).isoformat(),"source":URL,"method":method,
+      "liveStagesFetched":live_count,"snapshotStages":len(stages) if not live_count else 0,
       "stages":len(stages),"withAscent":sum(s["ascentM"] is not None for s in stages),
       "withDescent":sum(s["descentM"] is not None for s in stages),
       "withDuration":sum(s["durationMinutes"] is not None for s in stages),
