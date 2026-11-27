@@ -907,6 +907,32 @@
       ],
       "refresh": "on_review",
       "target": "quality"
+    },
+    {
+      "key": "waterAvailableReported",
+      "group": "services",
+      "priority": "P1",
+      "sources": [
+        "cai",
+        "sat",
+        "official",
+        "osm"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.waterAvailableReported",
+      "notes": "CAI acqua_in_rifugio_service segnala acqua presente, non potabilità"
+    },
+    {
+      "key": "largeDormitoriesAvailableReported",
+      "group": "capacity",
+      "priority": "P2",
+      "sources": [
+        "cai",
+        "official"
+      ],
+      "refresh": "on_source_change",
+      "target": "facts.largeDormitoriesAvailableReported",
+      "notes": "Boolean presenza camerate con più di 4 posti: NON numero camerate né posti letto"
     }
   ]
 }
