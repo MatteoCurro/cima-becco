@@ -52,20 +52,21 @@ function viaFerrataValue(raw: string | undefined): number | null {
 
 /** Distinguere sempre una scala CAI/SAC da un soprannome editoriale. */
 export function trailMood(route: Route): TrailMood {
+  // Slang editoriale deliberatamente esagerato, mai spacciato per grado CAI.
+  // "label" è il dato serio, "quip" il titolo irriverente in evidenza.
   if (routeActivity(route) === 'ferrata') {
     const num = viaFerrataValue(route.viaFerrataScale);
-    if (num == null) return { level: 'unknown', label: 'Difficoltà da verificare', quip: null, basis: 'Scala ferrata non disponibile' };
-    if (num <= 2) return { level: 'regular', label: 'Ferrata poco difficile', quip: 'Attaccati e vai', basis: 'Scala ferrata: ' + route.viaFerrataScale };
-    if (num === 3) return { level: 'demanding', label: 'Ferrata impegnativa', quip: 'Strattona', basis: 'Scala ferrata: ' + route.viaFerrataScale };
-    return { level: 'technical', label: 'Ferrata molto impegnativa', quip: num >= 5 ? 'Vai bomber' : 'Braccia in leasing', basis: 'Scala ferrata: ' + route.viaFerrataScale };
+    if (num == null) return { level: 'unknown', label: 'Scala ferrata non disponibile', quip: 'GRADO IN LATITANZA', basis: 'Difficoltà tecnica da verificare' };
+    if (num <= 2) return { level: 'regular', label: 'Ferrata poco difficile', quip: 'BRACCIA IN GITA', basis: 'Scala ferrata: ' + route.viaFerrataScale };
+    if (num === 3) return { level: 'demanding', label: 'Ferrata impegnativa', quip: 'AVAMBRACCI IN LEASING', basis: 'Scala ferrata: ' + route.viaFerrataScale };
+    return { level: 'technical', label: 'Ferrata molto impegnativa', quip: num >= 5 ? 'IL VUOTO TI FA CIAO' : 'LA ROCCIA TI SGAMA', basis: 'Scala ferrata: ' + route.viaFerrataScale };
   }
   const level = route.caiDifficulty;
-  if (level === 'T') return { level: 'gentle', label: 'Turistico', quip: 'Due curve e spiana', basis: 'Classificazione CAI T' };
-  if (level === 'E') return { level: 'regular', label: 'Escursionistico', quip: 'Si fa sentire', basis: 'Classificazione CAI E' };
-  if (level === 'EE') return { level: 'demanding', label: 'Per escursionisti esperti', quip: 'Non spiana', basis: 'Classificazione CAI EE' };
-  if (level === 'EEA') return { level: 'technical', label: 'Esperti con attrezzatura', quip: 'Vai bomber', basis: 'Classificazione CAI EEA' };
-  // Se la classificazione tecnica manca, evitare una difficoltà inventata da km/dislivello.
-  return { level: 'unknown', label: 'Difficoltà da verificare', quip: null, basis: 'Classificazione CAI assente' };
+  if (level === 'T') return { level: 'gentle', label: 'Turistico · CAI T', quip: 'MERENDEROS', basis: 'Classificazione CAI T' };
+  if (level === 'E') return { level: 'regular', label: 'Escursionistico · CAI E', quip: 'MUOVI QUELLE GAMBE', basis: 'Classificazione CAI E' };
+  if (level === 'EE') return { level: 'demanding', label: 'Escursionisti esperti · CAI EE', quip: 'OGGI SI BESTEMMIA', basis: 'Classificazione CAI EE' };
+  if (level === 'EEA') return { level: 'technical', label: 'Esperti con attrezzatura · CAI EEA', quip: 'NON FARE IL FENOMENO', basis: 'Classificazione CAI EEA' };
+  return { level: 'unknown', label: 'Difficoltà da verificare', quip: 'GRADO IN LATITANZA', basis: 'Classificazione CAI assente' };
 }
 
 export function trailDescription(route: Route): string {
