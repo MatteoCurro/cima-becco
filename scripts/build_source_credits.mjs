@@ -29,7 +29,9 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
     if (typeof src!=='string'||!src.startsWith('https://') ||
         typeof licence!=='string'||!licence ||
         typeof author!=='string'||!author.trim()) return;
-    const key=[kind,slug,src].join('\x1f');
+    // A CAI shelter may have multiple distinct photos all credited to the
+    // SAME detail page: uniqueness must include each individual media URL.
+    const key=[kind,slug,src,mediaUrl||''].join('\x1f');
     if(dedup.has(key))return; dedup.add(key);
     const path=kind==='route'?'route':kind==='peak'?'place':
       kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'borghi';
