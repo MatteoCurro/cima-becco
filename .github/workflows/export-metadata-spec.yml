@@ -1,0 +1,32 @@
+name: Export metadata specification
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/MODELLO_METADATI_E_LAYOUT.md
+      - AGENTS.md
+      - .github/workflows/export-metadata-spec.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify canonical spec and memory pointers
+        run: |
+          test -s docs/MODELLO_METADATI_E_LAYOUT.md
+          test -s AGENTS.md
+          grep -q "## 32. Decisioni vincolanti" docs/MODELLO_METADATI_E_LAYOUT.md
+          grep -q "docs/MODELLO_METADATI_E_LAYOUT.md" AGENTS.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cimabecco-metadata-specification
+          path: |
+            docs/MODELLO_METADATI_E_LAYOUT.md
+            AGENTS.md
+          retention-days: 14
