@@ -52,7 +52,7 @@ function parseAtlas(hash: string): { section: Section; slug: string | null } {
     if(window.location.pathname.startsWith(base)){
       const parts=window.location.pathname.slice(base.length).split('/').filter(Boolean);
       if(parts[0]==='trekking'&&parts[1])return {section:'trekking',slug:parts[1]};
-      if(parts[0]==='comuni'&&parts[1])return {section:'borghi',slug:parts[1]};
+      if(parts[0]==='comuni')return {section:'borghi',slug:parts[1]??null};
     }
   }
   const path = hash.replace(/^#atlante\/?/, '').split('/').filter(Boolean);
@@ -333,7 +333,7 @@ export function AlpineAtlasPage() {
   const {section,slug}=parseAtlas(hash);
   usePageTitle(sectionLabels[section] + ' · Cima Becco');
   useEffect(()=>{
-    if(section==='trekking'||(slug&&window.location.pathname.includes('/comuni/')))return;
+    if(section==='trekking'||window.location.pathname.includes('/comuni/'))return;
     if(slug){
       const kind=section==='rifugi'?'rifugio':section==='bivacchi'?'bivacco':'borgo';
       window.location.replace(import.meta.env.BASE_URL+atlasCategory(kind)+'/'+encodeURIComponent(slug)+'/');
@@ -350,7 +350,9 @@ export function AlpineAtlasPage() {
       .then(r=>r.ok?r.json():EMPTY_TREKS).then((result:TreksDataset)=>{if(Array.isArray(result.projects))setTreks(result);})
       .catch(()=>undefined);
   },[]);
-  const allSectionPlaces=useMemo(()=>data.places.filter(place=>atlasCategory(place.kind)===section),[data,section]);
+  const onlyComuni=!slug && window.location.pathname.endsWith('/comuni/');
+  const allSectionPlaces=useMemo(()=>data.places.filter(place=>atlasCategory(place.kind)===section &&
+    (!onlyComuni||place.subtype==='italian_municipality')),[data,section,onlyComuni]);
   const places=useMemo(()=>allSectionPlaces.filter(place=>place.name.toLocaleLowerCase('it').includes(query.trim().toLocaleLowerCase('it'))),[allSectionPlaces,query]);
   const place=slug?data.places.find(p=>(p.slug===slug||canonicalAtlasSlug(p)===slug) && atlasCategory(p.kind)===section &&
     (!window.location.pathname.includes('/comuni/') || p.subtype==='italian_municipality')):null;
@@ -367,7 +369,7 @@ export function AlpineAtlasPage() {
           <div className="cb-atlas-intro">
             <div>
               <span className="cb-atlas-eyebrow">{section==='trekking'?'TANTE TAPPE, UNA SOLA FOLLIA':'FUORI DALLA SOLITA ROTTA'}</span>
-              <h1>{section==='rifugi'?'RIFUGI.\nPOI SI VEDE.':section==='bivacchi'?'BIVACCHI.\nPOCHE SCUSE.':section==='borghi'?'PAESI PICCOLI.\nGITE GROSSE.':'CAMMINI LUNGHI.\nSCUSE CORTE.'}</h1>
+              <h1>{section==='rifugi'?'RIFUGI.\nPOI SI VEDE.':section==='bivacchi'?'BIVACCHI.\nPOCHE SCUSE.':onlyComuni?'COMUNI.\nSTORIE DI MONTAGNA.':section==='borghi'?'PAESI PICCOLI.\nGITE GROSSE.':'CAMMINI LUNGHI.\nSCUSE CORTE.'}</h1>
               <p>{section==='rifugi'?'Dove fermarti, ricaricare le gambe e scegliere la prossima salita. Rifugi veri, collegati ai sentieri mappati.'
                 :section==='bivacchi'?'Ripari essenziali in quota, non strutture custodite: mappe e dati verificabili per pianificare con prudenza.'
                 :section==='borghi'?'Località montane da cui partire, con sentieri, cartografia e meteo della zona.'
