@@ -17,10 +17,10 @@ export const HUT_SERVICE_CHAPTERS={
     {id:'essenziali',title:'Acqua e servizi essenziali',keys:['waterAvailableReported','drinkingWater','outsideWater','pets','accessibility','defibrillator','accessibleToilets']},
   ],
   bivacco:[
-    {id:'riposo',title:'Riposo e dotazioni interne',keys:['mattressAvailableReported','blanketAvailableReported','sleepingBagLiner']},
-    {id:'calore',title:'Cucina e riscaldamento',keys:['stoveAvailableReported','firewoodAvailableReported','gasAvailableReported','kitchen']},
-    {id:'essenziali',title:'Acqua e servizi essenziali',keys:['waterAvailableReported','drinkingWater','outsideWater','toiletAvailableReported','accessibleToilets','pets','accessibility']},
-    {id:'energia',title:'Energia e comunicazioni',keys:['electricity','solarPower','generatorPower','hydropower','mobileSignal','wifi']},
+    {id:'riposo',title:'Riposo e dotazioni interne',keys:['mattressAvailableReported','blanketAvailableReported','sleepingBagLiner','showers','hotWater']},
+    {id:'calore',title:'Cucina e riscaldamento',keys:['stoveAvailableReported','firewoodAvailableReported','gasAvailableReported','kitchen','meals']},
+    {id:'essenziali',title:'Acqua e servizi essenziali',keys:['waterAvailableReported','drinkingWater','outsideWater','toiletAvailableReported','accessibleToilets','pets','accessibility','defibrillator']},
+    {id:'energia',title:'Energia e comunicazioni',keys:['electricity','solarPower','generatorPower','hydropower','mobileSignal','wifi','cardPayments']},
   ],
 };
 
