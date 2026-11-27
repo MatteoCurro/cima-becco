@@ -363,3 +363,47 @@ test('permalink rifugio: header e griglia flush alla viewport, breadcrumb non sp
     }else expect(r('.cb-location-sidebar').width).toBeGreaterThanOrEqual(width-2);
   }
 });
+
+test('altimetro permalink: grafico muove il cursore sulla mappa e lo azzera uscendo',async({page})=>{
+  test.setTimeout(100_000);
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/route/osm-hiking-13956722/');
+  const cursor=page.locator('#cb-route-map .cb-atlas-map-wrap');
+  await expect(cursor).toHaveAttribute('data-cursor-ready','true',{timeout:50_000});
+  const svg=page.locator('.route-panel .profile-chart svg').first();
+  await expect(svg).toBeVisible({timeout:70_000});
+  await svg.scrollIntoViewIfNeeded();
+  const bounds=await svg.boundingBox();
+  expect(bounds).not.toBeNull();
+  await page.mouse.move(bounds!.x+bounds!.width*.23,bounds!.y+bounds!.height*.5);
+  await expect.poll(()=>cursor.getAttribute('data-route-cursor')).not.toBe('none');
+  const before=await cursor.getAttribute('data-route-cursor');
+  await page.mouse.move(bounds!.x+bounds!.width*.78,bounds!.y+bounds!.height*.5);
+  await expect.poll(async()=>await cursor.getAttribute('data-route-cursor')).not.toBe(before);
+  await page.mouse.move(10,10);
+  await expect(cursor).toHaveAttribute('data-route-cursor','none');
+});
+
+test('header documenti: la ricerca riempie davvero la colonna senza max-width ereditati',async({page})=>{
+  for(const path of ['/rifugi/osm-w-39173072/','/route/osm-hiking-13956722/']){
+    for(const width of [390,1280,1664]){
+      await page.setViewportSize({width,height:900});
+      await page.goto(path);
+      await expect(page.locator('.site-header .home-search')).toBeVisible({timeout:45_000});
+      const layout=await page.evaluate(()=>{
+        const hdr=document.querySelector('.site-header')!.getBoundingClientRect();
+        const row=document.querySelector('.site-header-row')!.getBoundingClientRect();
+        const col=document.querySelector('.site-header-center')!.getBoundingClientRect();
+        const input=document.querySelector('.site-header .home-search')! as HTMLElement;
+        const rect=input.getBoundingClientRect();
+        return {hdr:hdr.width,row:row.width,center:col.width,search:rect.width,max:getComputedStyle(input).maxWidth,
+          scroll:document.documentElement.scrollWidth};
+      });
+      expect(layout.hdr).toBeGreaterThanOrEqual(width-2);
+      expect(layout.row).toBeGreaterThanOrEqual(width-2);
+      expect(layout.max).toBe('none');
+      expect(layout.search).toBeGreaterThan(layout.center-3);
+      expect(layout.scroll).toBeLessThanOrEqual(width+2);
+    }
+  }
+});

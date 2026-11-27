@@ -106,3 +106,28 @@ riga sopra la mappa.
 Il test Playwright `permalink rifugio: header e griglia flush` misura
 le bounding box effettive a 1664/1280/390 px e segnala ogni antenato
 che restringe il contenuto, senza ricorrere a `overflow-x:hidden`.
+
+## Congelamento grafico — 27 novembre 2026
+
+Dopo la correzione della regressione altimetrica e dell'header si congela
+la struttura UI generale: niente nuovi layout, spaziature globali o barra
+di navigazione alternativa finché non sarà definito e completato il
+modello dei dati strutturati per l'importatore vero.
+
+**Contratti funzionali da preservare:**
+- `ElevationProfile → App.routeHoverIndex → AlpineAtlasMap.hoverPoint → route-hover`:
+  il punto evidenziato nel grafico compare nello stesso indice GPS sulla
+  mappa del permalink; la direzione inversa passa da `onRouteHover`.
+- La fonte del punto vicino è `src/lib/routeHover.ts`, lo stesso modulo
+  usato dalla mappa di esplorazione. Il marker è `addRouteHoverLayer`
+  in `src/map/layers.ts`.
+- Nessun `max-width` sulla ricerca dentro `SiteHeader`: il massimo
+  editoriale della ricerca home non deve ereditarsi nelle schede.
+- La griglia editoriale/mappa e il selettore contestuale sono stabilizzati;
+  successive modifiche estetiche solo per bug riproducibili e con test.
+- Future attività: definire provenienza, schema, deduplica, relazioni
+  fra luoghi/percorsi e arricchimenti, quindi il sistema di importazione,
+  preservando interfaccia e URL canonici.
+
+Questo congelamento non riguarda bug funzionali, sicurezza, accessibilità
+o regressioni: vanno sempre corretti prima di importare nuovi contenuti.
