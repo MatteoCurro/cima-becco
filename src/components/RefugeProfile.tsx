@@ -17,6 +17,7 @@ import { scrollToDetailSection } from '../lib/detailNavigation';
 import { formatAtlasFact, type AtlasFact } from '../lib/atlasDossier';
 import { REFUGE_AMENITIES, refugeFact, refugeOverview, refugeServiceFacts } from '../lib/refugeEditorial';
 import { trailTitle, trailMood } from '../lib/routeEditorial';
+import { resolveRefugeTerritory } from '../lib/atlasConnections';
 import './refugeProfile.css';
 
 interface RefugeProfileProps {
@@ -24,17 +25,10 @@ interface RefugeProfileProps {
   routes: Route[];
   loadingRoutes: boolean;
   nearbyPlaces: readonly NearbyAtlasPlace[];
+  allPlaces: readonly AlpinePlace[];
   water: AlpineWaterPoint[];
 }
 
-const AMENITY_ICONS:Record<string,FaIconName>={
-  meals:'utensils',wifi:'wifi',showers:'shower',cardPayments:'credit-card',
-  electricity:'bolt',kitchen:'utensils',pets:'paw',accessibility:'wheelchair',
-  defibrillator:'heart-pulse',waterAvailableReported:'glass-water',drinkingWater:'glass-water',
-  hotWater:'shower',mobileSignal:'signal',accessibleToilets:'toilet',
-  outsideWater:'water',sleepingBagLiner:'bed',solarPower:'leaf',
-  hydropower:'water',generatorPower:'bolt',
-};
 const FACT_LABELS:Record<string,string>={
   bedsTotal:'Posti letto totali',capacityReported:'Capienza dichiarata',
   bedsWinter:'Posti letto invernali',winterShelter:'Ricovero invernale',
@@ -56,7 +50,7 @@ const FACT_LABELS:Record<string,string>={
   valleyName:'Valle',protectedAreaName:'Area protetta',
   regionReported:'Regione indicata',provinceReported:'Provincia indicata',
   hospitalityRegistrationId:'Identificativo ricettivo',
-  iso14001:'Certificazione ISO 14001',waterCertification:'Certificazione delle acque',
+  waterCertification:'Informazione sulle acque',
   caiCategory:'Classificazione nel catalogo CAI',
   caiCatalogueStatus:'Stato nel catalogo CAI (non stato di apertura)',
   elevationM:'Altitudine',
@@ -68,11 +62,11 @@ const PRICES=['nightlyPrice','halfBoardPrice','memberDiscount','priceValidUntil'
 const TERRITORY=['mountainGroupNameReported','municipalityNameReported','localityNameReported',
   'mountainGroupId','municipalityId','localityId','valleyName','protectedAreaName','regionReported','provinceReported'];
 const HISTORY=['yearBuilt','yearRebuilt','yearOpened','dedication'];
-const SPECIAL=['hospitalityRegistrationId','iso14001','waterCertification','caiCategory','caiCatalogueStatus'];
+const SPECIAL=['hospitalityRegistrationId','waterCertification','caiCategory','caiCatalogueStatus'];
 const COVERED=new Set([
   ...STAY,...OPEN,...MANAGEMENT,...PRICES,...TERRITORY,...HISTORY,...SPECIAL,
   ...REFUGE_AMENITIES.map(s=>s.key), 'elevationM','phone','email','website',
-  'description','address','bookingUrl',
+  'description','address','bookingUrl','iso14001',
 ]);
 
 function value(place:AlpinePlace,key:string):AtlasFact|null{
@@ -102,10 +96,10 @@ function FactLines({place,keys}:{place:AlpinePlace;keys:readonly string[]}){
     </div>)}
   </dl>:null;
 }
-function RefugeBlock({id,kicker,title,icon,children}:{id:string;kicker:string;title:string;icon:FaIconName;children:ReactNode}){
+function RefugeBlock({id,kicker,title,icon,children}:{id:string;kicker:string;title:string;icon?:FaIconName;children:ReactNode}){
   return <section id={id} className="cb-refuge-block cb-detail-group" aria-labelledby={id+'-title'}>
     <div className="cb-refuge-block-heading">
-      <span className="cb-refuge-block-icon"><FaIcon name={icon} size={20}/></span>
+      {icon&&<span className="cb-refuge-block-icon"><FaIcon name={icon} size={20}/></span>}
       <div><span>{kicker}</span><h2 id={id+'-title'}>{title}</h2></div>
     </div>
     {children}
@@ -123,9 +117,19 @@ function SourceLink({url,children}:{url?:string;children:ReactNode}){
   return url && /^https:\/\//.test(url)?<a href={url} target="_blank" rel="noopener noreferrer">{children}</a>:null;
 }
 
-export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,water}:RefugeProfileProps){
+export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces,water}:RefugeProfileProps){
   const facts=place.facts??{};
   const knownServices=refugeServiceFacts(place);
+  const territoryLinks=resolveRefugeTerritory(place,allPlaces);
+  const serviceChapters=[
+    {id:'ristoro',title:'Ristoro e pernottamento',description:'Alimentazione e comfort per la sosta.',
+      keys:['meals','kitchen','showers','hotWater','sleepingBagLiner']},
+    {id:'servizi',title:'Connettività ed energia',description:'Comunicazioni, pagamenti e alimentazione elettrica.',
+      keys:['wifi','cardPayments','electricity','mobileSignal','solarPower','hydropower','generatorPower']},
+    {id:'attenzioni',title:'Acqua, accessibilità e sicurezza',description:'Dotazioni utili prima di programmare una salita.',
+      keys:['waterAvailableReported','drinkingWater','outsideWater','pets','accessibility','defibrillator','accessibleToilets']},
+  ].map(chapter=>({...chapter,items:knownServices.filter(item=>chapter.keys.includes(item.key))}))
+    .filter(chapter=>chapter.items.length>0);
   const arrival=routes.filter(route=>(route.stops??[]).some(stop=>
     stop.slug===place.slug && ['arrivo','partenza'].includes(stop.relation)));
   const pass=routes.filter(route=>!arrival.includes(route) && (route.stops??[]).some(stop=>stop.slug===place.slug));
@@ -140,7 +144,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,water}:Re
   const hasHistory=HISTORY.some(key=>value(place,key)!==null)||Boolean(place.history&&place.historySourceUrl);
   const hasContact=Boolean(place.phone||place.email||place.website||bookingHref);
   const hasSpecial=SPECIAL.some(key=>value(place,key)!==null);
-  const others=Object.fromEntries(Object.entries(facts).filter(([key,entry])=>!COVERED.has(key)&&entry?.value!==null&&entry?.value!==undefined));
+  const others=Object.fromEntries(Object.entries(facts).filter(([key,entry])=>!COVERED.has(key)&&!/^iso\d+/i.test(key)&&entry?.value!==null&&entry?.value!==undefined));
   const extraRecord={...place,facts:others,history:undefined,historySourceUrl:undefined};
   const galleryLogo=place.media?.find(m=>m.kind==='logo'&&m.reuseAllowed&&m.subjectVerified&&m.url&&m.sourceUrl&&m.licence);
   const logo=place.logo?.url||galleryLogo?.url;
@@ -165,7 +169,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,water}:Re
       </div>
       <div className="cb-refuge-hero-info">
         <div className="cb-refuge-kicker"><AlpinePlaceIcon kind="rifugio" size={16}/> RIFUGIO ALPINO
-          {place.sourceIds?.cai&&<span> · SCHEDA CAI</span>}</div>
+          {place.sourceIds?.cai&&<span> · ARCHIVIO CAI</span>}</div>
         <h1>{place.name}</h1>
         <p className="cb-refuge-intro">{refugeOverview(place)}</p>
         <DetailMetrics label="Riepilogo del rifugio" items={[
@@ -209,17 +213,24 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,water}:Re
         <p className="cb-refuge-disclaimer">Le informazioni pratiche non sono ancora documentate. Consulta la scheda della fonte o contatta direttamente la struttura prima di partire.</p>}
       <SourceLink url={official}>Consulta la scheda del rifugio nel catalogo CAI</SourceLink>
     </RefugeBlock>
-    {knownServices.length>0&&<RefugeBlock id="cb-refuge-services" kicker="DOTAZIONI DICHIARATE" title="Servizi disponibili" icon="utensils">
-      <p className="cb-refuge-section-intro">Le dotazioni riportano il valore comunicato dalla fonte, non una verifica effettuata oggi. I servizi senza dato non vengono considerati assenti.</p>
-      <div className="cb-refuge-service-grid">
-        {knownServices.map(item=><div key={item.key} className={'cb-refuge-service '+(item.value?'is-yes':'is-no')}>
-          <span className="cb-refuge-service-icon"><FaIcon name={AMENITY_ICONS[item.key]||'circle-question'} size={19}/></span>
-          <span><strong>{item.label}</strong><small>{item.value?'Dichiarato presente':'Dichiarato non presente'}</small></span>
-          <FaIcon name={item.value?'circle-check':'circle-xmark'} size={14}/>
-        </div>)}
+    {knownServices.length>0&&<RefugeBlock id="cb-refuge-services" kicker="VITA IN RIFUGIO" title="Cosa trovi una volta arrivato">
+      <p className="cb-refuge-section-intro">Un colpo d'occhio a ciò che la struttura dichiara di offrire. I servizi non documentati non sono considerati assenti.</p>
+      <div className="cb-refuge-service-chapters">
+        {serviceChapters.map(chapter=><section key={chapter.id} className="cb-refuge-service-chapter">
+          <span className="cb-refuge-chapter-counter">0{serviceChapters.indexOf(chapter)+1}</span>
+          <div className="cb-refuge-chapter-copy"><h3>{chapter.title}</h3>
+            <p>{chapter.description}</p>
+            {chapter.items.some(item=>item.value)&&<div className="cb-refuge-featured-services">
+              {chapter.items.filter(item=>item.value).map(item=><span key={item.key}>{item.label}</span>)}
+            </div>}
+            {chapter.items.some(item=>!item.value)&&<p className="cb-refuge-absent-services">
+              <strong>Non presenti secondo la fonte:</strong> {chapter.items.filter(item=>!item.value).map(item=>item.label).join(', ')}.
+            </p>}
+          </div>
+        </section>)}
       </div>
-      <p className="cb-refuge-disclaimer">Acqua disponibile non equivale ad acqua potabile: la potabilità richiede un'informazione specifica.</p>
-    </RefugeBlock>}
+      <p className="cb-refuge-disclaimer">L'acqua censita non è automaticamente potabile; la voce potabilità compare solo quando documentata in modo distinto.</p>
+    </RefugeBlock>
     <RefugeBlock id="cb-refuge-access" kicker="NEL TERRITORIO" title="Come arrivare e sentieri" icon="person-hiking">
       {place.access&&<p className="cb-refuge-section-intro"><strong>Accesso riportato dalla fonte:</strong> {place.access}</p>}
       {arrival.length>0&&<div className="cb-refuge-route-list"><h3>Itinerari con relazione di partenza o arrivo</h3>{arrival.slice(0,12).map(route=><RouteLine key={route.slug} route={route}/>)}</div>}
@@ -231,18 +242,38 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,water}:Re
       <p className="cb-refuge-disclaimer">La vicinanza a una traccia GPX non certifica che il sentiero conduca al rifugio né che sia percorribile.</p>
       <button type="button" className="cb-refuge-map-link" onClick={()=>scrollToDetailSection('cb-place-map')}><FaIcon name="map" size={14}/> Vedi il rifugio sulla mappa</button>
     </RefugeBlock>
-    {(place.description||hasTerritory||hasHistory)&&<RefugeBlock id="cb-refuge-story" kicker="IDENTITÀ E TERRITORIO" title="Il rifugio, la storia e il paesaggio" icon="book-open">
-      {place.description&&<p className="cb-refuge-editorial">{place.description}</p>}
-      {hasTerritory&&<FactLines place={place} keys={TERRITORY}/>}
-      {hasHistory&&<div className="cb-refuge-subsection"><h3>Storia documentata</h3>
-        <FactLines place={place} keys={HISTORY}/>
-        {place.history&&place.historySourceUrl&&<><p className="cb-refuge-editorial">{place.history}</p>
-          <SourceLink url={place.historySourceUrl}>Fonte dell'approfondimento storico</SourceLink></>}</div>}
-    </RefugeBlock>}
-    <RefugeBlock id="cb-refuge-weather" kicker="CONDIZIONI DEL TERRITORIO" title="Meteo e montagna" icon="compass">
+    {(place.description||hasTerritory||hasHistory)&&<RefugeBlock id="cb-refuge-story" kicker="LUOGHI, NOMI E MEMORIA" title="Un rifugio, un territorio">
+      {territoryLinks.length>0&&<aside className="cb-refuge-territory-feature">
+        <span>IL RIFUGIO E I LUOGHI INTORNO</span>
+        <p>{territoryLinks.map((item,index)=><span key={item.key}>
+          {index>0?' · ':''}{item.label}: {item.href?
+            <a href={item.href}>{item.name} <FaIcon name="arrow-up-right-from-square" size={11}/></a>:
+            <strong>{item.name}</strong>}
+        </span>)}</p>
+        <small>{territoryLinks.some(item=>item.href)
+          ? 'Collegamenti a località omonime individuate nell’Atlante e coerenti con la posizione. I nomi amministrativi restano dichiarazioni della fonte.'
+          : 'Denominazioni dichiarate dalla fonte; collegamenti territoriali non ancora riconciliati.'}</small>
+      </aside>}
+      {place.description&&<div className="cb-refuge-story-prose"><h3>Il luogo, secondo le fonti</h3>
+        <p className="cb-refuge-editorial">{place.description}</p></div>}
+      {hasTerritory&&<div className="cb-refuge-territory-details">
+        <h3>Geografia e toponimi</h3>
+        <FactLines place={place} keys={TERRITORY.filter(key=>!territoryLinks.some(item=>item.key===key))}/>
+      </div>}
+      {hasHistory&&<div className="cb-refuge-history-feature">
+        {value(place,'yearBuilt')&&<div className="cb-refuge-history-date"><small>ANNO DI COSTRUZIONE DICHIARATO</small>
+          <strong>{formatAtlasFact(value(place,'yearBuilt')!)}</strong></div>}
+        <div><h3>Storia documentata</h3>
+          <FactLines place={place} keys={HISTORY.filter(key=>key!=='yearBuilt'||!value(place,'yearBuilt'))}/>
+          {place.history&&place.historySourceUrl&&<><p className="cb-refuge-editorial">{place.history}</p>
+            <SourceLink url={place.historySourceUrl}>Fonte dell'approfondimento storico</SourceLink></>}
+        </div>
+      </div>}
+    </RefugeBlock>
+    <RefugeBlock id="cb-refuge-weather" kicker="CONDIZIONI DEL TERRITORIO" title="Meteo e montagna">
       <AlpineWeatherPanel lat={place.lat} lng={place.lng} name={place.name}/>
     </RefugeBlock>
-    {water.length>0&&<RefugeBlock id="cb-refuge-water" kicker="PUNTI CARTOGRAFATI" title="Acqua nei dintorni" icon="water">
+    {water.length>0&&<RefugeBlock id="cb-refuge-water" kicker="PUNTI CARTOGRAFATI" title="Acqua nei dintorni">
       <div className="cb-refuge-water-list">{water.slice(0,8).map(item=><div key={item.slug}>
         <FaIcon name="water" size={17}/><span><strong>{item.name}</strong><small>{item.kind} · {potabilityLabel(item.potable)}{item.seasonal?' · stagionale':''}</small></span>
       </div>)}</div>
@@ -251,12 +282,14 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,water}:Re
     <NearbyAtlasPlaces items={nearbyPlaces}/>
     <AtlasDossierBlocks record={place} placement="connections"/>
     {(hasSpecial||Object.keys(others).length>0||place.climate?.length||place.aliases?.length||place.administrativeHierarchy)&&
-      <RefugeBlock id="cb-refuge-archive" kicker="ATLANTE / DATI E PROVENIENZA" title="Altri dati documentati" icon="book-open">
-        {hasSpecial&&<FactLines place={place} keys={SPECIAL}/>}
-        <AtlasDossierBlocks record={extraRecord} placement="core"/>
-      </RefugeBlock>}
+      <section id="cb-refuge-archive" className="cb-refuge-archive cb-detail-group">
+        <details><summary>Altri approfondimenti, toponimi e dati tecnici</summary>
+          {hasSpecial&&<FactLines place={place} keys={SPECIAL}/>}
+          <AtlasDossierBlocks record={extraRecord} placement="core"/>
+        </details>
+      </section>}
     <AtlasDossierBlocks record={place} placement="media" excludeImages/>
-    <RefugeBlock id="cb-refuge-community" kicker="CIMA BECCO / COMMUNITY" title="Conosci questo rifugio?" icon="house">
+    <RefugeBlock id="cb-refuge-community" kicker="CIMA BECCO / COMMUNITY" title="Conosci questo rifugio?">
       <p>Se rappresenti la struttura, puoi richiedere la gestione della scheda e proporre informazioni aggiornate. Non mostriamo recensioni o valutazioni inventate.</p>
       <HutClaimRequest place={place}/>
     </RefugeBlock>

@@ -1,5 +1,6 @@
 import { DATA_BASE, type Bounds } from './venues';
 import type { AtlasEntityMetadata } from './atlasDossier';
+import { canonicalAtlasSlug } from './placePermalinks';
 import { mergeRefugeRelease } from './refugeRelease';
 
 export interface AlpinePlace extends AtlasEntityMetadata {
@@ -67,8 +68,8 @@ export function atlasCategory(kind: AlpinePlace['kind']): 'rifugi' | 'bivacchi' 
   return kind === 'rifugio' ? 'rifugi' : kind === 'bivacco' ? 'bivacchi' : 'borghi';
 }
 
-export function alpinePlaceLink(place: Pick<AlpinePlace, 'slug' | 'kind'>): string {
-  return `${import.meta.env.BASE_URL}${atlasCategory(place.kind)}/${encodeURIComponent(place.slug)}/`;
+export function alpinePlaceLink(place: Pick<AlpinePlace, 'slug' | 'name' | 'kind' | 'sourceIds'>): string {
+  return `${import.meta.env.BASE_URL}${atlasCategory(place.kind)}/${encodeURIComponent(canonicalAtlasSlug(place))}/`;
 }
 
 /** Box comodo per aprire la mappa sul POI, non finge un accesso stradale. */

@@ -34,12 +34,12 @@ export const REFUGE_AMENITIES = Object.freeze([
 export function refugeOverview(place) {
   if (typeof place?.shortSummary === 'string' && place.shortSummary.trim()) return place.shortSummary.trim();
   const elevation = refugeFact(place,'elevationM') ?? (Number.isFinite(place?.elevationM) ? place.elevationM : null);
-  const location = ['localityId','valleyName','mountainGroupId','municipalityId'].map(key=>refugeFact(place,key))
+  const location = ['localityNameReported','valleyName','mountainGroupNameReported','municipalityNameReported'].map(key=>refugeFact(place,key))
     .find(value=>typeof value==='string' && value.trim());
   const municipality = place?.administrativeHierarchy?.municipality;
   const where = location || municipality || null;
   const first = place?.name
-    ? place.name + (where ? ' si trova nella zona di ' + where : ' è un rifugio alpino censito nell’Atlante Cima Becco')
+    ? place.name + (where ? ' è segnalato nel territorio di ' + where : ' è un rifugio alpino censito nell’Atlante Cima Becco')
     : 'Rifugio alpino';
   const intro = first + (typeof elevation==='number' && elevation>0
     ? ', a ' + elevation.toLocaleString('it-IT') + ' metri di quota.' : '.');

@@ -125,3 +125,43 @@ Riferimenti: W3C/WAI carousel APG
 (https://www.w3.org/WAI/ARIA/apg/patterns/carousel/) e
 Google Search Central immagini
 (https://developers.google.com/search/docs/appearance/google-images).
+
+
+## Rifugi — legami territoriali e permalink parlanti (fase 3, 27/11/2026)
+
+Le pagine rifugio hanno un permalink pubblico `/rifugi/<nome-normalizzato>-cai-<id>/`
+oppure `/rifugi/<nome-normalizzato>-osm-n-<id>/` in assenza dell'ID CAI.
+L'ID finale evita collisioni per nomi uguali. **Non si cambia `AlpinePlace.slug`**,
+che è l'identificativo storico utilizzato da tappe, GPX, tracciamento e cache.
+La regola è condivisa tra React e SEO in `src/lib/placePermalinks.js`.
+Il vecchio indirizzo `/rifugi/osm-…/` o `/rifugi/cai-…/` rimane disponibile
+come pagina statica di trasferimento con canonical nuovo e `noindex,follow`.
+GitHub Pages non offre redirect HTTP 301 sui singoli file: i vecchi URL usano
+`meta refresh`; non promettere un codice di risposta 301.
+Il catalogo, la navigazione fra schede e le pagine SEO di categoria usano il
+nuovo permalink; i link storici continuano a trovare la scheda corretta.
+I permalink degli altri tipi **non vengono migrati in questa fase**.
+
+La riconciliazione dei nomi CAI con le pagine dei paesi è conservativa:
+`src/lib/atlasConnections.js` usa valori documentati di
+`municipalityNameReported` e `localityNameReported`; sceglie solo
+l'unico record `borgo` con nome normalizzato identico e posizione entro
+40 km (comune) o 12 km (località). Con omonimi compatibili, distanza maggiore
+o fonte assente il toponimo resta testo non cliccabile. Un collegamento così
+individuato è una corrispondenza di scheda territoriale, **non** una prova di
+identità amministrativa formale, appartenenza o accesso escursionistico.
+Il generatore statico e la pagina interattiva usano lo stesso algoritmo.
+
+Le sezioni del profilo rifugio non ripetono un elenco uniforme di metadati:
+la galleria introduce il luogo, l'ospitalità evidenzia i dati operativi,
+i servizi sono distribuiti in capitoli (ristoro, connettività, dotazioni),
+le località diventano un pannello narrativo e la storia valorizza
+l'anno di costruzione se documentato. Le certificazioni ISO non sono mostrate.
+Gli altri campi rimangono in un approfondimento espandibile con fonti.
+La SEO statica conserva dati normalizzati significativi e link interni ai
+rifugi, bivacchi, paesi e itinerari effettivamente indicizzati.
+
+Regressioni da mantenere: URL storici con redirect, pagine canoniche
+indicizzabili, mappa 42/58 invariata, passaggio comune/località solo
+su match non ambiguo, falso vs ignoto nei servizi, CSS in file
+specialistico e nessuna regressione negli slug GPX.

@@ -64,7 +64,8 @@ for(const section of ['rifugi','bivacchi','paesi'] as const){
     await first.click();
     await expect(page.locator('.cb-location-profile h1')).toBeVisible();
     await expect(page.locator('.cb-detail-metrics')).toBeVisible();
-    await expect(page.locator('.cb-detail-facts')).toBeVisible();
+    if(section==='rifugi')await expect(page.locator('.cb-refuge-hero')).toBeVisible();
+    else await expect(page.locator('.cb-detail-facts')).toBeVisible();
     for(const width of [320,375,390,768,1024,1440]){
       await page.setViewportSize({width,height:844});
       const sizes=await page.evaluate(()=>({
@@ -404,14 +405,19 @@ test('hero rifugio: emblema dentro la foto e attribuzione leggibile',async({page
   for(const width of [390,1440]){
     await page.setViewportSize({width,height:900});
     await page.goto('/rifugi/osm-w-39173072/');
-    const hero=page.locator('.cb-location-hero-media');
+    const hero=page.locator('.cb-refuge-hero-media');
     await expect(hero).toBeVisible({timeout:45_000});
-    const logo=hero.locator('.cb-location-avatar');
-    const credit=hero.locator('figcaption');
+    const logo=hero.locator('.cb-refuge-avatar');
+    const gallery=hero.locator('.cb-refuge-gallery');
     await expect(logo).toBeVisible();
-    const a=await logo.boundingBox(),b=await credit.boundingBox();
-    expect(a).not.toBeNull();expect(b).not.toBeNull();
-    expect(a!.y+a!.height).toBeLessThan(b!.y);
+    await expect(gallery).toBeVisible();
+    const credit=hero.locator('.cb-refuge-gallery-caption');
+    if(await credit.count()){
+      await expect(credit).toBeVisible();
+      const a=await logo.boundingBox(),b=await credit.boundingBox();
+      expect(a).not.toBeNull();expect(b).not.toBeNull();
+      expect(a!.y+a!.height).toBeLessThan(b!.y);
+    }else await expect(hero.locator('.cb-place-visual')).toBeVisible();
   }
 });
 
@@ -482,10 +488,10 @@ test('dossier: Vai a non cambia il permalink e porta la sezione sotto la testata
   await first.click();
   const original=page.url();
   const nav=page.getByRole('navigation',{name:'Naviga questa scheda'});
-  await expect(nav.getByRole('button',{name:/Contatti/})).toBeVisible();
-  await nav.getByRole('button',{name:/Contatti/}).click();
+  await expect(nav.getByRole('button',{name:/Ospitalità/})).toBeVisible();
+  await nav.getByRole('button',{name:/Ospitalità/}).click();
   expect(page.url()).toBe(original);
-  const top=await page.locator('#cb-place-contacts').evaluate(el=>el.getBoundingClientRect().top);
+  const top=await page.locator('#cb-refuge-stay').evaluate(el=>el.getBoundingClientRect().top);
   const header=await page.locator('.site-header').evaluate(el=>el.getBoundingClientRect().bottom);
   expect(top).toBeGreaterThanOrEqual(header-2);
   expect(top).toBeLessThan(header+60);
@@ -499,7 +505,7 @@ test('dossier: Vai a non cambia il permalink e porta la sezione sotto la testata
 test('Font Awesome: simboli inline SVG, nessun emoji di fallback nelle schede',async({page})=>{
   await page.goto('/#rifugi');
   await page.locator('.cb-explore-card-detail').first().click();
-  await expect(page.locator('.cb-location-avatar svg.cb-fa-icon')).toBeVisible();
+  await expect(page.locator('.cb-refuge-avatar svg.cb-fa-icon')).toBeVisible();
   const links=page.locator('.cb-detail-jump button .cb-fa-icon');
   expect(await links.count()).toBeGreaterThan(3);
   const computed=await links.first().evaluate(el=>({

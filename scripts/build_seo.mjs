@@ -20,6 +20,8 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
+import { atlasCanonicalPath,atlasLegacyPath,canonicalAtlasSlug } from '../src/lib/placePermalinks.js';
+import { resolveRefugeTerritory, relatedAtlasPlaces } from '../src/lib/atlasConnections.js';
 import { refugeFact, refugeOverview, refugeSeoDescription, refugeServiceFacts } from '../src/lib/refugeEditorial.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -167,6 +169,22 @@ footer{max-width:880px;margin:0 auto;padding:20px;border-top:1px solid var(--lin
 .cima-seo-details dt{font-size:11px;color:#687869}
 .cima-seo-details dd{margin:2px 0 0;font-weight:800}
 .cima-seo-warning{font-size:13px;color:#6b6249;background:#f6f0e3;padding:12px 16px;border-radius:10px;margin-top:24px}
+.cima-seo-territory{margin:27px 0;padding:24px;border-radius:13px;background:#193f2e;color:#ecf6e7}
+.cima-seo-territory h2{margin:0 0 10px;font-size:27px}
+.cima-seo-territory p{margin:0 0 11px;line-height:1.8}
+.cima-seo-territory a{color:#dbf5b0;text-decoration:underline}
+.cima-seo-territory small{color:#c6dfc8;font-size:12px}
+.cima-seo-related{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0 30px}
+.cima-seo-related a{display:grid;gap:5px;padding:15px;border-radius:9px;background:#edf4e9;
+  color:#234c33;text-decoration:none;border:1px solid #d7e5d5}
+.cima-seo-related small{color:#658172}
+.cima-seo-services{display:grid;gap:10px;margin:16px 0}
+.cima-seo-services p{margin:0;padding:12px 14px;background:#f2f8ef;border-left:3px solid #80ae77}
+.cima-seo-photo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cima-seo-photo-grid figure{margin:0}
+.cima-seo-photo-grid img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.cima-seo-photo-grid figcaption{overflow-wrap:anywhere}
+@media(max-width:660px){.cima-seo-photo-grid,.cima-seo-related{grid-template-columns:1fr}}
 @media(max-width:660px){.cima-seo-facts,.cima-seo-details{grid-template-columns:repeat(2,minmax(0,1fr))}header{flex-wrap:wrap}main{padding-top:18px}}
 
 `;
@@ -325,7 +343,9 @@ for (const venue of venues) {
 // Write the place pages that fit: places with routes, a photo or a written
 // description first, then the tallest.
 const countFiles = (dir) => readdirSync(dir, { withFileTypes: true }).reduce((n, entry) => n + (entry.isDirectory() ? countFiles(join(dir, entry.name)) : 1), 0);
-const reserved = countFiles(DIST) + Object.keys(index.byCountry).length + routes.length + alpinePlaces.length + trekProjects.length + 12;
+const refugeAliases = alpinePlaces.filter(p=>p.kind==='rifugio' && canonicalAtlasSlug(p)!==p.slug).length;
+const reserved = countFiles(DIST) + Object.keys(index.byCountry).length + routes.length +
+  alpinePlaces.length + refugeAliases + trekProjects.length + 12;
 const room = Math.max(0, MAX_FILES - reserved);
 const score = (spec) => (spec.routesHere.length ? 4 : 0) + (spec.photo ? 2 : 0) + (spec.text ? 1 : 0);
 placeSpecs.sort((a, b) => score(b) - score(a) || (b.heightM ?? 0) - (a.heightM ?? 0));
@@ -499,12 +519,31 @@ for (const route of routes) {
   });
 }
 
+// I vecchi URL continuano a funzionare anche su hosting statico GitHub Pages.
+function writePlaceAlias(place){
+  const old=atlasLegacyPath(place),canonical=atlasCanonicalPath(place);
+  if(old===canonical)return;
+  const url=SITE+canonical;
+  const file=join(DIST,old.replace(/^\//,''),'index.html');
+  mkdirSync(dirname(file),{recursive:true});
+  writeFileSync(file,`<!doctype html><html lang="it"><head><meta charset="utf-8">
+    <title>${escape(place.name)} · Cima Becco</title>
+    <link rel="canonical" href="${escape(url)}">
+    <meta name="robots" content="noindex,follow">
+    <meta http-equiv="refresh" content="0;url=${escape(url)}">
+    </head><body><p>La scheda del rifugio ha un nuovo indirizzo:
+    <a href="${escape(url)}">${escape(place.name)}</a>.</p></body></html>`);
+}
+
 // Pagine SEO locali per rifugi, bivacchi e borghi OSM con coordinate e percorsi verificati vicini.
 // Evita pagine seriali prive di contenuto: i borghi senza sentieri o fonte propria
 // restano consultabili nell'app ma non vengono generati come pagine indicizzabili.
 for (const place of alpinePlaces) {
   if (!/^(?:osm-[nwr]-\d+|cai-\d+)$/.test(place.slug)) continue;
   const related=(byStop.get(place.slug)||[]).slice(0,24);
+  const canonicalPath=atlasCanonicalPath(place);
+  const territory=place.kind==='rifugio' ? resolveRefugeTerritory(place,alpinePlaces) : [];
+  const nearbyEntities=place.kind==='rifugio' ? relatedAtlasPlaces(place,alpinePlaces,8,5) : [];
   // Tutti i luoghi mostrati nel catalogo devono avere una pagina reale: niente link rotti.
   // I borghi poveri di metadati sono consultabili ma non indicizzabili finché non vengono arricchiti.
   const isCaiOnly = Boolean(place.sourceIds?.cai && !place.sourceIds?.osm);
@@ -542,7 +581,7 @@ for (const place of alpinePlaces) {
   })).filter(entry=>entry.value!==null):[];
   const photo=place.photo?.url?.startsWith('https://') && place.photo?.license && place.photo?.sourceUrl ? place.photo : null;
   page({
-    path:`${category}/${place.slug}/`,
+    path:canonicalPath.replace(/^\//,''),
     noindex:(place.kind==='borgo' && !related.length && !place.website && !place.description && !place.photo) ||
       (isCaiOnly && knownCaiFacts<5 && (!place.description || place.description.length < 100) && !photo),
     title:`${place.name} · ${place.kind==='rifugio'?'Rifugio':place.kind==='bivacco'?'Bivacco':'Paese'}, altitudine, sentieri e meteo | Cima Becco`,
@@ -550,7 +589,7 @@ for (const place of alpinePlaces) {
     image:photo?.url||null,
     jsonLd:{'@context':'https://schema.org','@graph':[
       {'@type':place.kind==='rifugio'&&hasDocumentedStay?'LodgingBusiness':'Place',name:place.name,description,
-        url:`${SITE}/${category}/${place.slug}/`,
+        url:SITE+canonicalPath,
         geo:{'@type':'GeoCoordinates',latitude:place.lat,longitude:place.lng,
           ...(place.elevationM?{elevation:place.elevationM}:{})},
         ...(imageUrls.length?{image:imageUrls.slice(0,12)}:{}),
@@ -581,6 +620,11 @@ for (const place of alpinePlaces) {
         ${hasDocumentedStay?`<li><strong>${refugeBeds}</strong>posti letto ${place.sourceIds?.cai?'dichiarati CAI':'indicati OSM'}</li>`:''}
         
       </ul>
+      ${territory.length?`<section class="cima-seo-territory">
+        <h2>Il rifugio e il suo territorio</h2>
+        <p>${territory.map(item=>`${escape(item.label)}: ${item.href?`<a href="${SITE+item.href}">${escape(item.name)}</a>`:`<strong>${escape(item.name)}</strong>`}`).join(' · ')}</p>
+        <small>${territory.some(item=>item.href)?'Sono disponibili schede locali per denominazioni univoche e compatibili con la posizione; le attribuzioni amministrative restano quelle dichiarate dalla fonte.':'Toponimi dichiarati dalla fonte, non ancora collegati univocamente a una scheda locale.'}</small>
+      </section>`:''}
       <div class="cima-seo-actions">
         <a class="cta" href="${escape(place.osmUrl)}" target="_blank" rel="noopener noreferrer">POSIZIONE SULLA MAPPA ↗</a>
         ${place.phone?`<a class="cima-seo-secondary" href="tel:${escape(place.phone.replace(/[^+\d]/g,''))}">Chiama la struttura</a>`:''}
@@ -598,11 +642,18 @@ for (const place of alpinePlaces) {
       </dl>`:''}
       ${place.kind==='rifugio'&&publishedDetails.length?`<h2>Ospitalità, gestione e storia del rifugio</h2><dl class="cima-seo-details">${publishedDetails.map(({label,value,fact})=>`<div><dt>${escape(label)}</dt><dd>${escape(typeof value==='boolean'?(value?'Sì':'No'):value)}
         ${fact?.unit?' '+escape(fact.unit):''}${fact?.sourceUpdatedAt?`<small> · Fonte aggiornata: ${escape(fact.sourceUpdatedAt)}</small>`:''}</dd></div>`).join('')}</dl>`:''}
-      ${place.kind==='rifugio'&&refugeServices.length?`<h2>Servizi e dotazioni dichiarati</h2>
-        <p>I servizi sono riportati come presenti o non presenti secondo la fonte; l'assenza del dato non equivale a un servizio mancante.</p>
-        <ul class="list">${refugeServices.map(s=>`<li>${escape(s.label)}: <strong>${s.value?'dichiarato presente':'dichiarato non presente'}</strong></li>`).join('')}</ul>
-        <p>L'acqua in rifugio non è necessariamente potabile: la potabilità deve essere documentata separatamente.</p>`:''}
+      ${place.kind==='rifugio'&&refugeServices.length?`<section><h2>Vivere il rifugio: servizi e dotazioni</h2>
+        <p>Tra le informazioni dichiarate dall'archivio CAI, i servizi segnalati come presenti sono:
+        ${escape(refugeServices.filter(item=>item.value).map(item=>item.label).join(', ')||'nessuno dei servizi censiti')}.
+        ${refugeServices.some(item=>!item.value)?`Non risultano presenti, secondo la medesima fonte: ${escape(refugeServices.filter(item=>!item.value).map(item=>item.label).join(', '))}.`:''}</p>
+        <p>L'assenza del dato non equivale a un servizio mancante. L'acqua disponibile non implica potabilità.</p>
+      </section>`:''}
       ${place.kind==='rifugio'&&place.description?`<h2>Descrizione del rifugio e territorio</h2><p>${escape(place.description)}</p>`:''}
+      ${nearbyEntities.length?`<section><h2>Altri luoghi da esplorare</h2>
+        <p>Rifugi, bivacchi e località geograficamente vicini; la distanza in linea d'aria non descrive un percorso percorribile.</p>
+        <div class="cima-seo-related">${nearbyEntities.map(({place:p,distanceKm})=>`<a href="${SITE+atlasCanonicalPath(p)}">
+        <small>${p.kind==='rifugio'?'RIFUGIO':p.kind==='bivacco'?'BIVACCO':'LOCALITÀ'} · ${distanceKm.toFixed(1)} km in linea d'aria</small>
+        <strong>${escape(p.name)}</strong></a>`).join('')}</div></section>`:''}
       ${related.length?`<h2>Sentieri e itinerari collegati</h2><ul class="list">${related.map(route=>`<li><a href="${SITE}/route/${route.slug}/">${escape(trailName(route))}</a> · ${km(route.distanceM)}</li>`).join('')}</ul>`:''}
       ${nearbyWater.length?`<h2>Acqua sulla cartografia del luogo</h2><p>${nearbyWater.length} fonti censite: posizione e indicazioni di potabilità sono visibili sulla mappa interattiva, non costituiscono una garanzia di sicurezza.</p><p><a class="cta" href="${escape(place.osmUrl)}" target="_blank" rel="noopener noreferrer">Posizione sulla cartografia</a></p>`:''}
       <h2>Previsioni meteo e condizioni in quota</h2><p>La scheda interattiva presenta previsioni e informazioni meteorologiche disponibili per le coordinate del luogo. Le condizioni possono cambiare rapidamente.</p>
@@ -612,6 +663,7 @@ for (const place of alpinePlaces) {
       ${place.sourceIds?.cai?` · <a href="${escape(place.officialUrl||'https://rifugi.cai.it/shelters/'+place.sourceIds.cai)}" target="_blank" rel="noopener noreferrer">Club Alpino Italiano · Unico Rifugi</a>`:''}.
       ${photo?` Foto: ${escape(photo.author||'Autore non indicato')} · ${escape(photo.license)} · <a href="${escape(photo.sourceUrl)}" target="_blank" rel="noopener noreferrer">Fonte</a>`:''}</p>`,
   });
+  if(place.kind==='rifugio')writePlaceAlias(place);
 }
 
 // Categoria SEO vera: un ingresso indicizzabile agli itinerari locali,
@@ -637,7 +689,7 @@ for (const [kind,segment,label,title,blurb] of [
     jsonLd:{'@context':'https://schema.org','@graph':[
       {'@type':'CollectionPage',name:label,url:`${SITE}/${segment}/`,description:blurb,
         mainEntity:{'@type':'ItemList',itemListElement:list.slice(0,120).map((item,i)=>({
-          '@type':'ListItem',position:i+1,name:item.name,url:`${SITE}/${segment}/${item.slug}/`
+          '@type':'ListItem',position:i+1,name:item.name,url:SITE+atlasCanonicalPath(item)
         }))}},
       breadcrumbLd([[label,null]])]},
     body:`${crumbs([[label]])}
@@ -646,7 +698,7 @@ for (const [kind,segment,label,title,blurb] of [
       <p class="cima-seo-lead">${escape(blurb)}</p>
       <div class="cima-seo-actions"><a class="cta" href="${appLink(`#${segment==='borghi'?'paesi':segment}`)}">ESPLORA LA MAPPA COMPLETA ↗</a></div>
       <p class="sub">${list.length} luoghi con scheda · censiti in OpenStreetMap e/o nel catalogo Unico Rifugi CAI.</p>
-      <ul class="list">${list.slice(0,120).map(place=>`<li><a href="${SITE}/${segment}/${place.slug}/">${escape(place.name)}</a>${place.elevationM ? ' · '+metres(place.elevationM) : ''}${(byStop.get(place.slug)||[]).length?' · '+(byStop.get(place.slug)||[]).length+' sentieri':''}</li>`).join('')}</ul>
+      <ul class="list">${list.slice(0,120).map(place=>`<li><a href="${SITE+atlasCanonicalPath(place)}">${escape(place.name)}</a>${place.elevationM ? ' · '+metres(place.elevationM) : ''}${(byStop.get(place.slug)||[]).length?' · '+(byStop.get(place.slug)||[]).length+' sentieri':''}</li>`).join('')}</ul>
       <p class="sub">Per trovare anche i luoghi non ancora arricchiti usa la mappa interattiva. I dati OSM e le tracce non certificano condizioni, accessibilità o servizi.</p>`,
   });
 }

@@ -70,18 +70,55 @@
 .cb-refuge-fact-list dd a{display:inline-flex;align-items:center;gap:4px;margin-left:4px;
   color:#a8004d;font:700 10px 'Space Grotesk',sans-serif;text-decoration:none}
 .cb-refuge-disclaimer,.cb-refuge-section-intro{color:#5e7566;font:600 12px/1.7 'Space Grotesk',sans-serif}
-.cb-refuge-service-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-.cb-refuge-service{display:flex;align-items:center;gap:10px;padding:12px;min-width:0;
-  border:1px solid #dce6d8;border-radius:8px;background:#f8fbf5}
-.cb-refuge-service-icon{flex:none;display:grid;place-items:center;width:35px;height:35px;border-radius:7px;
-  background:#e3f0dc;color:#2b6741}
-.cb-refuge-service>span:nth-child(2){display:grid;gap:3px;flex:1;min-width:0}
-.cb-refuge-service strong{color:#284b37;font:800 12px/1.4 'Space Grotesk',sans-serif;overflow-wrap:anywhere}
-.cb-refuge-service small{color:#718675;font:600 10px/1.4 'Space Grotesk',sans-serif}
-.cb-refuge-service>.cb-fa-icon{color:#367f4f}
-.cb-refuge-service.is-no{background:#f5f6f3;border-color:#e2e3de}
-.cb-refuge-service.is-no .cb-refuge-service-icon{background:#eceeea;color:#8a998d}
-.cb-refuge-service.is-no>.cb-fa-icon{color:#a18c93}
+/* Le dotazioni restano in tre capitoli testuali, non in 20 schede uguali. */
+.cb-refuge-service-chapters{display:grid;gap:0;margin:17px 0 8px}
+.cb-refuge-service-chapter{display:grid;grid-template-columns:48px minmax(0,1fr);column-gap:14px;
+  padding:23px 4px;border-top:1px solid #dce9db}
+.cb-refuge-service-chapter:last-child{border-bottom:1px solid #dce9db}
+.cb-refuge-chapter-counter{color:#a3004a;opacity:.65;
+  font:900 28px/1 'Bricolage Grotesque',sans-serif;letter-spacing:-.08em}
+.cb-refuge-chapter-copy{min-width:0}
+.cb-refuge-chapter-copy h3{margin:1px 0 7px;color:#1e4634;font:850 clamp(19px,1.7vw,23px)/1.15 'Bricolage Grotesque',sans-serif}
+.cb-refuge-chapter-copy>p{margin:0 0 12px;font:500 12px/1.65 'Space Grotesk',sans-serif;color:#647a68}
+.cb-refuge-featured-services{display:flex;flex-wrap:wrap;gap:7px}
+.cb-refuge-featured-services span{display:inline-block;border:1px solid #d5e5cd;border-radius:999px;
+  padding:7px 11px;background:#edf6e9;color:#27593c;
+  font:800 12px/1.3 'Space Grotesk',sans-serif;overflow-wrap:anywhere}
+.cb-refuge-featured-services span::before{content:'';display:inline-block;margin-right:7px;
+  width:6px;height:6px;border-radius:50%;background:#3c8a50;vertical-align:middle}
+.cb-refuge-chapter-copy>.cb-refuge-absent-services{margin:13px 0 0;font-size:11px;color:#7a8678}
+.cb-refuge-absent-services strong{font-weight:850;color:#66786b}
+/* Il toponimo diventa un invito esplorabile, non l'ennesimo dato tabellare. */
+.cb-refuge-territory-feature{margin:7px 0 25px;padding:22px 21px;
+  border-radius:10px;background:linear-gradient(135deg,#204c38,#143c2c);color:#effbec}
+.cb-refuge-territory-feature>span{display:block;margin-bottom:12px;
+  color:#bedfca;font:850 10px/1.4 'Space Grotesque',sans-serif;letter-spacing:.11em}
+.cb-refuge-territory-feature p{margin:0 0 12px;
+  font:800 clamp(17px,1.8vw,23px)/1.4 'Bricolage Grotesque',sans-serif;letter-spacing:-.025em}
+.cb-refuge-territory-feature p strong{font-weight:850;color:#f0f7e8}
+.cb-refuge-territory-feature p a{color:#d1f1a9;text-decoration:underline;text-underline-offset:3px}
+.cb-refuge-territory-feature p .cb-fa-icon{display:inline-block;vertical-align:baseline}
+.cb-refuge-territory-feature small{display:block;font:550 11px/1.6 'Space Grotesk',sans-serif;color:#d2e5d4}
+.cb-refuge-story-prose{margin:20px 0 23px}
+.cb-refuge-story-prose h3,.cb-refuge-territory-details h3,.cb-refuge-history-feature h3{
+  margin:0 0 12px;color:#214833;font:850 clamp(18px,1.8vw,23px)/1.2 'Bricolage Grotesque',sans-serif}
+.cb-refuge-story-prose .cb-refuge-editorial{font-size:15px;line-height:1.85}
+.cb-refuge-territory-details{margin:19px 0 27px}
+.cb-refuge-territory-details .cb-refuge-fact-list>div{background:transparent;
+  border:0;border-bottom:1px solid #dce9db;border-radius:0;padding:9px 0}
+.cb-refuge-history-feature{display:grid;grid-template-columns:minmax(100px,35%) minmax(0,1fr);
+  gap:16px;padding:18px 0;border-top:1px solid #d7e6d8}
+.cb-refuge-history-feature:not(:has(.cb-refuge-history-date)){grid-template-columns:1fr}
+.cb-refuge-history-date{display:grid;align-content:start;gap:8px;padding:17px 12px;
+  border-radius:8px;background:#f5f0e3;color:#90643a}
+.cb-refuge-history-date small{font:800 10px/1.4 'Space Grotesk',sans-serif;letter-spacing:.04em}
+.cb-refuge-history-date strong{font:900 clamp(31px,3.4vw,47px)/1.1 'Bricolage Grotesque',sans-serif;
+  letter-spacing:-.06em;overflow-wrap:anywhere}
+.cb-refuge-history-feature .cb-refuge-fact-list{grid-template-columns:1fr}
+.cb-refuge-archive{padding:12px 0 20px}
+.cb-refuge-archive details{padding:17px 19px;border:1px solid #dce8d8;border-radius:9px;background:#f9fbf7}
+.cb-refuge-archive summary{cursor:pointer;color:#3c624b;font:850 13px/1.6 'Space Grotesk',sans-serif}
+.cb-refuge-archive details[open] summary{margin-bottom:16px}
 .cb-refuge-route-list{display:grid;gap:7px;margin:12px 0 18px}
 .cb-refuge-route{display:flex;gap:11px;align-items:center;min-width:0;padding:12px 11px;
   background:#f3f8ef;border:1px solid #dbe8d7;border-radius:8px;color:#27553b;text-decoration:none}
@@ -108,7 +145,8 @@
 .cb-refuge-profile .cb-dossier-section{margin:12px 0}
 @container(max-width:520px){
   .cb-refuge-gallery-stage,.cb-refuge-gallery .cb-place-visual{height:clamp(205px,57vw,310px)}
-  .cb-refuge-service-grid,.cb-refuge-water-list{grid-template-columns:1fr}
+  .cb-refuge-water-list{grid-template-columns:1fr}
+  .cb-refuge-history-feature{grid-template-columns:1fr}
 }
 @container(max-width:370px){
   .cb-refuge-fact-list{grid-template-columns:1fr}

@@ -20,6 +20,7 @@ import { DetailJumpNav } from './DetailJumpNav';
 import { FaIcon } from './FaIcon';
 import { scrollToDetailSection } from '../lib/detailNavigation';
 import { NearbyAtlasPlaces } from './NearbyAtlasPlaces';
+import { canonicalAtlasSlug } from '../lib/placePermalinks';
 import { nearbyAtlasPlaces } from '../lib/nearbyAtlas';
 import type { AtlasEntityMetadata } from '../lib/atlasDossier';
 import { loadAlpineWater, alpineWaterNear, potabilityLabel, type AlpineWaterPoint } from '../lib/alpineWater';
@@ -150,7 +151,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
         height="100%" caption={place.name}/>
     </section>}
   >
-    {place.kind==='rifugio' ? <RefugeProfile place={place} routes={nearby} loadingRoutes={loading} nearbyPlaces={nearbyPlaces} water={water}/> : <>
+    {place.kind==='rifugio' ? <RefugeProfile place={place} routes={nearby} loadingRoutes={loading} nearbyPlaces={nearbyPlaces} allPlaces={localAtlas} water={water}/> : <>
     <header className="cb-location-hero">
       <div className="cb-location-hero-copy">
         <PlaceBadge place={place}/>
@@ -332,7 +333,7 @@ export function AlpineAtlasPage() {
     if(section==='trekking')return;
     if(slug){
       const kind=section==='rifugi'?'rifugio':section==='bivacchi'?'bivacco':'borgo';
-      window.location.replace(alpinePlaceLink({kind,slug}));
+      window.location.replace(import.meta.env.BASE_URL+atlasCategory(kind)+'/'+encodeURIComponent(slug)+'/');
     }else window.location.replace(homeHref(section==='borghi'?'paesi':section));
   },[section,slug]);
   useEffect(() => {
@@ -348,7 +349,7 @@ export function AlpineAtlasPage() {
   },[]);
   const allSectionPlaces=useMemo(()=>data.places.filter(place=>atlasCategory(place.kind)===section),[data,section]);
   const places=useMemo(()=>allSectionPlaces.filter(place=>place.name.toLocaleLowerCase('it').includes(query.trim().toLocaleLowerCase('it'))),[allSectionPlaces,query]);
-  const place=slug?data.places.find(p=>p.slug===slug && atlasCategory(p.kind)===section):null;
+  const place=slug?data.places.find(p=>(p.slug===slug||canonicalAtlasSlug(p)===slug) && atlasCategory(p.kind)===section):null;
   const trek=slug?treks.projects.find(p=>p.slug===slug):null;
   return <div className="cb-atlas-page">
     <SiteHeader sticky/>
