@@ -7211,29 +7211,39 @@
    else stays mounted, only hidden, so "More details" is as it was when the
    panel opens again. One button over the whole strip opens it. The map is
    never re-framed for the change of size. */
+.route-panel.folded > .cima-trail-mood,
+.route-panel.folded > .cima-route-description,
+.route-panel.folded > .cima-route-cover,
+.route-panel.folded > .cb-route-destinations,
+.route-panel.folded > .cb-route-water,
 .route-panel.folded > .route-rating,
 .route-panel.folded > .profile,
 .route-panel.folded > .route-elevation-unavailable,
+.route-panel.folded > .route-legend,
+.route-panel.folded > .route-directions,
 .route-panel.folded > .route-more,
 .route-panel.folded > .route-more-toggle,
 .route-panel.folded .gpx-panel-actions,
 .route-panel.folded .route-panel-title .info-tip,
-.route-panel.folded > .gpx-stats > .gpx-stat:nth-child(n + 4) {
+.route-panel.folded > .cb-detail-metrics > .cb-detail-metric:nth-child(n + 4) {
   display: none;
 }
 .route-panel.folded .route-panel-title h2 {
   font-size: 15px;
 }
-.route-panel.folded > .gpx-stats,
-.map-wrap > .gpx-panel.route-panel.folded > .gpx-stats {
-  gap: 4px 16px;
-  margin-top: 6px;
+.route-panel.folded > .cb-detail-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 7px;
+  margin: 6px 0 0;
 }
-.route-panel.folded .gpx-stat strong {
+.route-panel.folded .cb-detail-metric {
+  padding: 6px 4px;
+}
+.route-panel.folded .cb-detail-metric strong {
   font-size: 15px;
 }
-.route-panel.folded .gpx-stat span {
-  font-size: 12px;
+.route-panel.folded .cb-detail-metric span {
+  font-size: 10px;
 }
 /* As a side sheet it sits centred over the middle of the map, right where the
    visitor is looking; folded, it moves up into the top-left corner. */
