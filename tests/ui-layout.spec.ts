@@ -138,9 +138,16 @@ test('permalink: scheda sentiero completa, mappa responsive e un solo titolo', a
       const stage=document.querySelector('.map-page .stage')!.getBoundingClientRect();
       const panel=document.querySelector('.route-panel.in-sidebar')!.getBoundingClientRect();
       const map=document.querySelector('.map-page .map-wrap')!.getBoundingClientRect();
-      return {scroll:document.documentElement.scrollWidth,viewport:innerWidth,stage:stage.width,panel:panel.width,map:map.width};
+      const offenders=[...document.querySelectorAll<HTMLElement>('.route-panel *, .site-header *')]
+        .map(el=>{
+          const rect=el.getBoundingClientRect();
+          return {tag:el.tagName,cls:typeof el.className==='string'?el.className.slice(0,80):'',right:Math.round(rect.right),left:Math.round(rect.left),width:Math.round(rect.width),scroll:el.scrollWidth,client:el.clientWidth};
+        })
+        .filter(item=>item.right>innerWidth+2||item.width>innerWidth+2)
+        .sort((a,b)=>b.right-a.right).slice(0,16);
+      return {scroll:document.documentElement.scrollWidth,viewport:innerWidth,stage:stage.width,panel:panel.width,map:map.width,offenders};
     });
-    expect(sizes.scroll).toBeLessThanOrEqual(width+2);
+    expect(sizes.scroll, JSON.stringify({width,offenders:sizes.offenders})).toBeLessThanOrEqual(width+2);
     expect(sizes.stage).toBeGreaterThanOrEqual(width-2);
     expect(sizes.panel).toBeGreaterThan(width<900?width*.9:width*.35);
     expect(sizes.map).toBeGreaterThan(width<900?width*.9:width*.35);
