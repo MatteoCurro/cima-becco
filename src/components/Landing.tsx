@@ -5,8 +5,8 @@ import { HEIGHT_LABEL, boundsOf, loadDataset, photoSrc, rankingHeight, townName,
 import { DESTINATIONS, boundsToHash, normalisePlace, regionBounds, regionOf } from '../lib/regions';
 import { countrySummaries, type CountrySummary } from '../lib/worldPeaks';
 import { SiteFooter, SiteHeader } from './SiteChrome';
-import { mixByDifficulty, routeDifficulty, routeHasElevation } from '../lib/routes';
-import { trailTitle } from '../lib/routeEditorial';
+import { mixByDifficulty, routeHasElevation } from '../lib/routes';
+import { trailTitle, trailMood, trailArea } from '../lib/routeEditorial';
 import { ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { RatingLabel } from './ResultsList';
 import { RouteThumb } from './RouteThumb';
@@ -46,9 +46,14 @@ const ROUTES_LINK: MapLink = { href: '#routes', mode: 'routes' };
 export function Landing() {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [featuredRoutes, setFeaturedRoutes] = useState<Route[] | null>(null);
 
   useEffect(() => {
     loadDataset().then(setDataset).catch((error: unknown) => setLoadError(errorText(error)));
+    void fetch(`${import.meta.env.BASE_URL}data/featured-routes.json`)
+      .then(response=>response.ok ? response.json() as Promise<{ routes: Route[] }> : null)
+      .then(doc=>setFeaturedRoutes(Array.isArray(doc?.routes)?doc.routes:[]))
+      .catch(()=>setFeaturedRoutes([]));
   }, []);
 
   const countries = useCountries();
@@ -61,8 +66,8 @@ export function Landing() {
   );
   // Two routes per difficulty level in turn, so the row is not all big climbs.
   const routes = useMemo(
-    () => (dataset ? mixByDifficulty(dataset.routes) : null),
-    [dataset],
+    () => (featuredRoutes ? mixByDifficulty(featuredRoutes.length ? featuredRoutes : dataset?.routes ?? []) : null),
+    [dataset, featuredRoutes],
   );
 
   // Local rows first (Singapore, Malaysia, then the rest), topped up with
@@ -91,9 +96,17 @@ export function Landing() {
         )}
         {!loadError && (
           <>
-            <Row title="Itinerari da esplorare" link={ROUTES_LINK} loading={!routes}>
+            <Row title="Pessime idee per il weekend" link={ROUTES_LINK} loading={!routes}>
               {routes?.map((route, i) => <RouteTile key={route.slug} route={route} index={i} />)}
             </Row>
+            <section className="cb-home-atlas" aria-label="Atlante di montagna">
+              <div className="cb-home-atlas-head"><span>NON SOLO VETTE</span><h2>LA MONTAGNA NON FINISCE IN CIMA.</h2><p>Scegli un rifugio, un paese di partenza o un cammino lungo: il percorso si trova.</p></div>
+              <div className="cb-home-atlas-grid">
+                <a href="#atlante/rifugi"><small>01 / DESTINAZIONI</small><strong>RIFUGI.<br/>POI SI VEDE.</strong><span>ESPLORA I RIFUGI ↗</span></a>
+                <a href="#atlante/borghi"><small>02 / PUNTI DI PARTENZA</small><strong>BORGHI PICCOLI.<br/>GITE GROSSE.</strong><span>TROVA UN PAESE ↗</span></a>
+                <a href="#atlante/trekking"><small>03 / CHI TE LO FA FARE?</small><strong>CAMMINI XXL.<br/>SCUSE CORTE.</strong><span>ALTE VIE &amp; SENTIERO ITALIA ↗</span></a>
+              </div>
+            </section>
             {(rows ?? PLACEHOLDER_ROWS).slice(0, COUNTRY_ROWS).map(placeRow)}
             {worldShown.map((country) => (
               <Row
@@ -351,7 +364,8 @@ function PlaceTile({ venue, index, showKind = false }: { venue: Venue; index: nu
 
 function RouteTile({ route, index }: { route: Route; index: number }) {
   const units = useUnits();
-  const region = route.country ?? regionOf(route.coordinates[0][0], route.coordinates[0][1]);
+  const region = trailArea(route);
+  const mood = trailMood(route);
   return (
     <div className="tile-wrap">
       <button
@@ -365,13 +379,13 @@ function RouteTile({ route, index }: { route: Route; index: number }) {
       >
         <span className="tile-media">
           <RouteThumb route={route} />
-          <span className="tile-badge">{routeDifficulty(route)}</span>
+          <span className={`tile-badge cb-tile-slang cb-tile-slang--${mood.level}`} title={mood.label}>{mood.quip}</span>
         </span>
         <span className="tile-top">
           <span className="tile-name">{trailTitle(route)}</span>
           <ActivityTag activity={routeActivity(route)} />
         </span>
-        <span className="tile-meta">{[region, route.loop ? 'Loop' : 'Point to point'].filter(Boolean).join(' · ')}</span>
+        <span className="tile-meta">{[region, route.loop ? 'Anello' : 'Percorso lineare'].filter(Boolean).join(' · ')}</span>
         <span className="tile-meta">
           <strong>{units.distance(route.distanceM)}</strong> · <strong>{routeHasElevation(route) ? `${units.height(route.gainM)} di salita` : 'Dislivello da stimare'}</strong>
         </span>
