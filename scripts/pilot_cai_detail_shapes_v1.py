@@ -59,8 +59,38 @@ def summarize_detail(data):
             obj["hasValue"] += 1
         if item.get("updated_at"):
             obj["hasUpdatedAt"] += 1
+    # Optional schema discovery: reveal ONLY key names and types for schedule,
+    # never any dates/hours/persons or raw provider values.
+    schedule_key_names = set()
+    schedule_item_shapes = Counter()
+    for item in data["fields"]:
+        if isinstance(item, dict) and item.get("name") == "openingTime_contact":
+            nested = item.get("data")
+            if isinstance(nested, list):
+                for child in nested[:30]:
+                    schedule_item_shapes[shape(child)] += 1
+                    if isinstance(child, dict):
+                        schedule_key_names.update(k for k in child
+                                                  if isinstance(k, str) and len(k) < 80
+                                                  and k.replace("_", "").isalnum())
+    media_key_names = set()
+    media_custom_names = set()
+    for item in (data.get("media") or [])[:12]:
+        if isinstance(item, dict):
+            media_key_names.update(k for k in item
+                                   if isinstance(k, str) and len(k) < 80
+                                   and k.replace("_", "").isalnum())
+            custom = item.get("custom_properties")
+            if isinstance(custom, dict):
+                media_custom_names.update(k for k in custom
+                                          if isinstance(k, str) and len(k) < 80
+                                          and k.replace("_", "").isalnum())
     # Intentionally do not copy title, field values, contact details or media URLs.
     return {"caiId": fid, "fieldEntries": len(data["fields"]),
+            "openingTimeArrayElementTypes": dict(schedule_item_shapes),
+            "openingTimeArrayFieldKeys": sorted(schedule_key_names),
+            "mediaFieldKeys": sorted(media_key_names),
+            "mediaCustomPropertyKeys": sorted(media_custom_names),
             "mediaCount": len(data.get("media") or []),
             "fields": [
                 {"name": key, "count": v["count"], "valueTypes": dict(v["valueTypes"]),
@@ -110,13 +140,15 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--output", type=Path, default=ROOT / "build" /
                    "cai-detail-shapes" / "summary.json")
+    p.add_argument("--one", action="store_true",
+                   help="One chosen previously-tested CAI ID, no bulk")
     args = p.parse_args()
-    result = run()
+    result = run((SAMPLE_IDS[2],) if args.one else SAMPLE_IDS)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2)
                            + "\n", encoding="utf-8")
     print(json.dumps({
-        "attempted": len(SAMPLE_IDS), "succeeded": result["successful"],
+        "attempted": len(result["attemptedIds"]), "succeeded": result["successful"],
         "fieldNames": len(result["fieldNames"]),
         "populatedFieldNames": len(result["fieldNamesWithValues"]),
         "errors": result["errors"], "valuesExported": False,
