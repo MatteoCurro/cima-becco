@@ -42,6 +42,13 @@ jobs:
             typecheck=99
             echo "npm ci fallito" > /tmp/cimabecco-typecheck.log
           fi
+          if [ "$install" -eq 0 ]; then
+            npm run test > /tmp/cimabecco-tests.log 2>&1
+            tests=$?
+          else
+            tests=99
+            echo "Dipendenze npm non installate" > /tmp/cimabecco-tests.log
+          fi
           if [ "$typecheck" -eq 0 ]; then
             VITE_BASE=/cima-becco/ VITE_SITE_URL=https://matteocurro.github.io/cima-becco SITE_URL=https://matteocurro.github.io/cima-becco npm run build > /tmp/cimabecco-build.log 2>&1
             build=$?
@@ -57,10 +64,16 @@ jobs:
             echo "- installazione npm: **$install**"
             echo "- TypeScript: **$typecheck**"
             echo "- build e SEO: **$build**"
+            echo "- test Vitest: **$tests**"
             echo
             echo '## Ultimi messaggi TypeScript'
             echo '~~~'
             tail -n 65 /tmp/cimabecco-typecheck.log
+            echo '~~~'
+            echo
+            echo '## Test di regressione'
+            echo '~~~'
+            tail -n 65 /tmp/cimabecco-tests.log
             echo '~~~'
             echo
             echo '## Ultimi messaggi build'
