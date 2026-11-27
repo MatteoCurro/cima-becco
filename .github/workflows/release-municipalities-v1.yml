@@ -109,16 +109,14 @@ jobs:
           cache: npm
       - name: Test TypeScript, build, SEO e crediti
         shell: bash
-        env:
-          VITE_BASE: /
-          SITE_URL: https://www.cimabecco.it
-          VITE_SITE_URL: https://www.cimabecco.it
         run: |
           set -euo pipefail
           npm ci
           npm run typecheck
+          # The existing auth tests depend on jsdom localhost.
+          # SITE_URL and VITE_SITE_URL are supplied only for the production build.
           npm run test
-          npm run build
+          VITE_BASE=/ SITE_URL=https://www.cimabecco.it VITE_SITE_URL=https://www.cimabecco.it npm run build
           node scripts/check_permalinks.mjs
           node scripts/test_central_credits.mjs
       - name: Report QA (nessun raw amministrativo)
