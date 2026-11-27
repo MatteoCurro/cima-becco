@@ -44,6 +44,8 @@ import { RouteMarkers, VenueMarkers } from './markers';
 import './worker';
 import { MAP_STYLE_URL } from './constants';
 import { installMountainBasemap, MountainBasemapControl } from './mountainBasemap';
+import { loadAlpinePlaces } from '../lib/alpinePlaces';
+import { addAlpinePlaceLayers } from './alpineOverlays';
 import { parseSvg, textSpan } from '../lib/dom';
 import { glyphSvg } from '../lib/venueGlyphs';
 import { frameableBounds, isFiniteBounds } from './camera';
@@ -682,6 +684,9 @@ export function MapView({
       addAllRouteLayers(map, routesToGeoJson(allRoutesRef.current));
       addRouteStartSource(map);
       addRouteLayers(map);
+      void loadAlpinePlaces().then((data) => {
+        if (mapRef.current === map && map.isStyleLoaded() && data.places.length > 0) addAlpinePlaceLayers(map, data.places);
+      });
       markersRef.current = new VenueMarkers(map, {
         onSelect: (slug) => onSelectRef.current(slug),
         onHover: (slug) => onHoverRef.current?.(slug),
