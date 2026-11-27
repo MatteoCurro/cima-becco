@@ -316,7 +316,7 @@ test('scheda luogo: gli strumenti dei livelli non si sovrappongono a note flotta
   await expect(page.locator('.cb-location-profile h1')).toContainText('Abfaltersbach');
   const map=page.locator('.cb-location-sidebar');
   await expect(map.locator('.cb-map-context')).toBeVisible();
-  await expect(map.locator('.cb-map-layer-switches button')).toBeVisible();
+  await expect(map.locator('.cb-map-layer-switches button').first()).toBeVisible();
   await expect(map.locator('.cb-location-map-note')).toHaveCount(0);
   const positions=await page.evaluate(()=>{
     const h=document.querySelector('.cb-location-sidebar .cb-map-context')!.getBoundingClientRect();
