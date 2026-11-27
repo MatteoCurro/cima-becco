@@ -13,6 +13,8 @@ export interface AlpinePlace {
   lat: number;
   lng: number;
   osmUrl: string;
+  /** Scheda della fonte CAI, dove presente. */
+  officialUrl?: string;
   elevationM?: number;
   /** OSM = quota indicata dal mappatore; DEM = terreno stimato. */
   elevationSource?: 'osm' | 'dem';
@@ -42,12 +44,19 @@ let pending: Promise<AlpinePlacesDataset> | null = null;
 
 /** Un solo JSON per il pilota, con cache di sessione e nessun dato fittizio. */
 export function loadAlpinePlaces(): Promise<AlpinePlacesDataset> {
-  pending ??= fetch(`${DATA_BASE}/alpine-places.json`)
-    .then(async (response) => {
-      if (!response.ok) throw new Error('Catalogo rifugi non disponibile');
+  pending ??= Promise.all([
+    fetch(`${DATA_BASE}/alpine-places.json`).then(async response => {
+      if (!response.ok) throw new Error('Catalogo OSM non disponibile');
       const doc = await response.json() as AlpinePlacesDataset;
       return doc && Array.isArray(doc.places) ? doc : empty;
-    })
+    }),
+    // Non sostituisce l'importatore OSM esistente: è un secondo dataset
+    // normalizzato con fonte CAI e identità riconciliate. Fallback compatibile.
+    fetch(`${DATA_BASE}/atlas/refuges-v1.json`)
+      .then(response => response.ok ? response.json() as Promise<unknown> : null)
+      .catch(() => null),
+  ])
+    .then(([legacy, release]) => mergeRefugeRelease(legacy, release))
     .catch(() => { pending = null; return empty; });
   return pending;
 }
