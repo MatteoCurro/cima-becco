@@ -4,6 +4,32 @@
 **Specifica superiore e vincolante:** [MODELLO_METADATI_E_LAYOUT.md](MODELLO_METADATI_E_LAYOUT.md). Il presente piano organizza i lavori e NON cambia la tassonomia o le regole canoniche.  
 **UI:** [ARCHITECTURE.md](ARCHITECTURE.md); un solo sistema di ricerca, mappa, dettaglio e filtri.
 
+## Blocco 1 — Rifugi: rilascio v1.1 verificato
+
+**Importatore operativo e testato su cataloghi reali (27/11/2026):** [import CAI](../scripts/import_cai_refuges_v1.py) + [normalizzazione OSM](../scripts/import_refuges_v1.py) + [assemblaggio](../scripts/assemble_refuges_release_v1.py). L'utente titolare di Cima Becco ha confermato il riuso dei dati CAI. I diritti non sono un gate in sospeso per questo progetto. Rimangono obbligatori attribuzione, provenienza e qualità tecnica del dato.
+
+**Output effettivo e stabile**: [refuges-v1.json](../public/data/atlas/refuges-v1.json), integrato nel motore Atlante e nella generazione delle pagine SEO. La [CI di rilascio](https://github.com/MatteoCurro/cima-becco/actions/runs/46056572061) ha superato test Python/TypeScript/Vitest, import completo, build SEO, 2.669 permalink controllati e commit atomico dei dati, senza sovrascrivere `alpine-places.json`.
+
+| Indicatore | Risultato |
+|---|---:|
+| Schede CAI (tutte le categorie, archivio di base) | 763 |
+| Rifugi CAI | 390 |
+| Bivacchi CAI, separati per blocco 2 | 252 |
+| Altre strutture CAI, separate | 121 |
+| Rifugi OSM dopo revisione/quarantena | 433 |
+| Rifugi CAI↔OSM unificati (stesso permalink OSM) | 30 |
+| Rifugi soltanto CAI con nuovo permalink | 346 |
+| Candidati CAI non uniti perché ambigui | 14 |
+| **Rifugi nel catalogo pubblico unificato** | **779** |
+| **Fotografie CAI con origine, credito e URL HTTPS** | **659** |
+| Campi canonici rifugi predisposti | 80 |
+
+**Rilascio e aggiornamenti:** la workflow [import-cai-refuges-v1.yml](../.github/workflows/import-cai-refuges-v1.yml) importa il catalogo paginato, riusa i dettagli invariati tramite `updated_at`, rielabora soltanto quelli nuovi o modificati, mantiene distinta la tipologia CAI, confronta identità per nome/coordinate/quota, pubblica due JSON atomici *solo dopo tutti i test* e conserva i report. Esecuzione pianificata una volta al giorno dopo l'integrazione in `main`; il deploy Pages è collegato al successo del job.
+
+**Semantica:** la classificazione `Bivacco` non viene mostrata come rifugio; il conflitto Fiamme Gialle e il duplicato Passo Lusia sono in quarantena; 14 possibili duplicati CAI↔OSM sono in revisione e non pubblicati due volte. `In attività` è uno stato di catalogo, **non** un'informazione `open_now`. `near` non equivale a un accesso verificato. Campo sconosciuto e qualità G0/G1 non vengono promossi automaticamente. Foto e dettagli risiedono in risorse collegate al proprio ID sorgente; le webcam si aggiungeranno solo quando l'operatore espone risorse verificabili, non sono simulate.
+
+**Stato progetto:** questo chiude **il primo blocco di rilascio dati**, non pretende una valorizzazione completa dei campi non presenti alla fonte. I 127 nomi di campo CAI osservati sono censiti e 80 attributi canonici sono pronti; successive acquisizioni possono arricchire le schede senza ricreare il modello.
+
 ## Regole operative
 
 1. **Un importatore per volta**. Per ciascuno: schema/adapter fonte, test offline con fixture, pilot su campione reale, report anomalie/copertura, revisione e solo dopo schedulazione.
@@ -19,8 +45,8 @@
 
 | Ordine | Importatore | Fonti e legami necessari |
 | --- | --- | --- |
-| **1, in sviluppo** | **Rifugi: normalizzazione baseline OSM** | Snapshot esistente; identità, facts, vicino a località/cime e percorsi, SEO invariata |
-| 2 | Rifugi: riconciliazione/arricchimento ufficiale | CAI Unico Rifugi e SAT (diritti da validare): proprietà, gestione, letti, servizi, orari e conflitti |
+| **1, rilasciato v1.1** | **Rifugi: normalizzazione baseline OSM** | Snapshot esistente; identità, facts, vicino a località/cime e percorsi, SEO invariata |
+| 2 | Rifugi: riconciliazione/arricchimento ufficiale | CAI Unico Rifugi (riuso confermato) e SAT: proprietà, gestione, letti, servizi, orari e conflitti |
 | 3 | Bivacchi e ricoveri | OSM + CAI/SAT/enti; schema diverso dai rifugi, chiusure e dotazioni |
 | 4 | Comuni | ISTAT ufficiale (codici, confini, popolazione datata), DAIT per sindaci |
 | 5 | Frazioni/località/borghi | ISTAT località + OSM + Wikidata: located_in documentato, non ereditare dati comunali |
