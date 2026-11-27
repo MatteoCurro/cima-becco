@@ -1,17 +1,8 @@
-<!-- Keep in sync with the Mark component in src/components/icons.tsx. Three contour lines rising to a summit dot. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#e06c44"/>
-      <stop offset="0.55" stop-color="#c1502e"/>
-      <stop offset="1" stop-color="#9c3a1d"/>
-    </linearGradient>
-  </defs>
-  <rect width="120" height="120" rx="26.25" fill="url(#g)"/>
-  <g fill="none" stroke="#ffffff" stroke-width="8.5" stroke-linecap="round">
-    <path d="M23 86A37 37 0 0 1 97 86"/>
-    <path d="M38 86A22 22 0 0 1 82 86"/>
-    <path d="M52.5 86A7.5 7.5 0 0 1 67.5 86"/>
-  </g>
-  <circle cx="60" cy="33" r="6.5" fill="#ffffff"/>
+  <rect width="120" height="120" rx="27" fill="#476857"/>
+  <path d="M18 90 49 31l19 32 12-17 24 44H18Z" fill="#f7f6ed"/>
+  <path d="m40 90 17-31 10 18 14-21 17 34H40Z" fill="#b8c7b2"/>
+  <path d="m49 31 10 17-8-5-10 7Z" fill="#fdfdf9"/>
+  <path d="m80 46 28 12-18 9-10-21Z" fill="#e6c89c"/>
+  <path d="M26 96h71" stroke="#f7f6ed" stroke-width="4" stroke-linecap="round"/>
 </svg>
