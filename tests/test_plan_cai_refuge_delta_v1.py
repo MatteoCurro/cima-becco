@@ -61,7 +61,7 @@ class CAIDeltaTests(unittest.TestCase):
         self.assertFalse(r["summary"]["readyToFetchDetails"])
 
     def test_bad_input_never_changes_baseline(self):
-        bad = [{"1": "2026-11-27T00:00:00Z"}, {}, {"fake": "2026-11-27T00:00:00Z"},
+        bad = [[], {}, {"fake": "2026-11-27T00:00:00Z"},
                {"1": None}, {"0": "2026-11-27T00:00:00Z"}]
         for row in bad:
             with self.subTest(row=row), self.assertRaises(ValueError):
