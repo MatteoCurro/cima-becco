@@ -34,11 +34,12 @@ export function SiteHeader({ center, sticky = false }: { center?: ReactNode; sti
         </div>
         <div className="site-header-center">{center}</div>
         <div className="site-header-right">
-          <a className="site-header-cta" href="#import" onClick={openImportHere} aria-label="Upload GPX" data-tip="Upload GPX">
+          <a className="site-header-cta cb-plan-link" href="#pianifica" aria-label="Pianifica un percorso">Pianifica</a>
+          <a className="site-header-cta" href="#import" onClick={openImportHere} aria-label="Carica GPX" data-tip="Carica GPX">
             <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <path d="M8 3v10M3 8h10" />
             </svg>
-            <span className="site-header-cta-label" aria-hidden="true">Upload GPX</span>
+            <span className="site-header-cta-label" aria-hidden="true">Carica GPX</span>
           </a>
           <HeaderControls />
           <AccountMenu />

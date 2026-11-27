@@ -601,7 +601,7 @@ export function MapView({
       container: containerRef.current,
       style: MAP_STYLE_URL,
       center: ITALY_CENTRE,
-      zoom: 11,
+      zoom: 5.8,
       minZoom: 2,
       renderWorldCopies: false,
       attributionControl: { compact: true },

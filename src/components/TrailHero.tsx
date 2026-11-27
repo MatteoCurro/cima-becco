@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { prefersReducedMotion } from '../lib/dom';
-import { openImportHere } from '../lib/contribute';
 import { openMapWith } from '../lib/mapIntent';
-import { LocateIcon, SearchIcon, UploadIcon } from './icons';
+import { LocateIcon, SearchIcon } from './icons';
 import { focusSiteSearch } from './SearchBar';
 
 /**
@@ -134,9 +133,9 @@ export function TrailHero() {
             <SearchIcon size={16} />
             Search by Region
           </button>
-          <a className="btn btn-light" href="#import" onClick={openImportHere}>
-            <UploadIcon size={16} />
-            Carica GPX
+          <a className="btn btn-light" href="#pianifica">
+            <SearchIcon size={16} />
+            Pianifica un percorso
           </a>
         </div>
 
