@@ -269,7 +269,7 @@ test('navbar e filtri: occupano l’intera larghezza e non hanno slot fissi',asy
         expect(r.left,JSON.stringify({path,width,r})).toBeLessThanOrEqual(2);
         expect(r.right,JSON.stringify({path,width,r})).toBeGreaterThanOrEqual(width-2);
       }
-      if(width>=1050){
+      if(width>=901){
         const last=page.locator('.cb-browse-tabs').locator('a,span.is-upcoming').last();
         const r=await last.boundingBox();
         expect((r?.x||0)+(r?.width||0)).toBeGreaterThan(width-48);
@@ -308,4 +308,20 @@ test('mappe: stesso canvas full-bleed e intestazione, senza barre che sottraggon
   const b=await wrap.boundingBox();
   expect(b?.width||0).toBeGreaterThanOrEqual(388);
   await expect(page.locator('.cb-explore-map-topline')).toHaveCount(0);
+});
+
+test('scheda luogo: gli strumenti dei livelli non si sovrappongono a note flottanti',async({page})=>{
+  await page.setViewportSize({width:1280,height:850});
+  await page.goto('/borghi/osm-n-240044790/');
+  await expect(page.locator('.cb-location-profile h1')).toContainText('Abfaltersbach');
+  const map=page.locator('.cb-location-sidebar');
+  await expect(map.locator('.cb-map-context')).toBeVisible();
+  await expect(map.locator('.cb-map-layer-switches button')).toBeVisible();
+  await expect(map.locator('.cb-location-map-note')).toHaveCount(0);
+  const positions=await page.evaluate(()=>{
+    const h=document.querySelector('.cb-location-sidebar .cb-map-context')!.getBoundingClientRect();
+    const layers=document.querySelector('.cb-location-sidebar .cb-map-layer-switches')!.getBoundingClientRect();
+    return {headingBottom:h.bottom,layerTop:layers.top};
+  });
+  expect(positions.layerTop).toBeGreaterThan(positions.headingBottom+8);
 });

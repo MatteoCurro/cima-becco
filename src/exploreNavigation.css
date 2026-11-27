@@ -22,6 +22,6 @@
 .cb-browse-sort select{max-width:175px;border:0;background:transparent;color:inherit;font:inherit}
 .cb-browse-count{margin-left:auto;white-space:nowrap;font-size:12px;font-weight:800;color:#55735f}
 .map-page .map-filters,.map-page .map-filters>div{width:100%;min-width:0;max-width:none}
-@media(min-width:1050px){.cb-browse-tabs>a,.cb-browse-tabs>.is-upcoming{flex:1 1 0;min-width:0}}
+@media(min-width:901px){.cb-browse-tabs>a,.cb-browse-tabs>.is-upcoming{flex:1 1 0;min-width:0}}
 @media(max-width:900px){.cb-browse-facets .categories{flex:0 0 auto}.cb-browse-facets .category{min-width:96px}.cb-browse-facets .category-label{display:none}.cb-browse-facets .category-label-short{display:inline}}
 @media(max-width:744px){.cb-browse-tabs{padding:6px 10px}.cb-browse-tabs>a,.cb-browse-tabs>.is-upcoming{font-size:12px;min-height:34px;padding:7px 10px}.cb-browse-facets{padding:6px 10px;gap:5px}.cb-browse-facets .category{min-width:70px;min-height:34px;padding:7px 9px}.cb-browse-count{display:none}}

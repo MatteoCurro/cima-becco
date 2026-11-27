@@ -127,7 +127,6 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
       <AlpineAtlasMap places={mapPlaces} kind={place.kind} selected={place} routes={nearby}
         water={water.map(w=>({lng:w.lng,lat:w.lat,name:w.name,kind:w.kind,potable:w.potable}))}
         height="100%" caption={place.name}/>
-      <span className="cb-location-map-note">Sentieri e punti acqua della zona · dati OSM da verificare</span>
     </section>}
   >
     <header className="cb-location-hero">
