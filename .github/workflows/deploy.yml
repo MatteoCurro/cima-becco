@@ -21,7 +21,7 @@ permissions:
 
 concurrency:
   # Gruppo aggiornato per svincolare il deploy dalle esecuzioni precedenti bloccate.
-  group: cima-becco-pages-v2
+  group: cima-becco-pages-v3
   cancel-in-progress: true
 
 jobs:
