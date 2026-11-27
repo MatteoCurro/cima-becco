@@ -43,6 +43,7 @@ import { RouteEndpointMarkers } from './endpoints';
 import { RouteMarkers, VenueMarkers } from './markers';
 import './worker';
 import { MAP_STYLE_URL } from './constants';
+import { installMountainBasemap, MountainBasemapControl } from './mountainBasemap';
 import { parseSvg, textSpan } from '../lib/dom';
 import { glyphSvg } from '../lib/venueGlyphs';
 import { frameableBounds, isFiniteBounds } from './camera';
@@ -346,7 +347,7 @@ class TerrainControl {
 
   private sync(): void {
     if (!this.button) return;
-    const label = this.on ? 'Show flat map' : 'Show mountain terrain';
+    const label = this.on ? 'Ritorna alla mappa 2D' : 'Mostra il rilievo in 3D';
     const text = this.button.querySelector('.terrain-ctrl-label');
     if (text) text.textContent = this.on ? '2D' : '3D';
     this.button.setAttribute('aria-label', label);
@@ -604,18 +605,11 @@ export function MapView({
       zoom: 5.8,
       minZoom: 2,
       renderWorldCopies: false,
-      attributionControl: { compact: true },
+      attributionControl: { compact: false },
     });
     mapRef.current = map;
     let routeHoverFrame = 0;
 
-    const collapseAttribution = () => {
-      const el = map.getContainer().querySelector('.maplibregl-ctrl-attrib');
-      if (el instanceof HTMLDetailsElement) el.open = false;
-      el?.classList.remove('maplibregl-compact-show');
-    };
-    collapseAttribution();
-    map.on('load', collapseAttribution);
 
     if (import.meta.env.DEV) (window as unknown as { map: MlMap }).map = map;
 
@@ -637,6 +631,7 @@ export function MapView({
     );
     map.addControl(expandControlRef.current, 'top-right');
     map.addControl(new TerrainControl(), 'top-right');
+    map.addControl(new MountainBasemapControl(), 'top-right');
 
     const geolocate = new GeolocateControl({
       positionOptions: { enableHighAccuracy: true },
@@ -677,6 +672,7 @@ export function MapView({
     map.on('load', () => {
       if (mapRef.current !== map) return;
 
+      installMountainBasemap(map);
       addVenueLayers(map, venuesToGeoJson(venuesRef.current));
       addUserLocationSource(map);
       const loc = userLocationRef.current;
