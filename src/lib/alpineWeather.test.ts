@@ -15,7 +15,7 @@ describe('meteo alpino sicuro e contestualizzato',()=>{
       [-2,0,8,20,4,30],
     );
     expect(r.period).toBe('2021–2025');
-    expect(r.seasons[0].averageC).toBeCloseTo(( -2 + 0 + 4 )/3);
+    expect(r.seasons[0].averageC).toBe(0.7);
     expect(r.seasons[0].days).toBe(3);
     expect(r.seasons[1].averageC).toBe(8);
     expect(r.seasons[2].averageC).toBe(20);
