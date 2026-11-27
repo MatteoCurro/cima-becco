@@ -104,8 +104,8 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
   const wikiUrl=wiki?`https://${wiki[1]}.wikipedia.org/wiki/${encodeURIComponent(wiki[2].replace(/ /g,'_'))}`:null;
   const kindLabel=place.kind==='rifugio'?'rifugio alpino':place.kind==='bivacco'?'bivacco':'località montana';
   const placeLine=place.kind==='borgo'
-    ? `${place.name} è una località di montagna censita nelle Dolomiti.`
-    : `${place.name} è un ${kindLabel} censito nelle Dolomiti.`;
+    ? `${place.name} è una località di montagna censita nell'Atlante Cima Becco.`
+    : `${place.name} è un ${kindLabel} censito nell'Atlante Cima Becco.`;
   const detailRows: { label:string; value:string }[]=[
     ...(place.operator?[{label:'Gestore o ente indicato',value:place.operator}]:[]),
     ...(place.capacity!=null?[{label:place.kind==='bivacco'?'Capienza indicata':'Posti letto indicati',value:String(place.capacity)}]:[]),
@@ -201,7 +201,9 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
           <HutClaimRequest place={place}/>
         </section>}
         <footer className="cb-location-credits">
-          Dati del luogo: <a href={place.osmUrl} target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>.
+          Dati del luogo:
+          {place.sourceIds?.osm || !place.sourceIds?.cai ? <> <a href={place.osmUrl} target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>.</> : null}
+          {place.sourceIds?.cai ? <> <a href={place.officialUrl || 'https://rifugi.cai.it/shelters/' + place.sourceIds.cai} target="_blank" rel="noopener noreferrer">Club Alpino Italiano · Unico Rifugi</a>.</> : null}
           {place.photo&&<> Immagine: {place.photo.author}, {place.photo.license} · <a href={place.photo.sourceUrl} target="_blank" rel="noopener noreferrer">licenza e attribuzione</a>.</>}
           {place.wikidata&&<> <a href={'https://www.wikidata.org/wiki/'+place.wikidata} target="_blank" rel="noopener noreferrer">Wikidata</a>.</>}
           {' '}Meteo da modello, dati e condizioni del territorio possono cambiare.
