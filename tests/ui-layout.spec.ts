@@ -1,0 +1,56 @@
+import { test, expect } from '@playwright/test';
+
+const categories = [
+  { hash:'#rifugi', heading:'RIFUGI.' },
+  { hash:'#bivacchi', heading:'BIVACCHI.' },
+  { hash:'#paesi', heading:'PAESI.' },
+] as const;
+
+for (const item of categories) {
+  test('esplorazione '+item.heading+' desktop, mappa e risultati nello stesso viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/'+item.hash);
+    await expect(page.locator('.cb-explore-heading h1')).toHaveText(item.heading);
+    const bar = await page.locator('.cb-explore-overview').boundingBox();
+    const work = await page.locator('.cb-explore-workspace').boundingBox();
+    const list = await page.locator('.cb-explore-list').boundingBox();
+    const map = await page.locator('.cb-explore-map-panel').boundingBox();
+    expect(bar).not.toBeNull();expect(work).not.toBeNull();
+    expect(list).not.toBeNull();expect(map).not.toBeNull();
+    expect(bar!.height).toBeLessThan(115);
+    expect(work!.height).toBeGreaterThan(650);
+    expect(Math.abs((work!.y + work!.height)-900)).toBeLessThan(4);
+    expect(Math.abs((list!.x + list!.width)-map!.x)).toBeLessThan(3);
+    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
+    expect(overflow).toBe(false);
+  });
+}
+
+test('mobile: filtro compatto, lista e mappa si alternano senza sbordare', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/#rifugi');
+  await expect(page.locator('.cb-explore-heading h1')).toHaveText('RIFUGI.');
+  const bar=await page.locator('.cb-explore-overview').boundingBox();
+  const work=await page.locator('.cb-explore-workspace').boundingBox();
+  expect(bar!.height).toBeLessThan(105);
+  expect(work!.height).toBeGreaterThan(620);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
+  await expect(page.locator('.cb-explore-list')).toBeVisible();
+  await page.getByRole('button',{name:'Mappa',exact:true}).click();
+  await expect(page.locator('.cb-explore-map-panel')).toBeVisible();
+  await expect(page.locator('.cb-explore-list')).toBeHidden();
+  await page.getByRole('button',{name:'Elenco',exact:true}).click();
+  await expect(page.locator('.cb-explore-list')).toBeVisible();
+});
+
+test('home: hero utilizzabile senza illustrazioni e con navigazione responsive',async ({page})=>{
+  for (const width of [390,768,1440]) {
+    await page.setViewportSize({width,height:900});
+    await page.goto('/');
+    await expect(page.locator('.cb-hero-v3 h1')).toContainText('DOVE SI VA?');
+    await expect(page.locator('.cb-hero-v3-directory a')).toHaveCount(5);
+    await expect(page.getByRole('link',{name:/Esplora i sentieri/})).toBeVisible();
+    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
+    expect(overflow).toBe(false);
+  }
+});
