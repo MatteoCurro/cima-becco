@@ -23,6 +23,18 @@ L'audit ha utilizzato gli artefatti reali delle PR sperimentali [#7](https://git
 
 Riferimenti ufficiali da cui partire: [CAI REST](https://rifugi.cai.it/api/documentation), [INFOMONT](https://www.cai.it/sentieri-e-rifugi/infomont/), [SAT](https://www.sat.tn.it/sentiero-italia/), [Commons metadata](https://commons.wikimedia.org/wiki/Commons:Machine-readable_data), [codici ISTAT](https://www.istat.it/classificazione/codici-dei-comuni-delle-province-e-delle-regioni/), [GeoNames](https://www.geonames.org/about.html), [OpenBeta](https://docs.openbeta.io/introduction/overview/), [Open-Meteo Terms](https://open-meteo.com/en/terms). La disponibilità pubblica di un endpoint NON autorizza automaticamente copie e ridistribuzione.
 
+## 1.1 Aggiornamento sui rifugi CAI: pilot controllato e riconciliazione
+
+**Riuso del campione PR #8:** dagli 80 record CAI disponibili nell'artefatto `multi-domain-places-weather-history`, confrontati con 436 rifugi OSM normalizzati della PR #9, il resolver conservativo ha proposto **3 coppie** (Boé 0,8 m; Torrani 1,1 m; Fiamme Gialle 13,7 m). Richiede nome coerente (similarità token ≥0,75), distanza ≤250 m, quota compatibile quando *entrambe* le quote sono attestate e revisione della tipologia. Una falsa associazione a 946 m è scartata. **0 merge, 0 relazioni CAI↔OSM pubblicate**, il campione CAI non dichiara il tipo nel listato. Output `cai-osm-match-review.json` in staging, test in `test_reconcile_cai_osm_refuges_v1.py`.
+
+**Sonda live limitata a quattro dettagli pubblici:** richiesta 27/11/2026 su ID già presenti nel precedente pilota; tutti e 4 HTTP 200, **83 / 116 / 110 / 76 field entries** e **1 / 1 / 2 / 3 media**. Unione delle 4 risposte: **125 nomi di campo distinti**, **119 con almeno un valore non vuoto**. Unione con PR #8: **127 nomi di campo da gestire**, analizzati in `scripts/cai_pilot_field_inventory_v1.json`: **47** con mapping di staging, **50** da interpretare, **22** bloccati per privacy/contratti/contatti, **8** identificativi interni. Lo snapshot contiene **nomi e tipi, MAI valori originali o URL media**; l'accesso API e l'esistenza di media NON costituiscono licenza di ripubblicazione.
+
+**Problema tecnico risolto a livello di tracciamento:** nei quattro dettagli `openingTime_contact` ha `value=null` ma `data` di tipo array; il mapper conserva `sourceStructuredData.shape/length` e stato `structured_source_requires_parser`, senza confondere questo con orario assente o aperto ora. Un parser del calendario deve attendere la verifica della struttura effettiva del sottoarray, dei periodi di apertura e dei diritti.
+
+**Incrementale:** l'OpenAPI ufficiale documenta `GET /api/v1/shelters/updatedAt`; la **forma della risposta non è ancora testata**. Prima di schedulare, provare timestamp e ID/variazioni, checkpoint, tombstone e gestione 429/5xx; non scaricare ciclicamente tutte le schede. L'API documenta media con `original_url`, ma non attribuzione/licenza per ogni immagine: restano candidate non pubblicabili.
+
+La base OSM continua ad avere **80 campi rifugio predisposti**, compresi `waterAvailableReported` distinto da `drinkingWater` e `largeDormitoriesAvailableReported` distinto dal numero di posti letto.
+
 ## 2. Architettura di ingestione e pubblicazione
 
 La pipeline unica è: source adapter limitato → raw snapshot versionato e SHA-256 → normalizzatore di tipo → registry ID e deduplicazione → grafo tipizzato → verifica campi/licenze/validità → staging con diff e report → publishing autorizzato per shard → adapter UI condiviso.
