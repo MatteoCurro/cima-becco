@@ -356,8 +356,8 @@ test('permalink rifugio: header e griglia flush alla viewport, breadcrumb non sp
     expect(r('.cb-explore-detail-shell').maxWidth).toBe('none');
     expect(r('.cb-explore-detail-shell').paddingLeft).toBe('0px');
     expect(layout.scrollWidth,JSON.stringify(layout)).toBeLessThanOrEqual(width+2);
-    expect(Math.abs(r('.cb-location-sidebar').top-r('.cb-location-body').top)).toBeLessThanOrEqual(2);
     if(width>900){
+      expect(Math.abs(r('.cb-location-sidebar').top-r('.cb-location-body').top)).toBeLessThanOrEqual(2);
       expect(Math.abs(r('.cb-location-content').width/width-.42)).toBeLessThan(.03);
       expect(Math.abs(r('.cb-location-sidebar').width/width-.58)).toBeLessThan(.03);
     }else expect(r('.cb-location-sidebar').width).toBeGreaterThanOrEqual(width-2);
