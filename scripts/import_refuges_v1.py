@@ -213,6 +213,33 @@ def assign_identities(refuges, registry):
     return mapping, conflicts
 
 
+
+def suspected_duplicates(refuges, identities):
+    """Produci candidati di revisione, senza fondere due identità OSM."""
+    rows = sorted(refuges, key=lambda p: source_ref(p)["key"])
+    pairs = []
+    for i, a in enumerate(rows):
+        for b in rows[i+1:]:
+            same_name = slugify(a["name"]) == slugify(b["name"])
+            same_qid = bool(a.get("wikidata")) and a.get("wikidata") == b.get("wikidata")
+            if not same_name and not same_qid:
+                continue
+            distance = haversine_km(a, b)
+            if not ((same_name and distance <= 0.15) or (same_qid and distance <= 1)):
+                continue
+            akey = source_ref(a)["key"]
+            bkey = source_ref(b)["key"]
+            pairs.append({
+                "left": {"id": identities[akey]["id"], "sourceKey": akey, "name": a["name"]},
+                "right": {"id": identities[bkey]["id"], "sourceKey": bkey, "name": b["name"]},
+                "straightLineM": round(distance * 1000),
+                "evidence": "same_wikidata_qid" if same_qid else "same_normalized_name",
+                "method": "haversine", "status": "manual_review_required",
+                "autoMerged": False,
+            })
+    return pairs
+
+
 def nearby_relations(refuge, items, target_kind, max_km, limit):
     matches = []
     for item in items:
@@ -314,6 +341,7 @@ def run(root=ROOT, out=None, registry_file=None, strict=False):
     registry_path = Path(registry_file) if registry_file else out / "identity-registry.json"
     existing = load(registry_path, {})
     identities, conflicts = assign_identities(refuges, existing)
+    duplicate_pairs = suspected_duplicates(refuges, identities)
     entities = []
     for key, place in sorted(by_source.items()):
         entities.append(build_refuge(place, identities[key], source.get("generatedAt")))
@@ -347,6 +375,7 @@ def run(root=ROOT, out=None, registry_file=None, strict=False):
             x["targetRef"]["kind"] == "mountain" for e in entities for x in e["relations"]),
         "routeProximityLinks": len(route_links),
         "slugCollisionsReview": len(conflicts),
+        "candidateDuplicatePairs": len(duplicate_pairs),
         "missingElevation": sum("elevationM" not in e["facts"] for e in entities),
         "missingVerifiedOpeningStatus": len(entities),
         "searchIndexable": 0, "connectedToCai": 0,
@@ -365,6 +394,7 @@ def run(root=ROOT, out=None, registry_file=None, strict=False):
                                "edges": route_links})
     write(out / "identity-registry.json", identities)
     write(out / "review.json", {"slugConflicts": conflicts,
+                                "candidateDuplicates": duplicate_pairs,
                                 "linksRequireEntityResolution": True})
     write(out / "report.json", status)
     return status
