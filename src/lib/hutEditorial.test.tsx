@@ -35,6 +35,20 @@ describe('dossier bivacchi e servizi condivisi',()=>{
     expect(markup).not.toContain("La disponibilità d'acqua");
     expect(markup).not.toContain('secondo le fonti');
   });
+  it('non perde dotazioni CAI valide quando le categorie sono specifiche dei bivacchi',()=>{
+    const place:AlpinePlace={...base,facts:{
+      meals:fact(true),showers:fact(false),hotWater:fact(true),
+      cardPayments:fact(false),defibrillator:fact(true),toiletAvailableReported:fact(true),
+      electricity:fact(true),
+    }};
+    const keys=hutServiceChapters(place).flatMap(ch=>ch.items.map(item=>item.key));
+    expect(keys.slice().sort()).toEqual(hutServiceFacts(place).map(item=>item.key).sort());
+  });
+  it('ricava nomi alternativi anche da fatti CAI dotati di provenienza',()=>{
+    const place:AlpinePlace={...base,facts:{aliases:fact('Bivacco vecchio; Capanna del Passo')}};
+    expect(hutAliases(place).map(item=>item.value)).toEqual(['Bivacco vecchio','Capanna del Passo']);
+    expect(hutAliases({...base,facts:{aliases:{value:'Nome senza fonte'}}})).toEqual([]);
+  });
   it('visualizza alias senza ripetere il titolo, con lingua e valore storico',()=>{
     const place={...base,aliases:[
       {value:'Bivacco Fiamme Gialle'}, {value:'Bivacco Fiame',historical:true},
