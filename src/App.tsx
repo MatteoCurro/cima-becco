@@ -1230,7 +1230,7 @@ function MapApp() {
               title={isRouteDetail?(selectedRoute?.name??"Caricamento tracciato"):mode==='routes'?"Esplora i percorsi":"Esplora le cime"}
             />
             <Suspense fallback={<div className="map-skeleton"><div className="map-skeleton-pulse" /></div>}>
-              {isRouteDetail && <AlpineAtlasMap places={NO_ALPINE_PLACES} kind="borgo" routes={detailRouteMap} water={detailWaterMap} caption="TRACCIA E PUNTI ACQUA" height="100%" />}
+              {isRouteDetail && <AlpineAtlasMap places={NO_ALPINE_PLACES} kind="borgo" routes={detailRouteMap} water={detailWaterMap} caption="TRACCIA E PUNTI ACQUA" height="100%" hoverPoint={routeHoverPoint} onRouteHover={setRouteHoverIndex} />}
               {!isRouteDetail && mapNeeded && <MapView
                 allRoutes={mode === 'routes' ? planner.listedRoutes : allRoutes}
                 mode={mode}

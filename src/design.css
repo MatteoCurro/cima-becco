@@ -5039,6 +5039,8 @@
 .site-header-center .header-search {width:100%;min-width:0}
 .site-header .home-search {
   width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 /* "Routes near me": a round button just left of the pill, the same weight as
