@@ -5,13 +5,8 @@ import { SUPABASE_CONFIGURED } from '../lib/api';
 import { HeaderControls } from './HeaderControls';
 import { CoverageModal, useCoverage } from './Coverage';
 import { Mark } from './icons';
-import { OpenSourceInline } from './OpenSourceNotice';
 
-/**
- * The logo lockup: the mark and the name in one brand colour, set in Nunito
- * (rounded, like Airbnb's wordmark) at a medium-bold weight with tight
- * tracking. Only these seven letters of the face are loaded (see index.html).
- */
+/** Identità Cima Becco: cresta e becco stilizzati, tipografia dal carattere editoriale. */
 export function Wordmark({ size = 28, href = '#' }: { size?: number; href?: string }) {
   return (
     <a className="wordmark" href={href} aria-label="Cima Becco — home">
@@ -57,49 +52,33 @@ export function SiteHeader({ center, sticky = false }: { center?: ReactNode; sti
 export function SiteFooter({ openSourcePill = false }: { openSourcePill?: boolean }) {
   const [coverageOpen, setCoverageOpen] = useState(false);
   return (
-    <footer className="site-footer">
+    <footer className={`site-footer${openSourcePill ? ' site-footer--featured' : ''}`}>
       <div className="site-footer-inner">
         <div className="site-footer-cols">
           <div>
-            <h3>Esplora</h3>
+            <h3>Vai a vedere</h3>
             <a href="#map">Cime e montagne</a>
-            <a href="#routes">Percorsi</a>
-            <a href="#pianifica">Pianifica</a>
-            <button type="button" className="site-footer-link" aria-haspopup="dialog" onClick={() => setCoverageOpen(true)}>
-              What's mapped
-            </button>
+            <a href="#routes">Escursioni e ferrate</a>
+            <a href="#pianifica">Pianifica un percorso</a>
+            <button type="button" className="site-footer-link" aria-haspopup="dialog" onClick={() => setCoverageOpen(true)}>Cosa c'è nella mappa</button>
           </div>
           <div>
-            <h3>Contribute</h3>
-            <a href="#import" onClick={openImportHere}>Importa GPX</a>
-            <button type="button" className="site-footer-link" onClick={requestAddPlace}>
-              Add a missing place
-            </button>
-          </div>
-          <div>
-            <h3>Project</h3>
-            <a href="#community">How we run and fund it</a>
-            <a href="#data">Data sources and licences</a>
-          </div>
-          <div>
-            <h3>About</h3>
+            <h3>Cima Becco</h3>
+            <a href="#community">Il progetto</a>
+            <a href="#data">Fonti e crediti</a>
             <a href="#privacy">Privacy</a>
-            <a href="#terms">Contributions and licences</a>
-            <a href="#contact">Contact</a>
+            <a href="#contact">Contatti</a>
+          </div>
+          <div>
+            <h3>Un sentiero in più</h3>
+            <a href="#import" onClick={openImportHere}>Importa un GPX</a>
+            <button type="button" className="site-footer-link" onClick={requestAddPlace}>Segnala una cima mancante</button>
+            <a href="#terms">Contributi e licenze</a>
           </div>
         </div>
         <div className="site-footer-base">
-          {openSourcePill && <OpenSourceInline />}
-          <span>© Cima Becco · Codice MIT · Dati OSM/CAI ODbL · Contributi degli utenti con licenza indicata nelle schede</span>
-          <span className="site-footer-credits">
-            Dati: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>,{' '}
-            <a href="https://www.geonames.org" target="_blank" rel="noreferrer">GeoNames</a>,{' '}
-            <a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a>,{' '}
-            <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noreferrer">AWS Terrain</a>,{' '}
-            <a href="https://www.cai.it/sentieri-e-rifugi/infomont/" target="_blank" rel="noreferrer">CAI INFOMONT</a>,{' '}
-            <a href="https://commons.wikimedia.org" target="_blank" rel="noreferrer">Wikimedia</a>,{' '}
-            <a href="https://www.mapillary.com" target="_blank" rel="noreferrer">Mapillary</a>
-          </span>
+          <span>© Cima Becco · Ogni cima, un nuovo percorso.</span>
+          <span>Un progetto sperimentale. <a href="#data">Fonti, attribuzioni e licenze</a></span>
         </div>
       </div>
       {coverageOpen && <FooterCoverage onClose={() => setCoverageOpen(false)} />}
