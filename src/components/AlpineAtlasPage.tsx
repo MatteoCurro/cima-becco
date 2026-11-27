@@ -151,7 +151,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
         height="100%" caption={place.name}/>
     </section>}
   >
-    {place.kind==='rifugio' ? <RefugeProfile place={place} routes={nearby} loadingRoutes={loading} nearbyPlaces={nearbyPlaces} allPlaces={localAtlas} water={water}/> : <>
+    {(place.kind==='rifugio'||place.kind==='bivacco') ? <RefugeProfile place={place} routes={nearby} loadingRoutes={loading} nearbyPlaces={nearbyPlaces} allPlaces={localAtlas} water={water}/> : <>
     <header className="cb-location-hero">
       <div className="cb-location-hero-copy">
         <PlaceBadge place={place}/>
@@ -169,7 +169,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
           {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>{place.kind==='bivacco'?'CHIAMA IL REFERENTE':'CHIAMA'}</a>}
           {place.email&&<a href={'mailto:'+place.email}>SCRIVI</a>}
         </div>
-        {place.kind==='bivacco'&&<p className="cb-location-alert">Bivacco o ricovero: struttura non necessariamente custodita. Verifica accesso, disponibilità, manutenzione e dotazioni prima di partire. I posti dichiarati non garantiscono una sistemazione libera; acqua segnalata non significa potabile.</p>}
+        
       </div>
       <figure className="cb-location-hero-media">
         <AlpinePlaceVisual key={place.slug} place={place}/>
