@@ -1,8 +1,7 @@
 {
   "version": "1.0",
-  "scope": "Field names ONLY: union of 4 CAI detail API probe field-name lists in PR #8, run 46043518773, 27 November 2026. No values, no source personal information, no re-fetch.",
-  "pilotArtifactId": "15220728348",
-  "totalDistinctFieldNames": 108,
+  "scope": "Field names ONLY: union of 4 CAI detail names in PR8 + 4 bounded live detail shape probes, 27 November 2026. No values, no private source information, no media.",
+  "totalDistinctFieldNames": 127,
   "classificationPolicy": "mapped=code has strict allowlist; privacy_restricted never auto export; internal_reference not front-end data; field_level_review_needed has NOT been discarded, needs explicit mapping and rights.",
   "fieldNames": [
     {
@@ -66,11 +65,19 @@
       "state": "internal_reference"
     },
     {
+      "name": "buildingRegulation_certification",
+      "state": "field_level_review_needed"
+    },
+    {
       "name": "buildYear_certification",
       "state": "mapped_for_restricted_staging"
     },
     {
-      "name": "buildingRegulation_certification",
+      "name": "camerate_da_4_posti_service",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "camerate_da_6_posti_service",
       "state": "field_level_review_needed"
     },
     {
@@ -83,6 +90,10 @@
     },
     {
       "name": "cityPlanRegulation_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "class_certification",
       "state": "field_level_review_needed"
     },
     {
@@ -106,12 +117,24 @@
       "state": "privacy_restricted"
     },
     {
+      "name": "contract_end_date_property",
+      "state": "privacy_restricted"
+    },
+    {
       "name": "contract_fee_management_property",
       "state": "privacy_restricted"
     },
     {
       "name": "contract_start_date_management_property",
       "state": "privacy_restricted"
+    },
+    {
+      "name": "contract_start_date_property",
+      "state": "privacy_restricted"
+    },
+    {
+      "name": "convenzioni_service",
+      "state": "field_level_review_needed"
     },
     {
       "name": "defibrillatore_service",
@@ -126,11 +149,15 @@
       "state": "mapped_for_restricted_staging"
     },
     {
-      "name": "elettricita_service",
-      "state": "mapped_for_restricted_staging"
+      "name": "drainType_certification",
+      "state": "field_level_review_needed"
     },
     {
-      "name": "emailAddress",
+      "name": "droughts_certification",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "elettricita_service",
       "state": "mapped_for_restricted_staging"
     },
     {
@@ -140,6 +167,14 @@
     {
       "name": "email_property",
       "state": "privacy_restricted"
+    },
+    {
+      "name": "emailAddress",
+      "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "energy_certification",
+      "state": "field_level_review_needed"
     },
     {
       "name": "energy_class_certification",
@@ -158,12 +193,20 @@
       "state": "mapped_for_restricted_staging"
     },
     {
+      "name": "fixedPhone_management_property",
+      "state": "privacy_restricted"
+    },
+    {
       "name": "fixedPhone_property",
       "state": "privacy_restricted"
     },
     {
       "name": "genre_management_property",
       "state": "privacy_restricted"
+    },
+    {
+      "name": "gestore_telefonia_mobile_service",
+      "state": "field_level_review_needed"
     },
     {
       "name": "heating_type_certification",
@@ -200,6 +243,10 @@
     {
       "name": "migrate_id",
       "state": "internal_reference"
+    },
+    {
+      "name": "mobilePhone_contact",
+      "state": "privacy_restricted"
     },
     {
       "name": "mobilePhone_management_property",
@@ -274,6 +321,10 @@
       "state": "mapped_for_restricted_staging"
     },
     {
+      "name": "posti_sala_ristorante_service",
+      "state": "field_level_review_needed"
+    },
+    {
       "name": "posti_totali_service",
       "state": "mapped_for_restricted_staging"
     },
@@ -299,6 +350,10 @@
     },
     {
       "name": "punti_ricarica_spazi_comuni_service",
+      "state": "field_level_review_needed"
+    },
+    {
+      "name": "qualita_segnale_service",
       "state": "field_level_review_needed"
     },
     {
@@ -338,12 +393,20 @@
       "state": "field_level_review_needed"
     },
     {
+      "name": "rifornimento_invernale_service",
+      "state": "field_level_review_needed"
+    },
+    {
       "name": "ristorante_service",
       "state": "mapped_for_restricted_staging"
     },
     {
       "name": "role_contact",
       "state": "privacy_restricted"
+    },
+    {
+      "name": "secondaryBody_certification",
+      "state": "field_level_review_needed"
     },
     {
       "name": "segnale_gsm_service",
@@ -370,12 +433,20 @@
       "state": "field_level_review_needed"
     },
     {
+      "name": "stanze_dedicate_service",
+      "state": "field_level_review_needed"
+    },
+    {
       "name": "status",
       "state": "field_level_review_needed"
     },
     {
       "name": "surname_management_property",
       "state": "privacy_restricted"
+    },
+    {
+      "name": "tavolati_service",
+      "state": "field_level_review_needed"
     },
     {
       "name": "taxCode_management_property",
@@ -404,6 +475,10 @@
     {
       "name": "vendita_sacco_lenzuolo_service",
       "state": "mapped_for_restricted_staging"
+    },
+    {
+      "name": "water_availability_certification",
+      "state": "field_level_review_needed"
     },
     {
       "name": "water_certification_certification",
@@ -437,5 +512,9 @@
       "name": "wifi_service",
       "state": "mapped_for_restricted_staging"
     }
+  ],
+  "pilotArtifactIds": [
+    "15220728348",
+    "15225010137"
   ]
 }
