@@ -94,7 +94,7 @@ function cleanEntity():CleanEntity|null{
   if(parts.length!==2)return null;
   const [section,slug]=parts;
   if(!/^[a-zA-Z0-9_-]{2,120}$/.test(slug))return null;
-  const kind=section==='borghi'?'paesi':section;
+  const kind=section==='borghi'||section==='comuni'?'paesi':section;
   return kind==='rifugi'||kind==='bivacchi'||kind==='paesi'||kind==='route'||kind==='trekking'
     ?{kind,slug}:null;
 }
@@ -105,7 +105,7 @@ function viewFromHash(): View {
     ? '/' + window.location.pathname.slice(base.length).replace(/^\/+/, '').replace(/\/+$/, '')
     : window.location.pathname.replace(/\/+$/, '');
   if (pathWithoutBase === '/fonti-e-crediti' && (!hash || hash === '#data')) return 'data';
-  const path=cleanEntity();if(path && !hash)return path.kind==='route'?'map':path.kind==='trekking'?'atlas':'explore';
+  const path=cleanEntity();if(path && !hash)return path.kind==='route'?'map':path.kind==='trekking'||window.location.pathname.includes('/comuni/')?'atlas':'explore';
   if (hash === '#pianifica') return 'planner';
   if (hash === '#atlante' || hash.startsWith('#atlante/')) return 'atlas';
   if (/^#(rifugi|bivacchi|paesi)(\/|$)/.test(hash)) return 'explore';
