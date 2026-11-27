@@ -81,28 +81,6 @@ button {
   color: var(--danger);
 }
 
-/* Both headers use the same mark-and-name lockup; the nested span keeps "hill"
-   and "GPX" together while the flex gap separates the mark from the name. */
-.wordmark {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 620;
-  font-size: var(--t3);
-  letter-spacing: -0.02em;
-  text-decoration: none;
-  color: var(--ink);
-  white-space: nowrap;
-}
-.wordmark .dot {
-  color: var(--accent);
-}
-.lp-nav .wordmark {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-}
-
 /* The landing page and the shared design layer live in design.css. */
 
 .map-skeleton {
