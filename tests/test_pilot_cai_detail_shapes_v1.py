@@ -20,7 +20,8 @@ class ShapeProbeTests(unittest.TestCase):
                         "data": {"pii": "PRIVATE_NAME"}, "updated_at": "2026-11-27"},
                        {"name": "posti_totali_service", "value": 42, "data": {"x": 123}},
                        {"name": "wifi_service", "value": False},
-                       {"name": "openingTime_contact", "value": None},
+                       {"name": "openingTime_contact", "value": None,
+                        "data": [{"start_date": "PRIVATE_DAY", "end_date": "PRIVATE_DAY_2"}]},
                    ]}
         result = probe.summarize_detail(payload)
         self.assertEqual(result["caiId"], "921800106")
@@ -35,6 +36,10 @@ class ShapeProbeTests(unittest.TestCase):
         self.assertEqual(byname["posti_totali_service"]["valueTypes"], {"number": 1})
         self.assertEqual(byname["wifi_service"]["valueTypes"], {"bool": 1})
         self.assertEqual(byname["openingTime_contact"]["hasValue"], 0)
+        self.assertEqual(result["openingTimeArrayElementTypes"], {"object": 1})
+        self.assertEqual(result["openingTimeArrayFieldKeys"],
+                         ["end_date", "start_date"])
+        self.assertNotIn("PRIVATE_DAY", blob)
         self.assertFalse(result["rightsCleared"])
         self.assertFalse(result["publishedToAtlas"])
 
