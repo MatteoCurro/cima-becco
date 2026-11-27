@@ -666,9 +666,20 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
             <strong>Fotografie lungo il percorso</strong>
             {(route.photos ?? []).map((photo) => (
               <a key={`${photo.url}-${photo.sourceUrl}`} className="route-photo-thumb" href={photo.sourceUrl} target="_blank" rel="noopener noreferrer" title={[photo.caption, photo.author, photo.license].filter(Boolean).join(' · ')}>
-                <img src={photo.url} alt={photo.caption || `Fotografia del percorso ${route.name}`} loading="lazy" />
+                <img src={photo.url} alt={photo.caption || `Fotografia associata a ${route.name}`} loading="lazy" />
               </a>
             ))}
+            {(route.photos ?? []).length > 0 && (
+              <p className="photo-credit small muted">
+                Fonti: {(route.photos ?? []).map((photo, i) => (
+                  <span key={photo.sourceUrl}>
+                    {i > 0 ? ' · ' : ''}
+                    <a href={photo.sourceUrl} target="_blank" rel="noopener noreferrer">{photo.author || 'Wikimedia Commons'}</a>
+                    {photo.license ? ` (${photo.license})` : ''}
+                  </span>
+                ))}
+              </p>
+            )}
             {routePhotos.map((photo) => (
               <button type="button" key={photo.id} className={`route-photo-thumb ${photo.kind}`} onClick={() => onFocusPhoto(photo)} title={photo.caption || (photo.kind === 'hazard' ? 'Hazard' : 'Photo')}>
                 <img src={photo.url} alt="" loading="lazy" />
