@@ -85,8 +85,18 @@ def summarize_detail(data):
                 media_custom_names.update(k for k in custom
                                           if isinstance(k, str) and len(k) < 80
                                           and k.replace("_", "").isalnum())
+    # Only publicly displayed structural category/status enum values;
+    # no personal, contact, prices, hours, media or descriptions.
+    classification = {
+        item["name"]: item.get("value")
+        for item in data["fields"]
+        if isinstance(item, dict) and item.get("name") in ("type", "category", "status")
+        and isinstance(item.get("value"), (str, int, bool))
+        and len(str(item.get("value"))) < 120
+    }
     # Intentionally do not copy title, field values, contact details or media URLs.
     return {"caiId": fid, "fieldEntries": len(data["fields"]),
+            "publicClassificationEnums": classification,
             "openingTimeArrayElementTypes": dict(schedule_item_shapes),
             "openingTimeArrayFieldKeys": sorted(schedule_key_names),
             "mediaFieldKeys": sorted(media_key_names),
