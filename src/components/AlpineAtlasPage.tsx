@@ -235,7 +235,9 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
         </section>}
         <footer className="cb-location-credits">
           <AtlasDossierBlocks record={place} placement="credits"/>
-          Dati del luogo: <a href={place.osmUrl} target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>.
+          Dati del luogo:
+          {place.sourceIds?.osm || !place.sourceIds?.cai ? <> <a href={place.osmUrl} target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>.</> : null}
+          {place.sourceIds?.cai ? <> <a href={place.officialUrl || 'https://rifugi.cai.it/shelters/' + place.sourceIds.cai} target="_blank" rel="noopener noreferrer">Club Alpino Italiano · Unico Rifugi</a>.</> : null}
           {place.photo&&<> Immagine: {place.photo.author}, {place.photo.license} · <a href={place.photo.sourceUrl} target="_blank" rel="noopener noreferrer">licenza e attribuzione</a>.</>}
           {place.wikidata&&<> <a href={'https://www.wikidata.org/wiki/'+place.wikidata} target="_blank" rel="noopener noreferrer">Wikidata</a>.</>}
           {' '}Meteo da modello, dati e condizioni del territorio possono cambiare.
