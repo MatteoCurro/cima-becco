@@ -7,6 +7,7 @@ import { routesNear } from '../lib/routes';
 import { trailMood, trailTitle } from '../lib/routeEditorial';
 import { usePageTitle } from '../lib/pageTitle';
 import { AlpinePlaceIcon } from './AlpinePlaceIcon';
+import { AlpinePlaceVisual } from './AlpinePlaceVisual';
 import { AlpineAtlasMap } from './AlpineAtlasMap';
 import { AlpineWeatherPanel } from './AlpineWeatherPanel';
 import { HutClaimRequest } from './HutClaimRequest';
@@ -66,7 +67,7 @@ function RouteGroup({title,items}:{title:string;items:Route[]}) {
   </section>;
 }
 
-function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onBack: string; places: AlpinePlace[] }) {
+export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onBack: string; places: AlpinePlace[] }) {
   const [nearby,setNearby]=useState<Route[]>([]);
   const [loading,setLoading]=useState(true);
   const [water,setWater]=useState<AlpineWaterPoint[]>([]);
@@ -107,78 +108,101 @@ function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onBack: st
     {label:'Coordinate WGS84',value:`${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`},
     ...(place.elevationSource?[{label:'Fonte della quota',value:place.elevationSource==='dem'?'Stima del modello altimetrico DEM':'Quota registrata in OpenStreetMap'}]:[]),
   ];
-  return <article className="cb-atlas-detail cb-atlas-detail-wide cb-place-detail">
-    <a className="cb-atlas-back" href={onBack}>← Torna a {place.kind==='rifugio'?'rifugi':place.kind==='bivacco'?'bivacchi':'paesi'}</a>
-    <header className="cb-place-hero">
-      <PlaceBadge place={place}/>
-      <h1>{place.name}</h1>
-      <p className="cb-atlas-lead">{place.description || placeLine}</p>
-      <div className="cb-place-facts" aria-label="Dati essenziali">
-        <div><strong>{place.elevationM!=null?`${place.elevationM.toLocaleString('it-IT')} m`:'n.d.'}</strong><span>Altitudine{place.elevationSource==='dem'?' stimata':''}</span></div>
-        {place.capacity!=null&&<div><strong>{place.capacity}</strong><span>{place.kind==='bivacco'?'Posti indicati':'Posti letto'}</span></div>}
-        <div><strong>{nearby.length || (loading?'…':'0')}</strong><span>Sentieri nei dintorni</span></div>
+  return <article className="cb-location-profile">
+    <a className="cb-location-back" href={onBack}>← Esplora {place.kind==='rifugio'?'i rifugi':place.kind==='bivacco'?'i bivacchi':'i paesi'}</a>
+    <header className="cb-location-hero">
+      <div className="cb-location-hero-copy">
+        <PlaceBadge place={place}/>
+        <h1>{place.name}</h1>
+        <p className="cb-location-lead">{place.description || placeLine}</p>
+        <div className="cb-location-metrics" aria-label="Informazioni principali">
+          <div><strong>{place.elevationM!=null?place.elevationM.toLocaleString('it-IT')+' m':'n.d.'}</strong><span>Altitudine{place.elevationSource==='dem'?' stimata':''}</span></div>
+          {place.capacity!=null&&<div><strong>{place.capacity}</strong><span>{place.kind==='bivacco'?'Posti indicati':'Posti letto'}</span></div>}
+          <div><strong>{loading?'…':nearby.length}</strong><span>Sentieri vicini</span></div>
+        </div>
+        <div className="cb-location-actions">
+          <button type="button" className="cb-location-action-primary" onClick={()=>document.getElementById('cb-place-map')?.scrollIntoView({behavior:'smooth',block:'start'})}>ESPLORA SULLA MAPPA <span aria-hidden="true">↗</span></button>
+          {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>CHIAMA IL RIFUGIO</a>}
+          {place.email&&<a href={'mailto:'+place.email}>SCRIVI</a>}
+        </div>
+        {place.kind==='bivacco'&&<p className="cb-location-alert">Bivacco non custodito: verifica accesso, dotazioni e condizioni prima di partire. La capienza indicata non garantisce posto disponibile.</p>}
       </div>
-      <div className="cb-place-contact-actions">
-        {place.phone&&<a className="cb-atlas-primary" href={`tel:${place.phone.replace(/[^+\d]/g,'')}`}>CHIAMA LA STRUTTURA</a>}
-        {place.email&&<a className={place.phone?'cb-place-secondary':'cb-atlas-primary'} href={`mailto:${place.email}`}>SCRIVI UNA EMAIL</a>}
-        <button type="button" className={place.phone||place.email?'cb-place-secondary':'cb-atlas-primary'} onClick={()=>document.getElementById('cb-place-map')?.scrollIntoView({behavior:'smooth',block:'start'})}>VEDI SULLA MAPPA ↓</button>
-      </div>
-      {place.kind==='bivacco'&&<p className="cb-place-alert">Bivacco non equivale a rifugio custodito: verifica accessibilità, eventuale chiusura e dotazioni. Non fare affidamento sulla disponibilità di posti.</p>}
-      {place.kind==='rifugio'&&!place.phone&&!place.email&&<p className="cb-place-note">Recapiti non ancora verificati: non interpretiamo l'assenza del dato come indisponibilità della struttura.</p>}
+      <figure className="cb-location-hero-media">
+        <AlpinePlaceVisual key={place.slug} place={place}/>
+        <figcaption>{place.photo?'Foto del luogo · attribuzione e licenza in fondo alla pagina':'Rappresentazione topografica: fotografia del luogo non disponibile'}</figcaption>
+      </figure>
     </header>
 
-    {place.photo&&<figure className="cb-atlas-cover cb-place-cover">
-      <img src={place.photo.url} alt={`Fotografia documentata di ${place.name}`} loading="lazy"/>
-      <figcaption>Foto: {place.photo.author} · {place.photo.license}</figcaption>
-    </figure>}
+    <div className="cb-location-body">
+      <div className="cb-location-content">
+        <section className="cb-location-section cb-location-dossier" aria-labelledby="cb-location-info-heading">
+          <div className="cb-location-section-heading">
+            <span>01 / DATI ESSENZIALI</span>
+            <h2 id="cb-location-info-heading">PRIMA DI PARTIRE.</h2>
+            <p>Informazioni disponibili nelle fonti cartografiche, da verificare con la struttura quando necessario.</p>
+          </div>
+          <dl className="cb-location-dl">{detailRows.map(row=><div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>)}</dl>
+          {place.kind==='rifugio'&&!place.phone&&!place.email&&<p className="cb-location-muted-note">Non abbiamo ancora recapiti verificati per questa struttura: dato mancante non significa che sia chiusa.</p>}
+        </section>
 
-    <section className="cb-place-information" aria-label="Informazioni dettagliate">
-      <div className="cb-atlas-section-top"><span>INFORMAZIONI UTILI</span><h2>DATI DEL LUOGO.</h2>
-        <p>Informazioni strutturate riportate dalle fonti disponibili, non conferme di apertura in tempo reale.</p>
+        <AlpineWeatherPanel lat={place.lat} lng={place.lng} name={place.name}/>
+
+        <section className="cb-location-section cb-location-itineraries" aria-label="Sentieri vicini">
+          <div className="cb-location-section-heading">
+            <span>03 / ESCURSIONI E ACCESSI</span>
+            <h2>SENTIERI NEI DINTORNI.</h2>
+            <p>Tracce disponibili in zona: la vicinanza geometrica al percorso non certifica un accesso diretto.</p>
+          </div>
+          {loading?<p className="cb-atlas-loading">Recupero i sentieri cartografati…</p>:<>
+            <RouteGroup title="PARTONO DA QUI" items={departures}/>
+            <RouteGroup title="ARRIVANO QUI" items={arrivals}/>
+            <RouteGroup title="PASSANO VICINO" items={passes}/>
+            <RouteGroup title="ALTRI ITINERARI IN ZONA" items={around}/>
+            {!nearby.length&&<p className="cb-location-muted-note">Non sono state trovate tracce indicizzate nelle immediate vicinanze. Non implica che non esistano sentieri.</p>}
+          </>}
+        </section>
+
+        {water.length>0&&<section className="cb-location-section cb-location-water">
+          <div className="cb-location-section-heading"><span>04 / RISORSE IN ZONA</span>
+            <h2>ACQUA NEI DINTORNI.</h2>
+            <p>Fonti mappate entro circa 1,8 km in linea d'aria. La potabilità, l'accessibilità e la disponibilità vanno verificate sul posto.</p>
+          </div>
+          <div className="cb-location-water-grid">{water.slice(0,8).map(w=><div key={w.slug}>
+            <AlpinePlaceIcon kind="acqua" size={22}/><div><strong>{w.name}</strong><small>{w.kind} · {potabilityLabel(w.potable)}{w.seasonal?' · stagionale':''}</small></div>
+          </div>)}</div>
+        </section>}
+
+        {place.kind==='rifugio'&&<section className="cb-location-community">
+          <div className="cb-location-section-heading"><span>05 / COMUNITÀ</span><h2>PARLA CON CHI CONOSCE IL POSTO.</h2></div>
+          <p>Domande ai gestori verificati e recensioni moderate sono previste, ma non ancora disponibili. Non vengono mostrati giudizi o risposte fittizi.</p>
+          <HutClaimRequest place={place}/>
+        </section>}
+        <footer className="cb-location-credits">
+          Dati del luogo: <a href={place.osmUrl} target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>.
+          {place.photo&&<> Immagine: {place.photo.author}, {place.photo.license} · <a href={place.photo.sourceUrl} target="_blank" rel="noopener noreferrer">licenza e attribuzione</a>.</>}
+          {place.wikidata&&<> <a href={'https://www.wikidata.org/wiki/'+place.wikidata} target="_blank" rel="noopener noreferrer">Wikidata</a>.</>}
+          {' '}Meteo da modello, dati e condizioni del territorio possono cambiare.
+        </footer>
       </div>
-      <dl className="cb-place-details">{detailRows.map(row=><div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>)}</dl>
-      {(place.phone||place.email||place.website)&&<div className="cb-place-recapiti">
-        <h3>CONTATTI E RIFERIMENTI</h3>
-        {place.phone&&<a href={`tel:${place.phone.replace(/[^+\d]/g,'')}`}>Telefono: {place.phone}</a>}
-        {place.email&&<a href={`mailto:${place.email}`}>Email: {place.email}</a>}
-        {place.website&&<a href={place.website} target="_blank" rel="noopener noreferrer">Sito della struttura ↗</a>}
-      </div>}
-    </section>
 
-    <section id="cb-place-map" className="cb-place-map-section">
-      <div className="cb-atlas-section-top"><span>DOVE SI TROVA</span><h2>LA MAPPA DELLA ZONA.</h2>
-        <p>Il luogo e i sentieri vicini. Attiva separatamente i punti acqua; la vicinanza non dimostra l'accesso diretto.</p>
-      </div>
-      <AlpineAtlasMap places={places} kind={place.kind} selected={place} routes={nearby} water={water.map(w=>({lng:w.lng,lat:w.lat,potable:w.potable==='yes'}))} height={380}/>
-    </section>
-
-    {loading?<p className="cb-atlas-loading">Sto recuperando i sentieri nei dintorni…</p>:<>
-      <RouteGroup title="PERCORSI CHE PARTONO DA QUI" items={departures}/>
-      <RouteGroup title="PERCORSI CHE ARRIVANO QUI" items={arrivals}/>
-      <RouteGroup title="PERCORSI DI PASSAGGIO" items={passes}/>
-      <RouteGroup title="ALTRI SENTIERI NELLA ZONA" items={around}/>
-      {!nearby.length&&<p className="cb-place-note">Non ci sono tracce già indicizzate vicino al punto: non significa che non esistano sentieri.</p>}
-    </>}
-
-    <AlpineWeatherPanel lat={place.lat} lng={place.lng} name={place.name}/>
-
-    {water.length>0&&<section className="cb-local-water">
-      <h2><AlpinePlaceIcon kind="acqua" size={24}/> ACQUA NEI DINTORNI</h2>
-      <p>Fonti entro circa 1,8 km in linea d'aria. Potabilità, disponibilità e accesso non garantiti.</p>
-      <div className="cb-local-water-grid">{water.slice(0,8).map(w=><div key={w.slug}>
-        <strong>{w.name}</strong><small>{w.kind} · {potabilityLabel(w.potable)}{w.seasonal?' · stagionale':''}</small>
-      </div>)}</div>
-    </section>}
-
-    {place.kind==='rifugio'&&<HutClaimRequest place={place}/>}
-    {place.kind==='rifugio'&&<section className="cb-place-community">
-      <div className="cb-atlas-section-top"><span>LA VOCE DEI CAMMINATORI</span><h2>DOMANDE E RECENSIONI.</h2></div>
-      <p>Stiamo predisponendo le domande sulla struttura e le risposte del gestore verificato, insieme alle recensioni moderate. Non sono ancora aperte alle pubblicazioni: niente messaggi senza una gestione affidabile.</p>
-    </section>}
-    <footer className="cb-atlas-sourcing">Dati geografici: <a href={place.osmUrl} target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>.
-      {place.photo&&<> Immagine: {place.photo.license} · <a href={place.photo.sourceUrl} target="_blank" rel="noopener noreferrer">attribuzione completa</a>.</>}
-      {place.wikidata&&<> Scheda: <a href={`https://www.wikidata.org/wiki/${place.wikidata}`} target="_blank" rel="noopener noreferrer">Wikidata</a>.</>}
-      {' '}Verifica sempre itinerari, accessi e condizioni prima di partire.</footer>
+      <aside className="cb-location-sidebar" aria-label="Posizione e contatti">
+        <section id="cb-place-map" className="cb-location-side-map">
+          <div className="cb-location-sidebar-heading"><span>POSIZIONE</span><strong>DOVE SI TROVA.</strong></div>
+          <AlpineAtlasMap places={places} kind={place.kind} selected={place} routes={nearby} water={water.map(w=>({lng:w.lng,lat:w.lat,potable:w.potable==='yes'}))} height={315}/>
+          <p>Coordinate: {place.lat.toFixed(5)}, {place.lng.toFixed(5)} · Mappa TOPO / satellite</p>
+        </section>
+        <section className="cb-location-contact-card">
+          <div className="cb-location-sidebar-heading"><span>INFO OPERATIVE</span><strong>CONTATTI &amp; ACCESSO.</strong></div>
+          {place.operator&&<div className="cb-location-contact-row"><small>Gestore / ente</small><strong>{place.operator}</strong></div>}
+          {place.openingHours&&<div className="cb-location-contact-row"><small>Orari dichiarati</small><strong>{place.openingHours}</strong></div>}
+          {place.phone&&<a className="cb-location-contact-link" href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>☎ {place.phone}</a>}
+          {place.email&&<a className="cb-location-contact-link" href={'mailto:'+place.email}>✉ {place.email}</a>}
+          {place.website&&<a className="cb-location-contact-link cb-location-site-link" href={place.website} target="_blank" rel="noopener noreferrer">Sito della struttura ↗</a>}
+          {!place.phone&&!place.email&&!place.website&&<p className="cb-location-muted-note">Contatti non ancora presenti nei dati disponibili.</p>}
+        </section>
+        <div className="cb-location-safety"><strong>IN MONTAGNA SERVE LA TESTA.</strong><p>Posizione, meteo e sentieri sono indicativi. Prima di partire verifica apertura, condizioni, eventuali chiusure e bollettino valanghe.</p></div>
+      </aside>
+    </div>
   </article>;
 }
 
