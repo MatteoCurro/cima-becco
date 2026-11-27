@@ -6,6 +6,7 @@ import { AlpinePlaceIcon } from './AlpinePlaceIcon';
 import { PlaceDetail } from './AlpineAtlasPage';
 import { SiteFooter, SiteHeader } from './SiteChrome';
 import { alpinePlaceLink, loadAlpinePlaces, type AlpinePlace } from '../lib/alpinePlaces';
+import { canonicalAtlasSlug } from '../lib/placePermalinks';
 import { usePageTitle } from '../lib/pageTitle';
 import { atlasHasPhoto, atlasHasContact, availableLocalFacets, atlasMatchesFacet, type LocalAtlasFacetId } from '../lib/atlasFacets';
 import { presentAtlasFacts } from '../lib/atlasDossier';
@@ -72,7 +73,7 @@ export function AlpineExplorePage(){
   const activeFacets=Number(onlyPhoto)+Number(onlyContacts)+Number(minAltitude!=null)+Number(minBeds!=null)+selectedFacets.length;
   const resetFacets=()=>{setOnlyPhoto(false);setOnlyContacts(false);setMinAltitude(null);setMinBeds(null);setSelectedFacets([]);};
   const selectedPlace=useMemo(()=>places.find(p=>p.slug===selected)||null,[places,selected]);
-  const detail=nav.slug?places.find(p=>p.slug===nav.slug):null;
+  const detail=nav.slug?places.find(p=>p.slug===nav.slug||canonicalAtlasSlug(p)===nav.slug):null;
   const filtered=useMemo(()=>{
     const needle=query.trim().toLocaleLowerCase('it');
     const candidates=places.filter(p=>(!needle||[p.name,p.operator,p.address].some(v=>v?.toLocaleLowerCase('it').includes(needle)))&&

@@ -1,5 +1,5 @@
 import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
-import { mergeSheltersForSeo } from './merge_shelters_for_seo.mjs';
+import { canonicalAtlasSlug, atlasCanonicalPath } from '../src/lib/placePermalinks.js';
 /** Verifica prerender SEO + hydration delle URL profonde sulla build reale. */
 import {readFileSync,readdirSync,existsSync} from 'node:fs';
 import {join} from 'node:path';
@@ -9,8 +9,12 @@ const sections=['rifugi','bivacchi','borghi','route','trekking'];
 for(const section of sections){
   const base=join(dist,section);
   if(!existsSync(base))throw Error('Manca la categoria '+section);
-  const slug=readdirSync(base,{withFileTypes:true}).find(x=>x.isDirectory())?.name;
-  if(!slug)throw Error('Nessun permalink generato: '+section);
+  const slugs=readdirSync(base,{withFileTypes:true}).filter(x=>x.isDirectory()).map(x=>x.name);
+  const slug=slugs.find(name=>{
+    const filename=join(base,name,'index.html');
+    return existsSync(filename)&&readFileSync(filename,'utf8').includes('id="root"');
+  });
+  if(!slug)throw Error('Nessun permalink SEO completo generato: '+section);
   const file=join(base,slug,'index.html');
   if(!existsSync(file))throw Error('Manca '+file);
   const html=readFileSync(file,'utf8');
@@ -41,8 +45,18 @@ const alpine=mergeSheltersForSeo(mergeRefugesForSeo(
 );
 for(const place of alpine){
   const section=place.kind==='rifugio'?'rifugi':place.kind==='bivacco'?'bivacchi':'borghi';
-  const target=join(dist,section,place.slug,'index.html');
-  if(!existsSync(target))throw Error('Catalogo con link rotto: '+section+'/'+place.slug);
+  const canonical=atlasCanonicalPath(place).replace(/^\//,'');
+  const target=join(dist,canonical,'index.html');
+  if(!existsSync(target))throw Error('Catalogo con link rotto: '+canonical);
+  const canonicalHtml=readFileSync(target,'utf8');
+  if(!canonicalHtml.includes('/'+canonical+'">'))throw Error('Canonical SEO del luogo assente: '+canonical);
+  if(place.kind==='rifugio'&&canonicalAtlasSlug(place)!==place.slug){
+    const legacy=join(dist,section,place.slug,'index.html');
+    if(!existsSync(legacy))throw Error('Permalink storico non conservato: '+section+'/'+place.slug);
+    const html=readFileSync(legacy,'utf8');
+    if(!html.includes('http-equiv="refresh"')||!html.includes('noindex,follow'))
+      throw Error('Permalink storico senza redirect e noindex: '+section+'/'+place.slug);
+  }
 }
 const example=join(dist,'borghi','osm-n-240044790','index.html');
 if(!existsSync(example))throw Error('Permalink Abfaltersbach mancante');

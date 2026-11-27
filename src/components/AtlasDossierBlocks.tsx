@@ -55,8 +55,10 @@ function RelationItem({ relation }: { relation: AtlasRelation }) {
   </li>;
 }
 /** Moduli separati per responsabilità; nessun blocco vuoto, nessuna fonte o immagine inventata. */
-export function AtlasDossierBlocks({ record, placement }: {
+export function AtlasDossierBlocks({ record, placement, excludeImages=false }: {
   record: AtlasEntityMetadata; placement: 'alerts' | 'core' | 'connections' | 'media' | 'credits';
+  /** Le fotografie del rifugio sono già nella gallery principale. */
+  excludeImages?: boolean;
 }) {
   if (placement === 'alerts') {
     const notices = activeAtlasAlerts([...(record.alerts??[]),...(record.restrictions??[])]);
@@ -151,7 +153,8 @@ export function AtlasDossierBlocks({ record, placement }: {
   }
 
   if (placement === 'media') {
-    const media = authorizedAtlasMedia(record.media);
+    const media = authorizedAtlasMedia(record.media).filter(item=>
+      !excludeImages || !['photo','historical_photo'].includes(item.kind));
     const webcams = (record.webcams ?? []).filter(cam => Boolean(cam.id && cam.officialUrl && cam.name && cam.operator));
     return media.length || webcams.length ? <div className="cb-dossier-modules">
       {media.length > 0 && <Section kicker="FOTOGRAFIE / ARCHIVIO" title="Immagini documentate">
