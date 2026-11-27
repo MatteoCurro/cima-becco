@@ -79,7 +79,8 @@ export function RouteThumb({ route, animate = true }: { route: Route; animate?: 
   }, [route.coordinates, route.slug, route.source, route.gpxUrl]);
 
   // No stored image to show: render one here.
-  const needsLive = Boolean(shape) && (route.source === 'local' || imageFailed);
+  const verifiedPhoto = !imageFailed ? route.photos?.[0]?.url : null;
+  const needsLive = Boolean(shape) && !verifiedPhoto && (route.source === 'local' || imageFailed);
   useEffect(() => {
     if (!needsLive || !shape) return;
     let cancelled = false;
@@ -93,7 +94,7 @@ export function RouteThumb({ route, animate = true }: { route: Route; animate?: 
 
   if (!shape) return <span className="route-thumb" />;
   const liveUrl = live?.id === shape.key ? live.url : null;
-  const href = liveUrl ?? (route.source !== 'local' && !imageFailed ? shape.image : null);
+  const href = verifiedPhoto ?? liveUrl ?? (route.source !== 'local' && !imageFailed ? shape.image : null);
   const showImage = Boolean(href);
 
   return (
