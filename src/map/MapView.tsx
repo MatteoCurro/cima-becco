@@ -45,6 +45,8 @@ import './worker';
 import { MAP_STYLE_URL } from './constants';
 import { installMountainBasemap, MountainBasemapControl } from './mountainBasemap';
 import { loadAlpinePlaces } from '../lib/alpinePlaces';
+import { loadAlpineWater } from '../lib/alpineWater';
+import { addAlpineWaterLayers } from './waterOverlays';
 import { addAlpinePlaceLayers } from './alpineOverlays';
 import { parseSvg, textSpan } from '../lib/dom';
 import { glyphSvg } from '../lib/venueGlyphs';
@@ -686,6 +688,9 @@ export function MapView({
       addRouteLayers(map);
       void loadAlpinePlaces().then((data) => {
         if (mapRef.current === map && data.places.length > 0) addAlpinePlaceLayers(map, data.places);
+      });
+      void loadAlpineWater().then(data => {
+        if(mapRef.current===map && data.sources.length>0)addAlpineWaterLayers(map,data.sources);
       });
       markersRef.current = new VenueMarkers(map, {
         onSelect: (slug) => onSelectRef.current(slug),
