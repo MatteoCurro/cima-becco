@@ -1,0 +1,126 @@
+/* Esplorazione luoghi · stessa logica dell'elenco/mappa sentieri, non un Atlante a card. */
+.cb-explore-page{min-height:100vh;background:#f5f8f1;color:#183e30;font-family:'Space Grotesk',sans-serif}
+.cb-explore-page *{box-sizing:border-box}
+.cb-explore-overview{padding:18px clamp(18px,3vw,48px) 0;background:#edf4e6;border-bottom:2px solid #d6e5d0}
+.cb-explore-overline{font:850 10px/1.4 'Space Grotesk',sans-serif;letter-spacing:.14em;color:#bb0050;margin-bottom:9px}
+.cb-explore-overview-inner{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(230px,1fr) auto;gap:20px;align-items:center;max-width:1480px;margin:0 auto}
+.cb-explore-kicker{font:850 11px/1.5 'Space Grotesk',sans-serif;letter-spacing:.06em;color:#a7004e}
+.cb-explore-overview h1{font:900 clamp(34px,4.2vw,57px)/.95 'Bricolage Grotesque',sans-serif;letter-spacing:-.06em;color:#183f2e;margin:4px 0 12px}
+.cb-explore-overview p{font:550 13px/1.55 'Space Grotesk',sans-serif;max-width:560px;color:#3b5a45;margin:0}
+.cb-explore-count{border-left:2px solid #bdd1b9;padding-left:19px;display:flex;flex-direction:column;gap:2px}
+.cb-explore-count strong{font:900 clamp(28px,3vw,38px)/1 'Bricolage Grotesque',sans-serif;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.cb-explore-count span{font:850 10px/1.3 'Space Grotesk',sans-serif;letter-spacing:.045em;color:#526959}
+.cb-explore-categories{display:flex;max-width:1480px;margin:10px auto 0;gap:6px;overflow-x:auto;scrollbar-width:thin;padding-bottom:8px}
+.cb-explore-categories a{display:inline-flex;align-items:center;gap:6px;flex:none;padding:10px 15px;font:800 12px/1.2 'Space Grotesk',sans-serif;color:#2b543d;text-decoration:none;border-radius:7px;border:1px solid transparent}
+.cb-explore-categories a[aria-current=page]{background:#153e2f;color:#fff}
+.cb-explore-categories a[aria-current=page] svg{filter:brightness(1.5)}
+.cb-explore-categories a:hover:not([aria-current=page]){background:#dcead5;border-color:#c5d8bd}
+.cb-explore-workspace{display:grid;grid-template-columns:minmax(400px,46%) minmax(0,1fr);height:calc(100dvh - 205px);min-height:580px;overflow:hidden}
+.cb-explore-list{min-width:0;overflow:auto;overscroll-behavior:contain;background:#fcfdf9;padding:22px clamp(16px,2.8vw,36px) 35px;border-right:2px solid #d9e5d6;scrollbar-color:#c6d9c5 transparent}
+.cb-explore-list-head{display:grid;gap:10px;margin:0 0 22px}
+.cb-explore-search{display:flex;flex-direction:column;gap:6px;color:#40604e;font:800 11px/1.2 'Space Grotesk',sans-serif;text-transform:uppercase;letter-spacing:.05em}
+.cb-explore-search input{width:100%;height:47px;outline:none;background:#fff;color:#173b2c;border:1.5px solid #bed2c0;border-radius:9px;font:600 15px 'Space Grotesk',sans-serif;padding:0 15px;transition:border-color .2s}
+.cb-explore-search input:focus{border-color:#bd0050;box-shadow:0 0 0 3px #efb5d020}
+.cb-explore-filters{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.cb-explore-filters button{background:#fff;border:1px solid #bfd0bf;border-radius:6px;color:#254a39;font:750 11px 'Space Grotesk',sans-serif;padding:9px 11px;min-height:37px;cursor:pointer}
+.cb-explore-filters button.active{background:#194233;color:#fff;border-color:#194233}
+.cb-explore-filters label{margin-left:auto;display:flex;align-items:center;gap:7px;font:700 11px/1.4 'Space Grotesk',sans-serif;color:#54715a}
+.cb-explore-filters select{min-width:124px;max-width:160px;height:37px;border:1px solid #bfd0bf;background:#fff;border-radius:6px;padding:4px;font:700 11px 'Space Grotesk',sans-serif;color:#1b4230}
+.cb-explore-result-header{border-top:1px solid #dce8da;padding-top:14px;margin:0 0 17px}
+.cb-explore-result-header h2{font:850 18px/1.25 'Bricolage Grotesque',sans-serif;letter-spacing:-.03em;margin:0;color:#1c4634}
+.cb-explore-result-header h2 span{font:600 12px 'Space Grotesk',sans-serif;color:#6a7b6e}
+.cb-explore-result-header p{font:500 12px/1.5 'Space Grotesk',sans-serif;color:#647768;margin:5px 0 0}
+.cb-explore-grid{list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin:0;padding:0}
+.cb-explore-card{background:#fff;border:1.5px solid #e0e9dc;border-radius:12px;overflow:hidden;min-width:0;display:flex;flex-direction:column;box-shadow:0 4px 18px #244a3210;transition:transform .16s ease,border-color .16s ease}
+.cb-explore-card:hover{transform:translateY(-2px);border-color:#8fae92}
+.cb-explore-card.is-selected{border-color:#cc0053;box-shadow:0 0 0 2px #cc005323}
+.cb-explore-card-select{display:flex;flex-direction:column;flex:1;min-width:0;padding:0;border:0;background:#fff;color:#1d4432;text-align:left;cursor:pointer}
+.cb-explore-card .cb-place-visual{width:100%;height:auto;aspect-ratio:1.5;flex:none;border-radius:0}
+.cb-place-visual{position:relative;overflow:hidden;background:#dbe9cf;isolation:isolate}
+.cb-place-visual>img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+.cb-place-visual-art{position:absolute;inset:0;background:linear-gradient(155deg,#edf7da 0%,#cfe4c6 52%,#a1c6b8 100%);overflow:hidden}
+.cb-place-visual--bivacco .cb-place-visual-art{background:linear-gradient(145deg,#f9ebca,#ddccad 52%,#a0b29f)}
+.cb-place-visual--borgo .cb-place-visual-art{background:linear-gradient(145deg,#e8f5eb,#c7e3db 52%,#b9c8da)}
+.cb-place-visual-art>svg{position:absolute;width:100%;height:100%;inset:0}
+.cb-visual-mountain-far{fill:#739e84;opacity:.43}
+.cb-visual-mountain-near{fill:#315f50;opacity:.75}
+.cb-visual-contours path{stroke:#fff;stroke-width:2;opacity:.3}
+.cb-visual-sun{fill:#f2c483}
+.cb-visual-symbol{position:absolute;left:8%;top:11%;width:62px;height:62px;display:grid;place-items:center;background:#f5ffef;border:3px solid #22503b;border-radius:9px;transform:rotate(-6deg);box-shadow:4px 5px 0 #15402f44}
+.cb-explore-card .cb-visual-symbol{transform:rotate(-6deg) scale(.72);transform-origin:top left}
+.cb-visual-caption{position:absolute;right:10px;bottom:8px;background:#f3fae5e9;padding:4px 7px;border-radius:4px;font:800 9px/1.3 'Space Grotesk',sans-serif;color:#315b41;letter-spacing:.03em}
+.cb-place-visual-label{position:absolute;bottom:16px;left:16px;background:#163f30;color:#fff;font:850 10px/1.2 'Space Grotesk',sans-serif;letter-spacing:.09em;padding:8px 10px}
+.cb-explore-card-body{display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:100%;padding:14px 13px 12px;flex:1}
+.cb-explore-card-kicker{display:flex;align-items:center;gap:5px;color:#b2004c;font:850 10px/1.3 'Space Grotesk',sans-serif;letter-spacing:.045em}
+.cb-explore-card-name{color:#1b4232;font:850 clamp(17px,1.8vw,21px)/1.16 'Bricolage Grotesque',sans-serif;letter-spacing:-.03em;overflow-wrap:anywhere}
+.cb-explore-card-meta{font:550 11px/1.4 'Space Grotesk',sans-serif;color:#708074;min-height:17px}
+.cb-explore-card-facts{display:flex;gap:14px;flex-wrap:wrap;border-top:1px solid #e8eee6;width:100%;padding-top:11px;margin-top:auto}
+.cb-explore-card-facts>span{display:flex;flex-direction:column;gap:3px}
+.cb-explore-card-facts strong{font:850 15px/1 'Bricolage Grotesque',sans-serif;color:#1d4936;font-variant-numeric:tabular-nums}
+.cb-explore-card-facts small{font:600 10px/1.3 'Space Grotesk',sans-serif;color:#75877a}
+.cb-explore-card-detail{display:flex;justify-content:space-between;gap:10px;background:#edf4e9;padding:11px 13px;text-decoration:none;color:#153f30;font:850 11px 'Space Grotesk',sans-serif;border-top:1px solid #deebda}
+.cb-explore-card-detail:hover{color:#b0004d;background:#e2f1de}
+.cb-explore-more{width:100%;margin-top:20px;padding:15px;background:#1a4634;color:#fff;border:0;border-radius:7px;cursor:pointer;font:850 12px 'Space Grotesk',sans-serif}
+.cb-explore-source{font:500 11px/1.6 'Space Grotesk',sans-serif;color:#7b8b7b;margin-top:20px}
+.cb-explore-empty{padding:28px;background:#eff4e8;border-radius:10px}
+.cb-explore-empty strong{font:850 21px 'Bricolage Grotesque',sans-serif}
+.cb-explore-empty p{font:500 13px/1.5 'Space Grotesk',sans-serif}
+.cb-explore-empty button{cursor:pointer;border:0;padding:10px 12px;background:#173d2e;color:#fff;border-radius:6px}
+.cb-explore-map-panel{position:relative;min-height:0;min-width:0;background:#d3e6d2;overflow:hidden}
+.cb-explore-map-topline{height:38px;display:flex;align-items:center;gap:7px;background:#193f30;color:#fff;padding:0 17px;font:800 11px/1.2 'Space Grotesk',sans-serif;letter-spacing:.06em}
+.cb-explore-map-topline>span{margin-left:auto;color:#e3ffd1;font:700 10px 'Space Grotesk',sans-serif}
+.cb-explore-map-panel>.cb-atlas-map-wrap{height:calc(100% - 38px);border:0;border-radius:0;overflow:hidden;min-height:0}
+.cb-explore-map-panel .cb-atlas-map{min-height:0!important;height:100%!important}
+.cb-explore-map-panel .cb-atlas-map-caption{bottom:12px;left:12px}
+.cb-explore-map-preview{position:absolute;z-index:12;left:18px;bottom:55px;width:min(410px,calc(100% - 36px));display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;padding:9px;box-shadow:0 10px 32px #142f254a;background:#fff;border:1px solid #cbdccb;border-radius:12px}
+.cb-explore-map-preview>.cb-place-visual{height:110px;border-radius:7px}
+.cb-explore-map-preview>div:last-child{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:7px;min-width:0}
+.cb-explore-map-preview small{font:800 10px/1.3 'Space Grotesk',sans-serif;color:#b0004b;letter-spacing:.04em}
+.cb-explore-map-preview strong{font:850 18px/1.12 'Bricolage Grotesque',sans-serif;color:#183f2f;overflow-wrap:anywhere}
+.cb-explore-map-preview a{font:850 11px/1.4 'Space Grotesk',sans-serif;color:#b0004b;text-decoration:none}
+.cb-explore-preview-close{position:absolute;z-index:1;top:4px;right:6px;background:#f0f5ed;color:#194032;border:0;border-radius:50%;width:27px;height:27px;font-size:20px;cursor:pointer}
+.cb-explore-mobile-switch{display:none}
+.cb-explore-detail-shell{max-width:1300px;padding:20px clamp(16px,3vw,40px) 65px;margin:auto}
+.cb-explore-no-data{padding:50px 18px}
+.cb-explore-no-data h1{font:900 36px 'Bricolage Grotesque',sans-serif}
+@media(max-width:1100px){
+ .cb-explore-workspace{grid-template-columns:minmax(350px,49%) minmax(0,1fr)}
+ .cb-explore-overview-inner{grid-template-columns:1fr 1.3fr auto;gap:14px}
+ .cb-explore-grid{gap:11px}
+ .cb-explore-list{padding:16px}
+ .cb-explore-card-body{padding:12px}
+}
+@media(max-width:850px){
+ .cb-explore-overview-inner{grid-template-columns:1fr auto}
+ .cb-explore-overview-inner>p{grid-column:1/-1;grid-row:2;margin-bottom:5px}
+ .cb-explore-count{grid-column:2;grid-row:1}
+ .cb-explore-workspace{height:calc(100dvh - 208px);min-height:400px;display:block;position:relative}
+ .cb-explore-list,.cb-explore-map-panel{position:absolute;inset:0;height:100%;border:0}
+ .cb-explore-list{padding:17px 17px 95px}
+ .cb-explore-mobile-list .cb-explore-map-panel{display:none}
+ .cb-explore-mobile-map .cb-explore-list{display:none}
+ .cb-explore-map-panel .cb-atlas-map-wrap{height:calc(100% - 38px)}
+ .cb-explore-mobile-switch{display:flex;position:fixed;z-index:31;bottom:20px;left:50%;transform:translateX(-50%);border-radius:99px;background:#173e30;box-shadow:0 4px 18px #1a372864;padding:5px;gap:4px}
+ .cb-explore-mobile-switch button{cursor:pointer;border:0;border-radius:99px;min-width:95px;height:40px;background:transparent;color:#fff;font:800 12px 'Space Grotesk',sans-serif}
+ .cb-explore-mobile-switch button[aria-pressed=true]{background:#e8ffcc;color:#184130}
+ .cb-explore-overview{padding:14px 18px 0}
+}
+@media(max-width:510px){
+ .cb-explore-overview h1{font-size:35px}
+ .cb-explore-overview-inner>p{font-size:12px}
+ .cb-explore-count strong{font-size:25px}
+ .cb-explore-categories a{padding:8px 11px;font-size:11px}
+ .cb-explore-filters label{margin-left:0}
+ .cb-explore-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .cb-explore-list{padding:14px 12px 95px}
+ .cb-explore-card .cb-place-visual{aspect-ratio:1.38}
+ .cb-explore-card-body{padding:10px}
+ .cb-explore-card-name{font-size:16px}
+ .cb-explore-card-meta{font-size:10px}
+ .cb-explore-card-facts{gap:10px}
+ .cb-explore-card-facts strong{font-size:13px}
+ .cb-explore-card-detail{padding:10px;font-size:10px}
+ .cb-visual-symbol{width:48px;height:48px}
+}
+@media(max-width:365px){.cb-explore-grid{grid-template-columns:1fr}.cb-explore-card .cb-place-visual{aspect-ratio:1.9}}
+@media(prefers-reduced-motion:reduce){.cb-explore-card{transition:none}.cb-explore-card:hover{transform:none}}
