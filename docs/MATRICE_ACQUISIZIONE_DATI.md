@@ -2,7 +2,7 @@
 
 **Stato:** piano tecnico in staging, 27/11/2026. **Specifiche sovraordinate:** [Bibbia](MODELLO_METADATI_E_LAYOUT.md) e [architettura UI](ARCHITECTURE.md). Questo piano non riduce i requisiti della Bibbia: ogni nuovo campo significativo deve essere definito anche lì prima della realizzazione.
 
-**Registro sorgenti machine-readable:** [metadata_source_registry_v1.json](../scripts/metadata_source_registry_v1.json). **Controllo completezza:** [audit_metadata_spec_v1.py](../scripts/audit_metadata_spec_v1.py). **Registro rifugi (78 campi):** [refuge_field_registry_v1.json](../scripts/refuge_field_registry_v1.json). **Roadmap:** [PIANO_IMPORTATORI.md](PIANO_IMPORTATORI.md).
+**Registro sorgenti machine-readable:** [metadata_source_registry_v1.json](../scripts/metadata_source_registry_v1.json). **Controllo completezza:** [audit_metadata_spec_v1.py](../scripts/audit_metadata_spec_v1.py). **Registro rifugi (80 campi):** [refuge_field_registry_v1.json](../scripts/refuge_field_registry_v1.json). **Roadmap:** [PIANO_IMPORTATORI.md](PIANO_IMPORTATORI.md).
 
 ## 1. Cosa è stato davvero verificato: non ripetere i test
 
@@ -19,7 +19,7 @@ L'audit ha utilizzato gli artefatti reali delle PR sperimentali [#7](https://git
 | Meteo | 2 località con forecast e storico solo 2025 | pilot_place_weather_wikidata.py, weather client | nessun precipitato/neve storica nei due casi; quota e modello; uso commerciale |
 | DAIT / ISTAT | CSV DAIT 7.783 righe, intestazione aggiornata nel campione al 24/08/2026; cataloghi ISTAT consultati | pilot_admin_biography_webcams.py | codici a sei cifre, dataset demografici e licenze ancora da integrare |
 | Webcam | 3 portali HTTP 200 | pilot_admin_biography_webcams.py | **0 singole webcam/feed autorizzati estratti** |
-| Rifugi normalizzati | 436 ID, 909 proximity links, 78 campi pianificati, 8 foto candidate | import_refuges_v1.py e test PR #9 | CAI/SAT, diritti, 0 logo e 0 webcam nello snapshot; G0 |
+| Rifugi normalizzati | 436 ID, 909 proximity links, 80 campi pianificati, 8 foto candidate | import_refuges_v1.py e test PR #9 | CAI/SAT, diritti, 0 logo e 0 webcam nello snapshot; G0 |
 
 Riferimenti ufficiali da cui partire: [CAI REST](https://rifugi.cai.it/api/documentation), [INFOMONT](https://www.cai.it/sentieri-e-rifugi/infomont/), [SAT](https://www.sat.tn.it/sentiero-italia/), [Commons metadata](https://commons.wikimedia.org/wiki/Commons:Machine-readable_data), [codici ISTAT](https://www.istat.it/classificazione/codici-dei-comuni-delle-province-e-delle-regioni/), [GeoNames](https://www.geonames.org/about.html), [OpenBeta](https://docs.openbeta.io/introduction/overview/), [Open-Meteo Terms](https://open-meteo.com/en/terms). La disponibilità pubblica di un endpoint NON autorizza automaticamente copie e ridistribuzione.
 
