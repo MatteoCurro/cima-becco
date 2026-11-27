@@ -90,7 +90,7 @@ export function SiteFooter({ openSourcePill = false }: { openSourcePill?: boolea
         </div>
         <div className="site-footer-base">
           <span>© Cima Becco · Ogni cima, un nuovo percorso.</span>
-          <span>Un progetto sperimentale. <a href="/#data">Fonti, attribuzioni e licenze</a></span>
+          <span>Un progetto sperimentale. <a href="/fonti-e-crediti/">Fonti, attribuzioni e licenze</a></span>
         </div>
       </div>
       {coverageOpen && <FooterCoverage onClose={() => setCoverageOpen(false)} />}
