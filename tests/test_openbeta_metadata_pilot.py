@@ -23,6 +23,7 @@ class OpenBetaMappingTest(unittest.TestCase):
         self.assertIsNone(rows[0]["metadata"]["pitchesCount"])
         self.assertEqual(rows[0]["metadata"]["pitchDetails"], [])
         self.assertEqual(rows[0]["source"]["licence"], "CC0")
+        self.assertEqual(rows[0]["kind"], "climbing_route")
 
     def test_missing_bolts_not_zero(self):
         data = [{"uuid":"a","area_name":"A","climbs":[{"uuid":"r","name":"X",
@@ -30,6 +31,16 @@ class OpenBetaMappingTest(unittest.TestCase):
         row=normalize(data)[0]
         self.assertIsNone(row["metadata"]["boltsCount"])
         self.assertIsNone(row["metadata"]["quickdrawsRecommended"])
+        self.assertIsNone(row["metadata"]["lengthM"])
+
+    def test_negative_length_and_boulder_classification(self):
+        data = [{"uuid":"z","area_name":"Block","climbs":[{
+          "uuid":"z1","name":"Blocchetto","length":-1,"boltsCount":None,
+          "grades":{"vscale":"V5"},"type":{"bouldering":True}}]}]
+        row=normalize(data)[0]
+        self.assertEqual(row["kind"], "boulder_problem")
+        self.assertIsNone(row["metadata"]["lengthM"])
+        self.assertEqual(row["metadata"]["grades"]["vscale"], "V5")
 
 if __name__ == "__main__":
     unittest.main()
