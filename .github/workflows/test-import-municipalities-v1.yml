@@ -114,6 +114,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cima-becco-block3-municipalities-pilot
-          path: build/import-municipalities-v1/
+          # Keep full DAIT CSV (which includes birth dates and political lists)
+          # and immutable raw payloads inside the job only: do not upload them
+          # to public-repo Action artifacts. SHA256 stays in report.json.
+          path: |
+            build/import-municipalities-v1/municipalities.json
+            build/import-municipalities-v1/report.json
+            build/import-municipalities-v1/wikidata-resolver.json
           retention-days: 14
           if-no-files-found: warn
