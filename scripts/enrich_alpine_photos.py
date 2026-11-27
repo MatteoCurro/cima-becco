@@ -127,7 +127,14 @@ def wikipedia_page_image(language, title):
         'titles': title, 'piprop': 'name', 'redirects': '1'})
     for page in doc.get('query', {}).get('pages', {}).values():
         filename = page.get('pageimage')
-        if filename and re.search(r'\.(?:jpg|jpeg|png|webp)
+        if filename and filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+            unwanted = ('coat_of_arms', 'stemma', 'wappen', 'flag', 'bandiera', 'logo')
+            if not any(term in filename.lower() for term in unwanted):
+                return filename
+    return None
+
+
+def commons_photos(filenames):
     result = {}
     for batch in chunks(sorted(set(filenames)), 15):
         doc = request(COMMONS, {'action': 'query', 'format': 'json',
