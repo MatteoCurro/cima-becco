@@ -19,6 +19,7 @@ import { fetchCommunityRoutes } from '../lib/api';
 import { detectCountry } from '../lib/country';
 import { openMapWith } from '../lib/mapIntent';
 import { countrySummaries, notablePeakCountry, notablePeaks, peaksInView } from '../lib/worldPeaks';
+import { loadAlpinePlaces, alpinePlaceLink, type AlpinePlace } from '../lib/alpinePlaces';
 import { normaliseQuery } from '../lib/streetTerms';
 import { useUnits } from './UnitsContext';
 import { LocateIcon, SearchIcon } from './icons';
@@ -220,6 +221,7 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [lookup, setLookup] = useState<Lookup>({ state: 'idle' });
+  const [alpinePlaces, setAlpinePlaces] = useState<AlpinePlace[]>([]);
   const lookupIdRef = useRef(0);
   const rootRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -242,6 +244,16 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
   // Place names are matched on the plain query: street expansions would turn
   // "st" into "street" and miss "St Lucia".
   const plain = fold(query).trim().replace(/\s+/g, ' ');
+  useEffect(() => {
+    if (plain.length < 2 || alpinePlaces.length) return;
+    let active=true;
+    void loadAlpinePlaces().then(data=>{if(active)setAlpinePlaces(data.places);});
+    return ()=>{active=false;};
+  }, [plain, alpinePlaces.length]);
+  const alpineMatches = useMemo(()=>plain.length<2 ? [] : alpinePlaces
+    .filter(place=>fold(place.name).includes(plain))
+    .sort((a,b)=>Number(fold(b.name)===plain)-Number(fold(a.name)===plain) || Number(fold(b.name).startsWith(plain))-Number(fold(a.name).startsWith(plain)) || a.name.localeCompare(b.name,'it'))
+    .slice(0,5),[plain,alpinePlaces]);
 
   // Every match, not just the ones that fit on screen. Truncating during the
   // scan would return the first eight blocks in file order and sort only those,
@@ -312,6 +324,11 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
     if (venue && !loadedSlugs.has(slug)) onFitBounds({ west: venue.lng - 0.06, south: venue.lat - 0.06, east: venue.lng + 0.06, north: venue.lat + 0.06 });
     else onPick(slug);
     reset();
+  };
+
+  const pickAlpine = (place: AlpinePlace) => {
+    reset();
+    window.location.hash = alpinePlaceLink(place);
   };
 
   const pickRoute = (slug: string) => {
@@ -387,9 +404,12 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
     }
     track('search', query.trim());
     if (placeHits.exact) return pickPlace(placeHits.exact);
+    const exactAlpine = alpineMatches.find(place=>fold(place.name)===plain);
+    if (exactAlpine) return pickAlpine(exactAlpine);
     if (routeHits.exact) return pickRoute(routeHits.exact.slug);
     if (areaHits.length > 0) return pickArea(areaHits[0]);
     if (placeHits.prefix.length > 0) return pickPlace(placeHits.prefix[0]);
+    if (alpineMatches.length > 0) return pickAlpine(alpineMatches[0]);
     if (matches.length === 1) return pick(matches[0].slug);
     if (routeHits.hits.length > 0) return pickRoutes(routeHits.hits);
     const bounds = boundsOf(matches);
@@ -402,17 +422,17 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
     geocode(query.trim());
   };
 
-  const hasLocal = routeRows.length > 0 || areaHits.length > 0 || results.length > 0 || placeRows.length > 0;
+  const hasLocal = routeRows.length > 0 || areaHits.length > 0 || results.length > 0 || placeRows.length > 0 || alpineMatches.length > 0;
   const suggesting = query.trim() === '' && lookup.state === 'idle' && suggestions.length > 0;
   const status =
     lookup.state === 'searching' ? (
-      <p className="small muted results-head" role="status">Looking up “{lookup.query}”…</p>
+      <p className="small muted results-head" role="status">Cerco “{lookup.query}” sulla carta…</p>
     ) : lookup.state === 'missing' ? (
       <p className="small muted results-head" role="status">
         Nessun risultato per “{lookup.query}”. Prova una cima o un paesino sperduto.
       </p>
     ) : normalised.length >= 2 && !hasLocal ? (
-      <p className="small muted results-head">Press Search to look up “{query.trim()}” on the map.</p>
+      <p className="small muted results-head">Invio per cercare “{query.trim()}” sulla carta.</p>
     ) : null;
 
   // The same pill as the landing page's search, so the header keeps one shape
@@ -420,7 +440,7 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
   // just left of it (inside its left end on phones).
   return (
     <div className="header-search">
-      <button type="button" className="locate-btn" onClick={onLocate} aria-label="Show routes near me" data-tip="Routes near me">
+      <button type="button" className="locate-btn" onClick={onLocate} aria-label="Itinerari vicino a me" data-tip="Vicino a me">
         <LocateIcon size={18} />
       </button>
       <form
@@ -473,11 +493,17 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
                 <span className="result-meta small muted">{place.meta}</span>
               </button>
             ))}
+            {alpineMatches.map((place) => (
+              <button type="button" key={place.slug} className="result-row area-row" onClick={() => pickAlpine(place)}>
+                <span className="result-name">{place.name}</span>
+                <span className="result-meta small muted">{place.kind === 'rifugio' ? 'RIFUGIO' : 'BORGO'}{place.elevationM ? ` · ${place.elevationM} m` : ''} · ESPLORA ↗</span>
+              </button>
+            ))}
             {routeRows.map((route) => (
               <button type="button" key={`r:${route.slug}`} className="result-row" onClick={() => pickRoute(route.slug)}>
                 <span className="result-name">{route.name}</span>
                 <span className="result-meta small muted">
-                  Route · {units.distance(route.distanceM)}
+                  Sentiero · {units.distance(route.distanceM)}
                   {route.elevationAvailable !== false && ` · ${units.height(route.gainM)} ${HEIGHT_LABEL.gain}`}
                 </span>
               </button>
@@ -485,7 +511,7 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
             {areaHits.map((area) => (
               <button type="button" key={area.code} className="result-row area-row" onClick={() => pickArea(area)}>
                 <span className="result-name">{area.name}</span>
-                <span className="result-meta small muted">Area · {area.venueCount} places mapped</span>
+                <span className="result-meta small muted">Zona · {area.venueCount} luoghi mappati</span>
               </button>
             ))}
             {results.map((venue) => {
