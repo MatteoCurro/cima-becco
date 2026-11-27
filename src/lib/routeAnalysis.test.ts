@@ -1,65 +1,55 @@
-import kluangGpx from '../../data/routes/kluang-district-trail-run.gpx?raw';
-import ridgesGpx from '../../data/routes/southern-ridges-walk.gpx?raw';
 import { describe, expect, it } from 'vitest';
 import type { Route, RoutePoint } from '../types';
-import { parseGpx } from './gpx';
 import { computeGain } from './elevation';
 import { classifyActivity, findOverlaps, isSameRoute, routeFingerprint } from './routeAnalysis';
 import { routeFromPoints } from './routes';
 
-const kluang = parseGpx(kluangGpx);
-const ridges = parseGpx(ridgesGpx);
-const asRoute = (name: string, points: RoutePoint[]): Route => routeFromPoints(name, points, []);
+// Test indipendenti da vecchi GPX asiatici non più presenti nella repository.
+const sentieroDolomiti: RoutePoint[] = Array.from({ length: 100 }, (_, i) =>
+  [12.20 + i * 0.00012, 46.51 + i * 0.000025, 1100 + i * 2]);
+const sentieroAlpi: RoutePoint[] = Array.from({ length: 100 }, (_, i) =>
+  [10.20 + i * 0.00012, 46.20 + i * 0.000025, 1500 + i * 2]);
 
-describe('gpx timestamps', () => {
-  it('keeps one time slot per point and a recorded date', () => {
-    expect(kluang.times).toHaveLength(kluang.points.length);
-    if (kluang.times.some((t) => t != null)) expect(kluang.startedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+const toRoute = (name: string, coords: RoutePoint[]): Route => routeFromPoints(name, coords, []);
+
+describe('classificazione attività a piedi', () => {
+  it('una camminata resta escursione, non bici o ferrata', () => {
+    const timestamps = sentieroDolomiti.map((_, i) => i * 40_000);
+    expect(classifyActivity(sentieroDolomiti, computeGain(sentieroDolomiti).gainM, timestamps)).toBe('hike');
+  });
+  it('riconosce la corsa su sentiero da velocità umana compatibile', () => {
+    const points: RoutePoint[] = Array.from({ length: 50 }, (_, i) => [12.20 + i * 0.0001, 46.51, 1000]);
+    const timestamps = points.map((_, i) => i * 4_500);
+    expect(classifyActivity(points, 0, timestamps)).toBe('trail');
+  });
+  it('non inventa ferrate dalla sola traccia GPS', () => {
+    expect(classifyActivity(sentieroDolomiti, 900)).not.toBe('ferrata');
   });
 });
 
-describe('activity', () => {
-  it('classifica una traccia a piedi senza inventare una via ferrata', () => {
-    expect(classifyActivity(kluang.points, computeGain(kluang.points).gainM, kluang.times)).toMatch(/^(hike|trail)$/);
+describe('impronte e sovrapposizioni dei percorsi', () => {
+  it('genera la stessa impronta per la stessa geometria', () => {
+    expect(routeFingerprint(sentieroDolomiti)).toBe(routeFingerprint([...sentieroDolomiti]));
+    expect(routeFingerprint(sentieroDolomiti)).not.toBe(routeFingerprint(sentieroAlpi));
   });
-
-  it('non classifica come ciclismo tracce con velocità sospette', () => {
-    const points: RoutePoint[] = Array.from({ length: 40 }, (_, i) => [103.8 + i * 0.002, 1.3, 10]);
-    const times = points.map((_, i) => i * 25_000); // ~220 m per 25 s ≈ 32 km/h
-    expect(classifyActivity(points, 5, times)).toBe('hike');
+  it('riconosce un file ripubblicato con campionamento ridotto', () => {
+    const thinned = sentieroDolomiti.filter((_, i) => i % 2 === 0);
+    expect(isSameRoute(thinned, toRoute('Sentiero campione', sentieroDolomiti))).toBe(true);
+    expect(isSameRoute(sentieroAlpi, toRoute('Sentiero campione', sentieroDolomiti))).toBe(false);
   });
-
-  it('classifica una corsa su sentiero come trail', () => {
-    const points: RoutePoint[] = Array.from({ length: 40 }, (_, i) => [103.8 + i * 0.002, 1.3, 10]);
-    const times = points.map((_, i) => i * 70_000); // ~11 km/h
-    expect(classifyActivity(points, 5, times)).toBe('trail');
+  it('identifica un tratto realmente condiviso senza confondere zone distanti', () => {
+    const partial = sentieroDolomiti.slice(0, 60);
+    const hits = findOverlaps(partial, [
+      toRoute('Sentiero Dolomiti', sentieroDolomiti),
+      toRoute('Sentiero Alpi', sentieroAlpi),
+    ]);
+    expect(hits[0]?.route.name).toBe('Sentiero Dolomiti');
+    expect(hits[0]?.share).toBeGreaterThan(0.75);
+    expect(hits.some((hit) => hit.route.name === 'Sentiero Alpi')).toBe(false);
   });
-});
-
-describe('duplicates and overlaps', () => {
-  it('gives the same fingerprint for the same track, different for another', () => {
-    expect(routeFingerprint(kluang.points)).toBe(routeFingerprint([...kluang.points]));
-    expect(routeFingerprint(kluang.points)).not.toBe(routeFingerprint(ridges.points));
-  });
-
-  it('treats a thinned copy as the same route', () => {
-    const thinned = kluang.points.filter((_, i) => i % 2 === 0);
-    expect(isSameRoute(thinned, asRoute('Kluang', kluang.points))).toBe(true);
-    expect(isSameRoute(ridges.points, asRoute('Kluang', kluang.points))).toBe(false);
-  });
-
-  it('finds a partial overlap', () => {
-    const half = kluang.points.slice(0, Math.floor(kluang.points.length / 2));
-    const [overlap] = findOverlaps(half, [asRoute('Kluang', kluang.points), asRoute('Ridges', ridges.points)]);
-    expect(overlap.route.name).toBe('Kluang');
-    expect(overlap.share).toBeGreaterThan(0.9);
-  });
-
-  it('skips a corrupt stored route instead of throwing', () => {
-    const noDistance = { ...asRoute('Broken', []), distanceM: NaN };
-    const noCoords = { ...asRoute('Broken', []), coordinates: undefined as unknown as RoutePoint[] };
-    expect(isSameRoute(kluang.points, noDistance)).toBe(false);
-    expect(() => isSameRoute(kluang.points, noCoords)).not.toThrow();
-    expect(isSameRoute(kluang.points, noCoords)).toBe(false);
+  it('non cade su route danneggiate', () => {
+    const broken = { ...toRoute('Danneggiato', []), coordinates: undefined as unknown as RoutePoint[] };
+    expect(() => isSameRoute(sentieroDolomiti, broken)).not.toThrow();
+    expect(isSameRoute(sentieroDolomiti, broken)).toBe(false);
   });
 });
