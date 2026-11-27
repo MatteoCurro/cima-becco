@@ -20,8 +20,6 @@
   font:800 12px/1.25 'Space Grotesk',sans-serif;overflow-wrap:anywhere}
 .cb-location-actions .cb-location-action-primary{background:#bf0052;color:#fff;border-color:#bf0052}
 .cb-location-alert,.cb-location-safety{padding:14px 16px;margin:18px 0;background:#fff3dc;border-left:4px solid #bd8a3f;border-radius:5px;color:#6b512d;font:600 12px/1.65 'Space Grotesk',sans-serif}
-.cb-location-section{margin:25px 0 30px}
-.cb-location-dossier{padding-top:22px;border-top:1px solid #dce8d7}
 .cb-location-muted-note{color:#6b8170;font-size:12px;line-height:1.7}
 .cb-location-cost{display:flex;align-items:center;flex-wrap:wrap;gap:9px;padding:14px;margin:12px 0;border:1px solid #e6d2a5;background:#fff8e8;border-radius:7px}
 .cb-location-cost>span:first-child{font-size:11px;font-weight:800;color:#8a703c}
@@ -34,7 +32,6 @@
 .cb-location-water-grid small{font-size:11px;color:#637664;margin-top:4px}
 .cb-location-credits{margin-top:35px;padding:18px 0;border-top:1px solid #dae5d8;color:#6e8070;font-size:11px;line-height:1.8;overflow-wrap:anywhere}
 .cb-location-credits a,.cb-location-wiki{color:#aa0050}
-.cb-location-contact-card{padding:15px;background:#f7faf4;border:1px solid #dce9d7;border-radius:10px}
 .cb-location-contact-card p{font-size:13px;line-height:1.6}
 .cb-location-sidebar{background:#dce9d6}
 .cb-location-side-map{position:relative;width:100%;height:100%;min-height:0;display:flex;flex-direction:column}

@@ -51,7 +51,10 @@ Sono riferimenti per la struttura delle informazioni, non per duplicare loghi, e
 | File | Proprietà |
 | --- | --- |
 | `src/styles.css` | Base originale ed elementi storici non ancora migrati |
-| `src/design.css` | Componenti storici, non il nuovo workspace |
+| `src/design.css` | Componenti storici. Non include più selettori di header/footer/wordmark. |
+| `src/components/siteChrome.css` | Proprietario esclusivo di header, footer, wordmark, menu Esplora e geometrie del chrome | 
+| `src/components/fontAwesome.css` e `FaIcon.tsx` | Iconografia Font Awesome Free SVG locale, senza webfont o emoji di sistema (CC BY 4.0) | 
+| `src/components/detailSections.css` | Proprietario dell'indice Vai a e del ritmo delle sezioni, senza regole 42/58 | 
 | `src/cimaSystem.css` | Variabili e primitive UI condivise |
 | `src/cimaWorkspace.css` | **Unica proprietà** della griglia delle schede e della colonna cartografica `42/58`, anche per cime |
 | `src/exploreNavigation.css` | Unico selettore categorie e filtri contestuali |
@@ -131,3 +134,26 @@ modello dei dati strutturati per l'importatore vero.
 
 Questo congelamento non riguarda bug funzionali, sicurezza, accessibilità
 o regressioni: vanno sempre corretti prima di importare nuovi contenuti.
+
+## Refactoring architetturale del chrome e della navigazione (27/11/2026)
+
+- La cascata storica presentava 114 regole concorrenti o ridondanti su
+  SiteHeader, SiteFooter, wordmark e menu esplorazione. Sono state rimosse da
+  design.css e sostituite da un solo modulo siteChrome.css, non accodate come override.
+- Header e footer occupano la viewport; min-width:0, max-width:none e
+  spaziatura interna solo dei figli. Nessun width:100vw che amplifichi la scrollbar.
+- I componenti di navigazione interna non possono creare hash #id:
+  il router SPA interpreta gia l'hash come rotta. Usare bottoni e scrollToDetailSection,
+  che misura lo scroll-container e l'header sticky reali (anche l'overlay Venue).
+- Per le icone comuni il componente FaIcon usa SVG di Font Awesome Free
+  (Fonticons, Inc., CC BY 4.0, https://fontawesome.com/license/free).
+  Le icone sono locali e indipendenti dai font/emoji di iOS e Android.
+  Il marchio Cima Becco resta un SVG proprietario.
+- Le schede seguono: sintesi, dati, contatti, territorio, itinerari,
+  relazioni documentate, media, fonti. Non mostrare sezioni senza dati.
+- I test statici in uiCssArchitecture.test.ts proteggono la proprieta
+  degli stili del chrome; gli E2E misurano viewport, scroll e SVG.
+
+Proprieta esclusiva: design.css non puo piu definire site-header,
+site-footer, wordmark o cb-explore-menu; la griglia 42/58 resta
+in cimaWorkspace.css. Le sezioni non modificano la larghezza dei main/aside.

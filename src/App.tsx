@@ -1224,7 +1224,7 @@ function MapApp() {
             </pre>
           </div>
         ) : (
-          <div className="map-wrap" id={isRouteDetail?"cb-route-map":undefined}>
+          <div className="map-wrap" id={isRouteDetail?"cb-route-map":undefined} tabIndex={isRouteDetail?-1:undefined}>
             <MapContextLabel
               kicker={isRouteDetail?"MAPPA DEL PERCORSO":mode==='routes'?"SENTIERI E FERRATE":"CIME E MONTAGNE"}
               title={isRouteDetail?(selectedRoute?.name??"Caricamento tracciato"):mode==='routes'?"Esplora i percorsi":"Esplora le cime"}

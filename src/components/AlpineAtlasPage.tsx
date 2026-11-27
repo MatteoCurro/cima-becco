@@ -17,6 +17,8 @@ import { HutClaimRequest } from './HutClaimRequest';
 import { DetailFacts, DetailLayout, DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
 import { AtlasDossierBlocks } from './AtlasDossierBlocks';
 import { DetailJumpNav } from './DetailJumpNav';
+import { FaIcon } from './FaIcon';
+import { scrollToDetailSection } from '../lib/detailNavigation';
 import { NearbyAtlasPlaces } from './NearbyAtlasPlaces';
 import { nearbyAtlasPlaces } from '../lib/nearbyAtlas';
 import type { AtlasEntityMetadata } from '../lib/atlasDossier';
@@ -128,12 +130,10 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
     ? `${place.name} è una località di montagna censita nelle Dolomiti.`
     : `${place.name} è un ${kindLabel} censito nelle Dolomiti.`;
   const detailRows: { label:string; value:string }[]=[
-    ...(place.operator?[{label:'Gestore o ente indicato',value:place.operator}]:[]),
-    ...(place.capacity!=null?[{label:place.kind==='bivacco'?'Capienza indicata':'Posti letto indicati',value:String(place.capacity)}]:[]),
-    ...(place.openingHours?[{label:'Orari dichiarati',value:place.openingHours}]:[]),
+
     ...(place.seasonal?[{label:'Stagionalità',value:place.seasonal}]:[]),
     ...(place.access?[{label:'Accesso dichiarato in OSM',value:place.access}]:[]),
-    ...(place.fee?[{label:'Indicazione tariffa',value:place.fee}]:[]),
+
     ...(place.winterRoom?[{label:'Locale invernale',value:place.winterRoom}]:[]),
     ...(place.address?[{label:'Indirizzo',value:place.address}]:[]),
     {label:'Coordinate WGS84',value:`${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`},
@@ -143,7 +143,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
     backHref={onBack}
     backLabel={`Esplora ${place.kind==='rifugio'?'i rifugi':place.kind==='bivacco'?'i bivacchi':'i paesi'}`}
     sidebarLabel="Posizione e contatti"
-    sidebar={<section id="cb-place-map" className="cb-location-side-map">
+    sidebar={<section id="cb-place-map" tabIndex={-1} className="cb-location-side-map">
       <MapContextLabel kicker="CARTOGRAFIA DEL LUOGO" title={place.name}/>
       <AlpineAtlasMap places={mapPlaces} kind={place.kind} selected={place} routes={nearby}
         water={water.map(w=>({lng:w.lng,lat:w.lat,name:w.name,kind:w.kind,potable:w.potable}))}
@@ -155,21 +155,15 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
         <PlaceBadge place={place}/>
         <h1>{place.name}</h1>
         <p className="cb-location-lead">{place.shortSummary || placeLine}</p>
-        {place.description&&<p className="cb-location-story">{place.description}</p>}
-        {wikiUrl&&<a className="cb-location-wiki" href={wikiUrl} target="_blank" rel="noopener noreferrer">Storia e approfondimenti enciclopedici ↗</a>}
+
         <AtlasDossierBlocks record={place} placement="alerts"/>
         <DetailMetrics label="Informazioni principali" items={[
           { label: 'Altitudine' + (place.elevationSource === 'dem' ? ' stimata' : ''), value: place.elevationM != null ? place.elevationM.toLocaleString('it-IT') + ' m' : 'n.d.' },
           ...(place.capacity != null ? [{ label: place.kind === 'bivacco' ? 'Posti indicati' : 'Posti letto', value: place.capacity }] : []),
           { label: 'Sentieri vicini', value: loading ? '…' : nearby.length },
         ]}/>
-        {place.kind!=='borgo'&&place.fee&&<div className="cb-location-cost">
-          <span>PREZZI / ACCESSO</span>
-          {/^\s*(yes|no)\s*$/i.test(place.fee)?<strong>{place.fee.toLowerCase()==='no'?'Accesso indicato gratuito':'Tariffa presente, importo da verificare'}</strong>:
-            <><strong>{place.fee}</strong>{/\d/.test(place.fee)&&<span className="cb-location-dobloni" title="Indicazione giocosa basata su una tariffa dichiarata; non è un rating">🪙 <small>Importo dichiarato · verifica con il gestore</small></span>}</>}
-        </div>}
         <div className="cb-location-actions">
-          <button type="button" className="cb-location-action-primary" onClick={()=>document.getElementById('cb-place-map')?.scrollIntoView({behavior:'smooth',block:'start'})}>ESPLORA SULLA MAPPA <span aria-hidden="true">↗</span></button>
+          <button type="button" className="cb-location-action-primary cb-icon-link" onClick={()=>scrollToDetailSection('cb-place-map')}><FaIcon name="map" size={14}/> ESPLORA SULLA MAPPA</button>
           {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>{place.kind==='rifugio'?'CHIAMA IL RIFUGIO':place.kind==='bivacco'?'CHIAMA IL REFERENTE':'CHIAMA'}</a>}
           {place.email&&<a href={'mailto:'+place.email}>SCRIVI</a>}
         </div>
@@ -182,32 +176,45 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
       </figure>
     </header>
     <DetailJumpNav items={[
-      {id:"cb-location-info-heading",label:"Informazioni"},
-      {id:"cb-location-contact-title",label:"Contatti"},
-      {id:"cb-place-itineraries",label:"Sentieri"},
-      ...(nearbyPlaces.length?[{id:"cb-place-nearby",label:"Dintorni"}]:[]),
-      {id:"cb-place-map",label:"Mappa"},
+      {id:"cb-place-essential",label:"Dati",icon:"compass"},
+      {id:"cb-place-contacts",label:"Contatti",icon:"house"},
+      ...(place.description||wikiUrl?[{id:"cb-place-story",label:"Territorio",icon:"mountain" as const}]:[]),
+      {id:"cb-place-weather",label:"Meteo",icon:"compass"},
+      {id:"cb-place-itineraries",label:"Sentieri",icon:"route"},
+      ...(nearbyPlaces.length?[{id:"cb-place-nearby",label:"Dintorni",icon:"location-dot" as const}]:[]),
+      {id:"cb-place-map",label:"Mappa",icon:"map"},
     ]}/>
-        <section className="cb-location-section cb-location-dossier" aria-labelledby="cb-location-info-heading">
+        <section id="cb-place-essential" className="cb-detail-group cb-detail-group--first cb-location-section cb-location-dossier" aria-labelledby="cb-location-info-heading">
           <DetailSectionHeading kicker="01 / DATI ESSENZIALI" title="PRIMA DI PARTIRE." id="cb-location-info-heading" description="Informazioni disponibili nelle fonti cartografiche, da verificare con la struttura quando necessario."/>
           <DetailFacts rows={detailRows}/>
           {place.kind==='rifugio'&&!place.phone&&!place.email&&<p className="cb-location-muted-note">Non abbiamo ancora recapiti verificati per questa struttura: dato mancante non significa che sia chiusa.</p>}
         </section>
-        <AtlasDossierBlocks record={place} placement="core"/>
-        <section className="cb-location-section cb-location-contact-card" aria-labelledby="cb-location-contact-title">
+        <section id="cb-place-contacts" className="cb-detail-group cb-detail-group--practical cb-location-section cb-location-contact-card" aria-labelledby="cb-location-contact-title">
           <DetailSectionHeading kicker="02 / INFO PRATICHE" id="cb-location-contact-title" title="CONTATTI E ACCESSO."/>
           {place.operator&&<p><strong>Gestore o ente: </strong>{place.operator}</p>}
           {place.openingHours&&<p><strong>Orari dichiarati: </strong>{place.openingHours}</p>}
           <div className="cb-location-contact-links">
-            {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>☎ {place.phone}</a>}
-            {place.email&&<a href={'mailto:'+place.email}>✉ {place.email}</a>}
-            {place.website&&<a href={place.website} target="_blank" rel="noopener noreferrer">Sito ufficiale ↗</a>}
+            {place.phone&&<a className="cb-icon-link" href={'tel:'+place.phone.replace(/[^+\d]/g,'')}><FaIcon name="phone" size={13}/> {place.phone}</a>}
+            {place.email&&<a className="cb-icon-link" href={'mailto:'+place.email}><FaIcon name="envelope" size={13}/> {place.email}</a>}
+            {place.website&&<a className="cb-icon-link" href={place.website} target="_blank" rel="noopener noreferrer"><FaIcon name="arrow-up-right-from-square" size={12}/> Sito ufficiale</a>}
           </div>
+          {place.kind!=='borgo'&&place.fee&&<div className="cb-location-cost">
+            <span>PREZZI / ACCESSO</span>
+            {/^\s*(yes|no)\s*$/i.test(place.fee)?<strong>{place.fee.toLowerCase()==='no'?'Accesso indicato gratuito':'Tariffa presente, importo da verificare'}</strong>:
+              <><strong>{place.fee}</strong>{/\d/.test(place.fee)&&<span className="cb-location-dobloni" title="Importo dichiarato; non è un rating"><FaIcon name="coins" size={14}/> <small>Importo dichiarato · verifica con il gestore</small></span>}</>}
+          </div>}
           {!place.phone&&!place.email&&!place.website&&<p className="cb-location-muted-note">Recapiti non disponibili nelle fonti: non significa che la struttura sia chiusa.</p>}
         </section>
-        <AlpineWeatherPanel lat={place.lat} lng={place.lng} name={place.name}/>
+        {(place.description||wikiUrl)&&<section id="cb-place-story" className="cb-detail-group cb-location-section">
+          <DetailSectionHeading kicker="03 / STORIA E TERRITORIO" title="CONOSCERE IL LUOGO."/>
+          {place.description&&<p className="cb-location-story">{place.description}</p>}
+          {wikiUrl&&<a className="cb-location-wiki cb-icon-link" href={wikiUrl} target="_blank" rel="noopener noreferrer"><FaIcon name="arrow-up-right-from-square" size={12}/> Approfondimento enciclopedico</a>}
+        </section>}
+        <section id="cb-place-weather" className="cb-detail-group cb-location-section" aria-label="Meteo del luogo">
+          <AlpineWeatherPanel lat={place.lat} lng={place.lng} name={place.name}/>
+        </section>
 
-        <section id="cb-place-itineraries" className="cb-location-section cb-location-itineraries" aria-label="Sentieri vicini">
+        <section id="cb-place-itineraries" className="cb-detail-group cb-location-section cb-location-itineraries" aria-label="Sentieri vicini">
           <DetailSectionHeading kicker="03 / ESCURSIONI E ACCESSI" title="SENTIERI NEI DINTORNI." description="Tracce disponibili in zona: la vicinanza geometrica al percorso non certifica un accesso diretto."/>
           {loading?<p className="cb-atlas-loading">Recupero i sentieri cartografati…</p>:<>
             <RouteGroup title="PARTONO DA QUI" items={departures}/>
@@ -218,13 +225,14 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
           </>}
         </section>
 
-        {water.length>0&&<section className="cb-location-section cb-location-water">
+        {water.length>0&&<section className="cb-detail-group cb-location-section cb-location-water">
           <DetailSectionHeading kicker="04 / RISORSE IN ZONA" title="ACQUA NEI DINTORNI." description="Fonti mappate entro circa 1,8 km in linea d'aria. La potabilità, l'accessibilità e la disponibilità vanno verificate sul posto."/>
           <div className="cb-location-water-grid">{water.slice(0,8).map(w=><div key={w.slug}>
             <AlpinePlaceIcon kind="acqua" size={22}/><div><strong>{w.name}</strong><small>{w.kind} · {potabilityLabel(w.potable)}{w.seasonal?' · stagionale':''}</small></div>
           </div>)}</div>
         </section>}
 
+        <AtlasDossierBlocks record={place} placement="core"/>
         <NearbyAtlasPlaces items={nearbyPlaces}/>
         <AtlasDossierBlocks record={place} placement="connections"/>
         <AtlasDossierBlocks record={place} placement="media"/>
@@ -267,7 +275,7 @@ function TrekDetail({ trek, onBack }: { trek: TrekProject; onBack: string }) {
     backLabel="Tutti i trekking"
     sidebarLabel="Cartografia del trekking"
     className="cb-trek-profile"
-    sidebar={<section id="cb-place-map" className="cb-location-side-map">
+    sidebar={<section id="cb-place-map" tabIndex={-1} className="cb-location-side-map">
       <MapContextLabel kicker="TAPPE DEL TREKKING" title={trek.title}/>
       {previewRoutes.length?<AlpineAtlasMap places={EMPTY_PLACES} kind="borgo" routes={previewRoutes}
         caption="ANTEPRIMA TAPPE" height="100%"/>:
@@ -290,14 +298,19 @@ function TrekDetail({ trek, onBack }: { trek: TrekProject; onBack: string }) {
             <p className="cb-location-alert">Il tracciato completo non è verificato: i segmenti cartografici non dimostrano da soli continuità, accessibilità o percorribilità.</p>
           </div>
         </header>
-        {trek.stages.length > 0 && <section className="cb-location-section cb-location-dossier">
+        <DetailJumpNav items={[
+          ...(trek.stages.length?[{id:"cb-trek-stages",label:"Tappe",icon:"route" as const}]:[]),
+          ...(trek.routeSlugs.length?[{id:"cb-trek-routes",label:"Segmenti",icon:"compass" as const}]:[]),
+          {id:"cb-place-map",label:"Mappa",icon:"map"},
+        ]}/>
+        {trek.stages.length > 0 && <section id="cb-trek-stages" className="cb-detail-group cb-detail-group--first cb-location-section cb-location-dossier">
           <DetailSectionHeading kicker="01 / PERCORSO" title="TAPPE IDENTIFICATE." description="Tappe esplicitamente associate nei dati, senza inferire collegamenti mancanti."/>
           <div className="cb-atlas-routes">{trek.stages.map(stage =>
             <div key={stage.number}><strong>TAPPA {stage.number}</strong>
               {stage.routeSlugs.map(slug => <a href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(slug)}/`} key={slug}>Apri il segmento {slug} ↗</a>)}
             </div>)}</div>
         </section>}
-        {trek.routeSlugs.length > 0 && <section className="cb-location-section cb-location-itineraries">
+        {trek.routeSlugs.length > 0 && <section id="cb-trek-routes" className="cb-detail-group cb-location-section cb-location-itineraries">
           <DetailSectionHeading kicker="02 / DATI CARTOGRAFICI" title="SEGMENTI COLLEGATI." description="Elementi realmente censiti, consultabili singolarmente sulla mappa."/>
           <div className="cb-atlas-routes">{trek.routeSlugs.slice(0, 80).map(slug =>
             <a key={slug} href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(slug)}/`}>Apri il segmento cartografico ↗ <small>{slug}</small></a>)}</div>

@@ -22,6 +22,8 @@ import { FlagIcon, LinkIcon, PlusIcon, ReportModal } from './ReportModal';
 import { useReveal } from './useReveal';
 import { SiteFooter, SiteHeader } from './SiteChrome';
 import { AtlasDossierBlocks } from './AtlasDossierBlocks';
+import { DetailJumpNav } from './DetailJumpNav';
+import { FaIcon } from './FaIcon';
 import { MapContextLabel } from './MapContextLabel';
 import { SEARCH_OPENS_MAP, SearchBar, SiteSearch } from './SearchBar';
 import { RatingLabel } from './ResultsList';
@@ -888,7 +890,16 @@ function VenueDetailInner({
           </div>
           <div className="venue-detail-main">
             <AtlasDossierBlocks record={venue} placement="alerts"/>
-            <section className="venue-detail-intro">
+            <DetailJumpNav items={[
+              {id:'cb-venue-overview',label:'In breve',icon:'mountain'},
+              {id:'cb-venue-about',label:'Descrizione',icon:'compass'},
+              {id:'cb-venue-planning',label:'Pianifica',icon:'route'},
+              {id:'cb-venue-routes',label:'Percorsi',icon:'map'},
+              {id:'reviews',label:'Recensioni'},
+              ...(nearby.length?[{id:'cb-venue-nearby',label:'Dintorni',icon:'location-dot' as const}]:[]),
+              {id:'cb-venue-map',label:'Mappa',icon:'map'},
+            ]}/>
+            <section id="cb-venue-overview" className="venue-detail-intro cb-detail-group cb-detail-group--first">
               <div className="venue-intro-row">
                 <h2>{heightBlock}</h2>
                 <div className="quick-rate" role="radiogroup" aria-label="Rate this place">
@@ -914,8 +925,8 @@ function VenueDetailInner({
               {(venue.storeys || address) && <p>{[venue.storeys ? `${venue.storeys} floors` : null, address || null].filter(Boolean).join(' · ')}</p>}
             </section>
 
-            <section className="venue-detail-section">
-              <h2>About this place</h2>
+            <section id="cb-venue-about" className="venue-detail-section cb-detail-group">
+              <h2>Il luogo e la sua storia</h2>
               {/* Three lines; a clear "Read more" (or a double-click) opens the rest. */}
               <div
                 ref={aboutRef}
@@ -941,13 +952,13 @@ function VenueDetailInner({
             </section>
 
             <AtlasDossierBlocks record={venue} placement="core"/>
-            <section className="venue-detail-section cb-venue-planning" aria-label="Pianificazione e meteo">
+            <section id="cb-venue-planning" className="venue-detail-section cb-detail-group cb-venue-planning" aria-label="Pianificazione e meteo">
               <PlanCard venue={venue}/>
               <button type="button" className="plan-report" onClick={() => setReporting(true)}><FlagIcon/> Segnala un problema su questo luogo</button>
             </section>
 
-            <section className="venue-detail-section venue-routes-section">
-              <h2>Routes that pass here</h2>
+            <section id="cb-venue-routes" className="venue-detail-section cb-detail-group venue-routes-section">
+              <h2>Percorsi e itinerari collegati</h2>
               {routes.length > 0 ? (
                   <div className="venue-route-grid">
                     {routes.map((route) => (
@@ -1000,8 +1011,8 @@ function VenueDetailInner({
             <ReviewsSection venue={venue} reviews={reviews} rating={rating} initialRating={quickRating} sectionRef={reviewsRef} onPosted={(review) => setReviews((current) => [review, ...current])} />
 
             {nearby.length > 0 && (
-              <section className="venue-detail-section">
-                <div className="venue-section-heading"><h2>Nearby</h2><span>Within 1 km</span></div>
+              <section id="cb-venue-nearby" className="venue-detail-section cb-detail-group">
+                <div className="venue-section-heading"><h2>Luoghi nei dintorni</h2><span>Entro 1 km in linea d'aria</span></div>
                 <div className="nearby-grid">
                   {nearby.map(({ venue: item }) => {
                     const itemHeight = venueHeight(item);
@@ -1022,11 +1033,11 @@ function VenueDetailInner({
             <AtlasDossierBlocks record={venue} placement="credits"/>
           </div>
 
-          <aside className="venue-detail-side" aria-label={'Mappa di '+venue.name}>
+          <aside id="cb-venue-map" tabIndex={-1} className="venue-detail-side" aria-label={'Mappa di '+venue.name}>
             <div className="cb-venue-map-pane">
               <MapContextLabel kicker="CARTOGRAFIA DEL LUOGO" title={venue.name}/>
               <Suspense fallback={<div className="mini-map mini-map-fallback" />}><MiniMap venue={venue}/></Suspense>
-              <button type="button" className="cb-venue-map-open" onClick={()=>onShowOnMap()}><MapIcon size={15}/> Esplora i percorsi sulla mappa ↗</button>
+              <button type="button" className="cb-venue-map-open" onClick={()=>onShowOnMap()}><MapIcon size={15}/> Esplora i percorsi sulla mappa <FaIcon name="arrow-up-right-from-square" size={12}/></button>
             </div>
           </aside>
         </div>

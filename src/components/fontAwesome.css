@@ -1,0 +1,8 @@
+/* Font Awesome Free SVG: colori e dimensioni visuali in CSS, niente webfont/emoji. */
+.cb-fa-icon{display:inline-block;flex:none;vertical-align:-.1em;fill:currentColor}
+.cb-alpine-icon--rifugio{color:#19523d}
+.cb-alpine-icon--bivacco{color:#c90053}
+.cb-alpine-icon--borgo{color:#537456}
+.cb-alpine-icon--acqua{color:#168dd5}
+.cb-icon-link{display:inline-flex;align-items:center;gap:7px}
+.cb-icon-link .cb-fa-icon{flex:none}
