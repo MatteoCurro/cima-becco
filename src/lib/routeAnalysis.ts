@@ -1,16 +1,11 @@
 import type { Route, RouteActivity, RoutePoint } from '../types';
 import { haversineM, totalDistanceM } from './elevation';
 
-/**
- * What kind of outing a GPX is. Trail running and hiking are one category:
- * same paths, same climbing, different pace. Road running and cycling are
- * told apart from it mainly by climbing per km and, when the file has
- * timestamps, by moving speed.
- */
+/** Categorie a piedi. Una ferrata non si può dedurre dalla velocità di un GPX. */
 export const ACTIVITY_LABEL: Record<RouteActivity, string> = {
-  run: 'Road run',
-  trail: 'Trail',
-  cycle: 'Cycling',
+  hike: 'Escursione',
+  trail: 'Trail running',
+  ferrata: 'Via ferrata',
 };
 
 export function classifyActivity(points: RoutePoint[], gainM: number, times: (number | null)[] = []): RouteActivity {
@@ -27,16 +22,16 @@ export function classifyActivity(points: RoutePoint[], gainM: number, times: (nu
   if (speeds.length >= 10) {
     speeds.sort((x, y) => x - y);
     const median = speeds[Math.floor(speeds.length / 2)];
-    if (median >= 15) return 'cycle';
-    if (median < 6.5 || gainPerKm >= 25) return 'trail';
-    return 'run';
+    // Non classificare mai una traccia come ferrata in base alla sola velocità.
+    if (median >= 6.5 && median < 15 && gainPerKm < 150) return 'trail';
+    return 'hike';
   }
-  if (km > 80 && gainPerKm < 15) return 'cycle';
-  return gainPerKm >= 25 ? 'trail' : 'run';
+  return 'hike';
 }
 
 export function routeActivity(route: Route): RouteActivity {
-  return route.activity ?? classifyActivity(route.coordinates, route.gainM);
+  return route.activity === 'hike' || route.activity === 'trail' || route.activity === 'ferrata'
+    ? route.activity : classifyActivity(route.coordinates, route.gainM);
 }
 
 /** Points every `stepM` metres along the line, so comparisons do not depend on GPS sampling rate. */
