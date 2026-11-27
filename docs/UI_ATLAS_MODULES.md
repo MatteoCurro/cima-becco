@@ -165,3 +165,38 @@ Regressioni da mantenere: URL storici con redirect, pagine canoniche
 indicizzabili, mappa 42/58 invariata, passaggio comune/località solo
 su match non ambiguo, falso vs ignoto nei servizi, CSS in file
 specialistico e nessuna regressione negli slug GPX.
+
+
+## Rifugi — gerarchia editoriale e Schema.org (rifinitura 27/11/2026)
+
+Nel dossier rifugio i fatti principali non sono più tile con bordo, fonte
+e aggiornamento ripetuti. `RefugeProfile.FactLines` rende una griglia
+tipografica fluida di `dt` e `dd` con divisori sottili, gerarchia per
+posti letto e valori economici, etichette leggibili e dimensioni responsive.
+La provenienza **rimane nei dati normalizzati** e si consulta nel pannello
+collassabile `Fonti e crediti del dossier`; le foto mantengono credito e
+licenza. I campi tecnici residuali rimangono nell'archivio collassabile,
+senza perdere qualità o attributi di provenienza. Non si altera la griglia
+globale `DetailLayout` né i fogli di stile del chrome.
+
+Servizi tri-state: i `true` vengono introdotti con «Servizi indicati come
+disponibili», i `false` con «Servizi indicati esplicitamente come non
+disponibili» e la spiegazione «la fonte riporta No», mentre `null` non
+produce un'affermazione. Acqua disponibile e potabilità restano separate.
+Questo vale anche per la descrizione SEO HTML generata.
+
+Schema.org: `src/lib/refugeStructuredData.js` centralizza l'arricchimento
+JSON-LD delle pagine rifugio. `LodgingBusiness` viene usato solo se la
+capienza è realmente documentata; in caso contrario `Place` conserva le
+proprietà lecite. Campi pubblicati: `amenityFeature` con valori booleani
+espliciti, `petsAllowed` quando dichiarato, `additionalProperty` per
+posti letto totali/invernali e anno di costruzione con fonte, `identifier`
+per ID CAI, `address` e `email` se documentati, `sameAs` per i siti
+esterni noti, immagini e coordinate dalla scheda. `numberOfRooms` NON
+è derivato dal numero di letti; nessun `availability`, orario corrente,
+prezzo, valutazione o `aggregateRating` inventato. Non è promessa
+l'assegnazione di rich result Google. Test unitari con valori `false`,
+ignoti e dati senza attribuzione verificano il contratto.
+
+Riferimenti: https://schema.org/LodgingBusiness e
+https://developers.google.com/search/docs/appearance/structured-data/local-business.
