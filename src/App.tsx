@@ -535,6 +535,17 @@ function MapApp() {
     if (bounds) setFocusBounds({ bounds, nonce: Date.now() });
   }, []);
 
+  // La pagina #routes deve mostrare immediatamente i sentieri reali del catalogo,
+  // non una mappa d'Italia troppo lontana da cui sembrano assenti.
+  const initialRoutesFramed = useRef(false);
+  useEffect(() => {
+    if (initialRoutesFramed.current || !dataset || mode !== 'routes' || window.location.hash !== '#routes') return;
+    const pilot = dataset.routes.filter((route) => !['cycle', 'run'].includes(String(route.activity)));
+    if (!pilot.length) return;
+    initialRoutesFramed.current = true;
+    frameRoutes(pilot);
+  }, [dataset, mode, frameRoutes]);
+
   // A route card on the landing page hands its slug over to open straight onto it.
   useEffect(() => {
     if (!dataset) return;
