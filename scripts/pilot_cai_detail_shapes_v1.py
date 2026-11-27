@@ -75,8 +75,21 @@ def summarize_detail(data):
                                                   and k.replace("_", "").isalnum())
     media_key_names = set()
     media_custom_names = set()
+    media_mimes = Counter()
+    media_original_url_schemes = Counter()
+    media_uuid_shapes = Counter()
+
     for item in (data.get("media") or [])[:12]:
         if isinstance(item, dict):
+            mime = item.get("mime_type")
+            media_mimes[str(mime)[:80]] += 1
+            source = item.get("original_url")
+            media_original_url_schemes[
+                source.split(":", 1)[0].lower() if isinstance(source, str) and ":" in source
+                else "missing_or_relative"
+            ] += 1
+            media_uuid_shapes["uuid_string" if isinstance(item.get("uuid"), str)
+                              else "uuid_missing_or_other"] += 1
             media_key_names.update(k for k in item
                                    if isinstance(k, str) and len(k) < 80
                                    and k.replace("_", "").isalnum())
@@ -101,6 +114,9 @@ def summarize_detail(data):
             "openingTimeArrayFieldKeys": sorted(schedule_key_names),
             "mediaFieldKeys": sorted(media_key_names),
             "mediaCustomPropertyKeys": sorted(media_custom_names),
+            "mediaMimeTypes": dict(sorted(media_mimes.items())),
+            "mediaOriginalUrlSchemes": dict(sorted(media_original_url_schemes.items())),
+            "mediaUuidShapes": dict(sorted(media_uuid_shapes.items())),
             "mediaCount": len(data.get("media") or []),
             "fields": [
                 {"name": key, "count": v["count"], "valueTypes": dict(v["valueTypes"]),
