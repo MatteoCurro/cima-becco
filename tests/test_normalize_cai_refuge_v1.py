@@ -80,6 +80,24 @@ class CAIRefugeMapperTests(unittest.TestCase):
         rows = [x for x in output["candidateFacts"] if x["fieldKeyCandidate"] == "bedsTotal"]
         self.assertEqual([x["value"] for x in rows], [16, 18])
 
+    def test_structured_opening_hours_is_not_lost_or_disclosed(self):
+        d = self.input()
+        d["fields"].append({
+            "name": "openingTime_contact", "value": None,
+            "data": [{"period": "PRIVATE_SOURCE_VALUE", "from": "secret-date"}],
+            "updated_at": "2026-11-27"
+        })
+        result = norm.convert_detail(d, self.rules, self.registry)
+        row = next(x for x in result["candidateFacts"]
+                   if x["sourceField"] == "openingTime_contact")
+        self.assertEqual(row["valueStatus"], "structured_source_requires_parser")
+        self.assertEqual(row["sourceStructuredData"]["shape"], "list")
+        self.assertEqual(row["sourceStructuredData"]["length"], 1)
+        self.assertIsNone(row["value"])
+        self.assertEqual(result["summary"]["structuredFieldsAwaitingParser"], 1)
+        self.assertNotIn("PRIVATE_SOURCE_VALUE", json.dumps(result))
+        self.assertNotIn("secret-date", json.dumps(result))
+
     def test_missing_full_fields_array_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "fields"):
             norm.convert_detail({"id_cai": 930010001}, self.rules, self.registry)
