@@ -127,6 +127,10 @@ def rows_for_section(number, section):
             result.append((line_no, line.strip(), "paragraph"))
         elif line.startswith("**Identità**:"):
             result.append((line_no, line.split(":", 1)[1].strip(), "paragraph"))
+        elif number == 19 and re.match(r"^\*\*(Area|Blocco|Problema)\*\*:", line):
+            # Sezione boulder: tre entità figlie descritte in paragrafi,
+            # non in tabelle. Non perdere questi requisiti.
+            result.append((line_no, line.strip(), "paragraph"))
     return result
 
 
