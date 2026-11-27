@@ -1,0 +1,1352 @@
+import { requestReport } from '../lib/contribute';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  Map as MapLibreMap,
+  Marker,
+  Popup,
+  GeolocateControl,
+  LngLatBounds,
+  NavigationControl,
+  type ErrorEvent,
+  type GeoJSONSource,
+  type GeolocateErrorEvent,
+  type LngLatLike,
+  type Map as MlMap,
+  type MapMouseEvent,
+  type MapMovementEvent,
+  type Offset,
+} from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import type { Route, RoutePoint, Venue } from '../types';
+import type { RoutePhoto } from '../lib/api';
+import { rankingHeight, type Bounds } from '../lib/venues';
+import { haversineM } from '../lib/elevation';
+import { useUnits } from '../components/UnitsContext';
+import { VenueCard } from '../components/VenueCard';
+import { RoutePhotoViewer } from '../components/RoutePhotoViewer';
+import {
+  addAllRouteLayers,
+  addRouteLayers,
+  addRouteStartSource,
+  addVenueLayers,
+  animateActiveRoute,
+  routesToGeoJson,
+  setOverlapRoutes,
+  setRouteFeatureState,
+  setRouteHover,
+  venuesToGeoJson,
+  MARKER_COLS,
+  MARKER_ROWS,
+} from './layers';
+import { RouteEndpointMarkers } from './endpoints';
+import { RouteMarkers, VenueMarkers } from './markers';
+import './worker';
+import { MAP_STYLE_URL } from './constants';
+import { parseSvg, textSpan } from '../lib/dom';
+import { glyphSvg } from '../lib/venueGlyphs';
+import { frameableBounds, isFiniteBounds } from './camera';
+
+/**
+ * Basemap tiles come from OpenFreeMap, which is free to use and needs no API
+ * key or account. That is what lets someone clone this repo and have a working
+ * map immediately — please keep it that way when swapping styles.
+ */
+
+const VENUE_POPUP_OFFSET: Offset = {
+  center: [0, 0],
+  top: [0, 22],
+  bottom: [0, -22],
+  left: [46, 0],
+  right: [-46, 0],
+  'top-left': [32, 18],
+  'top-right': [-32, 18],
+  'bottom-left': [32, -18],
+  'bottom-right': [-32, -18],
+};
+
+/** Where the data currently is — the opening view, not a fence. */
+const SINGAPORE_CENTRE: [number, number] = [103.8198, 1.3521];
+
+function addUserLocationSource(map: MlMap) {
+  map.addSource('user-location', {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+  });
+  map.addLayer({
+    id: 'user-location-dot',
+    type: 'circle',
+    source: 'user-location',
+    paint: {
+      'circle-radius': 8,
+      'circle-color': '#1e90ff',
+      'circle-stroke-width': 2.5,
+      'circle-stroke-color': '#ffffff',
+    },
+  });
+}
+
+function userLocationFeature(lng: number, lat: number) {
+  return {
+    type: 'FeatureCollection' as const,
+    features: [
+      {
+        type: 'Feature' as const,
+        geometry: { type: 'Point' as const, coordinates: [lng, lat] },
+        properties: {},
+      },
+    ],
+  };
+}
+
+interface MapViewProps {
+  venues: Venue[];
+  selectedSlug: string | null;
+  selectedVenue: Venue | null;
+  routes: Route[];
+  activeRoute: RoutePoint[] | null;
+  /** Kept point range while a dropped GPX is being trimmed; the ends outside it draw ghosted. */
+  activeRouteTrim?: [number, number] | null;
+  onSelectVenue: (slug: string | null) => void;
+  hoveredSlug?: string | null;
+  onHover?: (slug: string | null) => void;
+  /**
+   * Where to fly the camera. Carries a nonce so that picking the same venue
+   * twice still re-centres the map rather than being skipped as unchanged.
+   */
+  focus?: { lng: number; lat: number; nonce: number } | null;
+  /**
+   * A box to frame, for a search that resolved to a whole area rather than to
+   * one venue. Separate from `focus` rather than a union with it because a town
+   * has no single sensible centre-and-zoom: Woodlands and Bukit Timah differ by
+   * more than a zoom level, and picking one number for both would either crop a
+   * town or show mostly Johor. Nonced for the same reason `focus` is.
+   */
+  focusBounds?: { bounds: Bounds; nonce: number } | null;
+  mapExpanded: boolean;
+  injectedVenueSlugs: string[];
+  hoverPoint: [number, number] | null;
+  onRouteHover: (index: number | null) => void;
+  routePanelOpen: boolean;
+  /** A venue a route passes, pinned and flown to without leaving the route. */
+  spotlight?: { venue: Venue; nonce: number } | null;
+  /** Routes sharing ground with the open one, drawn dashed alongside it. */
+  overlapSlugs?: string[];
+  /** Approved photos and hazards pinned along the open route. */
+  routePhotos?: RoutePhoto[];
+  /** Fly to one of them and open its popup. */
+  photoFocus?: { id: string; nonce: number } | null;
+  onToggleExpand: () => void;
+  favorites: Set<string>;
+  onToggleFavorite: (slug: string) => void;
+  onLocateHint?: (message: string | null) => void;
+  /** A person started panning or zooming (never the app's own camera moves). */
+  onUserMove?: () => void;
+  /** The pan or zoom that person started has come to rest (after any inertia). */
+  onUserMoveEnd?: () => void;
+  /** Raised when the basemap itself fails, so the failure is never silent. */
+  onMapError?: (message: string) => void;
+  /** The area currently on screen, so the list can show what is actually in view. */
+  onViewportChange?: (
+    bounds: { west: number; south: number; east: number; north: number },
+    /**
+     * True only when a person panned or zoomed. A programmatic flyTo — from
+     * search, say — also ends in 'moveend', and treating that as a user gesture
+     * would deselect the very venue that was just picked.
+     */
+    userInitiated: boolean,
+  ) => void;
+  /** The user's current location, shown as a blue dot when available. */
+  userLocation?: { lng: number; lat: number } | null;
+  /** Every route to draw, whatever mode the page is in. */
+  allRoutes: Route[];
+  /** Routes mode puts distance pills on route starts and brings the lines forward. */
+  mode: 'climbs' | 'routes';
+  selectedRouteSlug: string | null;
+  hoveredRouteSlug: string | null;
+  onSelectRoute: (slug: string | null) => void;
+  onHoverRoute: (slug: string | null) => void;
+}
+
+function boundsMeaningfullyChanged(
+  prev: { west: number; south: number; east: number; north: number } | null,
+  next: { west: number; south: number; east: number; north: number },
+): boolean {
+  if (!prev) return true;
+  const tolX = Math.abs(next.east - next.west) * 0.1;
+  const tolY = Math.abs(next.north - next.south) * 0.1;
+  return (
+    Math.abs(prev.west - next.west) > tolX ||
+    Math.abs(prev.east - next.east) > tolX ||
+    Math.abs(prev.north - next.north) > tolY ||
+    Math.abs(prev.south - next.south) > tolY
+  );
+}
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function flyToVenue(map: MlMap, center: LngLatLike) {
+  map.flyTo({
+    center,
+    // Close enough to see the place and its neighbours, but never further out
+    // than you already were: a search from a whole-country view should not
+    // leave the pick as one dot among thousands.
+    zoom: Math.max(map.getZoom(), 12),
+    duration: prefersReducedMotion() ? 0 : 900,
+    essential: true,
+    // Pad the camera so the popup has room to open above the marker.
+    padding: { top: 220, bottom: 64, left: 64, right: 64 },
+  });
+}
+
+/** Camera padding with every side given, unlike MapLibre's all-optional PaddingOptions. */
+interface Padding {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
+/**
+ * Something the camera was asked to frame — an area from search or a link, or
+ * the open route — kept so it can be framed again when the map changes size
+ * (the list folding away, the window resizing, the style finishing loading)
+ * until the person moves the map themselves.
+ */
+interface FrameTarget {
+  bounds: Bounds;
+  maxZoom: number;
+  padding: (map: MlMap) => Padding;
+}
+
+/** Padding that still leaves at least a 40 px window, so fitBounds never gives up. */
+function safePadding(map: MlMap, padding: Padding): Padding {
+  const container = map.getContainer();
+  const fit = (a: number, b: number, size: number) => {
+    const room = Math.max(0, size - 40);
+    return a + b <= room ? [a, b] : [(a / (a + b)) * room, (b / (a + b)) * room];
+  };
+  const [left, right] = fit(padding.left, padding.right, container.clientWidth);
+  const [top, bottom] = fit(padding.top, padding.bottom, container.clientHeight);
+  return { top, bottom, left, right };
+}
+
+/**
+ * Maps whose style has finished loading at least once. `map.loaded()` is no
+ * use for this: it is false whenever any tile is still arriving, which is most
+ * of the time while browsing, so every move between routes jumped instead of
+ * flying.
+ */
+const startedMaps = new WeakSet<MlMap>();
+
+/** `durationMs` is a wish: start-up and reduced motion both jump instead. */
+function frameTo(map: MlMap, target: FrameTarget, durationMs: number) {
+  if (!isFiniteBounds(target.bounds)) return;
+  const { west, south, east, north } = frameableBounds(target.bounds);
+  map.fitBounds(
+    [
+      [west, south],
+      [east, north],
+    ],
+    {
+      padding: safePadding(map, target.padding(map)),
+      maxZoom: target.maxZoom,
+      // Before the style loads, resize() during start-up calls stop() and
+      // would cancel an animation half-way — which is how a landing-page link
+      // used to end up parked on Singapore. Jump instead.
+      duration: startedMaps.has(map) && !prefersReducedMotion() ? durationMs : 0,
+      essential: true,
+    },
+  );
+}
+
+class ExpandControl {
+  private button: HTMLButtonElement | null = null;
+  private expanded: boolean;
+  private onClick: () => void;
+
+  constructor(expanded: boolean, onClick: () => void) {
+    this.expanded = expanded;
+    this.onClick = onClick;
+  }
+
+  onAdd(_map: MlMap): HTMLElement {
+    const group = document.createElement('div');
+    group.className = 'maplibregl-ctrl maplibregl-ctrl-group map-expand-ctrl';
+    this.button = document.createElement('button');
+    this.button.type = 'button';
+    this.button.className = 'maplibregl-ctrl-icon';
+    this.button.addEventListener('click', () => this.onClick());
+    this.update(this.expanded);
+    group.appendChild(this.button);
+    return group;
+  }
+
+  onRemove(): void {
+    this.button?.parentElement?.remove();
+    this.button = null;
+  }
+
+  /** Pulse while a route is open on the split view, so the bigger map is easy to find. */
+  setInvite(invite: boolean): void {
+    this.button?.parentElement?.classList.toggle('invite', invite);
+  }
+
+  update(expanded: boolean): void {
+    this.expanded = expanded;
+    if (!this.button) return;
+    const label = expanded ? 'Show list' : 'Expand map';
+    this.button.setAttribute('aria-label', label);
+    this.button.setAttribute('aria-pressed', String(expanded));
+    this.button.title = label;
+    this.button.replaceChildren(
+      parseSvg(
+        expanded
+          ? '<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4l-5 5M11 5v4h4M4 16l5-5M9 15v-4H5"/></svg>'
+          : '<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4h5v5M16 4l-6 6M9 16H4v-5M4 16l6-6"/></svg>',
+      ),
+    );
+  }
+}
+
+const TERRAIN_TILES = 'https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png';
+
+/**
+ * Flat map or mountains: hillshade shading plus real 3D relief from the same
+ * keyless AWS terrain tiles, tilted so slopes read at a glance.
+ */
+class TerrainControl {
+  private button: HTMLButtonElement | null = null;
+  private map: MlMap | null = null;
+  private on = false;
+
+  onAdd(map: MlMap): HTMLElement {
+    this.map = map;
+    const group = document.createElement('div');
+    group.className = 'maplibregl-ctrl maplibregl-ctrl-group map-terrain-ctrl';
+    this.button = document.createElement('button');
+    this.button.type = 'button';
+    this.button.className = 'maplibregl-ctrl-icon';
+    const label = document.createElement('span');
+    label.className = 'terrain-ctrl-label';
+    this.button.replaceChildren(label);
+    this.button.addEventListener('click', () => this.toggle());
+    this.sync();
+    group.appendChild(this.button);
+    return group;
+  }
+
+  onRemove(): void {
+    this.button?.parentElement?.remove();
+    this.button = null;
+    this.map = null;
+  }
+
+  private sync(): void {
+    if (!this.button) return;
+    const label = this.on ? 'Show flat map' : 'Show mountain terrain';
+    const text = this.button.querySelector('.terrain-ctrl-label');
+    if (text) text.textContent = this.on ? '2D' : '3D';
+    this.button.setAttribute('aria-label', label);
+    this.button.setAttribute('aria-pressed', String(this.on));
+    this.button.title = label;
+  }
+
+  private toggle(): void {
+    const map = this.map;
+    if (!map || !map.isStyleLoaded()) return;
+    this.on = !this.on;
+    if (!map.getSource('terrain-dem')) {
+      map.addSource('terrain-dem', { type: 'raster-dem', tiles: [TERRAIN_TILES], encoding: 'terrarium', tileSize: 256, maxzoom: 15 });
+      map.addSource('terrain-shade', { type: 'raster-dem', tiles: [TERRAIN_TILES], encoding: 'terrarium', tileSize: 256, maxzoom: 15 });
+      const beneath = map.getStyle().layers.find((layer) => layer.type === 'line' || layer.type === 'symbol')?.id;
+      map.addLayer(
+        {
+          id: 'terrain-hillshade',
+          type: 'hillshade',
+          source: 'terrain-shade',
+          layout: { visibility: 'none' },
+          paint: { 'hillshade-exaggeration': 0.6, 'hillshade-shadow-color': '#4f5d46', 'hillshade-highlight-color': '#ffffff' },
+        },
+        beneath,
+      );
+    }
+    map.setLayoutProperty('terrain-hillshade', 'visibility', this.on ? 'visible' : 'none');
+    map.setTerrain(this.on ? { source: 'terrain-dem', exaggeration: 1.4 } : null);
+    map.easeTo({ pitch: this.on ? 55 : 0, duration: 700 });
+    this.sync();
+  }
+}
+
+/** Room for a start or finish marker's radius at the edge of the area left clear of the panel. */
+const MARKER_ROOM = 16;
+
+/**
+ * Padding that keeps a framed route clear of the route panel. On a wide map
+ * the panel is a side sheet down the left, so the route is framed to its
+ * right; on a narrow one it is docked along the bottom, so the route sits
+ * above it. Measured, not fixed: a fixed 320 px was taller than the whole map
+ * on a short window, so MapLibre could not fit the route and it ended up under
+ * the panel. Capped so the visible area is never squeezed to nothing.
+ */
+function panelClearance(map: MlMap, base: Padding): Padding {
+  const container = map.getContainer();
+  const panel = container.parentElement?.querySelector<HTMLElement>('.gpx-panel');
+  if (!panel) return base;
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+  // Offsets, not bounding boxes: the panel is mid slide-in animation when a
+  // route is first framed. Panel and map share .map-wrap as offset parent.
+  const left = panel.offsetLeft - container.offsetLeft;
+  const top = panel.offsetTop - container.offsetTop;
+  if (panel.offsetWidth < width * 0.6) {
+    const clear = left + panel.offsetWidth + 24;
+    // The cap leaves a little extra (a start marker's radius), so a route that begins at the
+    // edge of the clear area still shows its whole start marker beside the panel.
+    return { ...base, left: Math.max(base.left, Math.min(clear, width * 0.6 + MARKER_ROOM)) };
+  }
+  const clear = height - top + 16;
+  return { ...base, bottom: Math.max(base.bottom, Math.min(clear, height * 0.6 + MARKER_ROOM)) };
+}
+
+/** The strip down the map's right edge that its own buttons (expand, 3D, locate, zoom) sit in. */
+const CONTROLS_ROOM = 76;
+
+/**
+ * Pans the map just far enough that an opened card is whole: inside the map,
+ * clear of the route panel and of the map's own buttons. A card opens at its
+ * photo, wherever that is, and could otherwise sit half under the panel, behind
+ * a button or off the edge.
+ */
+function keepPopupInView(map: MlMap, popup: Popup, panelOpen: boolean, release: (map: MlMap) => void): void {
+  const element = popup.getElement();
+  if (!element) return;
+  const margin = 16;
+  const plain: Padding = { top: margin, bottom: margin, left: margin, right: margin };
+  const mapBox = map.getContainer().getBoundingClientRect();
+  const box = element.getBoundingClientRect();
+  const room = (pad: Padding) => ({
+    left: mapBox.left + pad.left,
+    right: mapBox.right - Math.max(pad.right, CONTROLS_ROOM),
+    top: mapBox.top + pad.top,
+    bottom: mapBox.bottom - pad.bottom,
+  });
+  let safe = room(panelOpen ? panelClearance(map, plain) : plain);
+  // Not enough clear room beside the panel: rather than squeeze the card against the map's
+  // edge (where it is cut off), let it float over the panel, whole.
+  if (panelOpen && (box.width > safe.right - safe.left || box.height > safe.bottom - safe.top)) safe = room(plain);
+  // Too big for the room (a small map): line its top-left up with the room's.
+  const shift = (low: number, high: number, safeLow: number, safeHigh: number) =>
+    high - low > safeHigh - safeLow ? low - safeLow : low < safeLow ? low - safeLow : high > safeHigh ? high - safeHigh : 0;
+  const dx = shift(box.left, box.right, safe.left, safe.right);
+  const dy = shift(box.top, box.bottom, safe.top, safe.bottom);
+  if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+  release(map);
+  map.panBy([dx, dy], { duration: prefersReducedMotion() ? 0 : 280 });
+}
+
+/**
+ * Keeps the bottom-right controls (zoom, attribution) clear of a route panel
+ * docked along the bottom of a narrow map: they ride on top of its edge, and
+ * drop back when the panel closes or sits at the side. Writes `--ctrl-lift`
+ * on the map, which the stylesheet applies. Returns a function that stops it.
+ */
+function keepControlsAbovePanel(map: MlMap): () => void {
+  const container = map.getContainer();
+  const wrap = container.parentElement;
+  if (!wrap) return () => {};
+  let watched: HTMLElement | null = null;
+  const resize = new ResizeObserver(() => lift());
+  function lift() {
+    const panel = wrap?.querySelector<HTMLElement>('.gpx-panel') ?? null;
+    if (panel !== watched) {
+      if (watched) resize.unobserve(watched);
+      if (panel) resize.observe(panel);
+      watched = panel;
+    }
+    const docked = panel !== null && panel.offsetWidth >= container.clientWidth * 0.6;
+    const top = panel ? panel.offsetTop - container.offsetTop : 0;
+    container.style.setProperty('--ctrl-lift', docked ? `${Math.max(0, container.clientHeight - top)}px` : '0px');
+  }
+  // The panel is added, removed and swapped as routes open and close.
+  const mutations = new MutationObserver(lift);
+  mutations.observe(wrap, { childList: true });
+  resize.observe(container);
+  lift();
+  return () => {
+    resize.disconnect();
+    mutations.disconnect();
+    container.style.removeProperty('--ctrl-lift');
+  };
+}
+
+export function MapView({
+  venues,
+  selectedSlug,
+  selectedVenue,
+  routes,
+  activeRoute,
+  activeRouteTrim,
+  onSelectVenue,
+  hoveredSlug,
+  onHover,
+  focus,
+  focusBounds,
+  mapExpanded,
+  onToggleExpand,
+  injectedVenueSlugs,
+  hoverPoint,
+  onRouteHover,
+  routePanelOpen,
+  spotlight,
+  overlapSlugs,
+  routePhotos,
+  photoFocus,
+  favorites,
+  onToggleFavorite,
+  onLocateHint,
+  onUserMove,
+  onUserMoveEnd,
+  onMapError,
+  onViewportChange,
+  userLocation,
+  allRoutes,
+  mode,
+  selectedRouteSlug,
+  hoveredRouteSlug,
+  onSelectRoute,
+  onHoverRoute,
+}: MapViewProps) {
+  const allRoutesRef = useRef(allRoutes);
+  allRoutesRef.current = allRoutes;
+  const onSelectRouteRef = useRef(onSelectRoute);
+  onSelectRouteRef.current = onSelectRoute;
+  const onHoverRouteRef = useRef(onHoverRoute);
+  onHoverRouteRef.current = onHoverRoute;
+  const routeMarkersRef = useRef<RouteMarkers | null>(null);
+  const endpointMarkersRef = useRef<RouteEndpointMarkers | null>(null);
+  const prevSelectedRouteRef = useRef<string | null>(null);
+  const prevHoveredRouteRef = useRef<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<MlMap | null>(null);
+  const [ready, setReady] = useState(false);
+  const { units } = useUnits();
+
+  const [busy, setBusy] = useState(false);
+  const markersRef = useRef<VenueMarkers | null>(null);
+  const refreshMarkersRef = useRef<(force?: boolean) => void>(() => {});
+  const onSelectRef = useRef(onSelectVenue);
+  onSelectRef.current = onSelectVenue;
+  const venuesRef = useRef(venues);
+  venuesRef.current = venues;
+  const venueBySlugRef = useRef(new Map(venues.map((venue) => [venue.slug, venue])));
+  const selectedSlugRef = useRef(selectedSlug);
+  selectedSlugRef.current = selectedSlug;
+  const hoveredSlugRef = useRef(hoveredSlug ?? null);
+  hoveredSlugRef.current = hoveredSlug ?? null;
+  const onMapErrorRef = useRef(onMapError);
+  onMapErrorRef.current = onMapError;
+  const userLocationRef = useRef(userLocation);
+  userLocationRef.current = userLocation;
+  const injectedVenueSlugsRef = useRef(injectedVenueSlugs);
+  injectedVenueSlugsRef.current = injectedVenueSlugs;
+  const activeRouteRef = useRef(activeRoute);
+  activeRouteRef.current = activeRoute;
+  const onRouteHoverRef = useRef(onRouteHover);
+  onRouteHoverRef.current = onRouteHover;
+  const onViewportRef = useRef(onViewportChange);
+  onViewportRef.current = onViewportChange;
+  const onHoverRef = useRef(onHover);
+  onHoverRef.current = onHover;
+  const visitedRef = useRef(new Set<string>());
+  const onLocateHintRef = useRef(onLocateHint);
+  onLocateHintRef.current = onLocateHint;
+  const onUserMoveRef = useRef(onUserMove);
+  onUserMoveRef.current = onUserMove;
+  const onUserMoveEndRef = useRef(onUserMoveEnd);
+  onUserMoveEndRef.current = onUserMoveEnd;
+  const onToggleExpandRef = useRef(onToggleExpand);
+  onToggleExpandRef.current = onToggleExpand;
+  const mapExpandedRef = useRef(mapExpanded);
+  mapExpandedRef.current = mapExpanded;
+  const expandControlRef = useRef<ExpandControl | null>(null);
+  const routePanelOpenRef = useRef(routePanelOpen);
+  routePanelOpenRef.current = routePanelOpen;
+  const lastFrameRef = useRef<FrameTarget | null>(null);
+  const geolocateLockedRef = useRef(false);
+
+  /**
+   * Programmatic camera moves must win over "follow my location". MapLibre's
+   * GeolocateControl only drops its lock on a move that does not zoom, and a
+   * search that frames a country zooms — so with tracking on, the next GPS fix
+   * snapped the camera straight back to the person's position. A no-op jump
+   * first is a non-zooming move, which releases the lock (the blue dot stays).
+   */
+  const releaseGeolocate = useCallback((map: MlMap) => {
+    if (geolocateLockedRef.current) map.jumpTo({ center: map.getCenter() });
+  }, []);
+
+  // The viewport and marker bounds are tracked separately because list updates
+  // and the 6 × 4 marker shortlist use different thresholds.
+  const viewportBoundsRef = useRef<{ west: number; south: number; east: number; north: number } | null>(null);
+  const markerBoundsRef = useRef<{ west: number; south: number; east: number; north: number } | null>(null);
+  const lastZoomRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    const map = new MapLibreMap({
+      container: containerRef.current,
+      style: MAP_STYLE_URL,
+      center: SINGAPORE_CENTRE,
+      zoom: 11,
+      minZoom: 2,
+      renderWorldCopies: false,
+      attributionControl: { compact: true },
+    });
+    mapRef.current = map;
+    let routeHoverFrame = 0;
+
+    const collapseAttribution = () => {
+      const el = map.getContainer().querySelector('.maplibregl-ctrl-attrib');
+      if (el instanceof HTMLDetailsElement) el.open = false;
+      el?.classList.remove('maplibregl-compact-show');
+    };
+    collapseAttribution();
+    map.on('load', collapseAttribution);
+
+    if (import.meta.env.DEV) (window as unknown as { map: MlMap }).map = map;
+
+    map.on('error', (e: ErrorEvent & { sourceId?: string; tile?: unknown }) => {
+      const message = e.error?.message ?? 'Unknown map error';
+      // A single tile that fails to download (flaky network, a gap in the
+      // terrain set while panning in 3D) leaves a blank square at worst; it is
+      // not "the map failed to load", so it must not raise the banner.
+      if (e.sourceId || e.tile || /Failed to fetch|\/terrarium\/|\.pbf|\.png/.test(message)) {
+        console.warn('[map tile]', message);
+        return;
+      }
+      console.error('[map]', message);
+      onMapErrorRef.current?.(message);
+    });
+
+    expandControlRef.current = new ExpandControl(mapExpandedRef.current, () =>
+      onToggleExpandRef.current(),
+    );
+    map.addControl(expandControlRef.current, 'top-right');
+    map.addControl(new TerrainControl(), 'top-right');
+
+    const geolocate = new GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: true,
+    });
+    geolocate.on('geolocate', () => onLocateHintRef.current?.(null));
+    geolocate.on('trackuserlocationstart', () => {
+      geolocateLockedRef.current = true;
+      // Following your location replaces whatever was framed before it.
+      lastFrameRef.current = null;
+    });
+    geolocate.on('trackuserlocationend', () => {
+      geolocateLockedRef.current = false;
+    });
+    geolocate.on('error', (e: GeolocateErrorEvent) => {
+      const code = e.code;
+      onLocateHintRef.current?.(
+        code === 1
+          ? 'To improve accuracy, enable location sharing in your browser settings.'
+          : code === 3
+            ? 'Timed out waiting for your location.'
+            : 'Could not get your location.',
+      );
+    });
+    map.addControl(geolocate, 'top-right');
+    // + and − at the bottom right, so zooming never needs a pinch (zooming out by hand
+    // takes two fingers). No compass: the map is not rotated by default.
+    map.addControl(new NavigationControl({ showCompass: false }), 'bottom-right');
+    // At a zoom limit MapLibre disables the button outright, which drops keyboard focus
+    // with it. Keep it focusable: aria-disabled (set by MapLibre) and the dimming say it.
+    map.on('move', () => {
+      for (const button of map.getContainer().querySelectorAll<HTMLButtonElement>('.maplibregl-ctrl-zoom-in, .maplibregl-ctrl-zoom-out')) {
+        button.disabled = false;
+      }
+    });
+    const stopLift = keepControlsAbovePanel(map);
+
+    map.on('load', () => {
+      if (mapRef.current !== map) return;
+
+      addVenueLayers(map, venuesToGeoJson(venuesRef.current));
+      addUserLocationSource(map);
+      const loc = userLocationRef.current;
+      if (loc) {
+        (map.getSource('user-location') as GeoJSONSource).setData(userLocationFeature(loc.lng, loc.lat));
+      }
+      addAllRouteLayers(map, routesToGeoJson(allRoutesRef.current));
+      addRouteStartSource(map);
+      addRouteLayers(map);
+      markersRef.current = new VenueMarkers(map, {
+        onSelect: (slug) => onSelectRef.current(slug),
+        onHover: (slug) => onHoverRef.current?.(slug),
+      });
+      routeMarkersRef.current = new RouteMarkers(map, {
+        onSelect: (slug) => onSelectRouteRef.current(slug),
+        onHover: (slug) => onHoverRouteRef.current(slug),
+        onCluster: (center, zoom) => {
+          // A tap is the person taking the camera, like a pan.
+          lastFrameRef.current = null;
+          releaseGeolocate(map);
+          map.easeTo({ center, zoom: Math.max(zoom, map.getZoom() + 1), duration: 600 });
+        },
+      });
+      endpointMarkersRef.current = new RouteEndpointMarkers(map);
+      refreshMarkersRef.current(true);
+      setReady(true);
+
+      // Route lines are drawn only for a hovered or open route (its pin or its row in the
+      // list), so there is nothing on the map to hover or tap: a click is on empty ground.
+      map.on('click', () => {
+        onSelectRef.current(null);
+      });
+      map.on('mousemove', (event: MapMouseEvent) => {
+        cancelAnimationFrame(routeHoverFrame);
+        routeHoverFrame = requestAnimationFrame(() => {
+          const features = map.queryRenderedFeatures(
+            [
+              [event.point.x - 6, event.point.y - 6],
+              [event.point.x + 6, event.point.y + 6],
+            ],
+            { layers: ['active-route-line', 'active-route-cut-line'] },
+          );
+          const points = activeRouteRef.current;
+          if (features.length === 0 || !points?.length) {
+            onRouteHoverRef.current(null);
+            return;
+          }
+          let nearest = 0;
+          let distance = Infinity;
+          for (let index = 0; index < points.length; index++) {
+            const next = haversineM(event.lngLat.lng, event.lngLat.lat, points[index][0], points[index][1]);
+            if (next < distance) {
+              distance = next;
+              nearest = index;
+            }
+          }
+          onRouteHoverRef.current(nearest);
+        });
+      });
+      map.on('mouseout', () => onRouteHoverRef.current(null));
+    });
+
+    const reportViewport = (event?: MapMovementEvent) => {
+      const b = map.getBounds();
+      const next = {
+        west: b.getWest(),
+        south: b.getSouth(),
+        east: b.getEast(),
+        north: b.getNorth(),
+      };
+      if (!boundsMeaningfullyChanged(viewportBoundsRef.current, next)) return;
+      viewportBoundsRef.current = next;
+      onViewportRef.current?.(next, Boolean(event?.originalEvent));
+    };
+
+    const refreshMarkers = (force = false) => {
+      const b = map.getBounds();
+      const zoom = map.getZoom();
+      const zoomingOut = lastZoomRef.current != null && zoom < lastZoomRef.current - 0.01;
+      const west = b.getWest();
+      const east = b.getEast();
+      const south = b.getSouth();
+      const north = b.getNorth();
+      const spanX = east - west;
+      const spanY = north - south;
+      if (spanX <= 0 || spanY <= 0) {
+        markersRef.current?.setVenues([]);
+        lastZoomRef.current = zoom;
+        return;
+      }
+
+      if (!force && !boundsMeaningfullyChanged(markerBoundsRef.current, { west, south, east, north })) return;
+      markerBoundsRef.current = { west, south, east, north };
+
+      const cellWinners = new Map<number, Venue>();
+      for (const venue of venuesRef.current) {
+        if (venue.lng < west || venue.lng > east || venue.lat < south || venue.lat > north) continue;
+        const col = Math.min(MARKER_COLS - 1, Math.floor(((venue.lng - west) / spanX) * MARKER_COLS));
+        const row = Math.min(MARKER_ROWS - 1, Math.floor(((north - venue.lat) / spanY) * MARKER_ROWS));
+        const cell = row * MARKER_COLS + col;
+        const held = cellWinners.get(cell);
+        if (!held || rankingHeight(venue) > rankingHeight(held)) cellWinners.set(cell, venue);
+      }
+
+      const next = new Map<string, Venue>();
+      for (const venue of cellWinners.values()) next.set(venue.slug, venue);
+      for (const slug of [
+        hoveredSlugRef.current,
+        selectedSlugRef.current,
+        ...injectedVenueSlugsRef.current,
+      ]) {
+        if (!slug) continue;
+        const venue = venueBySlugRef.current.get(slug);
+        if (venue) next.set(slug, venue);
+      }
+
+      // Carrying is a zoom-in continuity rule: existing ovals get room to open
+      // into full pills. Zooming out starts fresh so old neighbourhood detail
+      // does not accumulate over the wider view.
+      const carried = zoomingOut
+        ? []
+        : (markersRef.current?.currentSlugs() ?? [])
+            .map((slug) => venueBySlugRef.current.get(slug))
+            .filter(
+              (venue): venue is Venue =>
+                Boolean(
+                  venue &&
+                    venue.lng >= west &&
+                    venue.lng <= east &&
+                    venue.lat >= south &&
+                    venue.lat <= north &&
+                    !next.has(venue.slug),
+                ),
+            )
+            .sort((a, b) => rankingHeight(b) - rankingHeight(a));
+      for (const venue of carried.slice(0, Math.max(0, 48 - next.size))) {
+        next.set(venue.slug, venue);
+      }
+
+      markersRef.current?.setVenues([...next.values()]);
+      markersRef.current?.layout();
+      lastZoomRef.current = zoom;
+    };
+    refreshMarkersRef.current = refreshMarkers;
+
+    const layoutMarkers = () => markersRef.current?.layout();
+    // A pan or zoom by hand means the person has taken the camera; stop
+    // re-framing whatever was framed for them last.
+    let movedByHand = false;
+    map.on('movestart', (event: MapMovementEvent) => {
+      if (!event.originalEvent) return;
+      movedByHand = true;
+      lastFrameRef.current = null;
+      onUserMoveRef.current?.();
+    });
+    map.on('moveend', () => {
+      if (!movedByHand) return;
+      movedByHand = false;
+      onUserMoveEndRef.current?.();
+    });
+    map.on('load', () => {
+      if (lastFrameRef.current) frameTo(map, lastFrameRef.current, 0);
+    });
+    map.on('moveend', () => reportViewport());
+    map.on('moveend', () => refreshMarkers());
+    map.on('moveend', () => layoutMarkers());
+    map.on('zoomend', () => layoutMarkers());
+    map.on('resize', () => layoutMarkers());
+    map.once('load', () => {
+      reportViewport();
+      refreshMarkers();
+      layoutMarkers();
+    });
+
+    let showTimer: ReturnType<typeof setTimeout> | null = null;
+    const markBusy = () => {
+      if (showTimer) return;
+      showTimer = setTimeout(() => {
+        setBusy(true);
+        showTimer = null;
+      }, 280);
+    };
+    const markIdle = () => {
+      if (showTimer) {
+        clearTimeout(showTimer);
+        showTimer = null;
+      }
+      setBusy(false);
+    };
+    map.on('dataloading', markBusy);
+    map.on('idle', markIdle);
+
+    // The container changes size when the list folds away for a route, when
+    // the window resizes, and while the stage animates. Keep whatever was last
+    // framed on screen, once the size has settled.
+    // While the size animates (expanding the map, the list folding), the frame
+    // is re-fitted on every step with no animation, so the route glides with
+    // the edge instead of drifting and then jumping back once it settles. If
+    // a flight is still under way it is left alone and corrected at the end.
+    let refitTimer: ReturnType<typeof setTimeout> | undefined;
+    const observer = new ResizeObserver(() => {
+      map.resize();
+      const frame = lastFrameRef.current;
+      if (frame && startedMaps.has(map) && !map.isMoving()) frameTo(map, frame, 0);
+      map.redraw();
+      clearTimeout(refitTimer);
+      refitTimer = setTimeout(() => {
+        if (lastFrameRef.current) frameTo(map, lastFrameRef.current, 400);
+      }, 180);
+    });
+    observer.observe(containerRef.current);
+    const settle = setTimeout(() => map.resize(), 0);
+    map.on('load', () => {
+      map.resize();
+      startedMaps.add(map);
+    });
+
+    return () => {
+      stopLift();
+      clearTimeout(settle);
+      clearTimeout(refitTimer);
+      cancelAnimationFrame(routeHoverFrame);
+      if (showTimer) clearTimeout(showTimer);
+      observer.disconnect();
+      markersRef.current?.remove();
+      markersRef.current = null;
+      routeMarkersRef.current?.remove();
+      routeMarkersRef.current = null;
+      endpointMarkersRef.current?.remove();
+      endpointMarkersRef.current = null;
+      map.remove();
+      mapRef.current = null;
+      setReady(false);
+    };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const source = map.getSource('venues') as GeoJSONSource | undefined;
+    venueBySlugRef.current = new Map(venues.map((venue) => [venue.slug, venue]));
+    source?.setData(venuesToGeoJson(venues));
+    refreshMarkersRef.current(true);
+  }, [venues, ready]);
+
+  useEffect(() => {
+    if (!ready || !markersRef.current) return;
+    refreshMarkersRef.current(true);
+    if (selectedSlug) visitedRef.current.add(selectedSlug);
+    markersRef.current.setState({
+      selected: selectedSlug,
+      hovered: hoveredSlug ?? null,
+      visited: visitedRef.current,
+      units,
+    });
+    markersRef.current.layout();
+  }, [selectedSlug, hoveredSlug, injectedVenueSlugs, units, ready]);
+
+  useEffect(() => {
+    expandControlRef.current?.update(mapExpanded);
+    expandControlRef.current?.setInvite(routePanelOpen && !mapExpanded);
+  }, [mapExpanded, routePanelOpen]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !focus) return;
+    lastFrameRef.current = null;
+    releaseGeolocate(map);
+    flyToVenue(map, [focus.lng, focus.lat]);
+  }, [focus, releaseGeolocate]);
+
+  // Runs on mount too, so a #map/w,s,e,n link frames its area straight away,
+  // before the style has loaded, and again on 'load' in case the container
+  // was still settling its size.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !focusBounds) return;
+    const target: FrameTarget = {
+      bounds: focusBounds.bounds,
+      maxZoom: 16,
+      padding: (m) =>
+        routePanelOpenRef.current
+          ? panelClearance(m, { top: 96, bottom: 64, left: 64, right: 64 })
+          : { top: 96, bottom: 64, left: 64, right: 64 },
+    };
+    lastFrameRef.current = target;
+    releaseGeolocate(map);
+    frameTo(map, target, 900);
+  }, [focusBounds, releaseGeolocate]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    (map.getSource('routes') as GeoJSONSource | undefined)?.setData(routesToGeoJson(allRoutes));
+    prevSelectedRouteRef.current = null;
+    prevHoveredRouteRef.current = null;
+    routeMarkersRef.current?.setRoutes(mode === 'routes' ? allRoutes : [], units);
+  }, [allRoutes, mode, units, ready]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    setRouteFeatureState(map, selectedRouteSlug, 'selected', prevSelectedRouteRef.current);
+    setRouteFeatureState(map, hoveredRouteSlug, 'hover', prevHoveredRouteRef.current);
+    prevSelectedRouteRef.current = selectedRouteSlug;
+    prevHoveredRouteRef.current = hoveredRouteSlug;
+    routeMarkersRef.current?.setState(selectedRouteSlug, hoveredRouteSlug);
+  }, [selectedRouteSlug, hoveredRouteSlug, allRoutes, mode, ready]);
+
+  const lastDrawnRouteRef = useRef<RoutePoint[] | null>(null);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    // The reveal plays once per track. A trim drag redraws in place — re-running
+    // the animation on every tick would replay the line endlessly.
+    const isNewTrack = activeRoute !== lastDrawnRouteRef.current;
+    lastDrawnRouteRef.current = activeRoute;
+    return animateActiveRoute(map, activeRoute, activeRouteTrim ?? null, isNewTrack ? 1100 : 0);
+  }, [activeRoute, activeRouteTrim, ready]);
+
+  // The camera does not need the basemap style, so frame the route straight
+  // away. Waiting for `ready` left the map parked on Singapore for seconds
+  // after opening a route from the landing page, which read as "not working".
+  const routeFrameRef = useRef<FrameTarget | null>(null);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    // A closed route must not be re-framed when the list comes back.
+    if (lastFrameRef.current && lastFrameRef.current === routeFrameRef.current) lastFrameRef.current = null;
+    routeFrameRef.current = null;
+    if (activeRoute && activeRoute.length > 1) {
+      const box = activeRoute.reduce(
+        (b, [lng, lat]) => b.extend([lng, lat]),
+        new LngLatBounds(
+          [activeRoute[0][0], activeRoute[0][1]],
+          [activeRoute[0][0], activeRoute[0][1]],
+        ),
+      );
+      const target: FrameTarget = {
+        bounds: { west: box.getWest(), south: box.getSouth(), east: box.getEast(), north: box.getNorth() },
+        maxZoom: 15,
+        padding: (m) => {
+          const base = { top: 80, bottom: 80, left: 80, right: 80 };
+          return routePanelOpenRef.current ? panelClearance(m, base) : base;
+        },
+      };
+      lastFrameRef.current = target;
+      routeFrameRef.current = target;
+      releaseGeolocate(map);
+      // A flight, not a cut: zoom out, travel, settle on the next route.
+      frameTo(map, target, 1400);
+    }
+  }, [activeRoute, releaseGeolocate]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    setRouteHover(map, hoverPoint);
+  }, [hoverPoint, ready]);
+
+  // Start and finish markers: on the route being hovered (its pin or its row in the list)
+  // while the pointer is on it, otherwise on the open route (or the dropped GPX, kept part only).
+  useEffect(() => {
+    const markers = endpointMarkersRef.current;
+    if (!markers || !ready) return;
+    const hovered = hoveredRouteSlug ? allRoutes.find((route) => route.slug === hoveredRouteSlug) : undefined;
+    const open = activeRoute && activeRouteTrim ? activeRoute.slice(activeRouteTrim[0], activeRouteTrim[1] + 1) : activeRoute;
+    markers.show(hovered ? hovered.coordinates : open);
+  }, [ready, hoveredRouteSlug, allRoutes, activeRoute, activeRouteTrim]);
+
+  const photoMarkersRef = useRef(new Map<string, Marker>());
+  // The photo open full screen, if any (from the card on a photo's pin).
+  const [viewerId, setViewerId] = useState<string | null>(null);
+  const viewerIndex = viewerId && routePhotos ? routePhotos.findIndex((photo) => photo.id === viewerId) : -1;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const markers = photoMarkersRef.current;
+    for (const photo of routePhotos ?? []) {
+      const marker = routePhotoMarker(photo, setViewerId).addTo(map);
+      // Opening one photo or hazard closes the one that was open before it, and brings it fully into view.
+      const popup = marker.getPopup();
+      popup?.on('open', () => {
+        markers.forEach((other) => {
+          if (other !== marker && other.getPopup()?.isOpen()) other.togglePopup();
+        });
+        const bringIntoView = () => requestAnimationFrame(() => popup && popup.isOpen() && keepPopupInView(map, popup, routePanelOpenRef.current, releaseGeolocate));
+        // A card opened by the panel's thumbnail arrives while the map is still flying to it.
+        if (map.isMoving()) map.once('moveend', bringIntoView);
+        else bringIntoView();
+      });
+      markers.set(photo.id, marker);
+    }
+    return () => {
+      markers.forEach((marker) => marker.remove());
+      markers.clear();
+    };
+  }, [routePhotos, releaseGeolocate]);
+  useEffect(() => {
+    const map = mapRef.current;
+    const marker = photoFocus ? photoMarkersRef.current.get(photoFocus.id) : undefined;
+    if (!map || !marker) return;
+    const base = { top: 120, bottom: 64, left: 40, right: 40 };
+    lastFrameRef.current = null;
+    releaseGeolocate(map);
+    map.flyTo({
+      center: marker.getLngLat(),
+      zoom: Math.max(map.getZoom(), 14),
+      duration: prefersReducedMotion() ? 0 : 800,
+      padding: safePadding(map, routePanelOpenRef.current ? panelClearance(map, base) : base),
+    });
+    if (!marker.getPopup()?.isOpen()) marker.togglePopup();
+  }, [photoFocus, releaseGeolocate]);
+
+  const overlapKey = (overlapSlugs ?? []).join('|');
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    setOverlapRoutes(map, overlapKey ? overlapKey.split('|') : []);
+  }, [overlapKey, ready, allRoutes]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || !spotlight) return;
+    const { venue } = spotlight;
+    const marker = spotlightMarker(venue).addTo(map);
+    const base = { top: 64, bottom: 64, left: 64, right: 64 };
+    lastFrameRef.current = null;
+    releaseGeolocate(map);
+    map.flyTo({
+      center: [venue.lng, venue.lat],
+      zoom: Math.max(map.getZoom(), 14),
+      duration: prefersReducedMotion() ? 0 : 900,
+      essential: true,
+      // Keep the pin clear of the route panel.
+      padding: safePadding(map, routePanelOpenRef.current ? panelClearance(map, base) : base),
+    });
+    return () => {
+      marker.remove();
+    };
+  }, [spotlight, ready, releaseGeolocate]);
+
+  // Tapping the same place again lets go of it: fly back to the whole route.
+  const hadSpotlightRef = useRef(false);
+  useEffect(() => {
+    const map = mapRef.current;
+    const had = hadSpotlightRef.current;
+    hadSpotlightRef.current = Boolean(spotlight);
+    if (!map || spotlight || !had || !routeFrameRef.current) return;
+    lastFrameRef.current = routeFrameRef.current;
+    frameTo(map, routeFrameRef.current, 900);
+  }, [spotlight]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const source = map.getSource('user-location') as GeoJSONSource | undefined;
+    if (!source) return;
+    const loc = userLocationRef.current;
+    source.setData(loc ? userLocationFeature(loc.lng, loc.lat) : { type: 'FeatureCollection', features: [] });
+  }, [userLocation, ready]);
+
+  const closeCard = useCallback(() => onSelectVenue(null), [onSelectVenue]);
+
+  return (
+    <>
+      <div ref={containerRef} className="map" />
+      {busy && (
+        <div className="map-busy" role="status" aria-live="polite">
+          <span className="dots" aria-hidden="true">
+            <span className="dot" />
+            <span className="dot" />
+            <span className="dot" />
+          </span>
+          <span className="visually-hidden">Loading the map</span>
+        </div>
+      )}
+      {viewerIndex >= 0 && routePhotos && (
+        <RoutePhotoViewer
+          photos={routePhotos}
+          index={viewerIndex}
+          onIndex={(next) => setViewerId(routePhotos[next]?.id ?? null)}
+          onClose={() => setViewerId(null)}
+        />
+      )}
+      {selectedVenue && mapRef.current && (
+        <VenuePopup
+          map={mapRef.current}
+          venue={selectedVenue}
+          routes={routes}
+          onClose={closeCard}
+          favorites={favorites}
+          onToggleFavorite={onToggleFavorite}
+        />
+      )}
+    </>
+  );
+}
+
+/**
+ * A photo (round thumbnail) or hazard (warning badge) on the route. Tapping it
+ * opens a card with the whole picture, its caption and who added it; the picture
+ * opens full screen (`onEnlarge`).
+ */
+function routePhotoMarker(photo: RoutePhoto, onEnlarge: (id: string) => void): Marker {
+  const el = document.createElement('button');
+  el.type = 'button';
+  el.className = `route-photo-pin ${photo.kind}`;
+  el.setAttribute('aria-label', photo.kind === 'hazard' ? `Hazard: ${photo.caption || 'see photo'}` : `Photo: ${photo.caption || 'along the route'}`);
+  const img = document.createElement('img');
+  img.src = photo.url;
+  img.alt = '';
+  el.appendChild(img);
+  if (photo.kind === 'hazard') el.appendChild(textSpan('!', 'route-photo-pin-badge'));
+
+  const card = document.createElement('div');
+  card.className = `route-photo-pop ${photo.kind}`;
+
+  // The whole photo, never a cropped slice: it sits inside the frame over a blurred
+  // copy of itself, so a tall or wide picture has no bare bars either side.
+  const frame = document.createElement('button');
+  frame.type = 'button';
+  frame.className = 'route-photo-pop-frame';
+  frame.setAttribute('aria-label', 'View photo full screen');
+  const backdrop = document.createElement('span');
+  backdrop.className = 'route-photo-pop-bg';
+  backdrop.style.backgroundImage = `url("${photo.url}")`;
+  const big = document.createElement('img');
+  big.src = photo.url;
+  big.alt = photo.caption;
+  const expand = document.createElement('span');
+  expand.className = 'route-photo-pop-expand';
+  expand.appendChild(parseSvg(EXPAND_SVG));
+  expand.appendChild(textSpan('View larger', 'route-photo-pop-expand-label'));
+  frame.append(backdrop, big, expand);
+  frame.addEventListener('click', () => onEnlarge(photo.id));
+  card.appendChild(frame);
+
+  const body = document.createElement('div');
+  body.className = 'route-photo-pop-body';
+  if (photo.kind === 'hazard') body.appendChild(textSpan('Hazard', 'route-photo-pop-tag'));
+  if (photo.caption) body.appendChild(textSpan(photo.caption, 'route-photo-pop-caption'));
+  body.appendChild(textSpan(`Added by ${photo.author} · ${new Date(photo.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`, 'route-photo-pop-meta'));
+  const report = document.createElement('button');
+  report.type = 'button';
+  report.className = 'route-photo-pop-report';
+  report.textContent = 'Report';
+  report.addEventListener('click', () => requestReport({ targetType: 'route_photo', targetSlug: photo.id, targetName: photo.caption || 'this photo' }));
+  body.appendChild(report);
+  card.appendChild(body);
+
+  const popup = new Popup({ offset: 22, closeButton: true, maxWidth: '300px', className: 'route-photo-popup' }).setDOMContent(card);
+  const marker = new Marker({ element: el, anchor: 'center' }).setLngLat([photo.lng, photo.lat]).setPopup(popup);
+  el.addEventListener('click', (event) => {
+    // The click stays off the map (it would clear the selection), but the map is also what
+    // opens a marker's card from a click, so a tap or click has to open it here. Enter and
+    // Space (a click with no pointer, `detail` 0) are already handled by the marker itself.
+    event.stopPropagation();
+    if (event.detail > 0) marker.togglePopup();
+  });
+  return marker;
+}
+
+/** Arrows pointing out of the corners: "make this bigger". */
+const EXPAND_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
+
+/** A selected-style pin, labelled by name, that opens the venue's detail page. */
+function spotlightMarker(venue: Venue): Marker {
+  const anchor = document.createElement('div');
+  anchor.className = 'pin-anchor';
+  anchor.style.zIndex = '5';
+  const pin = document.createElement('button');
+  pin.type = 'button';
+  pin.className = 'pin is-selected';
+  pin.setAttribute('aria-label', `${venue.name} — open details`);
+  const glyph = document.createElement('span');
+  glyph.className = 'pin-glyph';
+  glyph.appendChild(parseSvg(glyphSvg(venue.type)));
+  pin.append(glyph, textSpan(venue.name, 'pin-label'));
+  pin.addEventListener('click', (event) => {
+    event.stopPropagation();
+    // Venue pages open in their own tab, like the cards.
+    window.open(`#venue/${venue.slug}`, '_blank', 'noopener');
+  });
+  anchor.appendChild(pin);
+  return new Marker({ element: anchor, anchor: 'center' }).setLngLat([venue.lng, venue.lat]);
+}
+
+/** A card anchored to the selected venue's map coordinate. */
+function VenuePopup({
+  map,
+  venue,
+  routes,
+  onClose,
+  favorites,
+  onToggleFavorite,
+}: {
+  map: MlMap;
+  venue: Venue;
+  routes: Route[];
+  onClose: () => void;
+  favorites: Set<string>;
+  onToggleFavorite: (slug: string) => void;
+}) {
+  const [content] = useState(() => document.createElement('div'));
+  const popupRef = useRef<Popup | null>(null);
+
+  useEffect(() => {
+    const popup = new Popup({
+      closeButton: false,
+      closeOnClick: false,
+      focusAfterOpen: false,
+      offset: VENUE_POPUP_OFFSET,
+      className: 'venue-popup',
+      maxWidth: 'none',
+    })
+      .setLngLat([venue.lng, venue.lat])
+      .addTo(map);
+    popup.setDOMContent(content);
+    popupRef.current = popup;
+
+    let frame = 0;
+    const clampToMap = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        content.style.transform = '';
+        const card = content.querySelector('.venue-card');
+        if (!(card instanceof HTMLElement)) return;
+        const cardRect = card.getBoundingClientRect();
+        const mapRect = map.getContainer().getBoundingClientRect();
+        const dx = cardRect.left < mapRect.left
+          ? mapRect.left - cardRect.left
+          : cardRect.right > mapRect.right
+            ? mapRect.right - cardRect.right
+            : 0;
+        const dy = cardRect.top < mapRect.top
+          ? mapRect.top - cardRect.top
+          : cardRect.bottom > mapRect.bottom
+            ? mapRect.bottom - cardRect.bottom
+            : 0;
+        if (dx || dy) content.style.transform = `translate(${dx}px, ${dy}px)`;
+      });
+    };
+    map.on('move', clampToMap);
+    map.on('resize', clampToMap);
+    clampToMap();
+
+    return () => {
+      cancelAnimationFrame(frame);
+      map.off('move', clampToMap);
+      map.off('resize', clampToMap);
+      popup.remove();
+      popupRef.current = null;
+    };
+  }, [map, content, venue.lng, venue.lat]);
+
+  return createPortal(
+    <div
+      className="venue-popup-inner"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <VenueCard
+        venue={venue}
+        routes={routes}
+        onClose={onClose}
+        isFavorite={favorites.has(venue.slug)}
+        onToggleFavorite={() => onToggleFavorite(venue.slug)}
+      />
+    </div>,
+    content,
+  );
+}

@@ -1,0 +1,306 @@
+import type { Venue } from '../types';
+import { DATA_BASE, loadDataset, type Bounds } from './venues';
+import { regionOf } from './regions';
+
+/**
+ * Worldwide summits (GeoNames, CC BY 4.0), built by scripts/fetch_world_peaks.py
+ * into 5° tiles. Nothing here is loaded on the landing page except the small
+ * index; the map fetches only the tiles on screen.
+ *
+ * Slugs carry their tile (`gn<id>-<south>x<west>`, negatives as `m`), so a
+ * shared link or a saved favourite can find its summit without a lookup table.
+ */
+
+/** [geonameid, name, lat, lng, elevation, 's'urveyed | 'd'em, country, feature] */
+type PeakRow = [number, string, number, number, number, 's' | 'd', string, string];
+
+export interface PeakIndex {
+  tile: number;
+  total: number;
+  countries: number;
+  /**
+   * ISO code → [summit count, west, south, east, north]: the tight box round
+   * the globe, so `east` exceeds 180 for a country across the antimeridian.
+   */
+  byCountry?: Record<string, [number, number, number, number, number]>;
+  /** ISO code → geonameids of its landing row (tallest distinct summits, highest first), all in `top`. */
+  rows?: Record<string, number[]>;
+  cells: Record<string, number>;
+  top: PeakRow[];
+}
+
+const BASE = `${DATA_BASE}/peaks`;
+let indexPromise: Promise<PeakIndex | null> | null = null;
+const tiles = new Map<string, Promise<Venue[]>>();
+
+export function loadPeakIndex(): Promise<PeakIndex | null> {
+  indexPromise ??= fetch(`${BASE}/index.json`)
+    .then((r) => (r.ok ? (r.json() as Promise<PeakIndex>) : null))
+    .catch(() => {
+      indexPromise = null;
+      return null;
+    });
+  return indexPromise;
+}
+
+const token = (n: number) => (n < 0 ? `m${-n}` : String(n));
+const untoken = (t: string) => (t.startsWith('m') ? -Number(t.slice(1)) : Number(t));
+
+function tileKeyOf(lat: number, lng: number, size: number): string {
+  return `${Math.floor(lat / size) * size}_${Math.floor(lng / size) * size}`;
+}
+
+function toVenue(row: PeakRow, size: number, photos?: Map<string, PeakPhoto>): Venue {
+  const [id, name, lat, lng, ele, source] = row;
+  const [south, west] = tileKeyOf(lat, lng, size).split('_').map(Number);
+  const slug = `gn${id}-${token(south)}x${token(west)}`;
+  // The landing's stored Commons photo, so map cards and the photo filter see it too.
+  const photo = photos?.get(slug);
+  return {
+    slug,
+    name,
+    type: 'hill',
+    lat,
+    lng,
+    summitM: ele,
+    gainM: null,
+    elevationSource: source === 's' ? 'community' : 'dem',
+    routeSlugs: [],
+    ...(photo && {
+      photo: {
+        file: photo.url,
+        credit: photo.credit || null,
+        license: photo.licence || undefined,
+        source: 'Wikimedia Commons',
+        sourceUrl: photo.pageUrl || undefined,
+      },
+    }),
+  };
+}
+
+export function isWorldPeakSlug(slug: string): boolean {
+  return /^gn\d+-m?\d+xm?\d+$/.test(slug);
+}
+
+function loadTile(key: string, size: number): Promise<Venue[]> {
+  let pending = tiles.get(key);
+  if (!pending) {
+    pending = Promise.all([
+      fetch(`${BASE}/${key}.json`).then((r) => (r.ok ? (r.json() as Promise<PeakRow[]>) : [])),
+      loadPeakPhotos(),
+    ])
+      .then(([rows, photos]) => rows.map((row) => toVenue(row, size, photos)))
+      .catch(() => {
+        tiles.delete(key);
+        return [];
+      });
+    tiles.set(key, pending);
+  }
+  return pending;
+}
+
+/** Above this span the map shows only each tile's tallest few, from the index. */
+const MAX_TILES = 16;
+
+/**
+ * Results are memoised by what is on screen, not by call: a pan or zoom inside
+ * the same tiles gets the same array back, so `setWorldPeaks` bails on the
+ * identical reference and the map, marker and list cascade never re-runs.
+ * Before this, every move rebuilt thousands of Venue objects and re-rendered
+ * the whole page even when the visible summits had not changed.
+ */
+let topCache: { size: number; photos: Map<string, PeakPhoto>; venues: Venue[] } | null = null;
+let viewCache: { sig: string; photos: Map<string, PeakPhoto>; venues: Venue[] } | null = null;
+
+/** Summits for a viewport: full tiles when zoomed in, the index's highlights when not. */
+export async function peaksInView(view: Bounds): Promise<Venue[]> {
+  const index = await loadPeakIndex();
+  if (!index) return [];
+  const size = index.tile;
+  const keys = new Set<string>();
+  for (let s = Math.floor(view.south / size) * size; s < view.north; s += size) {
+    for (let w = Math.floor(view.west / size) * size; w < view.east; w += size) {
+      // A view across the antimeridian runs past ±180; tiles are keyed within it.
+      const key = `${s}_${(((w + 180) % 360) + 360) % 360 - 180}`;
+      if (index.cells[key]) keys.add(key);
+    }
+  }
+  const photos = await loadPeakPhotos();
+  if (keys.size > MAX_TILES) {
+    if (!topCache || topCache.size !== size || topCache.photos !== photos) {
+      topCache = { size, photos, venues: index.top.map((row) => toVenue(row, size, photos)) };
+    }
+    return topCache.venues;
+  }
+  const sig = [...keys].sort().join('|');
+  if (viewCache?.sig === sig && viewCache.photos === photos) return viewCache.venues;
+  const venues = (await Promise.all([...keys].map((key) => loadTile(key, size)))).flat();
+  viewCache = { sig, photos, venues };
+  return venues;
+}
+
+/** Find one summit by slug (for links and favourites), loading just its tile. */
+export async function worldPeakBySlug(slug: string): Promise<Venue | null> {
+  const match = /^gn\d+-(m?\d+)x(m?\d+)$/.exec(slug);
+  const index = await loadPeakIndex();
+  if (!match || !index) return null;
+  const key = `${untoken(match[1])}_${untoken(match[2])}`;
+  const venues = await loadTile(key, index.tile);
+  return venues.find((venue) => venue.slug === slug) ?? null;
+}
+
+let notablePromise: Promise<Venue[]> | null = null;
+
+/**
+ * The world's best-known summits from the index (about 6,000), whatever is on
+ * screen, so search can find "Azumaya San" from Singapore. Ranges (`MTS`,
+ * `HLLS`) are areas rather than summits and are left out.
+ */
+export function notablePeaks(): Promise<Venue[]> {
+  notablePromise ??= Promise.all([loadPeakIndex(), loadPeakPhotos()]).then(([index, photos]) => {
+    if (!index) {
+      notablePromise = null;
+      return [];
+    }
+    return index.top
+      .filter((row) => row[7] !== 'MTS' && row[7] !== 'HLLS')
+      .map((row) => {
+        const venue = toVenue(row, index.tile, photos);
+        if (row[6]) notableCountries.set(venue.slug, countryName(row[6]));
+        return venue;
+      });
+  });
+  return notablePromise;
+}
+
+const notableCountries = new Map<string, string>();
+
+/** The country of a summit returned by notablePeaks(), for search results. */
+export function notablePeakCountry(slug: string): string | undefined {
+  return notableCountries.get(slug);
+}
+
+export interface CountrySummary {
+  code: string;
+  name: string;
+  count: number;
+  /** Where its summits are; `east` exceeds 180 for a country across the antimeridian. */
+  bounds: Bounds;
+  /** Its tallest distinct summits, highest first, with their stored photo when one exists. */
+  peaks: Venue[];
+}
+
+const regionNames = typeof Intl !== 'undefined' && 'DisplayNames' in Intl
+  ? new Intl.DisplayNames(['en'], { type: 'region' })
+  : null;
+
+export function countryName(code: string): string {
+  try {
+    return regionNames?.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+let summariesPromise: Promise<CountrySummary[]> | null = null;
+
+/** The tallest summits, skipping any within 3 km of a taller one already picked (its sub-peaks). */
+function tallestDistinct(venues: Venue[], limit: number): Venue[] {
+  const picked: Venue[] = [];
+  for (const venue of [...venues].sort((a, b) => (b.summitM ?? 0) - (a.summitM ?? 0))) {
+    const near = picked.some((other) => {
+      const dLat = ((venue.lat - other.lat) * Math.PI) / 180;
+      const dLng = (((venue.lng - other.lng) * Math.PI) / 180) * Math.cos((venue.lat * Math.PI) / 180);
+      return 6_371_000 * Math.hypot(dLat, dLng) < 3000;
+    });
+    if (!near) picked.push(venue);
+    if (picked.length === limit) break;
+  }
+  return picked;
+}
+
+/**
+ * Every country with mapped summits, most summits first, for the banner, the
+ * landing rows and the searches. Peaks carry the same stored photo as on the
+ * map (toVenue), so a summit looks the same everywhere.
+ */
+export function countrySummaries(): Promise<CountrySummary[]> {
+  summariesPromise ??= Promise.all([loadPeakIndex(), loadPeakPhotos(), loadDataset().catch(() => null)]).then(([index, photos, dataset]) => {
+    if (!index?.byCountry) {
+      summariesPromise = null;
+      return [];
+    }
+    const rowsBy = new Map<string, PeakRow[]>();
+    const byId = new Map<number, PeakRow>();
+    for (const row of index.top) {
+      byId.set(row[0], row);
+      const list = rowsBy.get(row[6]);
+      if (list) list.push(row);
+      else rowsBy.set(row[6], [row]);
+    }
+    const landingRow = (code: string): PeakRow[] => {
+      const ids = index.rows?.[code];
+      if (ids) return ids.map((id) => byId.get(id)).filter((row): row is PeakRow => Boolean(row));
+      // An index from before `rows`: its tallest highlights.
+      return (rowsBy.get(code) ?? []).sort((a, b) => b[4] - a[4]).slice(0, 12);
+    };
+    // The local data's hills are left out of the world index (so the map has
+    // no duplicate pins), which took Mount Fuji out of "Highest peaks in
+    // Japan". Put them back into their country's count and row.
+    const localBy = new Map<string, Venue[]>();
+    for (const venue of dataset?.venues ?? []) {
+      if (venue.type !== 'hill' || !venue.summitM) continue;
+      const country = regionOf(venue.lng, venue.lat);
+      if (!country) continue;
+      const list = localBy.get(country);
+      if (list) list.push(venue);
+      else localBy.set(country, [venue]);
+    }
+    return Object.entries(index.byCountry)
+      .map(([code, [count, west, south, east, north]]) => {
+        const name = countryName(code);
+        const local = localBy.get(name) ?? [];
+        const world = landingRow(code).map((row) => toVenue(row, index.tile, photos));
+        return {
+          code,
+          name,
+          count: count + local.length,
+          bounds: { west, south, east, north },
+          peaks: local.length ? tallestDistinct([...world, ...local], Math.max(world.length, 12)) : world,
+        };
+      })
+      .sort((a, b) => b.count - a.count);
+  });
+  return summariesPromise;
+}
+
+export interface PeakPhoto {
+  url: string;
+  pageUrl: string;
+  credit: string;
+  licence: string;
+}
+
+let photosPromise: Promise<Map<string, PeakPhoto>> | null = null;
+
+async function fetchPeakPhotos(): Promise<Map<string, PeakPhoto>> {
+  const map = new Map<string, PeakPhoto>();
+  try {
+    const response = await fetch(`${BASE}/photos.json`);
+    if (!response.ok) return map;
+    const data = (await response.json()) as { photos: Record<string, string[]> };
+    for (const [slug, value] of Object.entries(data.photos)) {
+      const [url, pageUrl = '', credit = '', licence = ''] = value;
+      if (url) map.set(slug, { url, pageUrl, credit, licence });
+    }
+  } catch {
+    // Placeholders are fine.
+  }
+  return map;
+}
+
+/** Commons/Wikipedia photos for the landing summits (scripts/fetch_peak_photos.py); links only. */
+export function loadPeakPhotos(): Promise<Map<string, PeakPhoto>> {
+  photosPromise ??= fetchPeakPhotos();
+  return photosPromise;
+}
