@@ -223,10 +223,13 @@ test('unico selettore: cambia categoria e mostra solo i filtri pertinenti',async
 
 test('cima: hero nella colonna sinistra e mappa nel 58% destro',async({page})=>{
   test.setTimeout(90_000);
-  const response=await page.request.get('/data/venues.json');
+  const response=await page.request.get('/data/peaks/index.json');
   expect(response.ok()).toBeTruthy();
-  const dataset=await response.json() as {venues:{slug:string}[]};
-  const slug=dataset.venues[0].slug;
+  const index=await response.json() as {top:[number,string,number,number,...unknown[]][]};
+  const [id,,lat,lng]=index.top[0];
+  const tile=(n:number)=>Math.floor(n/5)*5;
+  const token=(n:number)=>n<0?'m'+(-n):String(n);
+  const slug=`gn${id}-${token(tile(lat))}x${token(tile(lng))}`;
   await page.setViewportSize({width:1366,height:800});
   await page.goto('/#venue/'+slug);
   await expect(page.locator('.venue-detail-content.cb-venue-document')).toBeVisible({timeout:45_000});
