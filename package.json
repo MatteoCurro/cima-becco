@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "tsc --noEmit && vite build && node scripts/build_seo.mjs",
+    "build": "node scripts/check_chrome_css.mjs && tsc --noEmit && vite build && node scripts/build_seo.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
@@ -14,7 +14,8 @@
     "test:e2e": "playwright test",
     "data": "python scripts/build_data.py",
     "data:dem": "python scripts/fetch_dem.py",
-    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "css:check": "node scripts/check_chrome_css.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.0",

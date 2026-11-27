@@ -1,50 +1,35 @@
 import { describe, expect, it } from 'vitest';
-import legacyDesign from '../design.css?raw';
-import legacyStyles from '../styles.css?raw';
-import systemCss from '../cimaSystem.css?raw';
-import polishCss from '../cimaPolish.css?raw';
-import workspaceCss from '../cimaWorkspace.css?raw';
-import routeCss from '../routeDetail.css?raw';
-import atlasCss from '../alpineAtlas.css?raw';
-import locationCss from '../locationProfile.css?raw';
-import chromeCss from '../components/siteChrome.css?raw';
-import jumpSource from '../components/DetailJumpNav.tsx?raw';
-import faSource from '../components/FaIcon.tsx?raw';
-import placeIconSource from '../components/AlpinePlaceIcon.tsx?raw';
-const SOURCE: Record<string,string>={
-  '../design.css':legacyDesign,'../styles.css':legacyStyles,
-  '../cimaSystem.css':systemCss,'../cimaPolish.css':polishCss,
-  '../cimaWorkspace.css':workspaceCss,'../routeDetail.css':routeCss,
-  '../alpineAtlas.css':atlasCss,'../locationProfile.css':locationCss,
-  '../components/siteChrome.css':chromeCss,
-  '../components/DetailJumpNav.tsx':jumpSource,
-  '../components/FaIcon.tsx':faSource,
-  '../components/AlpinePlaceIcon.tsx':placeIconSource,
-};
-function source(path:string) { return SOURCE[path] ?? ''; }
-describe('proprietà CSS del design system',()=>{
-  it('impedisce la stratificazione di header/footer/wordmark nel legacy',()=>{
-    const legacy=['../design.css','../styles.css','../cimaSystem.css','../cimaPolish.css',
-      '../cimaWorkspace.css','../routeDetail.css','../alpineAtlas.css','../locationProfile.css'];
-    for(const path of legacy){
-      const css=source(path).replace(/\/\*[\s\S]*?\*\//g,'');
-      expect(css,'Chrome fuori dal proprietario: '+path)
-        .not.toMatch(/\.(site-header|site-footer|wordmark)(?![\w-])/);
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { DetailJumpNav } from '../components/DetailJumpNav';
+import { FaIcon } from '../components/FaIcon';
+import { AlpinePlaceIcon } from '../components/AlpinePlaceIcon';
+
+/** Checks real DOM output; CSS source ownership is verified by scripts/check_chrome_css.mjs. */
+describe('shared UI icons and internal navigation',()=>{
+  it('renders SVG path markup without font dependency',()=>{
+    const html=renderToStaticMarkup(createElement(FaIcon,{name:'mountain',size:24}));
+    expect(html).toContain('viewBox="0 0 512 512"');
+    expect(html).toContain('class="cb-fa-icon"');
+    expect(html).toContain('<path');
+    expect(html).not.toContain('font-awesome');
+  });
+  it('all mountain place categories render SVG, not emoji',()=>{
+    for(const kind of ['rifugio','bivacco','borgo','acqua'] as const){
+      const html=renderToStaticMarkup(createElement(AlpinePlaceIcon,{kind,size:24}));
+      expect(html).toContain('<svg');
+      expect(html).toContain('<path');
+      expect(html).not.toContain('🏔');
     }
-    const owner=source('../components/siteChrome.css');
-    expect(owner).toContain('.site-header-row');
-    expect(owner).toContain('.site-footer-inner');
   });
-  it('la navigazione interna non usa href con hash, riservati al router',()=>{
-    const nav=source('../components/DetailJumpNav.tsx');
-    expect(nav).not.toContain("href={'#");
-    expect(nav).toContain('scrollToDetailSection');
-  });
-  it('SVG Font Awesome sono locali e non richiedono un webfont o CDN',()=>{
-    const fa=source('../components/FaIcon.tsx');
-    expect(fa).toContain('Font Awesome Free');
-    expect(fa).toContain('viewBox');
-    expect(fa).not.toContain('https://kit.fontawesome.com/');
-    expect(source('../components/AlpinePlaceIcon.tsx')).toContain('<FaIcon');
+  it('quick links use buttons and cannot overwrite the SPA route hash',()=>{
+    const html=renderToStaticMarkup(createElement(DetailJumpNav,{items:[
+      {id:'cb-place-contacts',label:'Contatti',icon:'house'},
+      {id:'cb-place-map',label:'Mappa',icon:'map'},
+    ]}));
+    expect(html).toContain('Naviga questa scheda');
+    expect(html).toContain('<button');
+    expect(html).not.toContain('href="#');
+    expect(html.match(/<button/g)).toHaveLength(2);
   });
 });
