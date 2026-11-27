@@ -1,17 +1,7 @@
 import type { ReactNode, MouseEvent } from 'react';
 import { homeHref } from '../lib/navigation';
+import { EXPLORE_CATEGORIES, type ExploreKind } from '../lib/exploreNavigation';
 
-export type ExploreKind = 'routes'|'peaks'|'rifugi'|'bivacchi'|'paesi'|'trekking'|'falesie'|'palestre';
-export const EXPLORE_CATEGORIES: ReadonlyArray<{id:ExploreKind;label:string;hash:string;enabled:boolean}> = [
-  {id:'routes',label:'Sentieri',hash:'routes',enabled:true},
-  {id:'peaks',label:'Cime',hash:'map',enabled:true},
-  {id:'rifugi',label:'Rifugi',hash:'rifugi',enabled:true},
-  {id:'bivacchi',label:'Bivacchi',hash:'bivacchi',enabled:true},
-  {id:'paesi',label:'Paesi',hash:'paesi',enabled:true},
-  {id:'trekking',label:'Trekking',hash:'atlante/trekking',enabled:true},
-  {id:'falesie',label:'Falesie',hash:'falesie',enabled:false},
-  {id:'palestre',label:'Palestre',hash:'palestre',enabled:false},
-];
 /** Un solo selettore per l'Atlante, la mappa avanzata e tutte le categorie future.
  * Il livello inferiore accetta gli stessi filtri contestuali già sviluppati. */
 export function ExploreNavigation({active,children,onModeChange}:{

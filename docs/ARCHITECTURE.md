@@ -18,7 +18,7 @@ Sono riferimenti per la struttura delle informazioni, non per duplicare loghi, e
 
 ### Esplorazione
 - `SiteHeader` include l'identità, ricerca globale e azioni; nessuna navbar specifica per tipologia.
-- `ExploreNavigation` è l'unico selettore di categoria; `EXPLORE_CATEGORIES` è il registro delle risorse. Prima riga: sentieri, cime, rifugi, bivacchi, paesi, trekking, future falesie e palestre. Seconda riga: faccette che dipendono dalla categoria scelta. Il menu generale `SiteChrome` rimane un punto di accesso, non una seconda navigazione delle faccette.
+- `ExploreNavigation` è l'unico selettore di categoria; `EXPLORE_CATEGORIES` in `src/lib/exploreNavigation.ts` è l'unico registro delle risorse, utilizzato anche dal menu `SiteChrome`. Prima riga: sentieri, cime, rifugi, bivacchi, paesi, trekking, future falesie e palestre. Seconda riga: faccette che dipendono dalla categoria scelta. Il menu generale `SiteChrome` rimane un punto di accesso, non una seconda navigazione delle faccette.
 - Desktop: elenco e mappa affiancati, colonna elenco `42%`, restante mappa. Mobile: elenco/mappa alternativi, categoria e filtri a scorrimento orizzontale senza allargare il documento.
 - `FilterBar` contiene le faccette escursioni/cime; `AlpineExplorePage` le faccette foto/recapiti/quota dei luoghi. Sono **adapter di dati** del medesimo schema `ExploreNavigation`, non nav indipendenti.
 - Il click su un risultato localizza sulla mappa; `Apri scheda` apre l'URL canonico. Il dettaglio non mostra altri risultati sovrapposti alla mappa.
