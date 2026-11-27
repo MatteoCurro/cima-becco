@@ -1,4 +1,4 @@
-import { homeHref, routeHref } from './lib/navigation';
+import { homeHref, routeHref, routeDetailHref } from './lib/navigation';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Landing } from './components/Landing';
 import { ResultsList } from './components/ResultsList';
@@ -992,27 +992,29 @@ function MapApp() {
     openRoutes: openRoutesMode,
   });
   const { noteOpened } = planner;
-  /** Open a route from the list or a map pin. */
+  /** Uno stesso contratto anche per mappa, correlati e risultati di ricerca.
+   * La scheda non deve cambiare risorsa conservando l'URL di quella precedente. */
   const openRoute = useCallback(
     (slug: string | null) => {
+      if (isRouteDetail) {
+        if (!slug) return;
+        const source=allRoutes.find(route => route.slug===slug)?.source;
+        window.location.assign(source ? routeDetailHref(slug, source) : homeHref('route/' + encodeURIComponent(slug)));
+        return;
+      }
       noteOpened(slug);
       selectRoute(slug);
     },
-    [noteOpened, selectRoute],
+    [isRouteDetail, allRoutes, noteOpened, selectRoute],
   );
 
-  /** A route found by name in the search: open it in Routes mode. */
+  /** La ricerca, i pin e i correlati condividono lo stesso punto di accesso. */
   const pickRouteFromSearch = useCallback(
     (slug: string) => {
-      if (isRouteDetail) {
-        const source=allRoutes.find(route => route.slug===slug)?.source;
-        window.location.assign(source === 'curated' ? routeHref(slug) : homeHref('route/' + encodeURIComponent(slug)));
-        return;
-      }
-      setMode('routes');
+      if (!isRouteDetail) setMode('routes');
       openRoute(slug);
     },
-    [isRouteDetail, allRoutes, openRoute],
+    [isRouteDetail, openRoute],
   );
 
   /** Select one place and frame it, as tapping its pin does. */
@@ -1085,7 +1087,7 @@ function MapApp() {
                     onUnfold={panelFold.unfold}
                     spotlightSlug={spotlight?.slug ?? null}
                     onShowVenue={showPassedVenue}
-                    onShowRoute={selectRoute}
+                    onShowRoute={(slug) => openRoute(slug)}
                     routePhotos={routePhotos}
                     onFocusPhoto={(photo) => setPhotoFocus({ id: photo.id, nonce: Date.now() })}
                     onPhotoAdded={(photo) => {
