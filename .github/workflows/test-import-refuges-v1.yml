@@ -8,6 +8,9 @@ on:
       - docs/PIANO_IMPORTATORI.md
       - .github/workflows/test-import-refuges-v1.yml
       - scripts/refuge_field_registry_v1.json
+      - scripts/cai_refuge_field_map_v1.json
+      - scripts/normalize_cai_refuge_v1.py
+      - tests/test_normalize_cai_refuge_v1.py
       - scripts/metadata_source_registry_v1.json
       - scripts/audit_metadata_spec_v1.py
       - tests/test_metadata_spec_coverage_v1.py
@@ -37,6 +40,8 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_metadata_spec_coverage_v1.py' -v
           python scripts/audit_metadata_spec_v1.py
+      - name: Mapping CAI offline sui campi campione (senza rete)
+        run: python -m unittest discover -s tests -p 'test_normalize_cai_refuge_v1.py' -v
       - name: Import pilota su snapshot esistente (senza rete)
         run: python scripts/import_refuges_v1.py --strict
       - name: 'Controlla idempotenza: secondo import byte-identico'
