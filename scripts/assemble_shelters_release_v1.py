@@ -255,6 +255,9 @@ def localities_near(row, locality_rows):
 def consolidate(osm, cai):
     """Preserve OSM slug, retain CAI source and alternatives without erasing data."""
     joined = deepcopy(osm)
+    # Proven CAI category wins over OSM umbrella: social cabins stay shelters,
+    # fixed bivouacs stay bivouacs, even if OSM used a generic basic_hut.
+    joined["kind"] = cai["kind"]
     joined["sourceIds"]["cai"] = cai["sourceIds"]["cai"]
     joined["archivalRecordId"] = cai["archivalRecordId"]
     joined["officialUrl"] = cai["officialUrl"]
