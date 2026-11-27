@@ -11,6 +11,7 @@ import { usePageTitle } from '../lib/pageTitle';
 import { AlpinePlaceIcon } from './AlpinePlaceIcon';
 import { AlpinePlaceVisual } from './AlpinePlaceVisual';
 import { AlpineAtlasMap } from './AlpineAtlasMap';
+import { MapContextLabel } from './MapContextLabel';
 import { AlpineWeatherPanel } from './AlpineWeatherPanel';
 import { HutClaimRequest } from './HutClaimRequest';
 import { DetailFacts, DetailLayout, DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
@@ -122,7 +123,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
     backLabel={`Esplora ${place.kind==='rifugio'?'i rifugi':place.kind==='bivacco'?'i bivacchi':'i paesi'}`}
     sidebarLabel="Posizione e contatti"
     sidebar={<section id="cb-place-map" className="cb-location-side-map">
-      <div className="cb-location-sidebar-heading"><span>LA CARTA</span><strong>{place.name}</strong></div>
+      <MapContextLabel kicker="CARTOGRAFIA DEL LUOGO" title={place.name}/>
       <AlpineAtlasMap places={mapPlaces} kind={place.kind} selected={place} routes={nearby}
         water={water.map(w=>({lng:w.lng,lat:w.lat,name:w.name,kind:w.kind,potable:w.potable}))}
         height="100%" caption={place.name}/>
@@ -234,7 +235,7 @@ function TrekDetail({ trek, onBack }: { trek: TrekProject; onBack: string }) {
     sidebarLabel="Cartografia del trekking"
     className="cb-trek-profile"
     sidebar={<section id="cb-place-map" className="cb-location-side-map">
-      <div className="cb-location-sidebar-heading"><span>CARTOGRAFIA</span><strong>Segmenti verificati</strong></div>
+      <MapContextLabel kicker="TAPPE DEL TREKKING" title={project.title}/>
       {previewRoutes.length?<AlpineAtlasMap places={EMPTY_PLACES} kind="borgo" routes={previewRoutes}
         caption="ANTEPRIMA TAPPE" height="100%"/>:
         <div className="cb-trek-empty-map">{loading?'Caricamento delle tracce…':'Nessuna traccia disponibile per questa anteprima.'}</div>}

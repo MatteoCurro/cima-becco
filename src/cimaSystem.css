@@ -32,7 +32,7 @@
 .cb-place-community p{font:500 14px/1.65 var(--cb-body);color:var(--cb-muted);max-width:760px}
 .cb-atlas-kind--bivacco{background:#fff0d3;color:#614615}
 .cb-atlas-card .cb-atlas-kind--bivacco{color:#614615!important}
-.cb-map-layer-switches{position:absolute;z-index:5;top:12px;left:12px;display:flex;flex-wrap:wrap;gap:7px;max-width:70%;pointer-events:auto}
+.cb-map-layer-switches{position:absolute;z-index:5;top:auto;bottom:18px;left:12px;display:flex;flex-wrap:wrap;gap:7px;max-width:calc(100% - 128px);pointer-events:auto}
 .cb-map-layer-switches button{background:#fff;color:var(--cb-ink);border:1px solid #c5d8c6;border-radius:999px;padding:8px 12px;font:800 11px/1.2 var(--cb-body);cursor:pointer;box-shadow:0 1px 5px #1b3b2a26}
 .cb-map-layer-switches button[aria-pressed=true]{background:var(--cb-ink);border-color:var(--cb-ink);color:#fff}
 .cb-atlas-map-wrap{position:relative}
@@ -85,5 +85,5 @@
 .home .cb-home-atlas-grid a span{margin-top:auto;font:850 10px/1.35 var(--cb-body);letter-spacing:.035em;color:#8f0045!important}
 .home .cb-home-atlas-treks{display:inline-flex;margin-top:12px;font:800 12px/1.5 var(--cb-body);color:#e8ffca;text-decoration:underline;text-underline-offset:4px}
 @media(max-width:1050px){.home .cb-home-atlas-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:680px){.home .cb-home-atlas-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home .cb-home-atlas-grid a{min-height:150px;padding:14px}.cb-place-details{grid-template-columns:1fr}.cb-place-facts>div{flex:1;min-width:115px}.cb-place-detail .cb-atlas-lead{font-size:15px}.cb-map-layer-switches{max-width:calc(100% - 130px)}}
+@media(max-width:680px){.home .cb-home-atlas-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home .cb-home-atlas-grid a{min-height:150px;padding:14px}.cb-place-details{grid-template-columns:1fr}.cb-place-facts>div{flex:1;min-width:115px}.cb-place-detail .cb-atlas-lead{font-size:15px}.cb-map-layer-switches{max-width:calc(100% - 116px)}}
 @media(max-width:390px){.home .cb-home-atlas-grid{grid-template-columns:1fr}}

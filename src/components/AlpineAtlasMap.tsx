@@ -66,7 +66,7 @@ export function AlpineAtlasMap({places,kind,selected=null,selectedPoint=null,rou
     });
     mapRef.current=map;
     map.addControl(new MountainBasemapControl(),'top-right');
-    map.addControl(new NavigationControl({showCompass:true}),'top-right');
+    map.addControl(new NavigationControl({showCompass:false}),'bottom-right');
     map.on('load',()=>{
       if(mapRef.current!==map)return;
       installMountainBasemap(map);
@@ -179,6 +179,5 @@ export function AlpineAtlasMap({places,kind,selected=null,selectedPoint=null,rou
     </div>
     <div ref={container} className="cb-atlas-map" style={{height}} role="application"
       aria-label={caption ? `Mappa topografica: ${caption}` : selected||selectedPoint ? `Mappa topografica di ${(selected??selectedPoint)!.name} con sentieri vicini` : `Mappa topografica dedicata a ${kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'paesi di montagna'}`}/>
-    <span className="cb-atlas-map-caption">TOPO / SAT · {caption ?? selected?.name ?? selectedPoint?.name ?? (kind==='rifugio'?'RIFUGI':kind==='bivacco'?'BIVACCHI':'PAESI')} · + / − PER ZOOMARE</span>
   </div>;
 }

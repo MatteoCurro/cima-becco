@@ -52,6 +52,7 @@ import { parseAccountHash } from './lib/accountRoute';
 import { UnitsProvider, useUnits } from './components/UnitsContext';
 import { Modal } from './components/Modal';
 import { SiteFooter, SiteHeader } from './components/SiteChrome';
+import { MapContextLabel } from './components/MapContextLabel';
 import { errorText, fetchCommunityRoutes, fetchRoutePhotos, type RoutePhoto } from './lib/api';
 import { findOverlaps } from './lib/routeAnalysis';
 import { IMPORT_EVENT, REPORT_EVENT, ADD_PLACE_EVENT, type ReportRequest } from './lib/contribute';
@@ -1224,6 +1225,10 @@ function MapApp() {
           </div>
         ) : (
           <div className="map-wrap" id={isRouteDetail?"cb-route-map":undefined}>
+            <MapContextLabel
+              kicker={isRouteDetail?"MAPPA DEL PERCORSO":mode==='routes'?"SENTIERI E FERRATE":"CIME E MONTAGNE"}
+              title={isRouteDetail?(selectedRoute?.name??"Caricamento tracciato"):mode==='routes'?"Esplora i percorsi":"Esplora le cime"}
+            />
             <Suspense fallback={<div className="map-skeleton"><div className="map-skeleton-pulse" /></div>}>
               {isRouteDetail && <AlpineAtlasMap places={NO_ALPINE_PLACES} kind="borgo" routes={detailRouteMap} water={detailWaterMap} caption="TRACCIA E PUNTI ACQUA" height="100%" />}
               {!isRouteDetail && mapNeeded && <MapView

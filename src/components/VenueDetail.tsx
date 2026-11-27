@@ -21,6 +21,7 @@ import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon, DownloadIcon, 
 import { FlagIcon, LinkIcon, PlusIcon, ReportModal } from './ReportModal';
 import { useReveal } from './useReveal';
 import { SiteFooter, SiteHeader } from './SiteChrome';
+import { MapContextLabel } from './MapContextLabel';
 import { SEARCH_OPENS_MAP, SearchBar, SiteSearch } from './SearchBar';
 import { RatingLabel } from './ResultsList';
 import { ReviewCard, StarPicker } from './ReviewCard';
@@ -1017,7 +1018,7 @@ function VenueDetailInner({
 
           <aside className="venue-detail-side" aria-label={'Mappa di '+venue.name}>
             <div className="cb-venue-map-pane">
-              <div className="cb-venue-map-heading"><span>CARTOGRAFIA DEL LUOGO</span><strong>{venue.name}</strong></div>
+              <MapContextLabel kicker="CARTOGRAFIA DEL LUOGO" title={venue.name}/>
               <Suspense fallback={<div className="mini-map mini-map-fallback" />}><MiniMap venue={venue}/></Suspense>
               <button type="button" className="cb-venue-map-open" onClick={()=>onShowOnMap()}><MapIcon size={15}/> Esplora i percorsi sulla mappa ↗</button>
             </div>

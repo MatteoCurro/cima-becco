@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlpineAtlasMap } from './AlpineAtlasMap';
 import { AlpinePlaceVisual } from './AlpinePlaceVisual';
+import { MapContextLabel } from './MapContextLabel';
 import { AlpinePlaceIcon } from './AlpinePlaceIcon';
 import { PlaceDetail } from './AlpineAtlasPage';
 import { SiteFooter, SiteHeader } from './SiteChrome';
@@ -125,7 +126,7 @@ export function AlpineExplorePage(){
           <p className="cb-explore-source">Schede basate su dati OpenStreetMap e fonti dichiarate. Le foto vengono mostrate solo se attribuite al luogo e riutilizzabili.</p>
         </section>
         <section className="cb-explore-map-panel" aria-label="Mappa della categoria selezionata">
-          <div className="cb-explore-map-topline"><AlpinePlaceIcon kind={config.kind} size={17}/> MAPPA {nav.section.toUpperCase()} <span>{count} RISULTATI</span></div>
+          <MapContextLabel kicker="ESPLORA SULLA MAPPA" title={config.title.replace(".","")} detail={count+" risultati"}/>
           <AlpineAtlasMap places={mapPlaces} kind={config.kind} selected={selectedPlace} height="100%" onSelect={onSelect}/>
           {selectedPlace&&<aside className="cb-explore-map-preview" aria-label={'Selezionato: '+selectedPlace.name}>
             <button type="button" className="cb-explore-preview-close" onClick={()=>setSelected(null)} aria-label="Chiudi anteprima">×</button>
