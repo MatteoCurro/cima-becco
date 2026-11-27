@@ -19,7 +19,7 @@ describe('classificazione attività a piedi', () => {
   });
   it('riconosce la corsa su sentiero da velocità umana compatibile', () => {
     const points: RoutePoint[] = Array.from({ length: 50 }, (_, i) => [12.20 + i * 0.0001, 46.51, 1000]);
-    const timestamps = points.map((_, i) => i * 4_500);
+    const timestamps = points.map((_, i) => i * 3_500);
     expect(classifyActivity(points, 0, timestamps)).toBe('trail');
   });
   it('non inventa ferrate dalla sola traccia GPS', () => {
