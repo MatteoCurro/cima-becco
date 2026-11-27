@@ -1,0 +1,86 @@
+name: Import CAI and OSM refuges release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/refuges-canonical-import-v1]
+    paths:
+      - .github/workflows/import-cai-refuges-v1.yml
+  schedule:
+    - cron: '20 3 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cima-refuges-cai-release
+  cancel-in-progress: false
+
+jobs:
+  import-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test acquisizione e dataset pubblico
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_import_cai_refuges_v1.py' -v
+          python -m unittest discover -s tests -p 'test_publish_refuges_v1.py' -v
+          python -m unittest discover -s tests -p 'test_assemble_refuges_release_v1.py' -v
+      - name: Normalizza i rifugi dello snapshot OSM
+        run: python scripts/import_refuges_v1.py --strict
+      - name: Aggiorna il catalogo CAI completo solo per i record modificati
+        run: python scripts/import_cai_refuges_v1.py --workers 5
+      - name: Unisci rifugi CAI e OSM senza confondere i bivacchi
+        run: python scripts/assemble_refuges_release_v1.py
+      - name: Quality gate strutturale e report
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -c "import json; from pathlib import Path; p=Path('public/data/atlas/refuges-v1.json'); d=json.loads(p.read_text()); e=d['entities']; assert d['schemaVersion']=='1.1'; assert len(e)>=400; assert len(set(x['id'] for x in e))==len(e); assert len(set(x['slug'] for x in e))==len(e); assert all(x['kind']=='refuge' for x in e); assert all('caiCatalogueStatus' not in x.get('facts',{}) or x['facts']['caiCatalogueStatus']['value']!='Aperto ora' for x in e); print('Refuges validated:',len(e))"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Build e regressioni frontend/SEO su dati CAI reali
+        shell: bash
+        env:
+          VITE_BASE: /
+          SITE_URL: https://www.cimabecco.it
+          VITE_SITE_URL: https://www.cimabecco.it
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npm run test
+          npm run build
+          node scripts/check_permalinks.mjs
+          test -s dist/data/atlas/refuges-v1.json
+      - name: Archivia report senza artefatti non richiesti
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-refuges-release-report
+          path: |
+            build/release-refuges-v1/report.json
+            build/release-refuges-v1/match-review.json
+          retention-days: 21
+      - name: Versiona soltanto i due JSON pubblici dopo i controlli
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/atlas/cai-refuges-v1.json public/data/atlas/refuges-v1.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data(refuges): refresh verified CAI and OSM static catalog"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          else
+            echo 'Nessuna modifica dei dati; niente nuovo commit.'
+          fi
