@@ -4,18 +4,19 @@
   /* Light-first, the way the reference is: white ground, near-black text, one
      light grey rule, and a single warm accent used sparingly. The restraint is
      what makes it feel calm — not the specific hues. */
-  --bg: #ffffff;
+  --bg: #fcfcf8;
   --surface: #ffffff;
-  --bg-raised: #f7f7f7;
-  --ink: #222222;
-  --muted: #717171;
-  --border: #dddddd;
-  --accent: #c1502e;
+  --bg-raised: #f2f5ef;
+  --ink: #243c31;
+  --muted: #66766b;
+  --border: #dbe3d8;
+  --accent: #476857;
   --danger: #c13515;
   --shadow-card: 0 6px 16px rgb(0 0 0 / 12%);
   --radius: 12px;
   --topbar-h: 64px;
-  --font-sans: 'Figtree', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Bitter', Georgia, serif;
 
   /* Type scale */
   --t1: 13px;
