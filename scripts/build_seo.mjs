@@ -527,7 +527,7 @@ for (const place of alpinePlaces) {
       </ul>
       <div class="cima-seo-actions">
         <a class="cta" href="${appLink(`#atlante/${category}/${place.slug}`)}">MAPPA E SENTIERI ↗</a>
-        ${place.phone?`<a class="cima-seo-secondary" href="tel:${escape(place.phone.replace(/[^+\\d]/g,''))}">Chiama la struttura</a>`:''}
+        ${place.phone?`<a class="cima-seo-secondary" href="tel:${escape(place.phone.replace(/[^+\d]/g,''))}">Chiama la struttura</a>`:''}
         ${place.email?`<a class="cima-seo-secondary" href="mailto:${escape(place.email)}">Scrivi alla struttura</a>`:''}
       </div>
       ${place.operator||place.phone||place.email||place.openingHours||place.address||place.access||place.capacity? `<h2>Informazioni sulla località</h2><dl class="cima-seo-details">
@@ -543,7 +543,7 @@ for (const place of alpinePlaces) {
       ${related.length?`<h2>Sentieri e itinerari collegati</h2><ul class="list">${related.map(route=>`<li><a href="${SITE}/route/${route.slug}/">${escape(trailName(route))}</a> · ${km(route.distanceM)}</li>`).join('')}</ul>`:''}
       ${nearbyWater.length?`<h2>Fonti e fontanelle nei dintorni</h2><p>Presenza da dati OSM, non prova di raggiungibilità o potabilità.</p><ul class="list">${nearbyWater.map(w=>`<li><a href="${escape(w.osmUrl)}" target="_blank" rel="noopener noreferrer">${escape(w.name)}</a> · ${w.potable==='yes'?'potabilità indicata su OSM':w.potable==='no'?'non potabile':'potabilità ignota'}</li>`).join('')}</ul>`:''}
       <h2>Meteo attuale e temperature stagionali</h2><p>Apri la scheda interattiva per consultare le condizioni attuali, le previsioni neve e pioggia e le medie stagionali 2021–2025 da Open-Meteo.</p>
-      <p class="cima-seo-warning">Il dato geografico non prova accessibilità, stato del rifugio, potabilità o percorribilità del sentiero. Verifica prima di partire.</p>
+      <p class="cima-seo-warning">Il dato geografico non prova accessibilità, stato della struttura, potabilità o percorribilità del sentiero. Verifica prima di partire.</p>
       <p class="sub">Fonte geografica: <a href="${escape(place.osmUrl)}" target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>.
       ${photo?` Foto: ${escape(photo.author||'Wikimedia Commons')} · ${escape(photo.license||'Licenza nella fonte')} · <a href="${escape(photo.sourceUrl)}" target="_blank" rel="noopener noreferrer">Commons</a>`:''}</p>`,
   });

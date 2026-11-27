@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Route } from '../types';
 import { SiteFooter, SiteHeader } from './SiteChrome';
 import { loadAlpinePlaces, alpinePlaceLink, atlasCategory, placeBounds, type AlpinePlace, type AlpinePlacesDataset } from '../lib/alpinePlaces';
-import { boundsToHash } from '../lib/regions';
 import { loadRoutesInBounds } from '../lib/routeTiles';
 import { routesNear } from '../lib/routes';
 import { trailMood, trailTitle } from '../lib/routeEditorial';
