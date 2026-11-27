@@ -1,11 +1,11 @@
 # Cima Becco — Verifica compilazione
 
-Verificato da GitHub Actions su commit: `63090ee`
+Verificato da GitHub Actions su commit: `3ee094a`
 
 - installazione npm: **0**
 - TypeScript: **0**
 - build e SEO: **0**
-- test Vitest: **1**
+- test Vitest: **0**
 
 ## Ultimi messaggi TypeScript
 ~~~
@@ -17,71 +17,71 @@ Verificato da GitHub Actions su commit: `63090ee`
 
 ## Test di regressione
 ~~~
-     [32m✓[39m riconosce gli estremi e un vero anello[32m 1[2mms[22m[39m
-     [32m✓[39m non crea endpoint per tracce senza geometria valida[32m 0[2mms[22m[39m
-     [32m✓[39m costruisce permalink sicuri dei sentieri[32m 1[2mms[22m[39m
-     [32m✓[39m mescola i livelli di difficoltà senza scartare nessun elemento[32m 1[2mms[22m[39m
- [32m✓[39m src/lib/routeQuality.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 24[2mms[22m[39m
- [32m✓[39m src/lib/rangeScale.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 15[2mms[22m[39m
- [32m✓[39m src/lib/routeMatch.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 15[2mms[22m[39m
- [32m✓[39m src/lib/moderate.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 15[2mms[22m[39m
- [32m✓[39m src/lib/tcx.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 50[2mms[22m[39m
- [32m✓[39m src/lib/regions.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
- [32m✓[39m src/lib/routeAnalysis.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 17[2mms[22m[39m
- [32m✓[39m src/components/AuthModal.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 392[2mms[22m[39m
- [32m✓[39m src/lib/routeEditorial.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 45[2mms[22m[39m
- [32m✓[39m src/lib/saved.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 18[2mms[22m[39m
- [32m✓[39m src/map/camera.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 13[2mms[22m[39m
- [32m✓[39m src/lib/geolocation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/lib/bookmarks.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m src/map/collisions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/lib/dom.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 30[2mms[22m[39m
- [32m✓[39m src/lib/username.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 10[2mms[22m[39m
- [32m✓[39m src/styles.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m src/lib/elevation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m src/lib/country.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
- [32m✓[39m src/lib/gpx.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+[90mstderr[2m | src/lib/auth.test.ts[2m > [22m[2mauth[2m > [22m[2mfalls back to the row delete policy when the cleanup RPC is denied
+[22m[39mhillgpx delete RPC unavailable, deleting row directly 42501 permission denied for function delete_community_route
 
-[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[90mstderr[2m | src/lib/auth.test.ts[2m > [22m[2mauth[2m > [22m[2mreports a route the fallback cannot delete instead of failing silently
+[22m[39mhillgpx delete RPC unavailable, deleting row directly PGRST202 Could not find the function
 
-[41m[1m FAIL [22m[49m src/lib/routes.test.ts[2m > [22mricerca geografica percorsi a piedi[2m > [22mrileva le coordinate estreme e gestisce lista vuota
-[31m[1mAssertionError[22m: expected 12.283999999999999 to be greater than or equal to 12.284[39m
-[36m [2m❯[22m src/lib/routes.test.ts:[2m32:22[22m[39m
-    [90m 30|[39m     const box = routesBounds(routes)!;
-    [90m 31|[39m     expect(box.west).toBeLessThanOrEqual(11.65);
-    [90m 32|[39m     expect(box.east).toBeGreaterThanOrEqual(12.284);
-    [90m   |[39m                      [31m^[39m
-    [90m 33|[39m     expect(box.north).toBeGreaterThanOrEqual(46.521);
-    [90m 34|[39m     expect(routesBounds([])).toBeNull();
+ [32m✓[39m src/lib/auth.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 199[2mms[22m[39m
+ [32m✓[39m src/components/account.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[33m 807[2mms[22m[39m
+[90mstderr[2m | src/lib/googleHealth.test.ts[2m > [22m[2mgoogleHealth link/unlink[2m > [22m[2mmints a fresh token to revoke when none is held in memory
+[22m[39mGoTrueClient@sb-unconfigured-auth-token:1 (2.117.0) 2026-11-27T11:20:19.215Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
 
-[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+[90mstderr[2m | src/lib/googleHealth.test.ts[2m > [22m[2mgoogleHealth link/unlink[2m > [22m[2mclears the local link silently when no grant exists at Google
+[22m[39mGoTrueClient@sb-unconfigured-auth-token:2 (2.117.0) 2026-11-27T11:20:19.220Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
 
-[41m[1m FAIL [22m[49m src/lib/routes.test.ts[2m > [22mfiltri escursionistici[2m > [22mapplica il limite sul tempo stimato dal modello escursionistico
-[31m[1mAssertionError[22m: expected 1500 to be greater than 1500[39m
-[36m [2m❯[22m src/lib/routes.test.ts:[2m61:35[22m[39m
-    [90m 59|[39m   it('applica il limite sul tempo stimato dal modello escursionistico'…
-    [90m 60|[39m     const threshold = Math.round((routeEstimateS(cadore) + routeEstima…
-    [90m 61|[39m     expect(routeEstimateS(fassa)).toBeGreaterThan(routeEstimateS(cador…
-    [90m   |[39m                                   [31m^[39m
-    [90m 62|[39m     expect(filterRoutes(routes, { ...NO_ROUTE_FILTERS, maxDurationS: t…
-    [90m 63|[39m     expect(filterRoutes(routes, { ...NO_ROUTE_FILTERS, minDurationS: t…
+[90mstderr[2m | src/lib/googleHealth.test.ts[2m > [22m[2mgoogleHealth link/unlink[2m > [22m[2mdrops a held token before consenting so a relink re-consents
+[22m[39mGoTrueClient@sb-unconfigured-auth-token:3 (2.117.0) 2026-11-27T11:20:19.224Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
 
-[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+[90mstderr[2m | src/lib/googleHealth.test.ts[2m > [22m[2mgoogleHealth link/unlink[2m > [22m[2mkeeps the local link and reports failure when Google refuses the revoke
+[22m[39mGoTrueClient@sb-unconfigured-auth-token:4 (2.117.0) 2026-11-27T11:20:19.228Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
 
+[90mstderr[2m | src/lib/googleHealth.test.ts[2m > [22m[2mgoogleHealth link/unlink[2m > [22m[2mwarms the GIS script on a status check so the Link click keeps its gesture
+[22m[39mGoTrueClient@sb-unconfigured-auth-token:5 (2.117.0) 2026-11-27T11:20:19.232Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
 
-[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m25 passed[39m[22m[90m (26)[39m
-[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m226 passed[39m[22m[90m (228)[39m
-[2m   Start at [22m 11:18:46
-[2m   Duration [22m 12.54s[2m (environment 82%, tests 6%, import 5%, transform 4%, worker 3%)[22m
+[90mstderr[2m | src/lib/googleHealth.test.ts[2m > [22m[2mgoogleHealth link/unlink[2m > [22m[2mcounts an already-dead grant (invalid_token) as revoked
+[22m[39mGoTrueClient@sb-unconfigured-auth-token:6 (2.117.0) 2026-11-27T11:20:19.234Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
 
-[2mEnvironment [22m [33mjsdom was created 26 times[39m[2m · 26.34s total, 82% of tracked time[22m
+[90mstderr[2m | src/lib/googleHealth.test.ts[2m > [22m[2mgoogleHealth link/unlink[2m > [22m[2mfalls back to the same-origin relay when Google is unreachable
+[22m[39mGoTrueClient@sb-unconfigured-auth-token:7 (2.117.0) 2026-11-27T11:20:19.237Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | src/lib/googleHealth.test.ts[2m > [22m[2mgoogleHealth link/unlink[2m > [22m[2mtreats a relay-less host (dev, GitHub Pages) as unreachable
+[22m[39mGoTrueClient@sb-unconfigured-auth-token:8 (2.117.0) 2026-11-27T11:20:19.247Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+
+ [32m✓[39m src/lib/googleHealth.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 159[2mms[22m[39m
+ [32m✓[39m src/lib/routeTime.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/lib/routes.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m src/lib/routeQuality.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/lib/rangeScale.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/lib/routeMatch.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m src/lib/moderate.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/lib/tcx.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m src/lib/routeAnalysis.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/lib/regions.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/components/AuthModal.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 417[2mms[22m[39m
+ [32m✓[39m src/lib/routeEditorial.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m src/lib/saved.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/map/camera.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/lib/geolocation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/lib/bookmarks.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m src/map/collisions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/lib/dom.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m✓[39m src/lib/username.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/styles.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/lib/elevation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/lib/country.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/lib/gpx.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m26 passed[39m[22m[90m (26)[39m
+[2m      Tests [22m [1m[32m228 passed[39m[22m[90m (228)[39m
+[2m   Start at [22m 11:20:16
+[2m   Duration [22m 13.07s[2m (environment 81%, tests 6%, import 5%, transform 5%, worker 3%)[22m
+
+[2mEnvironment [22m [33mjsdom was created 26 times[39m[2m · 26.97s total, 81% of tracked time[22m
 [2m            [22m [2mcreate it once per worker with [22m[33mpool: 'vmThreads'[39m[2m (keeps per-file isolation) or [22m[33misolate: false[39m[2m (shares it across files)[22m
 [2m            [22m [2mlearn more: https://vitest.dev/guide/improving-performance#test-environments[22m
 
-
-::error file=/home/runner/work/cima-becco/cima-becco/src/lib/routes.test.ts,title=src/lib/routes.test.ts > ricerca geografica percorsi a piedi > rileva le coordinate estreme e gestisce lista vuota,line=32,column=22::AssertionError: expected 12.283999999999999 to be greater than or equal to 12.284%0A ❯ src/lib/routes.test.ts:32:22%0A%0A
-
-::error file=/home/runner/work/cima-becco/cima-becco/src/lib/routes.test.ts,title=src/lib/routes.test.ts > filtri escursionistici > applica il limite sul tempo stimato dal modello escursionistico,line=61,column=35::AssertionError: expected 1500 to be greater than 1500%0A ❯ src/lib/routes.test.ts:61:35%0A%0A
 ~~~
 
 ## Ultimi messaggi build
@@ -110,7 +110,7 @@ dist/assets/MapView-DKyjeori.js                37.40 kB │ gzip:  12.08 kB │ 
 dist/assets/venueGlyphs-DJfeYNKu.js           248.09 kB │ gzip:  67.31 kB │ map: 1,303.83 kB
 dist/assets/index-Dfwtjf1e.js               1,494.69 kB │ gzip: 420.20 kB │ map: 3,520.58 kB
 
-[32m✓ built in 1.45s[39m
+[32m✓ built in 1.48s[39m
 SEO: 4,125 pages, sitemap with 4,126 URLs, robots.txt, llms.txt for https://matteocurro.github.io/cima-becco
 ~~~
 
