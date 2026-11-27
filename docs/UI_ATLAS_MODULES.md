@@ -58,3 +58,30 @@ TypeScript, Vitest, Playwright e scripts/check_css_layout.mjs + check_permalinks
 Regression suite: permeabilità full-width degli header, rapporto 42/58,
 assenza di overflow a 320/390/768/1440, punto mappa ←→ profilo elevazione.
 Per gli importatori, provare record completi, parziali, nulli e fonti scadute.
+
+
+## Fase 2 — connessioni, navigation e fonti alternative
+
+- src/lib/nearbyAtlas.ts: distanza ortodromica calcolata da coordinate reali. Non produce accessi
+  né tratta la vicinanza come un percorso percorribile.
+- src/components/NearbyAtlasPlaces.tsx: card verso permalink esistenti tra rifugi, bivacchi,
+  località. Distanza dichiarata *in linea d'aria*, quota presente solo se censita.
+- src/components/DetailJumpNav.tsx: indice orizzontale compatto della scheda locale.
+  Resta nella colonna sinistra e non copre la mappa né modifica la griglia 42/58.
+- src/lib/atlasFacets.ts: registro di faccette per webcam, Wi-Fi, defibrillatore, docce
+  e animali; si attivano solo con almeno un fatto positivo e attribuito.
+  Mai inventare lo stato aperto-adesso da valori non verificati.
+- AtlasEntityMetadata: estensione opzionale con ID canonico, alias e toponimi,
+  gerarchia amministrativa, source IDs, coordinate con metodo e precisione, fatti
+  alternativi e restrizioni datate. In UI i dati contrastanti restano consultabili.
+- AlpineAtlasPage: la navbar del catalogo trekking sta fuori dal main con padding.
+  Le schede e i permalink conservano i loro CSS strutturali.
+- Test WebKit: misura atomica e attesa dei nodi dopo il mount SPA, senza equiparare
+  un nodo smontato a una larghezza nulla. Nessun workaround overflow-x:hidden.
+
+### Casi da provare con i veri importatori
+
+Record senza metadati, record con facts positivi/null/false, metadati conflittuali,
+webcam senza licenza still, rifugio con service flags, borgo con amministrazione
+documentata, foto e loghi con permessi per singolo file. Le faccette devono
+scomparire quando nessun dato disponibile le giustifica.

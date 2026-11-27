@@ -22,6 +22,8 @@ function FactTile({ name, fact }: { name: string; fact: AtlasFact }) {
     <dt>{label}</dt><dd>{formatAtlasFact(fact)}</dd>
     {(fact.method === 'estimated' || fact.method === 'derived') &&
       <small className="cb-dossier-method">{fact.method === 'estimated' ? 'Stima' : 'Calcolo derivato'}</small>}
+    {fact.sourceUpdatedAt && <small>Fonte aggiornata: {fact.sourceUpdatedAt}</small>}
+    {fact.validUntil && <small>Valido fino al: {fact.validUntil}</small>}
     {fact.sourceUrl && <small className="cb-dossier-source"><Source url={fact.sourceUrl} label={fact.sourceId || 'Origine del dato'}/></small>}
   </div>;
 }
@@ -57,7 +59,7 @@ export function AtlasDossierBlocks({ record, placement }: {
   record: AtlasEntityMetadata; placement: 'alerts' | 'core' | 'connections' | 'media' | 'credits';
 }) {
   if (placement === 'alerts') {
-    const notices = activeAtlasAlerts(record.alerts);
+    const notices = activeAtlasAlerts([...(record.alerts??[]),...(record.restrictions??[])]);
     return notices.length ? <div className="cb-dossier-alerts" aria-label="Avvisi documentati">
       {notices.map(alert => <aside className="cb-dossier-alert" key={alert.id} role="status">
         <strong>{alert.title}</strong><p>{alert.message}</p>
@@ -69,15 +71,40 @@ export function AtlasDossierBlocks({ record, placement }: {
   if (placement === 'core') {
     const facts = presentAtlasFacts(record.facts);
     const climate = usableAtlasClimate(record.climate);
-    const hasTechnical = Boolean(record.technical);
-    const hasPitches = Boolean(record.pitches?.length);
-    const hasStages = Boolean(record.stages?.length);
-    if (!facts.length && !record.history && !climate.length && !hasTechnical && !hasPitches && !hasStages) return null;
+    const hasTechnical = Boolean(record.technical && Object.values(record.technical).some(value=>value!==null&&value!==undefined&&value!==''));
+    const hasPitches = Boolean(record.pitches?.some(p=>p.id && Number.isFinite(p.ordinal)));
+    const hasStages = Boolean(record.stages?.some(p=>p.id && p.title && Number.isFinite(p.ordinal)));
+    const hasHistory=Boolean(record.history&&record.historySourceUrl);
+    const hierarchy=record.administrativeHierarchy;
+    const identity: [string,string|undefined][]=[['Stato',hierarchy?.country],['Regione',hierarchy?.region],
+      ['Provincia',hierarchy?.province],['Comune',hierarchy?.municipality]];
+    const knownIdentity=identity.filter((entry):entry is [string,string]=>Boolean(entry[1]));
+    const names=[...(record.localNames??[]),...(record.aliases??[])].filter(variant=>variant.value);
+    const alternatives=(record.factsAlternatives??[]).filter(alt=>alt.key&&alt.fact&&alt.fact.value!==null);
+    if (!facts.length && !hasHistory && !climate.length && !hasTechnical && !hasPitches && !hasStages &&
+      !knownIdentity.length && !names.length && !alternatives.length) return null;
     return <div className="cb-dossier-modules">
+      {(knownIdentity.length>0||names.length>0)&&<Section kicker="GEOGRAFIA / IDENTITÀ" title="Luogo e toponimi">
+        {knownIdentity.length>0&&<dl className="cb-dossier-facts">
+          {knownIdentity.map(([label,value])=><div className="cb-dossier-fact" key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+        </dl>}
+        {names.length>0&&<div className="cb-dossier-namevariants">
+          <strong>Nomi locali, varianti e denominazioni storiche</strong>
+          <ul>{names.map((variant,index)=><li key={variant.value+index}>
+            {variant.value}{variant.language?' · '+variant.language:''}
+            {variant.historical?' · storico':''}
+            {variant.sourceUrl&&<> · <Source url={variant.sourceUrl} label="Fonte del toponimo"/></>}
+          </li>)}</ul>
+        </div>}
+      </Section>}
       {facts.length > 0 && <Section kicker="ATLANTE / DATI DOCUMENTATI" title="La scheda in dettaglio">
         <dl className="cb-dossier-facts">{facts.map(([name, fact]) => <FactTile name={name} fact={fact} key={name}/>)}</dl>
       </Section>}
-      {record.history && record.historySourceUrl && <Section kicker="STORIA E TERRITORIO" title="Storie di montagna">
+      {alternatives.length>0&&<details className="cb-dossier-alternatives"><summary>Valori alternativi e fonti da confrontare ({alternatives.length})</summary>
+        <dl className="cb-dossier-facts">{alternatives.map((entry,index)=><FactTile key={entry.key+index} name={entry.key} fact={entry.fact}/>)}</dl>
+        <p className="cb-dossier-note">Sono presenti dati discordanti o alternativi: consultare le fonti prima di considerarli definitivi.</p>
+      </details>}
+      {hasHistory && <Section kicker="STORIA E TERRITORIO" title="Storie di montagna">
         <p className="cb-dossier-prose">{record.history}</p><Source url={record.historySourceUrl} label="Fonte storica"/>
       </Section>}
       {hasStages && <Section kicker="CAMMINI / TAPPE" title="Le tappe documentate">
@@ -141,8 +168,13 @@ export function AtlasDossierBlocks({ record, placement }: {
 
   const sources = new Map<string, string>();
   for (const f of Object.values(record.facts ?? {})) if (f?.sourceUrl) sources.set(f.sourceUrl, f.sourceId || f.sourceUrl);
+  for (const a of record.factsAlternatives ?? []) if (a.fact?.sourceUrl) sources.set(a.fact.sourceUrl, 'Valore alternativo: '+a.key);
+  for (const n of [...(record.aliases??[]),...(record.localNames??[])]) if (n.sourceUrl) sources.set(n.sourceUrl, 'Toponimo');
+  if (record.geo?.sourceUrl) sources.set(record.geo.sourceUrl, 'Posizione geografica');
+  for (const alert of [...(record.alerts??[]),...(record.restrictions??[])]) if (alert.sourceUrl) sources.set(alert.sourceUrl, 'Avviso / restrizione');
   for (const r of record.relations ?? []) if (r.sourceUrl) sources.set(r.sourceUrl, 'Relazione documentata');
   for (const m of record.media ?? []) if (m.sourceUrl) sources.set(m.sourceUrl, 'Media: ' + m.licence);
+  for (const cam of record.webcams ?? []) if (cam.officialUrl) sources.set(cam.officialUrl, 'Webcam: '+cam.operator);
   if (record.historySourceUrl) sources.set(record.historySourceUrl, 'Archivio storico');
   for (const c of record.climate ?? []) if (c.sourceUrl) sources.set(c.sourceUrl, 'Serie climatica');
   return sources.size ? <details className="cb-dossier-credits"><summary>Fonti e crediti del dossier <span>{sources.size}</span></summary>

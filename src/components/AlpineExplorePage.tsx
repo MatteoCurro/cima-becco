@@ -7,6 +7,8 @@ import { PlaceDetail } from './AlpineAtlasPage';
 import { SiteFooter, SiteHeader } from './SiteChrome';
 import { alpinePlaceLink, loadAlpinePlaces, type AlpinePlace } from '../lib/alpinePlaces';
 import { usePageTitle } from '../lib/pageTitle';
+import { atlasHasPhoto, atlasHasContact, availableLocalFacets, atlasMatchesFacet, type LocalAtlasFacetId } from '../lib/atlasFacets';
+import { presentAtlasFacts } from '../lib/atlasDossier';
 import { ExploreNavigation } from './ExploreNavigation';
 import '../alpineExplore.css';
 
@@ -30,10 +32,9 @@ function fromHash(){
   return {section:'rifugi' as Section,slug:null};
 }
 function score(p:AlpinePlace){
-  return Number(Boolean(p.photo))*110+Number(Boolean(p.description))*20+Number(Boolean(p.phone||p.email))*14+
-    Number(Boolean(p.website))*10+Number(Boolean(p.operator))*6+Number(p.elevationM!=null)*4;
+  return Number(atlasHasPhoto(p))*110+Number(Boolean(p.description||p.shortSummary))*20+Number(atlasHasContact(p))*14+
+    Number(Boolean(p.operator))*6+Number(p.elevationM!=null)*4+Math.min(20,presentAtlasFacts(p.facts).length*2);
 }
-function hasContact(p:AlpinePlace){return Boolean(p.phone||p.email);}
 
 /** Esplorazione coerente con #routes: risultati fotografici, filtri e una mappa dedicata alla sola categoria. */
 export function AlpineExplorePage(){
@@ -46,6 +47,7 @@ export function AlpineExplorePage(){
   const [onlyContacts,setOnlyContacts]=useState(false);
   const [minAltitude,setMinAltitude]=useState<number|null>(null);
   const [minBeds,setMinBeds]=useState<number|null>(null);
+  const [selectedFacets,setSelectedFacets]=useState<LocalAtlasFacetId[]>([]);
   const [limit,setLimit]=useState(24);
   const [selected,setSelected]=useState<string|null>(null);
   const [mobileTab,setMobileTab]=useState<'list'|'map'>('list');
@@ -58,29 +60,33 @@ export function AlpineExplorePage(){
   },[]);
   useEffect(()=>{let active=true;void loadAlpinePlaces().then(result=>{if(active){setData(result.places);setLoaded(true);}});return()=>{active=false};},[]);
   useEffect(()=>{
-    setQuery('');setOnlyPhoto(false);setOnlyContacts(false);setMinAltitude(null);setMinBeds(null);setSort('richness');
+    setQuery('');setOnlyPhoto(false);setOnlyContacts(false);setMinAltitude(null);setMinBeds(null);setSelectedFacets([]);setSort('richness');
     setSelected(null);setLimit(24);setMobileTab('list');
   },[nav.section]);
   const places=useMemo(()=>data.filter(p=>p.kind===config.kind),[data,config.kind]);
+  const availableFacets=useMemo(()=>availableLocalFacets(places,config.kind),[places,config.kind]);
+  const hasPhotoData=places.some(atlasHasPhoto);
+  const hasContactData=places.some(atlasHasContact);
   const hasElevationData=places.some(p=>p.elevationM!=null);
   const hasBedData=nav.section!=='paesi'&&places.some(p=>p.capacity!=null);
-  const activeFacets=Number(onlyPhoto)+Number(onlyContacts)+Number(minAltitude!=null)+Number(minBeds!=null);
-  const resetFacets=()=>{setOnlyPhoto(false);setOnlyContacts(false);setMinAltitude(null);setMinBeds(null);};
+  const activeFacets=Number(onlyPhoto)+Number(onlyContacts)+Number(minAltitude!=null)+Number(minBeds!=null)+selectedFacets.length;
+  const resetFacets=()=>{setOnlyPhoto(false);setOnlyContacts(false);setMinAltitude(null);setMinBeds(null);setSelectedFacets([]);};
   const selectedPlace=useMemo(()=>places.find(p=>p.slug===selected)||null,[places,selected]);
   const detail=nav.slug?places.find(p=>p.slug===nav.slug):null;
   const filtered=useMemo(()=>{
     const needle=query.trim().toLocaleLowerCase('it');
     const candidates=places.filter(p=>(!needle||[p.name,p.operator,p.address].some(v=>v?.toLocaleLowerCase('it').includes(needle)))&&
-      (!onlyPhoto||Boolean(p.photo))&&(!onlyContacts||hasContact(p))&&
+      (!onlyPhoto||atlasHasPhoto(p))&&(!onlyContacts||atlasHasContact(p))&&
+      selectedFacets.every(id=>{const facet=availableFacets.find(f=>f.id===id);return Boolean(facet && atlasMatchesFacet(p,facet));})&&
       (minAltitude==null||(p.elevationM!=null&&p.elevationM>=minAltitude))&&
       (minBeds==null||(p.capacity!=null&&p.capacity>=minBeds)));
     return candidates.sort((a,b)=>sort==='name'?a.name.localeCompare(b.name,'it'):
       sort==='altitude'?(b.elevationM??-1)-(a.elevationM??-1)||a.name.localeCompare(b.name,'it'):
       sort==='capacity'?(b.capacity??-1)-(a.capacity??-1)||a.name.localeCompare(b.name,'it'):
       score(b)-score(a)||a.name.localeCompare(b.name,'it'));
-  },[places,query,onlyPhoto,onlyContacts,minAltitude,minBeds,sort]);
+  },[places,query,onlyPhoto,onlyContacts,minAltitude,minBeds,selectedFacets,availableFacets,sort]);
   const mapPlaces=useMemo(()=>filtered,[filtered]);
-  useEffect(()=>{setLimit(24);setSelected(null);},[query,sort,onlyPhoto,onlyContacts,minAltitude,minBeds]);
+  useEffect(()=>{setLimit(24);setSelected(null);},[query,sort,onlyPhoto,onlyContacts,minAltitude,minBeds,selectedFacets]);
   const onSelect=(p:AlpinePlace)=>{setSelected(p.slug);setMobileTab('map');};
   const count=filtered.length.toLocaleString('it-IT');
   const detailHref=(p:AlpinePlace)=>alpinePlaceLink(p);
@@ -94,8 +100,10 @@ export function AlpineExplorePage(){
     </> : <div className="cb-explore-screen">
       <SiteHeader sticky/>
       <ExploreNavigation active={nav.section}>
-        <button type="button" className={onlyPhoto?'cb-facet-active':''} aria-pressed={onlyPhoto} onClick={()=>setOnlyPhoto(v=>!v)}>Con foto</button>
-        {nav.section==='rifugi'&&<button type="button" className={onlyContacts?'cb-facet-active':''} aria-pressed={onlyContacts} onClick={()=>setOnlyContacts(v=>!v)}>Con recapiti</button>}
+        {hasPhotoData&&<button type="button" className={onlyPhoto?'cb-facet-active':''} aria-pressed={onlyPhoto} onClick={()=>setOnlyPhoto(v=>!v)}>Con foto</button>}
+        {hasContactData&&<button type="button" className={onlyContacts?'cb-facet-active':''} aria-pressed={onlyContacts} onClick={()=>setOnlyContacts(v=>!v)}>Con recapiti</button>}
+        {availableFacets.map(facet=><button key={facet.id} type="button" className={selectedFacets.includes(facet.id)?'cb-facet-active':''}
+          aria-pressed={selectedFacets.includes(facet.id)} onClick={()=>setSelectedFacets(current=>current.includes(facet.id)?current.filter(id=>id!==facet.id):[...current,facet.id])}>{facet.label}</button>)}
         {hasElevationData&&<label className="cb-browse-sort">Quota
           <select aria-label="Quota minima" value={minAltitude??''} onChange={e=>setMinAltitude(e.target.value===''?null:Number(e.target.value))}>
             <option value="">Tutte le quote</option><option value="1000">Da 1.000 m</option><option value="1500">Da 1.500 m</option><option value="2000">Da 2.000 m</option><option value="2500">Da 2.500 m</option>

@@ -112,7 +112,48 @@ export interface AtlasClimateSeries {
   sourceUrl: string;
   values: { month: number; value: number | null }[];
 }
+/** I campi d'identità sono opzionali finché la migrazione dei dataset legacy non è completata. */
+export interface AtlasNameVariant {
+  value:string;
+  language?:string;
+  sourceUrl?:string;
+  historical?:boolean;
+}
+export interface AtlasAdministrativeHierarchy {
+  country?:string;
+  region?:string;
+  province?:string;
+  municipality?:string;
+  municipalityCodeISTAT?:string;
+  parentMunicipalityId?:string;
+}
+export interface AtlasGeo {
+  point?: {lat:number;lng:number};
+  area?: unknown;
+  method?:'reported'|'derived'|'estimated';
+  precisionM?:number;
+  sourceUrl?:string;
+}
+export interface AtlasFactAlternative {
+  key:string;
+  fact:AtlasFact;
+  reason?:string;
+}
 export interface AtlasEntityMetadata {
+  /** ID di entità stabile e separato da slug/codici fonte. */
+  id?:string;
+  subtype?:string;
+  aliases?:AtlasNameVariant[];
+  localNames?:AtlasNameVariant[];
+  slugAliases?:string[];
+  shortSummary?:string;
+  geo?:AtlasGeo;
+  administrativeHierarchy?:AtlasAdministrativeHierarchy;
+  sourceIds?:Record<string,string>;
+  factsAlternatives?:AtlasFactAlternative[];
+  restrictions?:AtlasAlert[];
+  weatherRef?:string;
+  climateRef?:string;
   facts?: Record<string, AtlasFact>;
   relations?: AtlasRelation[];
   media?: AtlasMedia[];
