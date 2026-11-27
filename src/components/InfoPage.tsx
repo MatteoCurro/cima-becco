@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SiteFooter, SiteHeader } from './SiteChrome';
 import { SiteSearch } from './SearchBar';
 import { usePageTitle } from '../lib/pageTitle';
@@ -13,6 +13,52 @@ const TABS: { id: InfoPageId; label: string }[] = [
   { id: 'terms', label: 'Contributi' },
   { id: 'contact', label: 'Contatti' },
 ];
+
+type CreditPhoto = {
+  kind:string; slug:string; name:string; entityUrl:string; sourceUrl:string;
+  author:string; licence:string; mediaUrl:string|null;
+};
+type CentralCredits = {
+  schemaVersion:string; generatedAt:string; photoCredits:CreditPhoto[];
+  counts:{total:number};
+};
+
+function PhotoCredits() {
+  const [data,setData]=useState<CentralCredits|null>(null);
+  const [query,setQuery]=useState('');
+  const [visible,setVisible]=useState(36);
+  useEffect(()=>{
+    let active=true;
+    void fetch(import.meta.env.BASE_URL+'data/atlas/credits-v1.json')
+      .then(r=>r.ok?r.json():null).then(result=>{if(active&&result?.schemaVersion==='1.0')setData(result);})
+      .catch(()=>undefined);
+    return ()=>{active=false};
+  },[]);
+  const matches=useMemo(()=>{
+    const value=query.trim().toLocaleLowerCase('it');
+    return (data?.photoCredits||[]).filter(p=>!value||
+      [p.name,p.author,p.licence,p.kind].some(f=>f.toLocaleLowerCase('it').includes(value)));
+  },[data,query]);
+  return <section aria-labelledby="cb-credits-photos-title">
+    <h2 id="cb-credits-photos-title">Attribuzioni fotografiche</h2>
+    <p>Autore, licenza e pagina originale rimangono associati a ogni immagine. Qui sono raccolte le attribuzioni delle immagini effettivamente pubblicate, non nelle schede individuali.</p>
+    {data ? <>
+      <p><strong>{data.counts.total.toLocaleString('it-IT')}</strong> attribuzioni registrate · {data.generatedAt}</p>
+      <label htmlFor="cb-credits-search">Cerca per luogo, autore o licenza</label>
+      <input id="cb-credits-search" type="search" value={query}
+        onChange={event=>{setQuery(event.target.value);setVisible(36);}}
+        placeholder="Nome, autore, CC BY…" style={{display:'block',maxWidth:'560px',width:'100%',margin:'10px 0 18px',padding:'12px'}}/>
+      <ul>{matches.slice(0,visible).map((p,i)=><li key={p.kind+p.slug+p.sourceUrl+i}>
+        <a href={p.entityUrl}>{p.name}</a> · {p.author} · {p.licence}
+        {' '}<a href={p.sourceUrl} target="_blank" rel="noopener noreferrer">Originale</a>
+      </li>)}</ul>
+      {!matches.length&&<p>Nessuna attribuzione corrisponde alla ricerca.</p>}
+      {matches.length>visible&&<button type="button" onClick={()=>setVisible(n=>n+48)}>
+        Mostra altre {Math.min(48,matches.length-visible)} attribuzioni
+      </button>}
+    </> : <p>Il registro dettagliato delle fotografie sarà disponibile con il prossimo aggiornamento dei dati. Le informazioni di provenienza rimangono comunque nei record originali.</p>}
+  </section>;
+}
 
 function DataSources() {
   return <>
@@ -30,6 +76,10 @@ function DataSources() {
     <p>Le previsioni attuali, pioggia, neve e vento derivano da <a href="https://open-meteo.com/en/docs" target="_blank" rel="noopener noreferrer">Open-Meteo</a>; le medie stagionali sono ricalcolate dal modello storico giornaliero 2021–2025 e non rappresentano normali climatiche trentennali. Meteo e temperature in quota sono indicativi: per condizioni locali, pericolo valanghe e allerte consultare i bollettini ufficiali.</p>
     <h2>Software</h2>
     <p>Cima Becco riutilizza codice del progetto open source <a href="https://github.com/StarlightsJourney/HillGPX" target="_blank" rel="noopener noreferrer">HillGPX</a>, distribuito con licenza MIT, mantenendone gli avvisi di copyright. <a href="https://github.com/MatteoCurro/cima-becco/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Leggi la licenza e gli avvisi originali.</a></p>
+    <h2>Cataloghi CAI di rifugi, bivacchi e ricoveri</h2>
+    <p>Le informazioni di <a href="https://rifugi.cai.it/" target="_blank" rel="noopener noreferrer">Unico Rifugi CAI</a> includono rifugi custoditi e incustoditi, bivacchi, capanne sociali e punti d'appoggio. Sono normalizzate per ID della struttura, con la tipologia originale e i singoli campi archiviati insieme alla loro provenienza. La classificazione amministrativa non conferma l'apertura corrente; acqua segnalata non certifica potabilità. I media CAI conservano autore e URL di provenienza.</p>
+    <p>Per il territorio trentino utilizziamo inoltre il riferimento all'<a href="https://www.sat.tn.it/elenco-bivacchi/" target="_blank" rel="noopener noreferrer">elenco dei bivacchi SAT</a> e all'<a href="https://www.provincia.tn.it/News/Approfondimenti/Bivacchi" target="_blank" rel="noopener noreferrer">elenco provinciale</a> come fonti ufficiali da riconciliare con coordinate e identità delle strutture, senza deduzioni automatiche dalla sola somiglianza del nome.</p>
+    <PhotoCredits />
     <p className="cima-info-note">Un percorso o un GPX non certifica condizioni, percorribilità e sicurezza della montagna. Prima di partire consulta indicazioni ufficiali, meteo e informazioni aggiornate.</p>
   </>;
 }
@@ -78,7 +128,7 @@ export function InfoPage({ page }: { page: InfoPageId }) {
     <SiteHeader sticky center={<SiteSearch />} />
     <main className="info-page-body">
       <nav className="info-tabs" aria-label="Informazioni Cima Becco">
-        {TABS.map((tab) => <a key={tab.id} href={`#${tab.id}`} aria-current={tab.id === page ? 'page' : undefined}>{tab.label}</a>)}
+        {TABS.map((tab) => <a key={tab.id} href={tab.id==='data'?'/fonti-e-crediti/':`/#${tab.id}`} aria-current={tab.id === page ? 'page' : undefined}>{tab.label}</a>)}
       </nav>
       <article className="info-article">
         {page === 'data' ? <DataSources /> : page === 'community' ? <Community /> : page === 'privacy' ? <Privacy /> : page === 'terms' ? <Terms /> : <Contact />}
