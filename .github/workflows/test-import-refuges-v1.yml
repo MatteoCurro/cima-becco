@@ -4,6 +4,19 @@ on:
   pull_request:
     paths:
       - scripts/import_refuges_v1.py
+      - scripts/import_cai_refuges_v1.py
+      - tests/test_import_cai_refuges_v1.py
+      - scripts/publish_refuges_v1.py
+      - tests/test_publish_refuges_v1.py
+      - scripts/assemble_refuges_release_v1.py
+      - tests/test_assemble_refuges_release_v1.py
+      - scripts/refuges_release_quarantine_v1.json
+      - scripts/merge_refuges_for_seo.mjs
+      - src/lib/refugeRelease.ts
+      - src/lib/refugeRelease.test.ts
+      - src/lib/alpinePlaces.ts
+      - src/components/AlpineAtlasPage.tsx
+      - scripts/build_seo.mjs
       - tests/test_import_refuges_v1.py
       - docs/PIANO_IMPORTATORI.md
       - .github/workflows/test-import-refuges-v1.yml
@@ -46,6 +59,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: CAI full catalogue: type, paging, incremental reuse (offline)
+        run: python -m unittest discover -s tests -p 'test_import_cai_refuges_v1.py' -v
+      - name: Publisher OSM-first: review, quarantine, provenance
+        run: python -m unittest discover -s tests -p 'test_publish_refuges_v1.py' -v
+      - name: Publisher OSM + CAI: identity and media QA
+        run: python -m unittest discover -s tests -p 'test_assemble_refuges_release_v1.py' -v
       - name: Test offline dei contratti
         run: python -m unittest discover -s tests -p 'test_import_refuges_v1.py' -v
       - name: Contratto metadati per tutte le tipologie
@@ -74,6 +93,17 @@ jobs:
           python scripts/import_refuges_v1.py --strict
           find build/import-refuges-v1 -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/refuges-after.txt
           diff -u /tmp/refuges-before.txt /tmp/refuges-after.txt
+      - name: Smoke test dataset OSM pubblico, con quarantena e licenze
+        run: |
+          python scripts/publish_refuges_v1.py --source-dir build/import-refuges-v1 --dist-dir build/release-smoke
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('build/release-smoke/data/atlas/refuges-v1.json').read_text())
+          assert len(d['entities']) > 400
+          assert all(not e['quality']['seoIndexable'] for e in d['entities'])
+          print('OSM publisher:',len(d['entities']),'records')
+          PY
       - name: Replay opzionale del campione CAI già esaminato nella PR 8
         shell: bash
         env:
