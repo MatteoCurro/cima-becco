@@ -1,0 +1,45 @@
+name: Final Block 2 Independent Smoke
+on:
+  push:
+    branches: [feat/bivouacs-shelters-canonical-import-v2]
+    paths:
+      - .github/workflows/verify-block2-release-once.yml
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Python metadata import, deterministic reconciler
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_assemble_shelters_release_v1.py' -v
+          python scripts/assemble_shelters_release_v1.py
+      - name: TypeScript and all frontend tests with local test origin
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npm run test
+      - name: Build final SEO and validate all permalinks and media attributions
+        shell: bash
+        env:
+          SITE_URL: https://www.cimabecco.it
+          VITE_SITE_URL: https://www.cimabecco.it
+          VITE_BASE: /
+        run: |
+          set -euo pipefail
+          npm run build
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
