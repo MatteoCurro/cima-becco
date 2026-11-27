@@ -97,6 +97,7 @@ def parse_item(row):
         "slug": ident, "name": name, "kind": kind, "lat": round(lat,6), "lng": round(lng,6),
         "osmUrl": f"https://www.openstreetmap.org/{row.get('type','node')}/{row['id']}",
         **({"elevationM": round(ele)} if ele is not None and 0 < ele < 4800 else {}),
+        **({"elevationSource": "osm"} if ele is not None and 0 < ele < 4800 else {}),
         **({"wikidata": tags["wikidata"]} if re.fullmatch(r"Q\d+", tags.get("wikidata","")) else {}),
         **({"website": sanitize_url(tags.get("website"))} if sanitize_url(tags.get("website")) else {}),
         **({"operator": clean_name(tags["operator"])} if tags.get("operator") else {}),
