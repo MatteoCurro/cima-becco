@@ -20,6 +20,7 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
+import { mergeSheltersForSeo } from './merge_shelters_for_seo.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
@@ -86,10 +87,11 @@ writeFileSync(join(DIST,'data','featured-routes.json'),JSON.stringify({generated
 const descriptions = existsSync(join(DATA, 'descriptions.json')) ? readJson(join(DATA, 'descriptions.json')).descriptions ?? {} : {};
 const index = readJson(join(DATA, 'peaks', 'index.json'));
 const peakPhotos = existsSync(join(DATA, 'peaks', 'photos.json')) ? readJson(join(DATA, 'peaks', 'photos.json')).photos ?? {} : {};
-const alpinePlaces = mergeRefugesForSeo(
+const alpinePlaces = mergeSheltersForSeo(mergeRefugesForSeo(
   existsSync(join(DATA, 'alpine-places.json')) ? readJson(join(DATA, 'alpine-places.json')).places ?? [] : [],
   existsSync(join(DATA, 'atlas', 'refuges-v1.json')) ? readJson(join(DATA, 'atlas', 'refuges-v1.json')) : null
-);
+), existsSync(join(DATA, 'atlas', 'shelters-v1.json')) ?
+  readJson(join(DATA, 'atlas', 'shelters-v1.json')) : null);
 const trekProjects = existsSync(join(DATA, 'trekking-projects.json')) ? readJson(join(DATA, 'trekking-projects.json')).projects ?? [] : [];
 const alpineWater=existsSync(join(DATA,'alpine-water.json')) ? readJson(join(DATA,'alpine-water.json')).sources ?? [] : [];
 const byStop = new Map();
@@ -508,7 +510,7 @@ for (const place of alpinePlaces) {
   // I borghi poveri di metadati sono consultabili ma non indicizzabili finché non vengono arricchiti.
   const isCaiOnly = Boolean(place.sourceIds?.cai && !place.sourceIds?.osm);
   const category=place.kind==='rifugio'?'rifugi':place.kind==='bivacco'?'bivacchi':'borghi';
-  const kind=place.kind==='rifugio'?'rifugio alpino':place.kind==='bivacco'?'bivacco alpino':'località di montagna';
+  const kind=place.kind==='rifugio'?'rifugio alpino':place.kind==='bivacco'?(place.shelterTypeLabel||'bivacco alpino'):'località di montagna';
   const altitude=Number.isFinite(place.elevationM)?` a ${metres(place.elevationM)} di quota`:'';
   const nearbyWater=alpineWater.filter(w=>Math.abs(w.lat-place.lat)<.017 && Math.abs(w.lng-place.lng)<.03 &&
     Math.hypot((w.lat-place.lat)*111195,(w.lng-place.lng)*111320*Math.cos(place.lat*Math.PI/180))<1400).slice(0,8);
@@ -520,7 +522,7 @@ for (const place of alpinePlaces) {
     path:`${category}/${place.slug}/`,
     noindex:(place.kind==='borgo' && !related.length && !place.website && !place.description && !place.photo) ||
       (isCaiOnly && (!place.description || place.description.length < 100) && !photo),
-    title:`${place.name} · ${place.kind==='rifugio'?'Rifugio':place.kind==='bivacco'?'Bivacco':'Paese'}, altitudine, sentieri e meteo | Cima Becco`,
+    title:`${place.name} · ${place.kind==='rifugio'?'Rifugio':place.kind==='bivacco'?(place.shelterTypeLabel||'Bivacco'):'Paese'}, altitudine, sentieri e meteo | Cima Becco`,
     description:description.slice(0,285),
     image:photo?.url||null,
     jsonLd:{'@context':'https://schema.org','@graph':[
@@ -575,8 +577,8 @@ for (const place of alpinePlaces) {
 for (const [kind,segment,label,title,blurb] of [
   ['rifugio','rifugi','Rifugi italiani e alpini','RIFUGI. POI SI VEDE.',
     'Consulta rifugi in Italia e sulle Alpi con dati OpenStreetMap e CAI, servizi dichiarati, meteo e itinerari nelle vicinanze.'],
-  ['bivacco','bivacchi','Bivacchi delle Dolomiti','BIVACCHI. POCHE SCUSE.',
-    'Bivacchi alpini, ripari essenziali, quote, coordinate e sentieri nelle Dolomiti. Verifica sempre accesso e condizioni.'],
+  ['bivacco','bivacchi','Bivacchi e ricoveri alpini italiani','BIVACCHI. POCHE SCUSE.',
+    'Bivacchi fissi, capanne sociali e punti di appoggio in Italia, con quote e dotazioni dichiarate CAI/OSM. Accesso e condizioni da verificare.'],
   ['borgo','borghi','Paesi e località montane','PAESI PICCOLI. GITE GROSSE.',
     'Esplora paesi alpini e punti di partenza con sentieri mappati, meteo e informazioni topografiche.'],
 ]) {
