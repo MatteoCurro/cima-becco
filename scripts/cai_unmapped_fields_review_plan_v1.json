@@ -1,0 +1,510 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "refuge",
+  "source": "cai_refuges",
+  "canonicalSpec": "docs/MODELLO_METADATI_E_LAYOUT.md",
+  "scope": "Proposals for ALL unmapped non-private CAI field names observed in the previous and bounded current pilots; values and rights not inferred.",
+  "totalProposals": 50,
+  "proposals": [
+    {
+      "sourceField": "accessibilita_famiglie_con_bambini_service",
+      "suggestedField": "familyAccessibilityReported",
+      "normalization": "tri_state_boolean",
+      "reviewNote": "Dichiarazione servizi per famiglie, non garanzia di accessibilità",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "accessibilita_macchina_service",
+      "suggestedField": "carAccessibilityReported",
+      "normalization": "tri_state_boolean",
+      "reviewNote": "Non implica strada transitabile in condizioni correnti",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "accessibilita_mountain_bike_service",
+      "suggestedField": "mountainBikeAccessibilityReported",
+      "normalization": "tri_state_boolean",
+      "reviewNote": "Non implica autorizzazione di transito su sentiero",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "amianto_certification",
+      "suggestedField": "asbestosComplianceClaim",
+      "normalization": "hold_for_technical_verification",
+      "reviewNote": "Indicazione sanitaria/edilizia sensibile, richiede certificazione idonea",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "authority_jurisdiction_geo",
+      "suggestedField": "jurisdictionAuthorityCandidate",
+      "normalization": "name_requires_entity_resolution",
+      "reviewNote": "Nessuna autorità ricavata dalla sola regione",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "buildingRegulation_certification",
+      "suggestedField": "buildingComplianceClaim",
+      "normalization": "hold_for_technical_verification",
+      "reviewNote": "Non dichiarare conformità senza documento",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "category",
+      "suggestedField": "caiCategoryOriginal",
+      "normalization": "categorical_original",
+      "reviewNote": "Codice/categoria originale con dizionario CAI necessario",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "cityPlanRegulation_certification",
+      "suggestedField": "townPlanningComplianceClaim",
+      "normalization": "hold_for_technical_verification",
+      "reviewNote": "Dichiarazioni urbanistiche non verificate",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "code_certification",
+      "suggestedField": "caiCertificationCodeReported",
+      "normalization": "categorical_original",
+      "reviewNote": "Determinare il significato preciso del codice",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "energy_class_certification",
+      "suggestedField": "energyClassReported",
+      "normalization": "categorical_original",
+      "reviewNote": "Classe energetica solo con fonte e data",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "facebook_contact",
+      "suggestedField": "officialFacebookCandidate",
+      "normalization": "url_or_handle_needs_validation",
+      "reviewNote": "Verificare account ufficiale e URL canonico",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "fireRegulation_certification",
+      "suggestedField": "fireComplianceClaim",
+      "normalization": "hold_for_technical_verification",
+      "reviewNote": "Non interpretare come sicurezza antincendio attestata",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "heating_type_certification",
+      "suggestedField": "heatingTypeReported",
+      "normalization": "categorical_original",
+      "reviewNote": "Verificare codifica e validità impianto",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "instagram_contact",
+      "suggestedField": "officialInstagramCandidate",
+      "normalization": "url_or_handle_needs_validation",
+      "reviewNote": "Verificare account ufficiale e URL canonico",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "mainBody_certification",
+      "suggestedField": "buildingMainBodyReported",
+      "normalization": "categorical_original",
+      "reviewNote": "Nome CAI tecnico da chiarire prima della pubblicazione",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "matericalCoherence_certification",
+      "suggestedField": "materialCoherenceClaim",
+      "normalization": "hold_for_technical_verification",
+      "reviewNote": "Voce tecnica con significato e documentazione incerti",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "oilSeparator_certification",
+      "suggestedField": "oilSeparatorClaim",
+      "normalization": "hold_for_technical_verification",
+      "reviewNote": "Non trasformare autocompilazione in certificazione",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "owner",
+      "suggestedField": "ownerClassReported",
+      "normalization": "categorical_original",
+      "reviewNote": "Non confondere ente proprietario, tipo proprietà e gestore",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "posti_letto_commerciali_service",
+      "suggestedField": "commercialBedsReported",
+      "normalization": "nonnegative_integer",
+      "reviewNote": "Non sommare ai letti totali senza definizione CAI",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "presidio_culturale_service",
+      "suggestedField": "culturalServiceReported",
+      "normalization": "tri_state_boolean",
+      "reviewNote": "Presenza di attività dichiarata, non dettagli ricostruiti",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "punti_ricarica_camere_service",
+      "suggestedField": "chargingPointsRoomsReported",
+      "normalization": "numeric_or_boolean_requires_shape",
+      "reviewNote": "Verificare se conteggio o disponibilità",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "punti_ricarica_spazi_comuni_service",
+      "suggestedField": "chargingPointsCommonReported",
+      "normalization": "numeric_or_boolean_requires_shape",
+      "reviewNote": "Verificare se conteggio o disponibilità",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "rain_water_certification",
+      "suggestedField": "rainWaterManagementReported",
+      "normalization": "tri_state_boolean",
+      "reviewNote": "Verificare se uso o certificazione tecnica",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "recycling_certification",
+      "suggestedField": "recyclingSystemReported",
+      "normalization": "tri_state_boolean",
+      "reviewNote": "Non attestare performance ambientali non documentate",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "regional_type",
+      "suggestedField": "regionalClassificationReported",
+      "normalization": "categorical_original",
+      "reviewNote": "Mantenere scala classificazione regionale",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "regulation_certification",
+      "suggestedField": "regulatoryComplianceClaim",
+      "normalization": "hold_for_technical_verification",
+      "reviewNote": "Dichiarazione tecnica non equivale a sopralluogo",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "rifornimento_estivo_service",
+      "suggestedField": "summerSupplyReported",
+      "normalization": "tri_state_boolean",
+      "reviewNote": "Disponibilità stagionale dichiarata e datata",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "site_geo",
+      "suggestedField": "siteNameCandidate",
+      "normalization": "name_requires_entity_resolution",
+      "reviewNote": "Non assegnare una località per sola omonimia",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "ski_area_geo",
+      "suggestedField": "skiAreaCandidate",
+      "normalization": "name_requires_entity_resolution",
+      "reviewNote": "Collegare a impianto o comprensorio solo se attestato",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "status",
+      "suggestedField": "caiStatusOriginal",
+      "normalization": "categorical_original",
+      "reviewNote": "Attivo da catalogo non significa aperto oggi",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "type",
+      "suggestedField": "caiStructureTypeOriginal",
+      "normalization": "categorical_original",
+      "reviewNote": "Obbligatorio per separare bivacchi da rifugi prima di fare join",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "typologicalCoherence_certification",
+      "suggestedField": "buildingTypologyClaim",
+      "normalization": "hold_for_technical_verification",
+      "reviewNote": "Accertare significato CAI e prova",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "water_type_certification",
+      "suggestedField": "waterSourceTypeReported",
+      "normalization": "categorical_original",
+      "reviewNote": "Tipo acqua non implica potabilità",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "wc_in_camera_service",
+      "suggestedField": "toiletsInRoomsReported",
+      "normalization": "tri_state_boolean",
+      "reviewNote": "Servizio dichiarato non equivale ad accessibilità",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "wc_uso_comune_service",
+      "suggestedField": "sharedToiletsReported",
+      "normalization": "tri_state_boolean",
+      "reviewNote": "Servizio dichiarato",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "camerate_da_4_posti_service",
+      "suggestedField": "dormitoriesFourBedsReported",
+      "normalization": "numeric_or_boolean_requires_shape",
+      "reviewNote": "Numero camerate o esistenza da chiarire",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "camerate_da_6_posti_service",
+      "suggestedField": "dormitoriesSixBedsReported",
+      "normalization": "numeric_or_boolean_requires_shape",
+      "reviewNote": "Numero camerate o esistenza da chiarire",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "class_certification",
+      "suggestedField": "caiCertificationClassReported",
+      "normalization": "categorical_original",
+      "reviewNote": "Classificazione originale con fonte e norma",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "convenzioni_service",
+      "suggestedField": "agreementsReported",
+      "normalization": "categorical_or_boolean_requires_shape",
+      "reviewNote": "Richiede partner e validità se davvero presenti",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "drainType_certification",
+      "suggestedField": "wastewaterDrainTypeReported",
+      "normalization": "categorical_original",
+      "reviewNote": "Verificare codifiche tecniche e unità",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "droughts_certification",
+      "suggestedField": "droughtResilienceClaim",
+      "normalization": "hold_for_technical_verification",
+      "reviewNote": "Non dedurre resilienza idrica senza attestazione",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "energy_certification",
+      "suggestedField": "energyCertificationClaim",
+      "normalization": "hold_for_technical_verification",
+      "reviewNote": "Verificare se certificato esiste davvero",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "gestore_telefonia_mobile_service",
+      "suggestedField": "mobileProviderReported",
+      "normalization": "categorical_original",
+      "reviewNote": "Segnale per operatore non garantito all'utente",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "posti_sala_ristorante_service",
+      "suggestedField": "diningSeatsReported",
+      "normalization": "nonnegative_integer",
+      "reviewNote": "Posti ristorante non sono posti letto",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "qualita_segnale_service",
+      "suggestedField": "mobileSignalQualityReported",
+      "normalization": "categorical_original",
+      "reviewNote": "Misura dichiarata non test di copertura attuale",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "rifornimento_invernale_service",
+      "suggestedField": "winterSupplyReported",
+      "normalization": "tri_state_boolean",
+      "reviewNote": "Stagionalità e validità necessarie",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "secondaryBody_certification",
+      "suggestedField": "secondaryBuildingBodyReported",
+      "normalization": "categorical_original",
+      "reviewNote": "Voce tecnica e riferimento strutturale da verificare",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "stanze_dedicate_service",
+      "suggestedField": "dedicatedRoomsReported",
+      "normalization": "numeric_or_boolean_requires_shape",
+      "reviewNote": "Rilevare significato e destinatari delle stanze",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "tavolati_service",
+      "suggestedField": "woodPlatformsReported",
+      "normalization": "categorical_or_boolean_requires_shape",
+      "reviewNote": "Il nome non basta per traduzione affidabile",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    },
+    {
+      "sourceField": "water_availability_certification",
+      "suggestedField": "waterAvailabilityDocumentation",
+      "normalization": "hold_for_technical_verification",
+      "reviewNote": "Disponibilità acqua non equivale a potabile",
+      "source": "cai_refuges",
+      "status": "PROPOSAL_ONLY_NEEDS_SOURCE_VALUE_AND_BIBBIA_REVIEW",
+      "publicationStatus": "RIGHTS_BLOCKED",
+      "verifyOnDetail": true
+    }
+  ]
+}
