@@ -7,11 +7,11 @@ import { CoverageModal, useCoverage } from './Coverage';
 import { Mark } from './icons';
 
 /** Identità Cima Becco: cresta e becco stilizzati, tipografia dal carattere editoriale. */
-export function Wordmark({ size = 28, href = '#' }: { size?: number; href?: string }) {
+export function Wordmark({ size = 36, href = '#' }: { size?: number; href?: string }) {
   return (
     <a className="wordmark" href={href} aria-label="Cima Becco — home">
       <Mark size={size} />
-      <span className="wordmark-text">Cima Becco</span>
+      <span className="wordmark-text"><b>CIMA</b><em>BECCO</em></span>
     </a>
   );
 }
