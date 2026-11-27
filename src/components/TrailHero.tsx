@@ -131,7 +131,7 @@ export function TrailHero() {
           </button>
           <button type="button" className="btn btn-light" onClick={searchByRegion}>
             <SearchIcon size={16} />
-            Search by Region
+            Cerca per zona
           </button>
           <a className="btn btn-light" href="#pianifica">
             <SearchIcon size={16} />
