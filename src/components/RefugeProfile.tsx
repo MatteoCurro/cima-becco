@@ -48,7 +48,7 @@ const FACT_LABELS:Record<string,string>={
   mountainGroupNameReported:'Gruppo montuoso dichiarato',
   municipalityNameReported:'Comune dichiarato',localityNameReported:'Località dichiarata',
   valleyName:'Valle',protectedAreaName:'Area protetta',
-  regionReported:'Regione indicata',provinceReported:'Provincia indicata',
+  regionReported:'Regione indicata',provinceReported:'Provincia indicata',address:'Indirizzo censito',
   hospitalityRegistrationId:'Identificativo ricettivo',
   waterCertification:'Informazione sulle acque',
   caiCategory:'Classificazione nel catalogo CAI',
@@ -60,7 +60,7 @@ const OPEN=['openingHoursReported','openingHours','seasonality','openingStatus',
 const MANAGEMENT=['manager','operatorReported','owner','owningSection','selfManaged'];
 const PRICES=['nightlyPrice','halfBoardPrice','memberDiscount','priceValidUntil'];
 const TERRITORY=['mountainGroupNameReported','municipalityNameReported','localityNameReported',
-  'mountainGroupId','municipalityId','localityId','valleyName','protectedAreaName','regionReported','provinceReported'];
+  'mountainGroupId','municipalityId','localityId','valleyName','protectedAreaName','regionReported','provinceReported','address'];
 const HISTORY=['yearBuilt','yearRebuilt','yearOpened','dedication'];
 const SPECIAL=['hospitalityRegistrationId','waterCertification','caiCategory','caiCatalogueStatus'];
 const COVERED=new Set([
