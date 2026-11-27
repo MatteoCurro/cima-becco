@@ -13,7 +13,7 @@ Questo file conserva le **decisioni tecniche e di prodotto vincolanti per chi sv
 - **Una ricerca, una navigazione, un motore geografico, un DetailLayout**, con adapter e filtri specifici per categoria; non creare layout paralleli.
 - Categorie: comuni, frazioni/borghi, cime/gruppi, passi/laghi/POI/acqua, rifugi/bivacchi, sentieri, escursioni, ferrate, grandi trekking/tappe, falesie/settori, vie mono-/multipitch/tiri/soste, boulder, palestre, alpinisti, parchi, trasporti, meteo, webcam e avvisi.
 - Desktop dettaglio **42% contenuti / 58% mappa**, full-width, mobile responsive: attenersi ad ARCHITECTURE.md, senza stratificazioni CSS.
-- Ogni entità possiede **ID interno stabile** indipendente dal **permalink parlante**, con slug alias/redirect per vecchi URL. ID OSM/Wikidata/CAI restano nei dati e nell'accordion **Fonti e crediti**.
+- Ogni entità possiede **ID interno stabile** indipendente dal **permalink parlante**, con slug alias/redirect per vecchi URL. ID OSM/Wikidata/CAI restano nei dati; la loro attribuzione pubblica e quella dei media e' centralizzata in **/fonti-e-crediti/**, non ripetuta nei dossier (MODELLO_METADATI_E_LAYOUT.md sez. 1.5).
 - Dati per campo: fonte, URL, licenza, data, unità, metodo, validità e confidenza. **null** per dato sconosciuto; non inventare dati, storie, gradi, stato di apertura, collegamenti sentieristici e sicurezza.
 - **Rinvii consigliati ≠ numero spit**; gradi e scale originali non vanno convertiti arbitrariamente; singoli tiri non devono essere creati se assenti. Priorità a limitazioni e aggiornamenti verificati.
 - **Comune ≠ frazione**: sindaco e popolazione comunale non sono proprietà automatiche della frazione. **Vicino ≠ attraversato ≠ raggiungibile**.

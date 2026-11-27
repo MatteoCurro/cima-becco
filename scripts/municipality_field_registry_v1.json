@@ -1,0 +1,606 @@
+{
+  "version": "1.0",
+  "canonicalSpec": "docs/MODELLO_METADATI_E_LAYOUT.md",
+  "entityKind": "municipality",
+  "status": "staging_pilot_not_public",
+  "updatedAt": "2026-11-27",
+  "rules": {
+    "identity": "ISTAT code 6 chars; preserve legacy id/slug on reimport; never identity by name/distance alone",
+    "safety": "mayor != fraction; population requires reference date; near != reaches != contains",
+    "publication": "noindex and staging until G2 manual gate",
+    "credits": "per-fact source retained; only /fonti-e-crediti/ displays attribution",
+    "daitCrosswalk": "DAIT codice_comune is NOT ISTAT; unique audited crosswalk (regionCode, provinceSigla, exact normalized official Italian name), independent source IDs, 3 unresolved discrepancies in 2026-11-27 final official pilot."
+  },
+  "fields": [
+    {
+      "key": "municipalityCodeISTAT",
+      "priority": "P0",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "string_6_digit; stable_source_id"
+    },
+    {
+      "key": "name",
+      "priority": "P0",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "documented_name"
+    },
+    {
+      "key": "aliases",
+      "priority": "P1",
+      "sources": [
+        "ISTAT",
+        "OSM",
+        "Wikidata"
+      ],
+      "status": "planned",
+      "validation": "lang_and_source_per_alias"
+    },
+    {
+      "key": "localNames",
+      "priority": "P1",
+      "sources": [
+        "ISTAT",
+        "Wikidata"
+      ],
+      "status": "partial",
+      "validation": "no_language_inference"
+    },
+    {
+      "key": "slug",
+      "priority": "P0",
+      "sources": [
+        "internal"
+      ],
+      "status": "implemented",
+      "validation": "human_readable_preserve_aliases"
+    },
+    {
+      "key": "administrativeHierarchy",
+      "priority": "P0",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "country_region_province_comune"
+    },
+    {
+      "key": "geo.point",
+      "priority": "P1",
+      "sources": [
+        "OSM",
+        "Wikidata",
+        "ISTAT"
+      ],
+      "status": "partial",
+      "validation": "only_unique_qid_to_istat_match"
+    },
+    {
+      "key": "geo.area",
+      "priority": "P1",
+      "sources": [
+        "ISTAT/geoportal"
+      ],
+      "status": "planned",
+      "validation": "no_bbox_as_boundary"
+    },
+    {
+      "key": "quotaCentroM",
+      "priority": "P1",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "partial",
+      "validation": "meters; only_if_explicit_column"
+    },
+    {
+      "key": "superficieKm2",
+      "priority": "P1",
+      "sources": [
+        "ISTAT/SITUAS"
+      ],
+      "status": "partial",
+      "validation": "km2; only_if_explicit_column"
+    },
+    {
+      "key": "popolazione",
+      "priority": "P1",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "planned",
+      "validation": "requires_reference_date_and_geography"
+    },
+    {
+      "key": "populationReferenceDate",
+      "priority": "P0_if_population",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "planned",
+      "validation": "no_undated_populations"
+    },
+    {
+      "key": "populationByAgeSex",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "planned",
+      "validation": "time_series_separate"
+    },
+    {
+      "key": "sindacoNome",
+      "priority": "P1",
+      "sources": [
+        "DAIT"
+      ],
+      "status": "partial",
+      "validation": "join_by_istat_code_only"
+    },
+    {
+      "key": "carica",
+      "priority": "P1",
+      "sources": [
+        "DAIT"
+      ],
+      "status": "partial",
+      "validation": "official_role_only"
+    },
+    {
+      "key": "dataElezione",
+      "priority": "P1",
+      "sources": [
+        "DAIT"
+      ],
+      "status": "implemented",
+      "validation": "not_equal_mandate_start"
+    },
+    {
+      "key": "mandatoInizio",
+      "priority": "P1",
+      "sources": [
+        "DAIT"
+      ],
+      "status": "implemented",
+      "validation": "must_have_specific_official_date"
+    },
+    {
+      "key": "mandatoFine",
+      "priority": "P1",
+      "sources": [
+        "DAIT"
+      ],
+      "status": "planned",
+      "validation": "do_not_infer_from_election_date"
+    },
+    {
+      "key": "sitoUfficiale",
+      "priority": "P1",
+      "sources": [
+        "municipality_official"
+      ],
+      "status": "planned",
+      "validation": "source_timestamp"
+    },
+    {
+      "key": "stemma",
+      "priority": "P1",
+      "sources": [
+        "Wikimedia_Commons",
+        "official"
+      ],
+      "status": "planned",
+      "validation": "subject_and_licence_required"
+    },
+    {
+      "key": "storia",
+      "priority": "P1",
+      "sources": [
+        "archives",
+        "Wikipedia",
+        "official"
+      ],
+      "status": "planned",
+      "validation": "documented_facts_original_editorial"
+    },
+    {
+      "key": "etimologia",
+      "priority": "P1",
+      "sources": [
+        "archives",
+        "Wikipedia",
+        "official"
+      ],
+      "status": "planned",
+      "validation": "explicit_source"
+    },
+    {
+      "key": "frazioni",
+      "priority": "P1",
+      "sources": [
+        "ISTAT_localities",
+        "OSM",
+        "Wikidata"
+      ],
+      "status": "planned_next_block",
+      "validation": "contains_only_with_verified_boundary_or_official_relation"
+    },
+    {
+      "key": "cimeRifugiVicini",
+      "priority": "P1",
+      "sources": [
+        "internal_graph"
+      ],
+      "status": "partial",
+      "validation": "near_km_not_accessible_from"
+    },
+    {
+      "key": "parchiEAreeProtette",
+      "priority": "P1",
+      "sources": [
+        "geoportal"
+      ],
+      "status": "planned",
+      "validation": "spatial_check_with_polygon"
+    },
+    {
+      "key": "trasportiAccessi",
+      "priority": "P2",
+      "sources": [
+        "OSM",
+        "GTFS"
+      ],
+      "status": "planned",
+      "validation": "no_route_just_from_proximity"
+    },
+    {
+      "key": "media",
+      "priority": "P2",
+      "sources": [
+        "Commons",
+        "official"
+      ],
+      "status": "planned",
+      "validation": "per_media_credit_to_central_page"
+    },
+    {
+      "key": "temperatureMedieMensili",
+      "priority": "P2",
+      "sources": [
+        "meteo"
+      ],
+      "status": "planned",
+      "validation": "climatological_period_and_station_elevation"
+    },
+    {
+      "key": "precipitazioniMedieMensili",
+      "priority": "P2",
+      "sources": [
+        "meteo"
+      ],
+      "status": "planned",
+      "validation": "not_same_as_single_year"
+    },
+    {
+      "key": "currentWeather",
+      "priority": "P2",
+      "sources": [
+        "meteo"
+      ],
+      "status": "planned_live_cache",
+      "validation": "TTL_separate"
+    },
+    {
+      "key": "forecastHourlyDaily",
+      "priority": "P2",
+      "sources": [
+        "meteo"
+      ],
+      "status": "planned_live_cache",
+      "validation": "TTL_separate"
+    },
+    {
+      "key": "webcams",
+      "priority": "P2",
+      "sources": [
+        "regional_official"
+      ],
+      "status": "planned",
+      "validation": "verified_stream_and_rights"
+    },
+    {
+      "key": "restrictions",
+      "priority": "P0_if_present",
+      "sources": [
+        "official"
+      ],
+      "status": "planned_live_cache",
+      "validation": "validity_and_timestamp_required"
+    },
+    {
+      "key": "facts",
+      "priority": "P0",
+      "sources": [
+        "all"
+      ],
+      "status": "implemented",
+      "validation": "provenance_method_confidence_and_no_sentinels"
+    },
+    {
+      "key": "factsAlternatives",
+      "priority": "P1",
+      "sources": [
+        "all"
+      ],
+      "status": "implemented",
+      "validation": "no_silent_overwrite"
+    },
+    {
+      "key": "relations",
+      "priority": "P1",
+      "sources": [
+        "internal_graph"
+      ],
+      "status": "partial",
+      "validation": "near_requires_point; no_implicit_located_in"
+    },
+    {
+      "key": "sourceIds",
+      "priority": "P0",
+      "sources": [
+        "all"
+      ],
+      "status": "implemented",
+      "validation": "no_source_ids_in_public_slug"
+    },
+    {
+      "key": "editorialStatus",
+      "priority": "P0",
+      "sources": [
+        "internal"
+      ],
+      "status": "implemented",
+      "validation": "raw_linked_enriched_reviewed"
+    },
+    {
+      "key": "quality",
+      "priority": "P0",
+      "sources": [
+        "internal"
+      ],
+      "status": "implemented",
+      "validation": "G0_G1_not_indexable"
+    },
+    {
+      "key": "checkedAt",
+      "priority": "P1",
+      "sources": [
+        "all"
+      ],
+      "status": "partial",
+      "validation": "source_specific_date_must_not_be_invented"
+    },
+    {
+      "key": "fullOfficialName",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "italianName",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "localName",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "regionCodeISTAT",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "statisticalTerritorialUnitCode",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "provinceCodeHistorical",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "municipalityProgressive",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "geographicalMacroRegionCode",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "geographicalMacroRegionName",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "statisticalTerritorialUnitTypeCode",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "vehicleRegistrationProvinceCode",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "municipalityNumericCode",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "municipalityNumericCode2017to2025",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "municipalityNumericCode2010to2016",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "municipalityNumericCode2006to2009",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "municipalityNumericCode1995to2005",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "cadastralCode",
+      "priority": "P1",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "nuts1_2021",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "nuts2_2021",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "nuts3_2021",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "nuts1_2024",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "nuts2_2024",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "nuts3_2024",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "provinceCapitalFlag",
+      "priority": "P2",
+      "sources": [
+        "ISTAT"
+      ],
+      "status": "implemented",
+      "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    }
+  ]
+}

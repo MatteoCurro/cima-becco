@@ -99,8 +99,16 @@ const alpinePlaces = mergeSheltersForSeo(mergeRefugesForSeo(
   existsSync(join(DATA, 'atlas', 'refuges-v1.json')) ? readJson(join(DATA, 'atlas', 'refuges-v1.json')) : null
 ), existsSync(join(DATA, 'atlas', 'shelters-v1.json')) ?
   readJson(join(DATA, 'atlas', 'shelters-v1.json')) : null);
-// Keep author, licence and source URL in one searchable credits document.
-const centralCredits = makeCentralCredits(alpinePlaces, routes, peakPhotos, TODAY);
+// Comuni G2, dataset semantico distinto dagli OSM borghi.
+const municipalityReleasePath=join(DATA,'atlas','municipalities-v1.json');
+const municipalityRelease=existsSync(municipalityReleasePath)?readJson(municipalityReleasePath):null;
+const municipalities=municipalityRelease?.releaseChannel==='ISTAT_DAIT_MUNICIPALITIES' &&
+  municipalityRelease?.isPublished && Array.isArray(municipalityRelease?.entities)
+  ? municipalityRelease.entities.filter(e=>e.kind==='municipality'&&e.quality?.gate==='G2'&&
+     e.quality?.seoIndexable && e.geo?.point && e.textSources?.length &&
+     e.media?.some(m=>m.kind==='photo'&&m.subjectVerified&&m.reuseAllowed&&m.sourceUrl&&m.licence)) : [];
+// Credits derived from every published image and text, not a second source of truth.
+const centralCredits = makeCentralCredits(alpinePlaces, routes, peakPhotos, TODAY,municipalities);
 mkdirSync(join(DIST,'data','atlas'),{recursive:true});
 writeFileSync(join(DIST,'data','atlas','credits-v1.json'),JSON.stringify(centralCredits));
 const trekProjects = existsSync(join(DATA, 'trekking-projects.json')) ? readJson(join(DATA, 'trekking-projects.json')).projects ?? [] : [];
@@ -735,6 +743,91 @@ for (const [kind,segment,label,title,blurb] of [
   });
 }
 
+// Comuni: reuse existing prerender SEO shell and the shared AlpineAtlasMap in SPA.
+for(const e of municipalities) {
+  const p=e.geo?.point;
+  if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lng))continue;
+  const media=(e.media||[]).filter(m=>m.reuseAllowed&&m.subjectVerified&&m.sourceUrl&&m.licence&&m.author);
+  const photo=media.find(m=>m.kind==='photo');
+  const logo=media.find(m=>m.kind==='logo');
+  const wiki=(e.textSources||[]).find(t=>t.text&&t.licence==='CC BY-SA 4.0'&&t.sourceUrl);
+  if(!photo||!wiki)continue;
+  const id=e.sourceIds?.istat;
+  const region=e.administrativeHierarchy?.region||'';
+  const province=e.administrativeHierarchy?.province||'';
+  const slug=e.slug;
+  const url=SITE+'/comuni/'+encodeURIComponent(slug)+'/';
+  const linked=(e.relations||[]).filter(r=>r.type==='near'&&r.target?.slug&&r.straightLineKm!=null&&
+    ['refuge','bivouac','shelter'].includes(r.target.kind)).slice(0,8);
+  const fields=[['Regione',region],['Provincia',province],
+    ['Sindaco riportato dal DAIT',e.facts?.sindacoNome?.value],
+    ['In carica dal (DAIT)',e.facts?.mandatoInizio?.value],
+    ['Sito istituzionale indicato',e.facts?.sitoUfficiale?.value]].filter(([,v])=>v!=null&&v!=='');
+  const lead=e.name+', comune '+(province?'della provincia di '+province:'italiano')+
+    (region?' in '+region:'')+'.';
+  const wikiText=String(wiki.text||'').slice(0,1000);
+  const metrics='<ul class="facts cima-seo-facts">'+
+    [['Provincia',province],['Regione',region],['Coordinate',p.lat.toFixed(4)+', '+p.lng.toFixed(4)],
+     ['Rifugi e bivacchi vicini',String(linked.length)]].map(([label,value])=>
+      '<li><strong>'+escape(value)+'</strong>'+escape(label)+'</li>').join('')+'</ul>';
+  const linkedHtml=linked.length?'<section class="cima-seo-related"><h2>Rifugi e bivacchi nei dintorni</h2>'+
+    linked.map(r=>'<a href="'+SITE+'/'+(r.target.kind==='refuge'?'rifugi':'bivacchi')+'/'+
+       encodeURIComponent(r.target.slug)+'/"><strong>'+escape(r.target.name)+'</strong><small>'+
+       escape(String(r.straightLineKm))+' km in linea d’aria · non un accesso verificato</small></a>').join('')+
+    '</section>':'';
+  page({
+    path:'comuni/'+slug+'/',
+    title:e.name+' ('+province+') · Storia, foto e luoghi nei dintorni | Cima Becco',
+    description:(lead+' '+wikiText).slice(0,275),
+    image:photo.url,
+    jsonLd:{'@context':'https://schema.org','@graph':[
+      {'@type':'AdministrativeArea',name:e.name,url,description:lead,
+       identifier:{'@type':'PropertyValue',propertyID:'ISTAT',value:id},
+       geo:{'@type':'GeoCoordinates',latitude:p.lat,longitude:p.lng},
+       image:photo.url,
+       ...(e.facts?.sitoUfficiale?.value?{sameAs:e.facts.sitoUfficiale.value}:{})},
+      breadcrumbLd([['Comuni',SITE+'/comuni/'],[e.name,null]])
+    ]},
+    body:crumbs([['Comuni',SITE+'/comuni/'],[e.name]])+
+      '<div class="cima-seo-eyebrow">CIMA BECCO · COMUNE · '+escape(region)+'</div>'+
+      '<h1>'+escape(e.name)+'</h1><p class="cima-seo-lead">'+escape(lead)+'</p>'+
+      '<figure class="cima-seo-photo"><img src="'+escape(photo.url)+'" alt="'+escape('Fotografia di '+e.name)+'" loading="lazy"></figure>'+
+      metrics+
+      '<section class="cima-seo-body"><h2>Il territorio</h2><p>'+escape(wikiText)+'</p>'+
+      '<h2>Amministrazione e informazioni</h2><dl class="cima-seo-details">'+
+      fields.map(([label,v])=>'<div><dt>'+escape(label)+'</dt><dd>'+escape(v)+'</dd></div>').join('')+
+      '</dl></section>'+
+      (logo?'<figure><img src="'+escape(logo.url)+'" alt="'+escape('Stemma di '+e.name)+'" loading="lazy" width="110"></figure>':'')+
+      linkedHtml+
+      '<p class="sub">La distanza dai rifugi è in linea d’aria; non attesta sentieri o accessibilità.</p>',
+  });
+  // Explicit migration for an OSM municipality identity that was once a "borgo".
+  const osm=e.sourceIds?.osm;
+  if(typeof osm==='string' && /^(node|way|relation)\/[1-9][0-9]*$/.test(osm)) {
+    const [type,idNumber]=osm.split('/');
+    const oldPath='borghi/osm-'+type[0]+'-'+idNumber+'/';
+    // Old OSM aliases redirect and must not remain in the XML sitemap.
+    const oldIndex=pages.indexOf(SITE+'/'+oldPath);
+    if(oldIndex>=0)pages.splice(oldIndex,1);
+    const oldFile=join(DIST,oldPath,'index.html');
+    mkdirSync(dirname(oldFile),{recursive:true});
+    writeFileSync(oldFile,'<!doctype html><html lang="it"><head><meta charset="utf-8">'+
+      '<link rel="canonical" href="'+escape(url)+'"><meta name="robots" content="noindex,follow">'+
+      '<meta http-equiv="refresh" content="0;url='+escape(url)+'"></head>'+
+      '<body><p><a href="'+escape(url)+'">'+escape(e.name)+'</a></p></body></html>');
+  }
+}
+if(municipalities.length){
+  page({path:'comuni/',title:'Comuni alpini: storia e fotografie | Cima Becco',
+    description:'Comuni alpini con anagrafe ISTAT, fotografie Commons e testi di fonte identificata.',
+    jsonLd:{'@context':'https://schema.org','@type':'CollectionPage',name:'Comuni',url:SITE+'/comuni/'},
+    body:crumbs([['Comuni']])+'<h1>COMUNI DI MONTAGNA.</h1>'+
+      '<p class="cima-seo-lead">Entità con identità ISTAT verificata, foto attribuite e approfondimenti documentati.</p>'+
+      '<ul class="list">'+municipalities.map(e=>'<li><a href="'+SITE+'/comuni/'+
+      encodeURIComponent(e.slug)+'/">'+escape(e.name)+'</a> · '+
+      escape(e.administrativeHierarchy?.province||'')+'</li>').join('')+'</ul>'});
+}
+
 // Le Alte Vie sono progetti contenitore; la lista delle tappe deriva soltanto
 // da riferimenti espliciti OSM, non da distanze arbitrarie.
 for (const trek of trekProjects) {
@@ -766,14 +859,14 @@ for (const trek of trekProjects) {
 page({
   path:'fonti-e-crediti',
   title:'Fonti, crediti fotografici e dati dell’Atlante | Cima Becco',
-  description:'Provenienza dei dati e delle fotografie di rifugi, bivacchi, capanne, sentieri e cime. Ricerca autore, foto e licenze.',
+  description:'Provenienza di dati, testi e fotografie di comuni, rifugi, bivacchi, sentieri e cime. Ricerca autore, foto e licenze.',
   jsonLd:{'@context':'https://schema.org','@type':'AboutPage',
     name:'Fonti e crediti · Cima Becco',url:SITE+'/fonti-e-crediti/'},
   body:`${crumbs([['Fonti e crediti']])}
     <h1>Fonti e crediti</h1>
-    <p class="cima-seo-lead">L’atlante conserva autore, licenza e fonte per ogni fatto o media documentato. Consulta qui le attribuzioni dei dati CAI, OSM, Commons, GeoNames e SAT.</p>
-    <h2>Fotografie e archivio</h2>
-    <p>${centralCredits.counts.total.toLocaleString('it-IT')} attribuzioni fotografiche registrate; la versione interattiva permette di cercare per luogo, autore e licenza.</p>
+    <p class="cima-seo-lead">L’atlante conserva autore, licenza e fonte per ogni fatto o media documentato. Consulta qui le attribuzioni dei dati ISTAT, DAIT, CAI, OSM, Wikipedia, Commons, GeoNames e SAT.</p>
+    <h2>Fotografie, testi e archivio</h2>
+    <p>${centralCredits.counts.total.toLocaleString('it-IT')} attribuzioni fotografiche e ${centralCredits.counts.textTotal.toLocaleString('it-IT')} attribuzioni testuali registrate; la versione interattiva permette di cercare per luogo, autore e licenza.</p>
     <p><a class="cta" href="${SITE}/fonti-e-crediti/">ESPLORA I CREDITI</a></p>`,
 });
 // The address list for search engines, the rules for crawlers, and a plain

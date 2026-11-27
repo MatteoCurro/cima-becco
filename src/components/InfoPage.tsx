@@ -18,9 +18,11 @@ type CreditPhoto = {
   kind:string; slug:string; name:string; entityUrl:string; sourceUrl:string;
   author:string; licence:string; mediaUrl:string|null;
 };
+type TextCredit = {kind:string;slug:string;name:string;entityUrl:string;sourceUrl:string;
+  author:string;licence:string;sourceId:string;sourceUpdatedAt:string|null};
 type CentralCredits = {
-  schemaVersion:string; generatedAt:string; photoCredits:CreditPhoto[];
-  counts:{total:number};
+  schemaVersion:string;generatedAt:string;photoCredits:CreditPhoto[];textCredits?:TextCredit[];
+  counts:{total:number;textTotal?:number};
 };
 
 function PhotoCredits() {
@@ -39,6 +41,8 @@ function PhotoCredits() {
     return (data?.photoCredits||[]).filter(p=>!value||
       [p.name,p.author,p.licence,p.kind].some(f=>f.toLocaleLowerCase('it').includes(value)));
   },[data,query]);
+  const texts=(data?.textCredits||[]).filter(t=>!query.trim()||
+    [t.name,t.author,t.licence].some(v=>v.toLocaleLowerCase('it').includes(query.trim().toLocaleLowerCase('it'))));
   return <section aria-labelledby="cb-credits-photos-title">
     <h2 id="cb-credits-photos-title">Attribuzioni fotografiche</h2>
     <p>Autore, licenza e pagina originale rimangono associati a ogni immagine. Qui sono raccolte le attribuzioni delle immagini effettivamente pubblicate, non nelle schede individuali.</p>
@@ -52,7 +56,14 @@ function PhotoCredits() {
         <a href={p.entityUrl}>{p.name}</a> · {p.author} · {p.licence}
         {' '}<a href={p.sourceUrl} target="_blank" rel="noopener noreferrer">Originale</a>
       </li>)}</ul>
-      {!matches.length&&<p>Nessuna attribuzione corrisponde alla ricerca.</p>}
+      {!matches.length&&!texts.length&&<p>Nessuna attribuzione corrisponde alla ricerca.</p>}
+      {texts.length>0&&<><h3>Testi e approfondimenti</h3>
+        <p>Gli estratti di Wikipedia sono contenuti riutilizzati con licenza CC BY-SA, non testi originali di Cima Becco. Gli autori e le licenze restano identificati per singola scheda.</p>
+        <ul>{texts.slice(0,visible).map((t,i)=><li key={t.sourceId+t.slug+i}>
+          <a href={t.entityUrl}>{t.name}</a> · {t.author} · {t.licence}
+          {' '}<a href={t.sourceUrl} target="_blank" rel="noopener noreferrer">Voce originale</a>
+        </li>)}</ul>
+      </>}
       {matches.length>visible&&<button type="button" onClick={()=>setVisible(n=>n+48)}>
         Mostra altre {Math.min(48,matches.length-visible)} attribuzioni
       </button>}
@@ -69,6 +80,8 @@ function DataSources() {
     <p>I dati del catasto sentieristico <a href="https://www.cai.it/sentieri-e-rifugi/infomont/" target="_blank" rel="noopener noreferrer">CAI INFOMONT</a> e quelli della <a href="https://www.sat.tn.it/sentieri/mappa-sentieri/" target="_blank" rel="noopener noreferrer">SAT</a> sono considerati per la successiva integrazione diretta. Se una classificazione CAI è già presente nella relazione OSM viene indicata come tale; non equivale a una verifica sul campo.</p>
     <p>Rifugi, località, fonti e fontanelle sono registrati su <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>, con identificativi puntuali, metadata OSM e collegamenti alle tracce per prossimità geografica. Una fonte marcata potabile nei dati OSM non costituisce una certificazione dell’acqua; la disponibilità stagionale può cambiare.</p>
     <p>Toponimi e cime sono arricchiti da <a href="https://www.geonames.org" target="_blank" rel="noopener noreferrer">GeoNames</a> (CC BY 4.0), <a href="https://www.wikidata.org" target="_blank" rel="noopener noreferrer">Wikidata</a> e, quando presente, <a href="https://it.wikipedia.org" target="_blank" rel="noopener noreferrer">Wikipedia</a>.</p>
+    <h2>Comuni e documentazione istituzionale</h2>
+    <p>L’anagrafe comunale, i codici e le gerarchie territoriali provengono da <a href="https://www.istat.it/classificazione/codici-dei-comuni-delle-province-e-delle-regioni/" target="_blank" rel="noopener noreferrer">ISTAT</a>; i titolari delle cariche sono riportati dal <a href="https://dait.interno.gov.it/" target="_blank" rel="noopener noreferrer">Ministero dell’Interno / DAIT</a> con data di estrazione. Il sindaco non è un attributo automatico di frazioni e borghi. I testi territoriali, quando presenti, sono estratti attribuiti di Wikipedia CC BY-SA 4.0 collegati a una specifica identità Wikidata P635: non sono contenuti originali né descrizioni inventate.</p>
     <h2>Mappe, quote e immagini</h2>
     <p>La carta topografica predefinita è <a href="https://github.com/sletuffe/OpenTopoMap" target="_blank" rel="noopener noreferrer">OpenTopoMap-R</a>, distribuita come servizio tile da <a href="https://openmaps.fr/tile-usage-policy.html" target="_blank" rel="noopener noreferrer">openmaps.fr</a>. Le isoipse e la simbologia sono importanti per valutare i sentieri; per sostenere il servizio è possibile <a href="https://openmaps.fr/donate" target="_blank" rel="noopener noreferrer">fare una donazione</a>. I tile provengono da un servizio gratuito per piccoli progetti non commerciali, con limiti d’uso e disponibilità senza garanzie.</p>
     <p>La vista satellitare utilizza <a href="https://www.arcgis.com/home/item.html?id=50c23e4987a44de4ab163e1baeab4a46" target="_blank" rel="noopener noreferrer">Esri World Imagery</a> e i relativi fornitori. Prima di un impiego commerciale o su larga scala è necessario verificare i diritti di utilizzo del servizio e le attribuzioni specifiche. <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer">OpenFreeMap</a> resta il livello cartografico di ripiego. Le quote possono utilizzare <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener noreferrer">AWS Terrain Tiles</a> e sono stime non certificate.</p>

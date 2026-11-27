@@ -6,7 +6,8 @@ import {readFileSync,readdirSync,existsSync} from 'node:fs';
 import {join} from 'node:path';
 
 const dist=new URL('../dist/',import.meta.url).pathname;
-const sections=['rifugi','bivacchi','borghi','route','trekking'];
+const hasComuni=existsSync(join(dist,'data','atlas','municipalities-v1.json'));
+const sections=['rifugi','bivacchi','borghi','route','trekking',...(hasComuni?['comuni']:[])];
 for(const section of sections){
   const base=join(dist,section);
   if(!existsSync(base))throw Error('Manca la categoria '+section);
@@ -50,7 +51,13 @@ for(const place of alpine){
   const target=join(dist,canonical,'index.html');
   if(!existsSync(target))throw Error('Catalogo con link rotto: '+canonical);
   const canonicalHtml=readFileSync(target,'utf8');
-  if(!canonicalHtml.includes('/'+canonical+'">'))throw Error('Canonical SEO del luogo assente: '+canonical);
+  if(!canonicalHtml.includes('/'+canonical+'">')){
+    const authorized=hasComuni && place.kind==='borgo' &&
+      JSON.parse(readFileSync(join(dist,'data','atlas','municipalities-v1.json'),'utf8')).entities.some(e=>
+       e.sourceIds?.osm===place.osmUrl.replace('https://www.openstreetmap.org/','') &&
+       canonicalHtml.includes('/comuni/'+e.slug+'/') && canonicalHtml.includes('noindex,follow'));
+    if(!authorized)throw Error('Canonical SEO del luogo assente: '+canonical);
+  }
   if((place.kind==='rifugio'||place.kind==='bivacco')&&canonicalAtlasSlug(place)!==place.slug){
     const legacy=join(dist,section,place.slug,'index.html');
     if(!existsSync(legacy))throw Error('Permalink storico non conservato: '+section+'/'+place.slug);
@@ -64,3 +71,22 @@ if(!existsSync(example))throw Error('Permalink Abfaltersbach mancante');
 const html=readFileSync(example,'utf8');
 if(!html.includes('noindex,follow'))throw Error('Pagina locale povera di dati senza noindex');
 console.log('OK: '+alpine.length+' permalinks reali, compreso Abfaltersbach');
+
+if(hasComuni){
+  const release=JSON.parse(readFileSync(join(dist,'data','atlas','municipalities-v1.json'),'utf8'));
+  const published=release.entities.filter(e=>e.quality?.gate==='G2'&&e.quality?.seoIndexable);
+  if(!published.length)throw Error('Comuni: nessuna scheda G2');
+  for(const e of published){
+    const filename=join(dist,'comuni',e.slug,'index.html');
+    if(!existsSync(filename))throw Error('Comune senza permalink: '+e.slug);
+    const html=readFileSync(filename,'utf8');
+    if(!html.includes('<link rel="canonical" href="https://www.cimabecco.it/comuni/'+e.slug+'/">'))
+      throw Error('Canonical non coerente per comune '+e.slug);
+    if(html.includes('noindex,follow'))throw Error('Comune G2 non indicizzato: '+e.slug);
+    if(!sitemap.includes('/comuni/'+e.slug+'/'))throw Error('Comune G2 fuori sitemap: '+e.slug);
+    if(!e.media.some(m=>m.kind==='photo'&&m.subjectVerified&&m.reuseAllowed&&m.licence&&m.author))
+      throw Error('Comune senza fotografia verificata: '+e.slug);
+    if(!e.textSources?.length)throw Error('Comune G2 senza testo attribuito: '+e.slug);
+  }
+  console.log('OK: '+published.length+' comuni G2 con URL, foto, testi, schema e sitemap');
+}
