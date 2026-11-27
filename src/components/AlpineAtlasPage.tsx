@@ -108,7 +108,7 @@ function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onBack: st
     </figure>}
     <div className="cb-atlas-facts">
       <span><strong>{place.lat.toFixed(4)}, {place.lng.toFixed(4)}</strong>Coordinate</span>
-      {place.elevationM!=null && <span><strong>{place.elevationM.toLocaleString('it-IT')} m</strong>Quota segnalata OSM</span>}
+      {place.elevationM!=null && <span><strong>{place.elevationM.toLocaleString('it-IT')} m</strong>{place.elevationSource==='dem'?'Quota DEM stimata':'Quota indicata in OSM'}</span>}
       {place.operator&&<span><strong>{place.operator}</strong>Gestore</span>}
       {place.capacity!=null&&<span><strong>{place.capacity}</strong>Posti letto dichiarati OSM</span>}
       {place.openingHours&&<span><strong>{place.openingHours}</strong>Orari indicati OSM</span>}
