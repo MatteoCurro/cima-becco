@@ -1,0 +1,98 @@
+name: Check Cima Becco build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/check-build.yml
+      - src/**
+      - scripts/build_seo.mjs
+      - package.json
+      - package-lock.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cima-becco-build-check
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Controlla installazione, TypeScript, build e dati
+        id: check
+        shell: bash
+        run: |
+          set +e
+          npm ci > /tmp/cimabecco-install.log 2>&1
+          install=$?
+          if [ "$install" -eq 0 ]; then
+            npm run typecheck > /tmp/cimabecco-typecheck.log 2>&1
+            typecheck=$?
+          else
+            typecheck=99
+            echo "npm ci fallito" > /tmp/cimabecco-typecheck.log
+          fi
+          if [ "$typecheck" -eq 0 ]; then
+            VITE_BASE=/cima-becco/ VITE_SITE_URL=https://matteocurro.github.io/cima-becco SITE_URL=https://matteocurro.github.io/cima-becco npm run build > /tmp/cimabecco-build.log 2>&1
+            build=$?
+          else
+            build=99
+            echo "TypeScript non superato" > /tmp/cimabecco-build.log
+          fi
+          {
+            echo "# Cima Becco — Verifica compilazione"
+            echo
+            echo "Verificato da GitHub Actions su commit: \`$(git rev-parse --short HEAD)\`"
+            echo
+            echo "- installazione npm: **$install**"
+            echo "- TypeScript: **$typecheck**"
+            echo "- build e SEO: **$build**"
+            echo
+            echo '## Ultimi messaggi TypeScript'
+            echo '~~~'
+            tail -n 65 /tmp/cimabecco-typecheck.log
+            echo '~~~'
+            echo
+            echo '## Ultimi messaggi build'
+            echo '~~~'
+            tail -n 55 /tmp/cimabecco-build.log
+            echo '~~~'
+            echo
+            if [ "$build" -eq 0 ]; then
+              echo '## File del sito verificati'
+              echo '~~~'
+              find dist -type f | wc -l
+              echo '~~~'
+              test -s dist/data/routes.json && echo '- JSON pilota: presente' || echo '- JSON pilota: ASSENTE'
+              test -s dist/data/routes-manifest.json && echo '- Manifest percorsi: presente' || echo '- Manifest percorsi: ASSENTE'
+              test -s dist/index.html && echo '- index: presente' || echo '- index: ASSENTE'
+            fi
+          } > docs/BUILD_CHECK.md
+          echo "install=$install" >> "$GITHUB_OUTPUT"
+          echo "typecheck=$typecheck" >> "$GITHUB_OUTPUT"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+      - name: Salva il report nella repository
+        if: always()
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/BUILD_CHECK.md
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'ci: stato aggiornato della compilazione Cima Becco'
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
+      - name: Segnala errori al workflow
+        if: steps.check.outputs.build != '0'
+        run: exit 1
