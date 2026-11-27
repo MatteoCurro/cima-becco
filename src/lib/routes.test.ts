@@ -8,15 +8,20 @@ import {
 import { routeEstimateS } from './routeTime';
 
 // Test indipendenti dal vecchio catalogo Singapore/Malaysia.
-const route = (name: string, slug: string, lng: number, lat: number, distanceM: number, gainM: number): Route => ({
-  slug, name, venueSlugs: [], distanceM, gainM, lossM: Math.floor(gainM / 2),
-  elevationAvailable: true, loop: false, activity: 'hike', source: 'curated',
-  coordinates: [
-    [lng, lat, 1000],
-    [lng + 0.002, lat + 0.0005, 1000 + gainM / 2],
-    [lng + 0.004, lat + 0.001, 1000 + gainM],
-  ],
-});
+const route = (name: string, slug: string, lng: number, lat: number, distanceM: number, gainM: number): Route => {
+  // Distanza della geometria coerente con quella dichiarata nei metadati:
+  // il modello temporale usa il profilo GPX, non il numero distanceM.
+  const degrees = distanceM / (111_320 * Math.cos((lat * Math.PI) / 180));
+  return {
+    slug, name, venueSlugs: [], distanceM, gainM, lossM: Math.floor(gainM / 2),
+    elevationAvailable: true, loop: false, activity: 'hike', source: 'curated',
+    coordinates: [
+      [lng, lat, 1000],
+      [lng + degrees / 2, lat + 0.0005, 1000 + gainM / 2],
+      [lng + degrees, lat + 0.001, 1000 + gainM],
+    ],
+  };
+};
 const cadore = route('Sentiero Cadore', 'sentiero-cadore', 12.28, 46.52, 5_000, 400);
 const fassa = route('Sentiero Fassa', 'sentiero-fassa', 11.65, 46.45, 10_000, 800);
 const routes = [cadore, fassa];
