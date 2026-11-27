@@ -121,7 +121,7 @@ function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onBack: st
       <div className="cb-place-contact-actions">
         {place.phone&&<a className="cb-atlas-primary" href={`tel:${place.phone.replace(/[^+\d]/g,'')}`}>CHIAMA LA STRUTTURA</a>}
         {place.email&&<a className={place.phone?'cb-place-secondary':'cb-atlas-primary'} href={`mailto:${place.email}`}>SCRIVI UNA EMAIL</a>}
-        <a className={place.phone||place.email?'cb-place-secondary':'cb-atlas-primary'} href="#cb-place-map">VEDI SULLA MAPPA ↓</a>
+        <button type="button" className={place.phone||place.email?'cb-place-secondary':'cb-atlas-primary'} onClick={()=>document.getElementById('cb-place-map')?.scrollIntoView({behavior:'smooth',block:'start'})}>VEDI SULLA MAPPA ↓</button>
       </div>
       {place.kind==='bivacco'&&<p className="cb-place-alert">Bivacco non equivale a rifugio custodito: verifica accessibilità, eventuale chiusura e dotazioni. Non fare affidamento sulla disponibilità di posti.</p>}
       {place.kind==='rifugio'&&!place.phone&&!place.email&&<p className="cb-place-note">Recapiti non ancora verificati: non interpretiamo l'assenza del dato come indisponibilità della struttura.</p>}
