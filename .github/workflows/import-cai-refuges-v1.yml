@@ -3,7 +3,7 @@ name: Import CAI and OSM refuges release
 on:
   workflow_dispatch:
   push:
-    branches: [main, feat/bivouacs-shelters-canonical-import-v2]
+    branches: [main]
     paths:
       - .github/workflows/import-cai-refuges-v1.yml
       - scripts/assemble_refuges_release_v1.py
@@ -65,22 +65,6 @@ jobs:
           npm ci
           npm run typecheck
           npm run test
-      - name: Recupera dal collaudo precedente le 373 schede CAI con foto già normalizzate
-        if: github.ref_name == 'feat/bivouacs-shelters-canonical-import-v2'
-        uses: actions/download-artifact@v4
-        with:
-          name: cima-refuges-normalized-cai-cache
-          run-id: 46063317381
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: build/last-validated-cai
-      - name: Ripristina il catalogo CAI del collaudo verificato
-        if: github.ref_name == 'feat/bivouacs-shelters-canonical-import-v2'
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -s build/last-validated-cai/cai-refuges-v1.json
-          cp build/last-validated-cai/cai-refuges-v1.json public/data/atlas/cai-refuges-v1.json
-          echo 'Riutilizzate 373 acquisizioni CAI gia verificate'
       - name: Normalizza i rifugi dello snapshot OSM
         run: python scripts/import_refuges_v1.py --strict
       - name: Aggiorna il catalogo CAI completo solo per i record modificati
