@@ -1,8 +1,38 @@
 # Cima Becco — piano di importazione e collegamenti
 
-**Data:** 27/11/2026. **Stato:** roadmap operativa, nessun nuovo job di pubblicazione attivato.  
+**Data:** 27/11/2026. **Stato:** blocco 1 pubblicato; blocco 2 con import CAI/OSM, attributi e pagina crediti verificati nel pilota, in fase di rilascio.  
 **Specifica superiore e vincolante:** [MODELLO_METADATI_E_LAYOUT.md](MODELLO_METADATI_E_LAYOUT.md). Il presente piano organizza i lavori e NON cambia la tassonomia o le regole canoniche.  
 **UI:** [ARCHITECTURE.md](ARCHITECTURE.md); un solo sistema di ricerca, mappa, dettaglio e filtri.
+
+## Blocco 2 — Bivacchi, capanne sociali e punti d'appoggio
+
+**Modello canonico:** [shelter_field_registry_v1.json](../scripts/shelter_field_registry_v1.json), **81 slot** programmati a priorità P0/P1/P2, senza considerarli automaticamente valorizzati. Distinzioni vincolanti: `Bivacco` ≠ `Capanna sociale` ≠ `Punto d'appoggio` ≠ `Rifugio custodito/incustodito`. L'ultima differenza è nella fonte ufficiale CAI, mai inferita dal nome. La UI raccoglie le prime tre sotto la famiglia di navigazione «Bivacchi e ricoveri» mantenendo sottotipo e etichetta ufficiale.
+
+**Pipeline:** [import_cai_refuges_v1.py](../scripts/import_cai_refuges_v1.py) riusa l'archivio completo CAI del blocco 1; ha effettuato una riconciliazione dei media HTTP→HTTPS per le 373 strutture prima non arricchite. [assemble_shelters_release_v1.py](../scripts/assemble_shelters_release_v1.py) produce [shelters-v1.json](../public/data/atlas/shelters-v1.json). Il pilota offline con 763 righe CAI e 33 bivacchi OSM ha accertato i risultati sotto riportati. **Il CAI possiede 252 bivacchi, 89 capanne sociali, 32 punti d'appoggio**; l'intera base CAI con 763 record resta nel dataset archivio `cai-refuges-v1.json` per non perdere altri fatti strutturati.
+
+| Risultato QA sul catalogo canonico | Totale |
+|---|---:|
+| Bivacchi CAI classificati | 252 |
+| Capanne sociali CAI classificate | 89 |
+| Punti d'appoggio CAI classificati | 32 |
+| Bivacchi OSM esaminati | 33 |
+| Associazioni CAI↔OSM univoche | 12 |
+| CAI nuovi e distinti da OSM | 355 |
+| CAI con identità ambigua sospesa | 6 |
+| OSM precedentemente etichettato rifugio e riclassificato grazie a CAI | 1 (Fiamme Gialle) |
+| **Catalogo bivacchi e ricoveri risultante** | **389** |
+| Fotografie CAI/OSM normalizzate e attribuite | 546 |
+| Fatti tipizzati con origine (schede pubblicate) | 11.034 |
+| Relazioni di vicinanza a località (non accessi) | 268 |
+| Collisioni ID/permalink, aperture o potabilità inventate | 0 |
+
+**Provenienza e layout:** ogni fatto e fotografia mantiene `sourceId/sourceUrl/author/licence`. I crediti sono aggregati in una [pagina dedicata](https://www.cimabecco.it/fonti-e-crediti/) tramite [build_source_credits.mjs](../scripts/build_source_credits.mjs), **senza presentare autori/licenze nel singolo dossier**. Si conserva l'avviso operativo con link ufficiale quando indispensabile. Registrati [18 bivacchi SAT](../scripts/sat_bivouacs_official_sources_v1.json) con i rispettivi URL ufficiali e segnalazione dell'eventuale criticità, ma ancora non associati senza prova d'identità; fonti da confrontare anche con la Provincia Autonoma di Trento. Non si copiain automatico il testo su avvicinamenti di pagine SAT quando non è sicuro che descriva proprio quel bivacco.
+
+**Aggiornamento:** workflow esistente `import-cai-refuges-v1.yml` esteso ai bivacchi; l'aggiornamento quotidiano considera le revisioni CAI nuove/modificate e **non scarica di nuovo tutte le 763 schede** una volta effettuata la migrazione delle immagini. Scrittura dei tre JSON soltanto dopo i test Python/TypeScript/Vitest, qualità e build SEO/permalink.
+
+**Sicurezza:** `In attività` è solo uno stato del catalogo, non `open_now`. L'acqua disponibile non certifica potabilità; la capienza storica non significa posti liberi. L'assenza di un dato non corrisponde a `false`. Le prossimità geometriche non attestano l'accesso percorribile. Nessun contatto, dato amministrativo privato o testo di disclaimer deve diventare un fatto d'accesso per deduzione.
+
+---
 
 ## Blocco 1 — Rifugi: rilascio v1.1 verificato
 
