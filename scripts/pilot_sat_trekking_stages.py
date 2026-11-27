@@ -60,10 +60,11 @@ def parse(html):
         items[code]=item
     return list(items.values())
 def main():
-    errors=[];stages=[]
+    errors=[];stages=[];diagnostics={}
     try:
         req=Request(URL,headers={"User-Agent":"CimaBecco-Research/0.1 (https://www.cimabecco.it)"})
         with urlopen(req,timeout=45) as r:html=r.read(4_000_000).decode("utf-8","replace")
+        diagnostics={'htmlBytes':len(html),'hasStageCode':bool(re.search(r'SI\\s*C0?1',html)),'stageCodeIndex':html.find('SI C01'),'htmlTableTags':html.count('<tr'),'firstStageNeighborhood':html[max(0,html.find('SI C01')-120):html.find('SI C01')+350] if 'SI C01' in html else None}
         stages=parse(html)
         if not stages:errors.append("No summary table rows matched. Inspect SAT HTML structure.")
     except Exception as ex:errors.append(str(ex)[:300])
@@ -75,7 +76,7 @@ def main():
       "chainByNamesOnly":all(stages[i]["endNameReported"]==stages[i+1]["startNameReported"]
                             for i in range(len(stages)-1)) if stages else None,
       "sourceNote":"Only official published table. Names alone do not prove footpath connection or current practicability.",
-      "errors":errors,"examples":stages[:3]}
+      "errors":errors,"sourceDiagnostics":diagnostics,"examples":stages[:3]}
     OUT.mkdir(parents=True,exist_ok=True)
     (OUT/"sat-sentiero-italia-stages.json").write_text(json.dumps({"stages":stages},ensure_ascii=False,indent=2),encoding="utf-8")
     (OUT/"trek-stage-report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
