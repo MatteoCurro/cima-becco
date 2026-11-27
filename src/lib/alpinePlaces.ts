@@ -78,7 +78,7 @@ export function atlasCategory(kind: AlpinePlace['kind']): 'rifugi' | 'bivacchi' 
 export function alpinePlaceLink(place: Pick<AlpinePlace, 'slug' | 'kind'> & Partial<Pick<AlpinePlace, 'name' | 'sourceIds'>>): string {
   // Le tappe GPX legacy conoscono solo lo slug OSM: l'alias pubblico le
   // indirizza alla scheda canonica, senza inventare nome o identità CAI.
-  const slug=place.kind==='rifugio'&&place.name ? canonicalAtlasSlug({
+  const slug=(place.kind==='rifugio'||place.kind==='bivacco')&&place.name ? canonicalAtlasSlug({
     kind:place.kind,name:place.name,slug:place.slug,sourceIds:place.sourceIds,
   }) : place.slug;
   return `${import.meta.env.BASE_URL}${atlasCategory(place.kind)}/${encodeURIComponent(slug)}/`;
