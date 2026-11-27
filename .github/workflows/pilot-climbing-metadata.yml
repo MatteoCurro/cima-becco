@@ -4,12 +4,14 @@ on:
     branches: [experiment/content-taxonomy-climbing-import]
     paths:
       - scripts/pilot_climbing_metadata.py
+      - scripts/pilot_openbeta_metadata.py
       - tests/test_climbing_metadata_pilot.py
       - .github/workflows/pilot-climbing-metadata.yml
   workflow_dispatch:
   pull_request:
     paths:
       - scripts/pilot_climbing_metadata.py
+      - scripts/pilot_openbeta_metadata.py
       - tests/test_climbing_metadata_pilot.py
       - .github/workflows/pilot-climbing-metadata.yml
 
@@ -34,5 +36,26 @@ jobs:
         with:
           name: climbing-arco-metadata-pilot
           path: experiments/climbing-pilot/
+          if-no-files-found: warn
+          retention-days: 14
+
+  sample-openbeta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Campione italiano OpenBeta API GraphQL
+        run: python scripts/pilot_openbeta_metadata.py --limit 25
+      - name: Esporta confronto OpenBeta
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openbeta-italy-metadata-pilot
+          path: |
+            experiments/climbing-pilot/openbeta-records.json
+            experiments/climbing-pilot/openbeta-report.json
           if-no-files-found: warn
           retention-days: 14
