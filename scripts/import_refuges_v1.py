@@ -114,6 +114,164 @@ def fact(value, key, url, unit=None, note=None):
     return data
 
 
+
+
+FIELD_REGISTRY_PATH = Path(__file__).resolve().with_name("refuge_field_registry_v1.json")
+
+
+def _safe_https(value):
+    return isinstance(value, str) and value.startswith("https://") and " " not in value
+
+
+def media_candidate(obj, kind, place, entity_id):
+    """Staging-only: a file/link found in raw data is not a published asset."""
+    if not isinstance(obj, dict):
+        return None
+    url = obj.get("url")
+    page = obj.get("sourceUrl") or obj.get("sourcePage")
+    if not _safe_https(url) or not _safe_https(page):
+        return None
+    licence = obj.get("license") or obj.get("licence")
+    author = obj.get("author")
+    rights_ready = bool(licence and author)
+    subject_ready = bool(
+        kind == "photo" and
+        place.get("photoGeoCheckedAt")
+    )
+    status = (
+        "reviewed_legacy_geo_match" if rights_ready and subject_ready else
+        "subject_review_required" if rights_ready else
+        "rights_and_subject_review_required"
+    )
+    candidate = {
+        "kind": kind, "subjectId": entity_id,
+        "url": url, "sourcePage": page,
+        "author": author or None,
+        "licence": licence or None,
+        "licenceUrl": obj.get("licenseUrl") or obj.get("licenceUrl") or None,
+        "status": status,
+        "subjectCheckedAt": place.get("photoGeoCheckedAt") if kind == "photo" else None,
+        "sourceCheckedAt": place.get("photoCheckedAt") if kind == "photo" else None,
+        "origin": "legacy_alpine_places",
+    }
+    for source_key, output_key in (
+        ("caption", "caption"), ("takenAt", "takenAt"),
+        ("orientation", "orientation"), ("width", "width"),
+        ("height", "height"), ("thumbnail", "thumbnail"),
+    ):
+        if obj.get(source_key) is not None:
+            candidate[output_key] = obj[source_key]
+    return candidate
+
+
+def webcam_candidate(obj, entity_id):
+    """Official link is only a lead; no implicit right to embed or call it live."""
+    if isinstance(obj, str):
+        obj = {"sourceUrl": obj}
+    if not isinstance(obj, dict):
+        return None
+    source = obj.get("officialUrl") or obj.get("sourceUrl") or obj.get("permalink")
+    if not _safe_https(source):
+        return None
+    return {
+        "kind": "webcam", "subjectId": entity_id,
+        "sourcePage": source,
+        "operator": obj.get("operator"),
+        "cameraDirectionDegrees": obj.get("directionDegrees"),
+        "cameraCoordinates": obj.get("coordinates"),
+        "visibleTarget": obj.get("visibleTarget"),
+        "stillUrlCandidate": obj.get("stillUrl") if _safe_https(obj.get("stillUrl")) else None,
+        "licence": obj.get("licence"),
+        "permission": obj.get("permission"),
+        "refreshedAt": obj.get("refreshedAt"),
+        "status": "official_source_and_stream_permission_review_required",
+        "isLive": False,
+    }
+
+
+def media_inventory(place, entity_id):
+    candidates, accepted = [], []
+    for kind in ("photo", "logo"):
+        items = place.get(kind)
+        if isinstance(items, dict):
+            items = [items]
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            candidate = media_candidate(item, kind, place, entity_id)
+            if candidate is None:
+                continue
+            candidates.append(candidate)
+            if candidate["status"] == "reviewed_legacy_geo_match":
+                accepted.append({
+                    "kind": "photo", "subjectId": entity_id,
+                    "url": candidate["url"], "sourcePage": candidate["sourcePage"],
+                    "author": candidate["author"], "licence": candidate["licence"],
+                    "licenceUrl": candidate["licenceUrl"],
+                    "subjectVerification": "legacy_explicit_commons_match",
+                    "subjectCheckedAt": candidate["subjectCheckedAt"],
+                })
+    webcams = place.get("webcams", place.get("webcam"))
+    if webcams is not None:
+        if not isinstance(webcams, list):
+            webcams = [webcams]
+        for item in webcams:
+            candidate = webcam_candidate(item, entity_id)
+            if candidate:
+                candidates.append(candidate)
+    return candidates, accepted
+
+
+def inventory_coverage(entities, raw_refuges, registry, route_links):
+    """No fabricated blanks in the cards: gaps live in a field-level audit."""
+    fields = registry.get("fields")
+    if not isinstance(fields, list) or len(fields) != len({f.get("key") for f in fields}):
+        raise ValueError("Registry dei campi canonici invalido o duplicato")
+    output = []
+    for entry in fields:
+        target = entry.get("target", "")
+        raw_key = entry.get("legacyKey")
+        observed = 0
+        if target == "routeProximity":
+            observed = len({x["to"]["id"] for x in route_links})
+        elif target == "nearbyLocalities":
+            observed = sum(any(x["targetRef"]["kind"] == "locality" for x in e["relations"]) for e in entities)
+        elif target == "nearbySummits":
+            observed = sum(any(x["targetRef"]["kind"] == "mountain" for x in e["relations"]) for e in entities)
+        elif target.startswith("mediaCandidates."):
+            kind = target.partition(".")[2]
+            observed = sum(any(x["kind"] == kind for x in e.get("mediaCandidates", [])) for e in entities)
+        else:
+            parts = target.split(".") if target else []
+            for entity in entities:
+                value = entity
+                for part in parts:
+                    if not isinstance(value, dict) or part not in value:
+                        value = None
+                        break
+                    value = value[part]
+                if value is not None and value != "" and value != [] and value != {}:
+                    observed += 1
+        raw_count = sum(
+            raw_key in p and p[raw_key] is not None and p[raw_key] != ""
+            for p in raw_refuges
+        ) if raw_key else None
+        output.append({
+            "key": entry["key"], "group": entry["group"], "priority": entry["priority"],
+            "providers": entry["sources"], "refreshPolicy": entry["refresh"],
+            "recordsWithValue": observed,
+            "recordsWithLegacySourceValue": raw_count,
+            "state": ("staging_value_present" if observed else
+                      "legacy_value_needs_review" if raw_count else
+                      "not_yet_acquired"),
+        })
+    return {"schemaVersion": registry.get("schemaVersion"), "kind": "refuge",
+            "records": len(entities),
+            "fieldCount": len(fields),
+            "fields": output,
+            "note": "Availability counts are NOT source verification, licences or live freshness."}
+
+
 def build_refuge(place, identity, snapshot_date):
     src = source_ref(place)
     name = place.get("name", "").strip()
@@ -143,18 +301,7 @@ def build_refuge(place, identity, snapshot_date):
         if legacy_field in ("openingHours", "seasonal", "access"):
             note = "Dichiarazione OSM senza verifica corrente: non indica apertura o accessibilità odierna."
         facts[key] = fact(value, src["key"], src["url"], unit, note)
-    media = []
-    photo = place.get("photo")
-    if (isinstance(photo, dict) and all(isinstance(photo.get(k), str)
-          and photo[k].strip() for k in ("url", "sourceUrl", "author", "license"))
-          and place.get("photoGeoCheckedAt")):
-        media.append({
-            "kind": "photo", "url": photo["url"], "sourcePage": photo["sourceUrl"],
-            "author": photo["author"], "licence": photo["license"],
-            "licenceUrl": photo.get("licenseUrl"),
-            "subjectVerification": "legacy_explicit_commons_match",
-            "subjectCheckedAt": place["photoGeoCheckedAt"],
-        })
+    media_candidates, media = media_inventory(place, identity["id"])
     kind = src["kind"]
     return {
         "id": identity["id"], "kind": "refuge", "subtype": "alpine_hut",
@@ -168,7 +315,9 @@ def build_refuge(place, identity, snapshot_date):
         "sources": [{"id": src["key"], "url": src["url"], "licence": LICENCE,
                      "retrievedAt": None, "snapshotDate": snapshot_date}],
         "facts": facts, "factsAlternatives": [],
-        "relations": [], "media": media, "restrictions": [], "alerts": [],
+        "relations": [], "media": media,
+        **({"mediaCandidates": media_candidates} if media_candidates else {}),
+        "restrictions": [], "alerts": [],
         "editorialStatus": "raw", "quality": {"gate": "G0", "seoIndexable": False,
             "notes": ["Identita OSM non ancora riconciliata con CAI/SAT: quality gate G0",
                       "Orari e stato di apertura non verificati in tempo reale"]},
@@ -359,6 +508,10 @@ def run(root=ROOT, out=None, registry_file=None, strict=False):
             nearby_relations(point, town_candidates, "locality", 12, 3) +
             nearby_relations(point, peaks, "mountain", 6, 3))
     route_links = links_from_routes(data, by_legacy)
+    field_registry = load(FIELD_REGISTRY_PATH)
+    if not isinstance(field_registry, dict) or field_registry.get("kind") != "refuge":
+        raise ValueError("Registro rifugi obbligatorio non disponibile")
+    coverage = inventory_coverage(entities, refuges, field_registry, route_links)
     # Una digest del sottoinsieme sorgente permette di rilevare aggiornamenti senza
     # spacciare la data di assemblaggio per verifica del singolo campo.
     raw = {"kind": "refuge", "sourceDataset": "public/data/alpine-places.json",
@@ -376,6 +529,11 @@ def run(root=ROOT, out=None, registry_file=None, strict=False):
         "routeProximityLinks": len(route_links),
         "slugCollisionsReview": len(conflicts),
         "candidateDuplicatePairs": len(duplicate_pairs),
+        "metadataFieldsTracked": coverage["fieldCount"],
+        "media": {"photosAccepted": sum(len(e["media"]) for e in entities),
+                  "photoCandidates": sum(sum(m["kind"] == "photo" for m in e.get("mediaCandidates", [])) for e in entities),
+                  "logoCandidates": sum(sum(m["kind"] == "logo" for m in e.get("mediaCandidates", [])) for e in entities),
+                  "webcamCandidates": sum(sum(m["kind"] == "webcam" for m in e.get("mediaCandidates", [])) for e in entities)},
         "missingElevation": sum("elevationM" not in e["facts"] for e in entities),
         "missingVerifiedOpeningStatus": len(entities),
         "searchIndexable": 0, "connectedToCai": 0,
@@ -393,6 +551,7 @@ def run(root=ROOT, out=None, registry_file=None, strict=False):
     write(out / "links.json", {"schemaVersion": "1.0", "status": "staging_only",
                                "edges": route_links})
     write(out / "identity-registry.json", identities)
+    write(out / "field-coverage.json", coverage)
     write(out / "review.json", {"slugConflicts": conflicts,
                                 "candidateDuplicates": duplicate_pairs,
                                 "linksRequireEntityResolution": True})
