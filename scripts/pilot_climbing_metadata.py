@@ -129,11 +129,12 @@ def normalize(osm):
     if not fields["osmClimbingTags"]:
         fields.pop("osmClimbingTags")
     # These are deliberately null: do not invent a number from bolt count or length!
+    fields = {k: v for k, v in fields.items() if v is not None}
+    # Campi tecnici intenzionalmente sconosciuti: null e non conteggio inferito.
     fields["quickdrawsRecommended"] = None
     fields["anchorType"] = None
     fields["ropeLengthRecommendedM"] = None
     fields["pitchDetails"] = []
-    fields = {k: v for k, v in fields.items() if v is not None}
     technical = kind in ("climbing_route", "boulder", "via_ferrata")
     return {
         "id": src_id, "kind": kind, "name": name,
@@ -154,7 +155,7 @@ def query_for(bbox):
         "[out:json][timeout:75];("
         f'nwr["sport"="climbing"]({bb});'
         f'nwr["climbing"]({bb});'
-        ");out center meta;"
+        ");out meta center;"
     )
 
 
