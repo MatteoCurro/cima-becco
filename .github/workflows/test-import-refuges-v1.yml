@@ -1,0 +1,45 @@
+name: Test importatore canonico rifugi (staging)
+
+on:
+  pull_request:
+    paths:
+      - scripts/import_refuges_v1.py
+      - tests/test_import_refuges_v1.py
+      - docs/PIANO_IMPORTATORI.md
+      - .github/workflows/test-import-refuges-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cima-refuges-v1-test
+  cancel-in-progress: false
+
+jobs:
+  test-and-stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test offline dei contratti
+        run: python -m unittest discover -s tests -p 'test_import_refuges_v1.py' -v
+      - name: Import pilota su snapshot esistente (senza rete)
+        run: python scripts/import_refuges_v1.py --strict
+      - name: Controlla idempotenza: secondo import byte-identico
+        shell: bash
+        run: |
+          set -euo pipefail
+          find build/import-refuges-v1 -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/refuges-before.txt
+          python scripts/import_refuges_v1.py --strict
+          find build/import-refuges-v1 -type f -print0 | sort -z | xargs -0 sha256sum > /tmp/refuges-after.txt
+          diff -u /tmp/refuges-before.txt /tmp/refuges-after.txt
+      - name: Report e JSON di staging, non pubblicati
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-refuges-v1-staging
+          path: build/import-refuges-v1/
+          retention-days: 10
