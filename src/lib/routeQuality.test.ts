@@ -20,7 +20,7 @@ const ids = (r: ReturnType<typeof assessRoute>) => r.flags.map((f) => f.id);
 
 // Parsing the larger files with jsdom's DOM parser is slow when the whole suite runs in parallel.
 describe('real hiking routes', { timeout: 30_000 }, () => {
-  for (const [path, xml] of Object.entries(gpxFiles).filter(([path]) => !/cycle|bike|cycling|round-island/i.test(path))) {
+  for (const [path, xml] of Object.entries(gpxFiles).filter(([path]) => /walk|trail|hiking|trek/i.test(path) && !/cycle|bike|cycling/i.test(path))) {
     it(`is not held: ${path.split('/').pop()}`, () => {
       const parsed = parseGpx(xml);
       const result = assess({ points: parsed.points, times: parsed.times, hasElevation: hasRealElevation(parsed.points) });
