@@ -36,7 +36,7 @@ describe('dossier condizionale',()=>{
         subjectVerified:true,reuseAllowed:true}]};
     const core=renderToStaticMarkup(<AtlasDossierBlocks record={record} placement="core"/>);
     const media=renderToStaticMarkup(<AtlasDossierBlocks record={record} placement="media"/>);
-    expect(core).toContain('bedsTotal');
+    expect(core).toContain('beds Total');
     expect(core).not.toContain('https://rifugi.cai.it/shelters/123');
     expect(media).toContain('https://rifugi.cai.it/media/123.jpg');
     expect(media).not.toContain('Autore fotografo');
