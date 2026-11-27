@@ -15,12 +15,12 @@ function walk(n: number, opts: { stepS?: number; degPerStep?: number; ele?: (i: 
 }
 
 const assess = (over: Partial<QualityInput> & Pick<QualityInput, 'points'>) =>
-  assessRoute({ activity: 'run', hasElevation: true, deviceElevation: true, ...over });
+  assessRoute({ activity: 'hike', hasElevation: true, deviceElevation: true, ...over });
 const ids = (r: ReturnType<typeof assessRoute>) => r.flags.map((f) => f.id);
 
 // Parsing the larger files with jsdom's DOM parser is slow when the whole suite runs in parallel.
-describe('real routes', { timeout: 30_000 }, () => {
-  for (const [path, xml] of Object.entries(gpxFiles)) {
+describe('real hiking routes', { timeout: 30_000 }, () => {
+  for (const [path, xml] of Object.entries(gpxFiles).filter(([path]) => !/cycle|bike|cycling|round-island/i.test(path))) {
     it(`is not held: ${path.split('/').pop()}`, () => {
       const parsed = parseGpx(xml);
       const result = assess({ points: parsed.points, times: parsed.times, hasElevation: hasRealElevation(parsed.points) });
@@ -87,18 +87,16 @@ describe('gps jump', () => {
 });
 
 describe('impossible speed', () => {
-  it('holds sustained car speed on a run', () => {
+  it('blocca velocità automobilistiche su un percorso a piedi', () => {
     const { points, times } = walk(120, { stepS: 5, degPerStep: 0.0012 }); // ~130 m / 5 s ≈ 94 km/h
     expect(ids(assess({ points, times }))).toContain('impossible-speed');
   });
 
-  it('allows a bike fast speed that a runner would not', () => {
-    const { points, times } = walk(120, { stepS: 5, degPerStep: 0.0004 }); // ~44 m / 5 s ≈ 32 km/h
-    expect(ids(assess({ points, times, activity: 'cycle' }))).not.toContain('impossible-speed');
-    expect(ids(assess({ points, times, activity: 'run' }))).not.toContain('impossible-speed');
-    const faster = walk(120, { stepS: 5, degPerStep: 0.0007 }); // ~78 m / 5 s ≈ 56 km/h
-    expect(ids(assess({ points: faster.points, times: faster.times, activity: 'cycle' }))).not.toContain('impossible-speed');
-    expect(ids(assess({ points: faster.points, times: faster.times, activity: 'run' }))).toContain('impossible-speed');
+  it('blocca tracce non compatibili con una velocità sostenuta a piedi', () => {
+    const { points, times } = walk(120, { stepS: 5, degPerStep: 0.0004 }); // circa 32 km/h
+    expect(ids(assess({ points, times }))).toContain('impossible-speed');
+    const slower = walk(120, { stepS: 5, degPerStep: 0.0002 }); // circa 16 km/h
+    expect(ids(assess({ points: slower.points, times: slower.times, activity: 'trail' }))).not.toContain('impossible-speed');
   });
 
   it('skips speed checks without timestamps', () => {
