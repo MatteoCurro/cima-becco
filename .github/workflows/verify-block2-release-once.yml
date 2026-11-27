@@ -6,6 +6,8 @@ on:
       - .github/workflows/verify-block2-release-once.yml
       - src/lib/refugeEditorial.test.tsx
       - src/components/RefugeGallery.tsx
+      - scripts/build_seo.mjs
+      - scripts/check_permalinks.mjs
 permissions:
   contents: read
 jobs:
