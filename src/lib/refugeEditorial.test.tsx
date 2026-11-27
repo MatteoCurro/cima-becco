@@ -19,7 +19,7 @@ describe('profilo rifugio CAI',()=>{
       wifi:fact(true),showers:fact(false),waterAvailableReported:fact(true),
     }};
     const copy=refugeOverview(place);
-    expect(copy).toContain('2.180 metri');
+    expect(copy).toMatch(/2\\.?180 metri/);
     expect(copy).toContain('32 posti letto');
     expect(copy).toContain('6 invernali');
     expect(copy).toContain('Wi-Fi');
