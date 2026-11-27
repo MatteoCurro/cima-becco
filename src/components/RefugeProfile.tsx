@@ -294,7 +294,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
       <AtlasDossierBlocks record={place} placement="credits"/>
       {place.sourceIds?.cai&&!Object.values(place.facts??{}).some(f=>f.sourceUrl)&&
         <p>Catalogo CAI · <SourceLink url={official}>Scheda originale</SourceLink></p>}
-      {place.sourceIds?.osm&&!place.facts&&<p>Dati OpenStreetMap · <SourceLink url={place.osmUrl}>Crediti</SourceLink></p>
+      {place.sourceIds?.osm&&!place.facts&&<p>Dati OpenStreetMap · <SourceLink url={place.osmUrl}>Crediti</SourceLink></p>}
     </div>
   </div>;
 }
