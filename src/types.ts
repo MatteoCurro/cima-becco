@@ -134,6 +134,10 @@ export interface Route {
   /** Metadati certificati dalla fonte, separati dalle stime ricavate dalla geometria. */
   caiDifficulty?: CaiDifficulty;
   caiTrailNumber?: string;
+  /** Numero/segnavia del sentiero, indipendentemente dall'ente gestore. */
+  trailRef?: string;
+  /** Identificativo Wikidata per eventuali descrizioni e media con licenza compatibile. */
+  wikidataId?: string;
   osmcSymbol?: string;
   sacScale?: string;
   viaFerrataScale?: string;
