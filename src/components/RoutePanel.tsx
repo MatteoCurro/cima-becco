@@ -300,7 +300,7 @@ function RouteEditForm({ route, venues, username, trim, onTrimChange, hoverIndex
   const keptQuality = useMemo(
     () => assessRoute({
       points: kept,
-      activity: route.activity ?? 'run',
+      activity: routeActivity(route),
       hasElevation: hasRealElevation(kept),
       deviceElevation: route.elevationSource === 'gps',
       spacing: 'simplified',
