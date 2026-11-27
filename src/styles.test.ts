@@ -5,10 +5,7 @@ import explore from './alpineExplore.css?raw';
 import location from './locationProfile.css?raw';
 import hero from './homeHeroV2.css?raw';
 
-/**
- * An unclosed rule makes a browser read every rule after it as nested inside it, so the styles
- * that follow silently stop applying (this once broke the whole share dialog). Cheap to catch.
- */
+/** Una regola non chiusa può invalidare tutto il CSS successivo. */
 function unclosed(css: string): { depth: number; negativeAt: number | null } {
   const text = css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g, '""');
   let depth = 0;
@@ -31,15 +28,17 @@ describe('stylesheets', () => {
     ['locationProfile.css', location],
     ['homeHeroV2.css', hero],
   ])('%s closes every rule it opens', (_name, css) => {
-    expect(unclosed(css)).toEqual({ depth: 0, negativeAt: null   it('riserva spazio reale a elenco e mappa senza sottrazioni hard-coded', () => {
+    expect(unclosed(css)).toEqual({ depth: 0, negativeAt: null });
+  });
+
+  it('riserva spazio reale a elenco e mappa senza sottrazioni hard-coded', () => {
     expect(explore).toContain('.cb-explore-screen{height:100vh;height:100dvh');
     expect(explore).toContain('container-type:inline-size');
     expect(explore).not.toContain('height:calc(100dvh - 205px)');
   });
-  it('la hero e solo navigazione e contenuti senza montagne decorative', () => {
+
+  it('la hero non usa il precedente paesaggio decorativo', () => {
     expect(hero).toContain('.cb-hero-v3-directory');
     expect(hero).not.toContain('.cb-hero-v2-landscape');
-  });
-});
   });
 });
