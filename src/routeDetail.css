@@ -58,6 +58,13 @@
   height:100%;
   border-radius:0!important;
 }
+/* I tooltip CSS delle icone (pseudo-elementi posizionati) allargano
+   il documento a 320px quando la scheda non usa più overflow:hidden.
+   Nella pagina completa le azioni conservano aria-label: non servono tooltip
+   flottanti oltre il bordo. Le anteprime mappa mantengono i loro tooltip. */
+.map-page.is-route-detail .route-panel .gpx-icon-btn[data-tip]::after{
+  display:none;
+}
 .map-page.is-route-detail .route-panel .route-title-heading{
   font:900 clamp(27px,3vw,42px)/1.08 var(--cb-display);
   letter-spacing:-.045em;
