@@ -6,6 +6,10 @@ import type { Bounds } from './venues';
  * geocoder, and nothing here is used for anything that needs a border.
  */
 const COUNTRIES: { name: string; bounds: Bounds }[] = [
+  { name: 'Italia', bounds: { west: 6.6, south: 35.4, east: 18.7, north: 47.15 } },
+  { name: 'Svizzera', bounds: { west: 5.95, south: 45.8, east: 10.5, north: 47.85 } },
+  { name: 'Austria', bounds: { west: 9.5, south: 46.35, east: 17.2, north: 49.1 } },
+  { name: 'Slovenia', bounds: { west: 13.35, south: 45.4, east: 16.6, north: 46.9 } },
   { name: 'Singapore', bounds: { west: 103.6, south: 1.16, east: 104.1, north: 1.48 } },
   { name: 'Hong Kong', bounds: { west: 113.82, south: 22.15, east: 114.44, north: 22.57 } },
   { name: 'Taiwan', bounds: { west: 119.3, south: 21.8, east: 122.1, north: 25.4 } },
@@ -35,14 +39,16 @@ export interface Destination {
 
 /** Places the landing search offers before anything is typed. */
 export const DESTINATIONS: Destination[] = [
-  { name: 'Singapore', hint: 'HDB blocks, Bukit Timah, Southern Ridges', bounds: COUNTRIES[0].bounds },
-  { name: 'Bukit Timah', hint: 'Singapore’s highest hill', bounds: { west: 103.76, south: 1.33, east: 103.8, north: 1.37 } },
-  { name: 'Johor', hint: 'Gunung Pulai, Gunung Lambak', bounds: { west: 102.8, south: 1.3, east: 104.4, north: 2.6 } },
-  { name: 'Kluang', hint: 'Gunung Lambak trail runs', bounds: { west: 103.25, south: 1.95, east: 103.42, north: 2.1 } },
-  { name: 'Kuala Lumpur', hint: 'Bukit Tabur, Broga Hill', bounds: { west: 101.5, south: 2.9, east: 101.95, north: 3.35 } },
-  { name: 'Peninsular Malaysia', hint: 'Over a thousand named summits', bounds: { west: 99.6, south: 1.2, east: 104.6, north: 6.8 } },
-  { name: 'Hong Kong', hint: 'Lion Rock, Tai Mo Shan', bounds: COUNTRIES[1].bounds },
-  { name: 'Taiwan', hint: 'Yushan and the Central Range', bounds: COUNTRIES[2].bounds },
+  { name: 'Dolomiti', hint: 'Sentieri, ferrate e cime che valgono la fatica', bounds: { west: 10.75, south: 46.04, east: 13.45, north: 47.15 } },
+  { name: 'Cortina d’Ampezzo', hint: 'La Regina delle Dolomiti', bounds: { west: 12.22, south: 46.48, east: 12.32, north: 46.58 } },
+  { name: 'Erto', hint: 'Un borgo che non si dimentica', bounds: { west: 12.34, south: 46.23, east: 12.41, north: 46.31 } },
+  { name: 'Casso', hint: 'Poche case, grandi montagne', bounds: { west: 12.35, south: 46.24, east: 12.41, north: 46.30 } },
+  { name: 'Sottoguda', hint: 'Il paese delle viuzze e delle pareti', bounds: { west: 11.94, south: 46.42, east: 12.02, north: 46.48 } },
+  { name: 'Colle Santa Lucia', hint: 'Piccolo, ma con un panorama sfacciato', bounds: { west: 11.88, south: 46.42, east: 11.99, north: 46.49 } },
+  { name: 'Zoppè di Cadore', hint: 'Per chi ama i posti fuori rotta', bounds: { west: 12.19, south: 46.35, east: 12.28, north: 46.44 } },
+  { name: 'Cibiana di Cadore', hint: 'Il paese dei murales, fra boschi e crode', bounds: { west: 12.23, south: 46.35, east: 12.32, north: 46.43 } },
+  { name: 'Val di Fassa', hint: 'Passi, rifugi e qualche salita onesta', bounds: { west: 11.56, south: 46.32, east: 11.87, north: 46.58 } },
+  { name: 'Passo Giau', hint: 'Due curve… e non spiana', bounds: { west: 12.03, south: 46.45, east: 12.12, north: 46.52 } },
 ];
 
 /** The coarse box of a region named by regionOf(), so a row titled with it can open there. */
