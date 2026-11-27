@@ -170,6 +170,11 @@ def media_from_detail(detail):
         if not isinstance(row, dict) or row.get("mime_type") not in VALID_IMAGE_TYPES:
             continue
         url = row.get("original_url")
+        # Il CAI espone original_url http://rifugi.cai.it, mentre il sito
+        # ufficiale funziona in HTTPS. Upgrade solo per dominio CAI esatto,
+        # mai per terzi: evita mixed content e mantiene la fonte corretta.
+        if isinstance(url, str) and url.startswith("http://rifugi.cai.it/"):
+            url = "https://rifugi.cai.it/" + url[len("http://rifugi.cai.it/"):]
         if not valid_url(url):
             continue
         key = row.get("uuid")
@@ -239,6 +244,7 @@ def normalize_detail(row, detail, mapping, proposals):
         "description": description,
         "openingScheduleStructured": schedule,
         "media": photos,
+        "mediaNormalizationVersion": "https-cai-2026-11",
         "webcams": [], "quality": {"gate": "G1", "seoIndexable": False},
         "unmappedFieldNames": unknown,
     }
@@ -325,7 +331,10 @@ def build_catalogue(rows, details_by_id, mapping, proposals, previous=None, *, c
             continue
         key = str(row["id_cai"])
         old = previous_by_id.get(key)
-        if old and old.get("revision") == row.get("updated_at"):
+        if old and old.get("revision") == row.get("updated_at") and (
+            old.get("kind") != "rifugio" or
+            old.get("mediaNormalizationVersion") == "https-cai-2026-11"
+        ):
             records.append(old)
             continue
         doc = details_by_id.get(key)
@@ -362,7 +371,14 @@ def collect(previous=None, *, limit=None, api=fetch_json, workers=5):
         rows = rows[:limit]
     previous_by_id = {r.get("caiId"): r for r in (previous or {}).get("records", [])}
     fetch_rows = [r for r in rows if r.get("published") and r.get("deleted_at") in (None, "")
-                  and not (previous_by_id.get(str(r["id_cai"]), {}).get("revision") == r.get("updated_at"))]
+                  and not (
+                      previous_by_id.get(str(r["id_cai"]), {}).get("revision") == r.get("updated_at")
+                      and (
+                          previous_by_id.get(str(r["id_cai"]), {}).get("kind") != "rifugio"
+                          or previous_by_id.get(str(r["id_cai"]), {}).get("mediaNormalizationVersion") ==
+                             "https-cai-2026-11"
+                      )
+                  )]
     details = {}
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futures = {
