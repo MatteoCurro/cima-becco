@@ -26,7 +26,7 @@ export function trailArea(route: Route): string {
   return route.country === 'Italy' ? 'Italia' : (route.country || 'Area alpina');
 }
 
-const generic = /^(?:sentiero(?:s+(?:cai|sat|si))?(?:s+[w\-/]+)?|percorso(?:s+[w\-/]+)?|route\s*\d+|hiking route)(?:\s*)$/i;
+const generic = /^(?:sentiero(?:\s+(?:cai|sat|si))?(?:\s+[\w\-/]+)?|percorso(?:\s+[\w\-/]+)?|route\s*\d+|hiking route)$/i;
 
 /** Le denominazioni ufficiali restano; i nomi generici ricevono contesto geografico. */
 export function trailTitle(route: Route): string {
@@ -75,7 +75,8 @@ export function trailDescription(route: Route): string {
   const kind = routeActivity(route) === 'ferrata' ? 'Il tratto attrezzato' : 'Il percorso';
   const km = (route.distanceM / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
   const basic = `${kind} si sviluppa ${area === 'Italia' ? 'in Italia' : 'nell’area ' + area} per circa ${km} km${route.loop ? ', con partenza e arrivo nello stesso punto' : ''}.`;
-  const number = route.trailRef ? ` Il riferimento segnaletico presente nei dati è ${route.trailRef}.` : '';
+  const ref = route.trailRef || route.name.match(/^sentiero\s+(\d+[a-z]?)$/i)?.[1];
+  const number = ref ? ` Il riferimento segnaletico presente nei dati è ${ref}.` : '';
   const gain = route.elevationAvailable !== false && Number.isFinite(route.gainM)
     ? ` Il dislivello positivo stimato è di ${Math.round(route.gainM)} metri.`
     : '';
