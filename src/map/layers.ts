@@ -1,6 +1,7 @@
 import type { ExpressionSpecification, Map as MlMap, GeoJSONSource } from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
 import type { Route, Venue } from '../types';
+import { routeDisplayGeometry } from './routeGeometry';
 
 /** MapLibre sources and layers that remain beneath the HTML venue markers. */
 
@@ -91,7 +92,7 @@ export function routesToGeoJson(routes: Route[]): FeatureCollection {
       .map((route) => ({
         type: 'Feature' as const,
         properties: { slug: route.slug, gain: route.gainM },
-        geometry: { type: 'LineString' as const, coordinates: route.coordinates.map(([lng, lat]) => [lng, lat]) },
+        geometry: { type: 'LineString' as const, coordinates: routeDisplayGeometry(route.coordinates) },
       })),
   };
 }
@@ -103,7 +104,7 @@ export function routesToGeoJson(routes: Route[]): FeatureCollection {
  * feature-state, so moving the pointer never re-uploads geometry.
  */
 export function addAllRouteLayers(map: MlMap, data: FeatureCollection): void {
-  map.addSource('routes', { type: 'geojson', data, promoteId: 'slug' });
+  map.addSource('routes', { type: 'geojson', data, promoteId: 'slug', maxzoom: 14, tolerance: 1.1, buffer: 32 });
   const hot = HOT;
   map.addLayer({
     id: 'routes-casing',
