@@ -89,7 +89,7 @@ class RefugeImportTests(unittest.TestCase):
 
     def test_repeat_is_byte_identical_and_preserves_permalink_on_rename(self):
         importer.run(self.root, self.out, strict=True)
-        targets = ("refuges.json", "links.json", "report.json", "identity-registry.json")
+        targets = ("refuges.json", "links.json", "report.json", "identity-registry.json", "field-coverage.json")
         original = {f: (self.out / f).read_bytes() for f in targets}
         importer.run(self.root, self.out, strict=True)
         self.assertEqual(original, {f: (self.out / f).read_bytes() for f in targets})
@@ -112,6 +112,78 @@ class RefugeImportTests(unittest.TestCase):
             self.assertNotIn("administrativeHierarchy", e)
             self.assertFalse(any(x["type"] == "located_in" for x in e["relations"]))
             self.assertFalse(any(x["type"] == "accessible_from" for x in e["relations"]))
+
+    def test_field_registry_includes_media_webcam_and_operational_metadata(self):
+        report = importer.run(self.root, self.out, strict=True)
+        self.assertGreaterEqual(report["metadataFieldsTracked"], 75)
+        coverage = json.loads((self.out / "field-coverage.json").read_text())
+        fields = {f["key"]: f for f in coverage["fields"]}
+        for required in ("name", "slug", "sourceIds", "logo", "photoCurrent",
+                         "photoHistorical", "webcam", "owner", "manager", "bedsWinter",
+                         "bookingUrl", "openingStatus", "weatherRef", "alerts",
+                         "restrictions", "trailAccess", "history", "nightlyPrice"):
+            self.assertIn(required, fields)
+        self.assertEqual(fields["logo"]["recordsWithValue"], 0)
+        self.assertEqual(fields["webcam"]["recordsWithValue"], 0)
+        self.assertEqual(fields["elevationM"]["recordsWithValue"], 1)
+        self.assertEqual(fields["elevationM"]["recordsWithLegacySourceValue"], 2)
+        self.assertEqual(fields["webcam"]["state"], "not_yet_acquired")
+
+    def test_photo_logo_and_webcam_candidates_never_become_unverified_live(self):
+        file = self.data / "alpine-places.json"
+        doc = json.loads(file.read_text())
+        doc["places"][0]["photo"] = {
+            "url": "https://commons.wikimedia.org/special/preview.jpg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Real_Hut.jpg",
+            "license": "CC BY-SA 4.0", "author": "Photographer",
+            "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/"}
+        doc["places"][0]["photoCheckedAt"] = "2026-11-27"
+        doc["places"][0]["logo"] = {
+            "url": "https://commons.wikimedia.org/logo.svg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Refuge_Logo.svg",
+            "license": "CC BY-SA 4.0", "author": "Club Alpino"}
+        doc["places"][0]["webcam"] = {
+            "officialUrl": "https://example.org/webcam/rifugio",
+            "operator": "Rifugio Dolomia", "directionDegrees": 140,
+            "visibleTarget": "Verso la cima", "stillUrl": "https://example.org/still.jpg",
+            "refreshedAt": "2026-11-27T10:00:00+01:00"}
+        file.write_text(json.dumps(doc), encoding="utf-8")
+        report = importer.run(self.root, self.out, strict=True)
+        self.assertEqual(report["media"]["photoCandidates"], 1)
+        self.assertEqual(report["media"]["logoCandidates"], 1)
+        self.assertEqual(report["media"]["webcamCandidates"], 1)
+        self.assertEqual(report["media"]["photosAccepted"], 0)
+        huts = json.loads((self.out / "refuges.json").read_text())["entities"]
+        hut = next(x for x in huts if x["sourceIds"]["osm"] == "node/100")
+        self.assertEqual(len(hut["media"]), 0)
+        candidates = {x["kind"]: x for x in hut["mediaCandidates"]}
+        self.assertEqual(candidates["photo"]["status"], "subject_review_required")
+        self.assertEqual(candidates["logo"]["status"], "subject_review_required")
+        self.assertEqual(candidates["webcam"]["status"],
+                         "official_source_and_stream_permission_review_required")
+        self.assertFalse(candidates["webcam"]["isLive"])
+        self.assertEqual(candidates["webcam"]["cameraDirectionDegrees"], 140)
+        cover = json.loads((self.out / "field-coverage.json").read_text())
+        counts = {x["key"]: x["recordsWithValue"] for x in cover["fields"]}
+        self.assertEqual(counts["photoCurrent"], 1)
+        self.assertEqual(counts["logo"], 1)
+        self.assertEqual(counts["webcam"], 1)
+
+    def test_existing_geo_checked_photo_keeps_subject_and_licence(self):
+        file = self.data / "alpine-places.json"
+        doc = json.loads(file.read_text())
+        doc["places"][0]["photo"] = {
+            "url": "https://commons.wikimedia.org/special/preview.jpg",
+            "sourceUrl": "https://commons.wikimedia.org/wiki/File:Real_Hut.jpg",
+            "license": "CC BY-SA 4.0", "author": "Photographer"}
+        doc["places"][0]["photoGeoCheckedAt"] = "2026-11-27"
+        file.write_text(json.dumps(doc), encoding="utf-8")
+        report = importer.run(self.root, self.out, strict=True)
+        self.assertEqual(report["media"]["photosAccepted"], 1)
+        huts = json.loads((self.out / "refuges.json").read_text())["entities"]
+        hut = next(x for x in huts if x["sourceIds"]["osm"] == "node/100")
+        self.assertEqual(hut["media"][0]["subjectId"], hut["id"])
+        self.assertEqual(hut["media"][0]["licence"], "CC BY-SA 4.0")
 
     def test_same_name_and_spatial_overlap_are_reviewed_not_merged(self):
         file = self.data / "alpine-places.json"
