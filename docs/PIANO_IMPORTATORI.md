@@ -49,6 +49,16 @@ La [matrice di acquisizione e normalizzazione](MATRICE_ACQUISIZIONE_DATI.md) doc
 
 **Attenzione:** il mapping fonte→tipologia è un elenco di fonti candidate, non la prova che il provider possieda *tutti* i campi. Ogni sottocampo va mappato esplicitamente, testato su payload reale autorizzato e validato prima di promuovere il modulo di categoria.
 
+### Avanzamento CAI R1/R2 verificato, 27/11/2026
+
+Il riuso offline del campione PR #8 ha individuato **3 coppie CAI↔OSM da revisionare** su 80 record (Boé, Torrani, Fiamme Gialle); **0 fuse/0 relazioni CAI pubblicate**. Il resolver `reconcile_cai_osm_refuges_v1.py` controlla tipo struttura, nome, coordinate, quota se attestata, più geometrie in conflitto, record non pubblicati e false prossimità, con 13 test offline.
+
+La sonda CAI limitata a quattro dettagli ha confermato **125 nomi di campo**, 119 valorizzati in almeno un record e **7 voci media**; unione con il pilota precedente: **127 chiavi**. Tutte sono classificate nel [catalogo campi CAI](../scripts/cai_pilot_field_inventory_v1.json): 47 con mapping ristretto di staging, **50 con proposta di normalizzazione individuale** nel [piano di revisione](../scripts/cai_unmapped_fields_review_plan_v1.json), 22 campi privacy/contratti/contatti bloccati, 8 riferimenti tecnici interni. Nessuna chiave osservata viene eliminata silenziosamente. La Bibbia minima supporta **80 metadati rifugio** tracciati.
+
+`openingTime_contact` risulta `value=null` e `data=array` negli esempi reali: i dati strutturati sono **presenti ma ancora da interpretare**, non vanno qualificati come apertura corrente. L'ispezione delle chiavi interne in un singolo record ha rivelato `attributes`, `key`, `layout`; per il calendario definitivo serve il parsing documentato della struttura e del periodo. Le immagini CAI hanno i metadati tecnici della risorsa ma **nessuna licenza singola accertata** nel pilot, pertanto nessuna ripubblicazione.
+
+La specifica REST ufficiale indica `/api/v1/shelters/updatedAt`: **endpoint documentato, risposta non ancora convalidata**. Prima di un job ricorrente valutare checkpoint e idempotenza e soprattutto diritti di riuso. Report CAI pilota solo in artefatti temporanei di staging, non `public/data`.
+
 ## Importatore 1: rifugi da snapshot OSM
 
 **Codice:** [import_refuges_v1.py](../scripts/import_refuges_v1.py) · **test:** [test_import_refuges_v1.py](../tests/test_import_refuges_v1.py) · **CI:** [workflow di staging](../.github/workflows/test-import-refuges-v1.yml).
