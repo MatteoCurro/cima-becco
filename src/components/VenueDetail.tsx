@@ -842,8 +842,10 @@ function VenueDetailInner({
         )}
       />
 
-      <main className="venue-detail-content">
-        <div className="venue-detail-title-row">
+      <main className="venue-detail-content cb-venue-document cb-document-page">
+        <div className="venue-detail-layout cb-venue-grid">
+          <div className="venue-detail-head">
+            <div className="venue-detail-title-row">
           <div>
             <h1>{venue.name}</h1>
             <p className="venue-detail-sub">
@@ -872,15 +874,16 @@ function VenueDetailInner({
           )}
         </div>
 
-        {photos.length === 0 ? (
-          <NoPhotos venue={venue} onAdd={() => setAddingPhotos(true)} actions={narrow ? iconActions : undefined} />
-        ) : narrow ? (
-          <PhotoCarousel photos={photos} onAdd={() => setAddingPhotos(true)} actions={iconActions} />
-        ) : (
-          <PhotoGrid photos={photos} venueName={venue.name} onAdd={() => setAddingPhotos(true)} />
-        )}
+        <div className="cb-venue-hero-media">
+          {photos.length===0?<NoPhotos venue={venue} onAdd={()=>setAddingPhotos(true)} actions={iconActions}/>:
+            <PhotoCarousel photos={photos} onAdd={()=>setAddingPhotos(true)} actions={iconActions}/>}
+          {photos.length>1&&!narrow&&<details className="cb-venue-gallery-more">
+            <summary>Apri tutte le {photos.length} fotografie</summary>
+            <PhotoGrid photos={photos} venueName={venue.name} onAdd={()=>setAddingPhotos(true)}/>
+          </details>}
+        </div>
 
-        <div className="venue-detail-layout">
+          </div>
           <div className="venue-detail-main">
             <section className="venue-detail-intro">
               <div className="venue-intro-row">
@@ -932,6 +935,11 @@ function VenueDetailInner({
                     ? <>From <a href={wiki.url} target="_blank" rel="noreferrer">Wikipedia</a>, CC BY-SA</>
                     : 'Know this place? Add a review below and it shapes this description.'}
               </p>
+            </section>
+
+            <section className="venue-detail-section cb-venue-planning" aria-label="Pianificazione e meteo">
+              <PlanCard venue={venue}/>
+              <button type="button" className="plan-report" onClick={() => setReporting(true)}><FlagIcon/> Segnala un problema su questo luogo</button>
             </section>
 
             <section className="venue-detail-section venue-routes-section">
@@ -1005,18 +1013,14 @@ function VenueDetailInner({
               </section>
             )}
 
-            <section className="venue-detail-section venue-location-section">
-              <h2>Where it is</h2>
-              <div className="mini-map-frame">
-                <Suspense fallback={<div className="mini-map mini-map-fallback" />}><MiniMap venue={venue} /></Suspense>
-                <button type="button" className="mini-map-open" onClick={() => onShowOnMap()}><MapIcon size={14} />Open in map</button>
-              </div>
-            </section>
           </div>
 
-          <aside className="venue-detail-side">
-            <PlanCard venue={venue} />
-            <button type="button" className="plan-report side" onClick={() => setReporting(true)}><FlagIcon />Report an issue with this place</button>
+          <aside className="venue-detail-side" aria-label={'Mappa di '+venue.name}>
+            <div className="cb-venue-map-pane">
+              <div className="cb-venue-map-heading"><span>CARTOGRAFIA DEL LUOGO</span><strong>{venue.name}</strong></div>
+              <Suspense fallback={<div className="mini-map mini-map-fallback" />}><MiniMap venue={venue}/></Suspense>
+              <button type="button" className="cb-venue-map-open" onClick={()=>onShowOnMap()}><MapIcon size={15}/> Esplora i percorsi sulla mappa ↗</button>
+            </div>
           </aside>
         </div>
       </main>

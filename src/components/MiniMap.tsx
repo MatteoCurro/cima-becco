@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Map, Marker } from 'maplibre-gl';
+import { Map, Marker, NavigationControl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Venue } from '../types';
 import { formatHeight } from '../lib/units';
@@ -8,6 +8,7 @@ import { glyphSvg } from '../lib/venueGlyphs';
 import { parseSvg, textSpan } from '../lib/dom';
 import '../map/worker';
 import { MAP_STYLE_URL } from '../map/constants';
+import { MountainBasemapControl } from '../map/mountainBasemap';
 import { useUnits } from './UnitsContext';
 
 export function MiniMap({ venue }: { venue: Venue }) {
@@ -22,9 +23,11 @@ export function MiniMap({ venue }: { venue: Venue }) {
       center: [venue.lng, venue.lat],
       // Built climbs need street level; a mountain needs its massif around it.
       zoom: venue.type === 'hill' ? 12 : 15,
-      interactive: false,
+      interactive: true,
       attributionControl: { compact: true },
     });
+    map.addControl(new MountainBasemapControl(),'top-right');
+    map.addControl(new NavigationControl({showCompass:true}),'top-right');
     // The detail page animates in, so the container can still be zero-sized
     // when the map is created; without a resize the canvas stays blank.
     const observer = new ResizeObserver(() => map.resize());

@@ -26,3 +26,41 @@
  }
 }
 @media(max-width:420px){:root{--cb-header-offset:106px}}
+
+/* Le cime usano la stessa griglia di scheda degli altri luoghi. Non più contenuto centrato a 1120px. */
+.venue-detail-content.cb-venue-document{display:block;width:100%;max-width:none;margin:0;padding:0;background:#fff}
+.cb-venue-grid{display:grid;grid-template-columns:minmax(0,var(--cb-detail-column)) minmax(0,1fr);
+  grid-template-areas:"hero map" "content map";align-items:start;gap:0;width:100%;min-width:0}
+.cb-venue-grid>.venue-detail-head{grid-area:hero;min-width:0;padding:22px clamp(16px,3vw,46px) 0}
+.cb-venue-grid>.venue-detail-main{grid-area:content;min-width:0;padding:0 clamp(16px,3vw,46px) 48px;width:100%}
+.cb-venue-grid>.venue-detail-side{grid-area:map;display:block!important;position:sticky!important;top:var(--cb-header-offset)!important;
+  width:100%;height:calc(100dvh - var(--cb-header-offset));min-height:320px;padding:0!important;margin:0!important;
+  overflow:hidden;background:#dce9db;align-self:start}
+.cb-venue-hero-media{position:relative;margin-bottom:12px;min-width:0}
+.cb-venue-hero-media>.venue-detail-gallery,.cb-venue-hero-media>.venue-detail-empty-photo{max-width:100%}
+.cb-venue-hero-media .venue-detail-hero{height:clamp(205px,23vw,330px);aspect-ratio:auto}
+.cb-venue-hero-media .venue-detail-empty-photo{height:clamp(205px,23vw,330px);aspect-ratio:auto}
+.cb-venue-gallery-more{margin:8px 0 10px;border:1px solid #dde8db;border-radius:7px;padding:7px 11px}
+.cb-venue-gallery-more>summary{cursor:pointer;font-size:12px;font-weight:750;color:#365c43}
+.cb-venue-gallery-more .venue-detail-gallery{margin:15px 0}
+.cb-venue-grid .venue-detail-title-row h1{font:900 clamp(30px,3.2vw,50px)/1.06 'Bricolage Grotesque',sans-serif;
+ letter-spacing:-.05em;color:#1c4432;overflow-wrap:anywhere}
+.cb-venue-grid .venue-detail-title-row{gap:15px;flex-wrap:wrap}
+.cb-venue-grid .venue-route-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.cb-venue-planning .plan-card{width:100%;max-width:none;box-shadow:none}
+.cb-venue-map-pane{position:relative;width:100%;height:100%;background:#e1eddb}
+.cb-venue-map-pane .mini-map{display:block;width:100%;height:100%;border-radius:0}
+.cb-venue-map-heading{position:absolute;top:14px;left:14px;z-index:2;max-width:calc(100% - 110px);
+  display:grid;gap:4px;padding:11px 13px;border-radius:8px;background:#fff;box-shadow:0 6px 20px #1d422c26;pointer-events:none}
+.cb-venue-map-heading span{font-size:10px;font-weight:800;letter-spacing:.055em;color:#be0051}
+.cb-venue-map-heading strong{font:850 16px/1.25 'Bricolage Grotesque',sans-serif;overflow-wrap:anywhere;color:#214a37}
+.cb-venue-map-open{position:absolute;bottom:25px;left:12px;z-index:3;min-height:42px;padding:10px 14px;
+ border:0;border-radius:7px;background:#173f31;color:#fff;cursor:pointer;font:750 12px 'Space Grotesk',sans-serif}
+@media(max-width:900px){
+ .cb-venue-grid{display:flex!important;flex-direction:column!important}
+ .cb-venue-grid>.venue-detail-head{order:0;width:100%;padding:18px clamp(14px,4vw,28px) 0}
+ .cb-venue-grid>.venue-detail-side{order:1;position:relative!important;top:auto!important;inset:auto;display:block!important;
+    width:100%;height:clamp(300px,47dvh,440px);min-height:300px;margin:0!important}
+ .cb-venue-grid>.venue-detail-main{order:2;width:100%;padding:0 clamp(14px,4vw,28px) 40px}
+ .cb-venue-hero-media .venue-detail-hero,.cb-venue-hero-media .venue-detail-empty-photo{height:clamp(205px,53vw,315px)}
+}
