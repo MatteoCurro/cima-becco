@@ -113,6 +113,35 @@ class RefugeImportTests(unittest.TestCase):
             self.assertFalse(any(x["type"] == "located_in" for x in e["relations"]))
             self.assertFalse(any(x["type"] == "accessible_from" for x in e["relations"]))
 
+    def test_same_name_and_spatial_overlap_are_reviewed_not_merged(self):
+        file = self.data / "alpine-places.json"
+        doc = json.loads(file.read_text())
+        doc["places"][1]["lat"] = 46.500005
+        doc["places"][1]["lng"] = 11.500005
+        file.write_text(json.dumps(doc), encoding="utf-8")
+        report = importer.run(self.root, self.out, strict=True)
+        self.assertEqual(report["candidateDuplicatePairs"], 1)
+        entity = json.loads((self.out / "refuges.json").read_text())["entities"]
+        self.assertEqual(len({x["id"] for x in entity}), 2)
+        review = json.loads((self.out / "review.json").read_text())
+        candidate = review["candidateDuplicates"][0]
+        self.assertEqual(candidate["evidence"], "same_normalized_name")
+        self.assertFalse(candidate["autoMerged"])
+        self.assertEqual(candidate["status"], "manual_review_required")
+
+    def test_equal_wikidata_identifier_is_only_a_merge_candidate(self):
+        file = self.data / "alpine-places.json"
+        doc = json.loads(file.read_text())
+        doc["places"][1]["name"] = "Capanna su altro lato"
+        doc["places"][1]["wikidata"] = "Q123"
+        doc["places"][1]["lat"] = 46.5005
+        doc["places"][1]["lng"] = 11.5005
+        file.write_text(json.dumps(doc), encoding="utf-8")
+        importer.run(self.root, self.out, strict=True)
+        review = json.loads((self.out / "review.json").read_text())
+        self.assertEqual(len(review["candidateDuplicates"]), 1)
+        self.assertEqual(review["candidateDuplicates"][0]["evidence"], "same_wikidata_qid")
+
     def test_duplicate_osm_id_aborts_before_writing(self):
         file = self.data / "alpine-places.json"
         doc = json.loads(file.read_text())
