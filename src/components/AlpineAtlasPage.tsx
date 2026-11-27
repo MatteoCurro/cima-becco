@@ -23,7 +23,6 @@ const EMPTY_TREKS: TreksDataset = { generatedAt: null, projects: [] };
 type Section = 'rifugi' | 'borghi' | 'trekking';
 
 function parseAtlas(hash: string): { section: Section; slug: string | null } {
-  const [, category, slug] = hash.replace(/^#atlante\/?/, '').split('/');
   // The initial part is a section name, not an empty prefix.
   const path = hash.replace(/^#atlante\/?/, '').split('/').filter(Boolean);
   const section = path[0] === 'borghi' || path[0] === 'trekking' ? path[0] : 'rifugi';
