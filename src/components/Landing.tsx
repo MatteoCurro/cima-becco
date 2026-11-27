@@ -24,11 +24,6 @@ function rememberMode(mode: Mode) {
   sessionStorage.setItem('hillgpx:mode', mode);
 }
 
-function openMap(mode: Mode, hash = '#map') {
-  rememberMode(mode);
-  window.location.hash = hash;
-}
-
 /** Where a row, its title and its "See all" card go: a real link, so it can be opened in a new tab too. */
 interface MapLink {
   href: string;
