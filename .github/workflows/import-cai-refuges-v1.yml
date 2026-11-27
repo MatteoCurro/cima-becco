@@ -7,6 +7,9 @@ on:
     paths:
       - .github/workflows/import-cai-refuges-v1.yml
       - scripts/assemble_refuges_release_v1.py
+      - src/lib/alpinePlaces.ts
+      - src/lib/refugeRelease.ts
+      - src/components/AlpineAtlasPage.tsx
       - scripts/import_cai_refuges_v1.py
       - scripts/publish_refuges_v1.py
       - tests/test_assemble_refuges_release_v1.py
@@ -53,7 +56,7 @@ jobs:
           python -c "import json; from pathlib import Path; p=Path('public/data/atlas/refuges-v1.json'); d=json.loads(p.read_text()); e=d['entities']; assert d['schemaVersion']=='1.1'; assert len(e)>=400; assert len(set(x['id'] for x in e))==len(e); assert len(set(x['slug'] for x in e))==len(e); assert all(x['kind']=='refuge' for x in e); assert all('caiCatalogueStatus' not in x.get('facts',{}) or x['facts']['caiCatalogueStatus']['value']!='Aperto ora' for x in e); print('Refuges validated:',len(e))"
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: npm
       - name: Build e regressioni frontend/SEO su dati CAI reali
         shell: bash
