@@ -28,20 +28,58 @@ export function trailArea(route: Route): string {
 
 const generic = /^(?:sentiero(?:\s+(?:cai|sat|si))?(?:\s+[\w\-/]+)?|percorso(?:\s+[\w\-/]+)?|route\s*\d+|hiking route)$/i;
 
+/** Solo POI vicini al tracciato OSM; mai associare un rifugio per assonanza. */
+export function trailDestinations(route: Route): string[] {
+  const stops = route.stops ?? [];
+  const huts = stops.filter((stop) => stop.kind === 'rifugio' && stop.distanceM <= 180);
+  const endpoints = huts.filter((stop) => stop.relation === 'arrivo');
+  const top = [...endpoints, ...huts.filter((stop) => stop.relation !== 'arrivo')];
+  const names = new Set<string>();
+  for (const stop of top) {
+    if (names.size === 2) break;
+    names.add(stop.name);
+  }
+  if (!names.size) {
+    for (const stop of stops.filter((item) => item.kind === 'borgo' && item.distanceM <= 350)) {
+      names.add(stop.name);
+      if (names.size === 2) break;
+    }
+  }
+  return [...names];
+}
+
+/** Descrizione geografica cauta: vicinanza al sentiero ≠ accesso garantito. */
+export function trailStopLine(route: Route): string {
+  const stops = route.stops ?? [];
+  const huts = stops.filter((p) => p.kind === 'rifugio' && p.distanceM <= 180).slice(0, 4);
+  const towns = stops.filter((p) => p.kind === 'borgo' && p.distanceM <= 350).slice(0, 3);
+  if (!huts.length && !towns.length) return '';
+  const text = [
+    huts.length ? 'Nei pressi della traccia sono segnalati ' + huts.map((p) => p.name).join(', ') + '.' : '',
+    towns.length ? 'Tra le località vicine al percorso: ' + towns.map((p) => p.name).join(', ') + '.' : '',
+  ].filter(Boolean).join(' ');
+  return text + ' La presenza nei dati cartografici non garantisce l’accesso alle strutture.';
+}
+
 /** Le denominazioni ufficiali restano; i nomi generici ricevono contesto geografico. */
 export function trailTitle(route: Route): string {
-  const raw = route.name.trim().replace(/\s+/g, ' ');
+  const raw = (route.name || '').trim().replace(/\s+/g, ' ');
   const area = trailArea(route);
-  if (/^sentiero si$/i.test(raw)) return `Sentiero Italia · ${area}`;
+  const poi = trailDestinations(route);
+  const destination = poi.length > 0 ? poi.join(' · ') : area;
+  if (/^sentiero si$/i.test(raw)) return `Sentiero Italia · ${destination}`;
   if (/^sentiero\s+(\d+[a-z]?)$/i.test(raw)) {
     const number = raw.match(/\d+[a-z]?/i)?.[0] ?? route.trailRef ?? '';
-    return `Sentiero ${number} · ${area}`;
+    return `Sentiero ${number} · ${destination}`;
   }
   if (generic.test(raw) || /^\d+[a-z]?$/i.test(raw)) {
     const ref = route.trailRef || raw.match(/\d+[a-z]?/i)?.[0];
-    return `${routeActivity(route) === 'ferrata' ? 'Via ferrata' : 'Itinerario a piedi'}${ref ? ' ' + ref : ''} · ${area}`;
+    return `${routeActivity(route) === 'ferrata' ? 'Via ferrata' : 'Sentiero'}${ref ? ' ' + ref : ''} · ${destination}`;
   }
-  return raw || `${routeActivity(route) === 'ferrata' ? 'Via ferrata' : 'Escursione'} · ${area}`;
+  if (!raw) return `${routeActivity(route) === 'ferrata' ? 'Via ferrata' : 'Escursione'} · ${destination}`;
+  // I nomi ufficiali OSM non si riscrivono: aggiungi al massimo un POI verificato.
+  const leading = poi.find((name) => !raw.toLocaleLowerCase('it').includes(name.toLocaleLowerCase('it')));
+  return leading && raw.length < 54 ? `${raw} · ${leading}` : raw;
 }
 
 function viaFerrataValue(raw: string | undefined): number | null {
@@ -71,7 +109,7 @@ export function trailMood(route: Route): TrailMood {
 
 export function trailDescription(route: Route): string {
   const raw = (route.description ?? '').trim();
-  if (raw && !/Tracciato OSM da verificare|non certifica percorribilità|^GPX route/i.test(raw)) return raw;
+  if (raw && !/Tracciato OSM da verificare|non certifica percorribilità|^GPX route/i.test(raw)) return `${raw} ${trailStopLine(route)}`.trim();
   const area = trailArea(route);
   const kind = routeActivity(route) === 'ferrata' ? 'Il tratto attrezzato' : 'Il percorso';
   const km = (route.distanceM / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
@@ -86,7 +124,7 @@ export function trailDescription(route: Route): string {
     : route.caiDifficulty
       ? ` La classificazione riportata è CAI ${route.caiDifficulty}.`
       : '';
-  return `${basic}${number}${gain}${technical}`;
+  return `${basic}${number}${gain}${technical} ${trailStopLine(route)}`.trim();
 }
 
 /** Link puntuali: la homepage dell'ente non è una descrizione ufficiale del sentiero. */
