@@ -10,7 +10,7 @@ const USER = {
   user_metadata: { username: 'RidgeRunner' },
 };
 const SESSION = { access_token: 'tok123', token_type: 'bearer', expires_in: 3600, refresh_token: 'ref1', user: USER };
-const SESSION_KEY = 'sb-dzpgnebkyubeptitzjlj-auth-token';
+const SESSION_KEY = 'sb-unconfigured-auth-token';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
@@ -51,7 +51,7 @@ describe('auth', () => {
     vi.stubGlobal('fetch', fetchMock);
     await expect(signUp('RidgeRunner', 'r@x.com', 'password123')).resolves.toBe(true);
     const signupCall = fetchMock.mock.calls.find(([url]) => String(url).includes('/auth/v1/signup')) as unknown as [string, RequestInit];
-    expect(signupCall[0]).toContain(`redirect_to=${encodeURIComponent('https://hillgpx.com')}`);
+    expect(signupCall[0]).toContain(`redirect_to=${encodeURIComponent(window.location.origin)}`);
   });
 
   it('emails a password-reset link to the canonical site', async () => {
@@ -59,7 +59,7 @@ describe('auth', () => {
     vi.stubGlobal('fetch', fetchMock);
     await resetPasswordForEmail('r@x.com');
     const call = fetchMock.mock.calls.find(([url]) => String(url).includes('/auth/v1/recover')) as unknown as [string, RequestInit];
-    expect(call[0]).toContain(`redirect_to=${encodeURIComponent('https://hillgpx.com')}`);
+    expect(call[0]).toContain(`redirect_to=${encodeURIComponent(window.location.origin)}`);
     expect(JSON.parse(String(call[1].body))).toMatchObject({ email: 'r@x.com' });
   });
 
