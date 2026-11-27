@@ -44,10 +44,6 @@ import { RouteMarkers, VenueMarkers } from './markers';
 import './worker';
 import { MAP_STYLE_URL } from './constants';
 import { installMountainBasemap, MountainBasemapControl } from './mountainBasemap';
-import { loadAlpinePlaces } from '../lib/alpinePlaces';
-import { loadAlpineWater } from '../lib/alpineWater';
-import { addAlpineWaterLayers } from './waterOverlays';
-import { addAlpinePlaceLayers } from './alpineOverlays';
 import { parseSvg, textSpan } from '../lib/dom';
 import { glyphSvg } from '../lib/venueGlyphs';
 import { frameableBounds, isFiniteBounds } from './camera';
@@ -316,75 +312,6 @@ class ExpandControl {
   }
 }
 
-const TERRAIN_TILES = 'https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png';
-
-/**
- * Flat map or mountains: hillshade shading plus real 3D relief from the same
- * keyless AWS terrain tiles, tilted so slopes read at a glance.
- */
-class TerrainControl {
-  private button: HTMLButtonElement | null = null;
-  private map: MlMap | null = null;
-  private on = false;
-
-  onAdd(map: MlMap): HTMLElement {
-    this.map = map;
-    const group = document.createElement('div');
-    group.className = 'maplibregl-ctrl maplibregl-ctrl-group map-terrain-ctrl';
-    this.button = document.createElement('button');
-    this.button.type = 'button';
-    this.button.className = 'maplibregl-ctrl-icon';
-    const label = document.createElement('span');
-    label.className = 'terrain-ctrl-label';
-    this.button.replaceChildren(label);
-    this.button.addEventListener('click', () => this.toggle());
-    this.sync();
-    group.appendChild(this.button);
-    return group;
-  }
-
-  onRemove(): void {
-    this.button?.parentElement?.remove();
-    this.button = null;
-    this.map = null;
-  }
-
-  private sync(): void {
-    if (!this.button) return;
-    const label = this.on ? 'Ritorna alla mappa 2D' : 'Mostra il rilievo in 3D';
-    const text = this.button.querySelector('.terrain-ctrl-label');
-    if (text) text.textContent = this.on ? '2D' : '3D';
-    this.button.setAttribute('aria-label', label);
-    this.button.setAttribute('aria-pressed', String(this.on));
-    this.button.title = label;
-  }
-
-  private toggle(): void {
-    const map = this.map;
-    if (!map || !map.isStyleLoaded()) return;
-    this.on = !this.on;
-    if (!map.getSource('terrain-dem')) {
-      map.addSource('terrain-dem', { type: 'raster-dem', tiles: [TERRAIN_TILES], encoding: 'terrarium', tileSize: 256, maxzoom: 15 });
-      map.addSource('terrain-shade', { type: 'raster-dem', tiles: [TERRAIN_TILES], encoding: 'terrarium', tileSize: 256, maxzoom: 15 });
-      const beneath = map.getStyle().layers.find((layer) => layer.type === 'line' || layer.type === 'symbol')?.id;
-      map.addLayer(
-        {
-          id: 'terrain-hillshade',
-          type: 'hillshade',
-          source: 'terrain-shade',
-          layout: { visibility: 'none' },
-          paint: { 'hillshade-exaggeration': 0.6, 'hillshade-shadow-color': '#4f5d46', 'hillshade-highlight-color': '#ffffff' },
-        },
-        beneath,
-      );
-    }
-    map.setLayoutProperty('terrain-hillshade', 'visibility', this.on ? 'visible' : 'none');
-    map.setTerrain(this.on ? { source: 'terrain-dem', exaggeration: 1.4 } : null);
-    map.easeTo({ pitch: this.on ? 55 : 0, duration: 700 });
-    this.sync();
-  }
-}
-
 /** Room for a start or finish marker's radius at the edge of the area left clear of the panel. */
 const MARKER_ROOM = 16;
 
@@ -634,7 +561,6 @@ export function MapView({
       onToggleExpandRef.current(),
     );
     map.addControl(expandControlRef.current, 'top-right');
-    map.addControl(new TerrainControl(), 'top-right');
     map.addControl(new MountainBasemapControl(), 'top-right');
 
     const geolocate = new GeolocateControl({
@@ -686,12 +612,6 @@ export function MapView({
       addAllRouteLayers(map, routesToGeoJson(allRoutesRef.current));
       addRouteStartSource(map);
       addRouteLayers(map);
-      void loadAlpinePlaces().then((data) => {
-        if (mapRef.current === map && data.places.length > 0) addAlpinePlaceLayers(map, data.places);
-      });
-      void loadAlpineWater().then(data => {
-        if(mapRef.current===map && data.sources.length>0)addAlpineWaterLayers(map,data.sources);
-      });
       markersRef.current = new VenueMarkers(map, {
         onSelect: (slug) => onSelectRef.current(slug),
         onHover: (slug) => onHoverRef.current?.(slug),
