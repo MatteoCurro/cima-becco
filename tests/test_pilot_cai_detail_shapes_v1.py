@@ -49,6 +49,22 @@ class ShapeProbeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "id_cai"):
             probe.summarize_detail({"id_cai": "bad", "fields": []})
 
+    def test_updated_at_structure_summary_never_contains_ids_or_dates(self):
+        sample = [{"id_cai": 123456789, "updated_at": "SECRET_TIMESTAMP",
+                   "contact": "secret@example.org"}]
+        result = probe.summarize_updated_at(sample)
+        self.assertEqual(result["responseType"], "array")
+        self.assertEqual(result["items"], 1)
+        self.assertEqual(result["firstItemKeys"],
+                         ["contact", "id_cai", "updated_at"])
+        blob = json.dumps(result)
+        self.assertNotIn("123456789", blob)
+        self.assertNotIn("SECRET_TIMESTAMP", blob)
+        self.assertNotIn("secret@example.org", blob)
+        obj = probe.summarize_updated_at({"data": sample, "total": 1})
+        self.assertEqual(obj["responseType"], "object")
+        self.assertEqual(obj["dataItems"], 1)
+
     def test_audit_disallows_arbitrary_remote_ids(self):
         with self.assertRaisesRegex(ValueError, "non autorizzato"):
             probe.fetch_detail("123456789")
