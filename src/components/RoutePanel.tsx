@@ -5,7 +5,7 @@ import { RouteBookmarkButton } from './RouteBookmarkButton';
 import type { Route, RoutePoint, Venue } from '../types';
 import { computeGain, cumulativeDistances, totalDistanceM } from '../lib/elevation';
 import { linkVenues, routeDirectionsUrl, routeEndpoints, routeHasElevation } from '../lib/routes';
-import { regionOf } from '../lib/regions';
+import { trailArea, trailDescription, trailMood, trailSources, trailTitle } from '../lib/routeEditorial';
 import { hasRealElevation, terrainElevations } from '../lib/terrain';
 import { assessRoute } from '../lib/routeQuality';
 import { toGpx } from '../lib/gpx';
@@ -470,19 +470,22 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
   }, [route.slug, route.name, endpoints]);
   const { minM, maxM } = useMemo(() => computeGain(elevation.points), [elevation.points]);
   const overlaps = useMemo(() => findOverlaps(route.coordinates, allRoutes, route.slug), [route, allRoutes]);
-  const region = route.country ?? regionOf(route.coordinates[0][0], route.coordinates[0][1]);
+  const region = trailArea(route);
+  const mood = trailMood(route);
+  const sources = trailSources(route);
+  const displayTitle = trailTitle(route);
   const touches = route.venueSlugs
     .map((slug) => venuesBySlug.get(slug))
     .filter((venue): venue is Venue => Boolean(venue));
   const km = totalDistanceM(route.coordinates) / 1000 || 1;
-  const unavailable = elevation.pending ? 'Measuring…' : 'Unavailable';
+  const unavailable = elevation.pending ? 'Calcolo…' : 'Non disponibile';
 
   return (
     <section className={`gpx-panel route-panel ${expanded ? 'expanded' : 'compact'}${folded ? ' folded' : ''}${sidebar ? ' in-sidebar' : ''}`} aria-label={`Route: ${route.name}`} key={route.slug}>
       {sidebar ? (
         <button type="button" className="route-back" onClick={onClose}>
           <ArrowLeftIcon size={16} />
-          All routes
+          Tutti i percorsi
         </button>
       ) : (
         /* A light runs once round the card's edge when a route opens. */
@@ -493,15 +496,14 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
       )}
       <header className="gpx-panel-head">
         <div className="route-panel-title">
-          <RouteTitle name={route.name} />
+          <RouteTitle name={displayTitle} />
           <InfoTip>
             <RecordedLine recordedAt={route.recordedAt} />
             {hasElevation && <ElevationSourceLine source={elevation.fromTerrain ? 'terrain' : route.elevationSource ?? 'gps'} />}
-            <span className="route-meta muted">{[ACTIVITY_LABEL[routeActivity(route)], region, route.loop ? 'Loop' : 'Point to point'].filter(Boolean).join(' · ')}</span>
-            <RouteCredit route={route} />
+            <span className="route-meta muted">{[ACTIVITY_LABEL[routeActivity(route)], region, route.loop ? 'Anello' : 'Percorso lineare'].filter(Boolean).join(' · ')}</span>
             <button type="button" className="info-tip-action" onClick={() => setReporting(true)}>
               <FlagIcon />
-              Report an issue with this route
+              Segnala un problema con il percorso
             </button>
           </InfoTip>
         </div>
@@ -561,19 +563,29 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
         />
       ) : (
         <>
+      <div className="cima-trail-mood">
+        <span className={`cima-mood-pill cima-mood-pill--${mood.level}`} title={mood.basis}>{mood.label}</span>
+        {mood.quip && <span className="cima-mood-quip">{mood.quip}</span>}
+        <span className="cima-trail-area">{region}{route.loop ? ' · Anello' : ''}</span>
+      </div>
+      <p className="cima-route-description">{trailDescription(route)}</p>
+      {route.photos?.[0] && <a className="cima-route-cover" href={route.photos[0].sourceUrl} target="_blank" rel="noopener noreferrer">
+        <img src={route.photos[0].url} alt={route.photos[0].caption || displayTitle} loading="lazy" />
+        <small>Fotografia: {route.photos[0].author || 'Wikimedia Commons'} · {route.photos[0].license || 'licenza nella fonte'}</small>
+      </a>}
       {reviewable && !reviewsState.error && (
         <p className="route-rating">{reviewsState.reviews && <RatingLabel rating={reviewsState.rating} />}</p>
       )}
       <div className="gpx-stats">
         {[
-          ['Distance', units.distance(route.distanceM)],
-          ['EG', hasElevation ? units.height(elevation.gainM) : unavailable],
-          ['EL', hasElevation ? units.height(elevation.lossM) : unavailable],
+          ['Distanza', units.distance(route.distanceM)],
+          ['Dislivello positivo', hasElevation ? units.height(elevation.gainM) : unavailable],
+          ['Dislivello negativo', hasElevation ? units.height(elevation.lossM) : unavailable],
           // Community routes only: curated files have no counter.
-          ...(route.downloads !== undefined ? [['Downloads', String(route.downloads)]] : []),
-          ['Est. time', formatEstimate(estimate.minutes * 60)],
+          ...(route.downloads !== undefined ? [['Download', String(route.downloads)]] : []),
+          ['Tempo stimato', formatEstimate(estimate.minutes * 60)],
         ].map(([label, value]) => (
-          <div className="gpx-stat" key={label} title={label === 'Est. time' ? estimate.caption : undefined}>
+          <div className="gpx-stat" key={label} title={label === 'Tempo stimato' ? estimate.caption : undefined}>
             <strong>{value}</strong>
             <span>{label}</span>
           </div>
@@ -583,17 +595,17 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
       {hasElevation ? (
         <ElevationProfile points={elevation.points} height={sidebar ? 132 : 72} hoverIndex={hoverIndex} onHoverIndex={onHoverIndex} />
       ) : (
-        <p className="route-elevation-unavailable">{elevation.pending ? 'Measuring elevation from terrain data…' : 'Elevation is unavailable for this route.'}</p>
+        <p className="route-elevation-unavailable">{elevation.pending ? 'Sto stimando il dislivello dal terreno…' : 'Dislivello non disponibile per questo tracciato.'}</p>
       )}
 
       {endpoints && (
         <p className="route-legend">
           {endpoints.isLoop ? (
-            <span><span aria-hidden="true" dangerouslySetInnerHTML={{ __html: endpointIconMarkup('loop', 18) }} />Start and finish</span>
+            <span><span aria-hidden="true" dangerouslySetInnerHTML={{ __html: endpointIconMarkup('loop', 18) }} />Partenza e arrivo</span>
           ) : (
             <>
-              <span><span aria-hidden="true" dangerouslySetInnerHTML={{ __html: endpointIconMarkup('start', 18) }} />Start</span>
-              <span><span aria-hidden="true" dangerouslySetInnerHTML={{ __html: endpointIconMarkup('finish', 18) }} />Finish</span>
+              <span><span aria-hidden="true" dangerouslySetInnerHTML={{ __html: endpointIconMarkup('start', 18) }} />Partenza</span>
+              <span><span aria-hidden="true" dangerouslySetInnerHTML={{ __html: endpointIconMarkup('finish', 18) }} />Arrivo</span>
             </>
           )}
         </p>
@@ -602,7 +614,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
       {directionsHref && (
         <a className="venue-primary-action route-directions" href={directionsHref} target="_blank" rel="noreferrer" aria-label="Get directions to the start (opens in maps)">
           <MapIcon size={16} />
-          Get directions
+          Indicazioni per la partenza
         </a>
       )}
 
@@ -611,7 +623,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
         <div className="route-more-inner">
           {(route.trailRef || route.caiDifficulty || route.viaFerrataScale || route.sacScale || route.officialDescriptionUrl || route.sourceUrl) && (
             <section className="route-official-data" aria-label="Fonti e dati escursionistici">
-              <strong>Informazioni sul percorso</strong>
+              <strong>Segnavia e dati tecnici</strong>
               <p className="route-meta muted">
                 {[
                   route.caiTrailNumber ? `Sentiero CAI ${route.caiTrailNumber}` : route.trailRef ? `Segnavia ${route.trailRef}` : null,
@@ -621,16 +633,18 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
                   route.operator ? `Gestore: ${route.operator}` : null,
                 ].filter(Boolean).join(' · ')}
               </p>
-              {route.sourceUrl?.startsWith('https://') && <a href={route.sourceUrl} target="_blank" rel="noopener noreferrer">Consulta il tracciato originale</a>}
-              {route.officialDescriptionUrl?.startsWith('https://') && <p><a href={route.officialDescriptionUrl} target="_blank" rel="noopener noreferrer">Consulta la descrizione ufficiale</a></p>}
+              <div className="cima-route-sources">
+                {sources.map((source) => <a key={source.href} href={source.href} target="_blank" rel="noopener noreferrer">{source.label} ↗</a>)}
+              </div>
+              <RouteCredit route={route} />
               {routeActivity(route) === 'ferrata' && <p className="route-meta muted">Via ferrata: la sola traccia GPX non indica condizioni, difficoltà effettiva né tempi tecnici. Verifica sempre la relazione ufficiale e l'attrezzatura necessaria.</p>}
             </section>
           )}
           <div className="gpx-stats">
             {[
-              ['Highest', hasElevation ? units.height(maxM) : unavailable],
-              ['Lowest', hasElevation ? units.height(minM) : unavailable],
-              ['EG / km', hasElevation ? units.height(elevation.gainM / km) : unavailable],
+              ['Quota massima', hasElevation ? units.height(maxM) : unavailable],
+              ['Quota minima', hasElevation ? units.height(minM) : unavailable],
+              ['Salita per km', hasElevation ? units.height(elevation.gainM / km) : unavailable],
             ].map(([label, value]) => (
               <div className="gpx-stat" key={label}>
                 <strong>{value}</strong>
@@ -641,7 +655,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
 
           {touches.length > 0 && (
             <div className="gpx-touches route-passes">
-              <strong>Passes</strong>
+              <strong>Luoghi attraversati</strong>
               <div className="route-passes-line">
                 {touches.map((venue) => (
                   <button
@@ -704,7 +718,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
         aria-controls={`route-more-${route.slug}`}
         aria-label={expanded ? 'Show fewer route details' : 'Show more route details'}
       >
-        <span>{expanded ? 'Fewer details' : 'More details'}</span>
+        <span>{expanded ? 'Meno dettagli' : 'Scheda completa'}</span>
         <ChevronRightIcon size={13} />
       </button>
         </>
