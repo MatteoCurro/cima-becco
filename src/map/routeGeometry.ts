@@ -24,7 +24,7 @@ export function routeDisplayGeometry(points:RoutePoint[]):number[][]{
   }
   const selected=new Uint8Array(points.length);
   selected[0]=selected[points.length-1]=1;
-  const stack:[[number,number]]|[number,number][]= [[0,points.length-1]];
+  const stack: [number,number][] = [[0,points.length-1]];
   const tolerance2=15*15;
   while(stack.length){
     const [left,right]=stack.pop()!;
