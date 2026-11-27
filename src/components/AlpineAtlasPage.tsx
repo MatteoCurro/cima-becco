@@ -235,7 +235,7 @@ function TrekDetail({ trek, onBack }: { trek: TrekProject; onBack: string }) {
     sidebarLabel="Cartografia del trekking"
     className="cb-trek-profile"
     sidebar={<section id="cb-place-map" className="cb-location-side-map">
-      <MapContextLabel kicker="TAPPE DEL TREKKING" title={project.title}/>
+      <MapContextLabel kicker="TAPPE DEL TREKKING" title={trek.title}/>
       {previewRoutes.length?<AlpineAtlasMap places={EMPTY_PLACES} kind="borgo" routes={previewRoutes}
         caption="ANTEPRIMA TAPPE" height="100%"/>:
         <div className="cb-trek-empty-map">{loading?'Caricamento delle tracce…':'Nessuna traccia disponibile per questa anteprima.'}</div>}
