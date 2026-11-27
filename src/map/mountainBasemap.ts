@@ -64,13 +64,11 @@ export function setMountainBasemap(map: MlMap, mode: MountainBasemap): void {
 
 /** Un unico selettore per atlante e planner: non ricarica MapLibre o i marker. */
 export class MountainBasemapControl implements IControl {
-  private map: MlMap | null = null;
   private root: HTMLDivElement | null = null;
   private buttons: HTMLButtonElement[] = [];
   private current = preferredBasemap();
 
   onAdd(map: MlMap): HTMLElement {
-    this.map = map;
     const root = document.createElement('div');
     root.className = 'maplibregl-ctrl cb-basemap-control';
     root.setAttribute('role', 'group');
@@ -102,7 +100,6 @@ export class MountainBasemapControl implements IControl {
     this.root?.remove();
     this.root = null;
     this.buttons = [];
-    this.map = null;
   }
 
   private sync(): void {
