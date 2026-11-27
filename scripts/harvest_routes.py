@@ -219,9 +219,15 @@ def process(args):
 
     for cell in chosen:
         print(f"Acquisisco {cell['id']} ({cell['area']}) bbox={cell['bbox']}", flush=True)
+        fetch_start = time.monotonic()
         data = fetch_relations(cell['bbox'], retries=2)
+        fetch_seconds = round(time.monotonic() - fetch_start, 2)
         if args.write:
+            normalize_start = time.monotonic()
             count = save_tile(cell, data['elements'], status, timestamp())
+            parse_seconds = round(time.monotonic() - normalize_start, 2)
+            status['tiles'][cell['id']]['fetchSeconds'] = fetch_seconds
+            status['tiles'][cell['id']]['parseSeconds'] = parse_seconds
             status['lastSuccess'] = timestamp()
             status['lastArea'] = cell['area']
             status['version'] = 1
@@ -230,7 +236,8 @@ def process(args):
         else:
             count = sum(1 for row in data['elements']
                         if (route := to_route(row)) and in_own_cell(route, cell['bbox']))
-        print(f"{cell['id']}: {count} itinerari validi e assegnati alla cella", flush=True)
+        print(f"{cell['id']}: {count} itinerari validi, download {fetch_seconds}s" +
+              (f", analisi {parse_seconds}s" if args.write else ""), flush=True)
         if len(chosen) > 1 and cell != chosen[-1]:
             time.sleep(args.pause_seconds)
 
