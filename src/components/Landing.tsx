@@ -360,14 +360,10 @@ function RouteTile({ route, index }: { route: Route; index: number }) {
   const mood = trailMood(route);
   return (
     <div className="tile-wrap">
-      <button
-        type="button"
+      <a
+        href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(route.slug)}/`}
         className="tile"
         style={{ '--i': index } as React.CSSProperties}
-        onClick={() => {
-          sessionStorage.setItem('hillgpx:pendingRoute', route.slug);
-          openMap('routes', '#routes');
-        }}
       >
         <span className="tile-media">
           <RouteThumb route={route} />
@@ -381,7 +377,7 @@ function RouteTile({ route, index }: { route: Route; index: number }) {
         <span className="tile-meta">
           <strong>{units.distance(route.distanceM)}</strong> · <strong>{routeHasElevation(route) ? `${units.height(route.gainM)} di salita` : 'Dislivello da stimare'}</strong>
         </span>
-      </button>
+      </a>
       <RouteBookmarkButton route={route} variant="card" />
     </div>
   );

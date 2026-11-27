@@ -29,7 +29,7 @@ export function ShareRouteDialog({ route, gainM, onClose }: ShareRouteDialogProp
       name={route.name}
       stats={`${units.distance(route.distanceM)}${gainM != null ? ` · ${units.height(gainM)} EG` : ''}`}
       text={`${route.name}: ${units.distance(route.distanceM)}${gainM != null ? `, ${units.height(gainM)} elevation gain` : ''} on HillGPX`}
-      url={routeLink(route.slug)}
+      url={routeLink(route.slug, route.source !== 'community')}
       onClose={onClose}
     />
   );
