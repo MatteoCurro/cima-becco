@@ -1,0 +1,38 @@
+name: Pilot — climbing metadata only
+on:
+  push:
+    branches: [experiment/content-taxonomy-climbing-import]
+    paths:
+      - scripts/pilot_climbing_metadata.py
+      - tests/test_climbing_metadata_pilot.py
+      - .github/workflows/pilot-climbing-metadata.yml
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - scripts/pilot_climbing_metadata.py
+      - tests/test_climbing_metadata_pilot.py
+      - .github/workflows/pilot-climbing-metadata.yml
+
+permissions:
+  contents: read
+jobs:
+  sample-arco:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit test su chiodatura, gradi e nessun rinvio inventato
+        run: python -m unittest discover -s tests -p test_climbing_metadata_pilot.py -v
+      - name: Import pilota Arco (Overpass, soli metadati)
+        run: python scripts/pilot_climbing_metadata.py
+      - name: Esporta risultati e rapporto (non pubblicare sul sito)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: climbing-arco-metadata-pilot
+          path: experiments/climbing-pilot/
+          if-no-files-found: warn
+          retention-days: 14
