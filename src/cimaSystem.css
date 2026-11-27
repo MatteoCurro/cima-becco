@@ -10,7 +10,7 @@
 .cb-place-facts strong{font:900 clamp(26px,3vw,35px)/1 var(--cb-display);color:var(--cb-ink)}
 .cb-place-facts span{font:700 12px/1.4 var(--cb-body);color:var(--cb-muted)}
 .cb-place-contact-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0 20px}
-.cb-place-contact-actions a{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:12px 17px;border-radius:8px;font:800 12px/1.25 var(--cb-body);letter-spacing:.02em}
+.cb-place-contact-actions a,.cb-place-contact-actions button{text-decoration:none;border:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:12px 17px;border-radius:8px;font:800 12px/1.25 var(--cb-body);letter-spacing:.02em}
 .cb-place-contact-actions .cb-place-secondary{background:#eff5eb;color:var(--cb-ink);border:1px solid #b6cbb8}
 .cb-place-contact-actions .cb-atlas-primary{background:var(--cb-brand);color:#fff}
 .cb-place-note{font:500 13px/1.6 var(--cb-body);color:var(--cb-muted);margin:12px 0}
