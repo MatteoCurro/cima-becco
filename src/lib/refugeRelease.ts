@@ -12,7 +12,7 @@ export interface RefugeReleaseEntity extends AtlasEntityMetadata {
   sources: Array<{ id: string; url: string; licence?: string }>;
   sourceIds: Record<string, string>;
   description?: string | null;
-  shortSummary?: string | null;
+  shortSummary?: string;
   officialUrl?: string;
   facts?: NonNullable<AtlasEntityMetadata['facts']>;
   media?: AtlasMedia[];
@@ -84,6 +84,7 @@ function extendPlace(place: AlpinePlace | undefined, entity: RefugeReleaseEntity
     photo: first ?? place?.photo,
     logo: place?.logo,
     elevationM: typeof estimatedHeight === 'number' ? estimatedHeight : place?.elevationM,
+    elevationSource: typeof estimatedHeight === 'number' && sources.cai ? 'cai' : place?.elevationSource,
     capacity: typeof beds === 'number' && beds > 0 ? beds : place?.capacity,
     operator: typeof owner === 'string' ? owner : place?.operator,
     phone: typeof contact === 'string' ? contact : place?.phone,
