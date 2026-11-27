@@ -21,11 +21,11 @@
       "url": "https://rifugi.cai.it/api/documentation",
       "format": "REST JSON list, search, detail fields[], media[]",
       "rights": "diritti di riutilizzo e licenze media NON confermati: nessun bulk publish",
-      "evidence": "PR8 80/764 list and 4 detail probes; bounded 27 Nov 2026 detailed shape audit: 4/4 accessible, 125 distinct field names (119 populated), union 127 with prior pilot; offline 3 CAI/OSM candidate pairs from 80 list rows; no established links",
+      "evidence": "PR8 80/764 list + 4 detail; bounded detail 4/4: 125 names/119 nonempty, union 127. Offline 3 CAI-OSM candidate links, 0 approved. UpdatedAt one-off probe 27 Nov 2026: JSON object 764 numeric internal keys and 764 timezone-naive ISO strings. Media 7 entries in four details, no licence confirmed.",
       "status": "tested_pilot",
       "licenseGate": "requires_review",
-      "refresh": "Check documented /api/v1/shelters/updatedAt response shape and checkpoint before enabling incremental polling; no bulk until rights granted",
-      "operations": "Reuse PR8 pilot parsers. Official /api/v1/shelters/updatedAt change tracking route (OpenAPI spec); detail fields[].value may be null while fields[].data contains nested opening schedule, require explicit parser; media[] carries URLs but no confirmed republishing rights. Never merge refuge/bivouac without detail type; 127 fieldnames classified in cai_pilot_field_inventory_v1.json."
+      "refresh": "No schedule. updatedAt provides revision strings but ALL 764 tested timestamps were timezone-naive; must verify provider timezone before UTC comparisons/checkpoint. Internal key not id_cai: establish explicit mapping; no deletes on absent keys. Test offline delta planner before any refresh.",
+      "operations": "Reuse PR8 scripts; latest source info scripts/cai_pilot_field_inventory_v1.json (127 names), scripts/cai_unmapped_fields_review_plan_v1.json (50 fields), scripts/normalize_cai_refuge_v1.py, scripts/reconcile_cai_osm_refuges_v1.py, scripts/plan_cai_refuge_delta_v1.py, scripts/normalize_cai_media_v1.py. CAI live media source URLs lack per-file licence, hold candidates, do not publish."
     },
     {
       "id": "sat",
