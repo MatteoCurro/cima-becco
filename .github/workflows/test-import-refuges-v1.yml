@@ -17,6 +17,8 @@ on:
       - tests/test_cai_pilot_field_inventory_v1.py
       - scripts/cai_unmapped_fields_review_plan_v1.json
       - tests/test_cai_unmapped_review_plan_v1.py
+      - scripts/plan_cai_refuge_delta_v1.py
+      - tests/test_plan_cai_refuge_delta_v1.py
       - scripts/metadata_source_registry_v1.json
       - scripts/audit_metadata_spec_v1.py
       - tests/test_metadata_spec_coverage_v1.py
@@ -53,6 +55,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_cai_pilot_field_inventory_v1.py' -v
       - name: Verifica pianificazione di ogni campo CAI non ancora mappato
         run: python -m unittest discover -s tests -p 'test_cai_unmapped_review_plan_v1.py' -v
+      - name: Revisioni CAI incrementali con checkpoint e nessuna cancellazione
+        run: python -m unittest discover -s tests -p 'test_plan_cai_refuge_delta_v1.py' -v
       - name: CAI↔OSM identity matching unitario (senza rete)
         run: python -m unittest discover -s tests -p 'test_reconcile_cai_osm_refuges_v1.py' -v
       - name: Import pilota su snapshot esistente (senza rete)
