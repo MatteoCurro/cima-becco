@@ -88,9 +88,11 @@ export interface Venue {
 }
 
 export type RouteSurface = 'trail' | 'stairs' | 'road' | 'boardwalk' | 'mixed';
-/** Trail running and hiking share one category: same paths, different pace. */
-export type RouteActivity = 'run' | 'trail' | 'cycle';
+/** Solo attività a piedi: escursioni, trail running e vie ferrate. */
+export type RouteActivity = 'hike' | 'trail' | 'ferrata';
 export type RouteDifficulty = 'easy' | 'moderate' | 'hard';
+/** Classificazione CAI: T, E, EE, EEA. Non attribuirla quando la fonte non la dichiara. */
+export type CaiDifficulty = 'T' | 'E' | 'EE' | 'EEA';
 
 /** A single point on a route: [lng, lat, elevation in metres]. */
 export type RoutePoint = [number, number, number];
@@ -129,6 +131,20 @@ export interface Route {
   licence?: string;
 
   activity?: RouteActivity;
+  /** Metadati certificati dalla fonte, separati dalle stime ricavate dalla geometria. */
+  caiDifficulty?: CaiDifficulty;
+  caiTrailNumber?: string;
+  osmcSymbol?: string;
+  sacScale?: string;
+  viaFerrataScale?: string;
+  operator?: string;
+  network?: string;
+  /** Istruzioni descrittive originali solo quando la licenza ne permette il riuso. */
+  officialDescriptionUrl?: string;
+  /** Campo informativo: foto geolocalizzate collegate al tracciato e attribuite. */
+  photos?: { url: string; sourceUrl: string; author?: string; license?: string; caption?: string }[];
+  /** Data dell'ultimo aggiornamento dei metadati sorgente, se conosciuta. */
+  sourceUpdatedAt?: string;
   /** When the GPX was recorded (first timestamp), if the file says. Older tracks may predate trail changes. */
   recordedAt?: string;
   /** Where EG/EL came from: the device, or worldwide terrain tiles when the file had none. */
