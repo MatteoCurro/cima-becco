@@ -12,12 +12,12 @@ export type RouteCategory = 'all' | RouteActivity | 'saved' | 'device';
 
 /** Same number of slots as the climbs bar, so switching modes does not shift the icons. */
 export const ROUTE_CATEGORIES: { id: RouteCategory; label: string; shortLabel: string }[] = [
-  { id: 'all', label: 'All routes', shortLabel: 'All' },
-  { id: 'run', label: 'Road runs', shortLabel: 'Run' },
-  { id: 'trail', label: 'Trails', shortLabel: 'Trail' },
-  { id: 'cycle', label: 'Cycling', shortLabel: 'Cycle' },
-  { id: 'saved', label: 'Saved', shortLabel: 'Saved' },
-  { id: 'device', label: 'On this device', shortLabel: 'Device' },
+  { id: 'all', label: 'Tutti i percorsi', shortLabel: 'Tutti' },
+  { id: 'hike', label: 'Escursioni', shortLabel: 'Escursioni' },
+  { id: 'trail', label: 'Trail running', shortLabel: 'Trail' },
+  { id: 'ferrata', label: 'Vie ferrate', shortLabel: 'Ferrate' },
+  { id: 'saved', label: 'Salvati', shortLabel: 'Salvati' },
+  { id: 'device', label: 'Sul dispositivo', shortLabel: 'Dispositivo' },
 ];
 
 export interface RouteFilters {
@@ -61,10 +61,12 @@ export function filterRoutes(routes: Route[], filters: RouteFilters, bookmarks: 
       if (filters.minDurationS != null && durationS < filters.minDurationS) return false;
       if (filters.maxDurationS != null && durationS > filters.maxDurationS) return false;
     }
+    // Non ripubblicare come escursioni le vecchie tracce bike/road-run eventualmente presenti.
+    if (route.activity === ('cycle' as string) || route.activity === ('run' as string)) return false;
     switch (filters.category) {
-      case 'run':
+      case 'hike':
       case 'trail':
-      case 'cycle':
+      case 'ferrata':
         return routeActivity(route) === filters.category;
       case 'saved':
         return bookmarks.has(route.slug);
