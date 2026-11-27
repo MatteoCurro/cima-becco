@@ -208,11 +208,11 @@ function RouteCredit({ route }: { route: Route }) {
   if (!route.contributor && !route.licence && !route.sourceUrl) return null;
   return (
     <span className="route-meta muted">
-      {route.contributor && <>Added by {route.contributor}. </>}
+      {route.contributor && <>Caricato da {route.contributor}. </>}
       {route.licence && <>{route.licence}. </>}
       {route.sourceUrl && (
         <a href={route.sourceUrl} target="_blank" rel="noreferrer">
-          Source
+          Fonte originale
         </a>
       )}
     </span>
@@ -223,8 +223,8 @@ export function ElevationSourceLine({ source }: { source: Route['elevationSource
   const text = source === 'terrain'
     ? 'EG/EL measured from terrain data (the file had no elevation)'
     : source === 'dem'
-      ? 'EG/EL from Singapore terrain model'
-      : 'EG/EL from the device that recorded it';
+      ? 'Dislivello stimato dal modello altimetrico'
+      : 'Dislivello dai dati altimetrici della traccia';
   return <p className="route-meta muted">{text}</p>;
 }
 
