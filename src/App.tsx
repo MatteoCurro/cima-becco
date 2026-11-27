@@ -50,7 +50,6 @@ import { parseAccountHash } from './lib/accountRoute';
 import { UnitsProvider, useUnits } from './components/UnitsContext';
 import { Modal } from './components/Modal';
 import { SiteFooter, SiteHeader } from './components/SiteChrome';
-import { OpenSourceBadge, OpenSourceNotice } from './components/OpenSourceNotice';
 import { errorText, fetchCommunityRoutes, fetchRoutePhotos, type RoutePhoto } from './lib/api';
 import { findOverlaps } from './lib/routeAnalysis';
 import { IMPORT_EVENT, REPORT_EVENT, ADD_PLACE_EVENT, type ReportRequest } from './lib/contribute';
@@ -141,11 +140,9 @@ export default function App() {
       ) : (
         <MapApp />
       )}
-      {view === 'landing' && <OpenSourceNotice />}
       {report && <ReportModal targetType={report.targetType} targetSlug={report.targetSlug} targetName={report.targetName} onClose={() => setReport(null)} />}
       {addPlaceOpen && <AddPlaceModal onClose={() => setAddPlaceOpen(false)} />}
       {recovering && <SetPasswordModal onClose={clearPasswordRecovery} />}
-      {view !== 'map' && view !== 'account' && view !== 'settings' && <OpenSourceBadge placement={view === 'landing' ? 'landing' : 'corner'} />}
     </UnitsProvider>
   );
 }
@@ -1209,7 +1206,6 @@ function MapApp() {
               />}
             </Suspense>
 
-            {!routeOpen && <OpenSourceBadge placement="on-map" />}
 
             {mapError && <div className="map-error small">The map failed to load: {mapError}</div>}
 
