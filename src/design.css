@@ -5040,9 +5040,9 @@
   font-weight: 700;
   white-space: nowrap;
 }
-.activity-tag.run { background: #e7f0fb; color: #1d5fa8; }
+.activity-tag.hike { background: #e7f0fb; color: #1d5fa8; }
 .activity-tag.trail { background: #eaf4e6; color: #2f6b2a; }
-.activity-tag.cycle { background: #f2ebfb; color: #6a3fb0; }
+.activity-tag.ferrata { background: #f2ebfb; color: #6a3fb0; }
 .route-pin {
   gap: 6px;
   height: 30px;
@@ -5060,9 +5060,9 @@
   height: 14px;
   fill: none;
 }
-.route-pin.run .route-pin-badge { background: #2f7fd6; }
+.route-pin.hike .route-pin-badge { background: #2f7fd6; }
 .route-pin.trail .route-pin-badge { background: #3f8a37; }
-.route-pin.cycle .route-pin-badge { background: #7c4fd0; }
+.route-pin.ferrata .route-pin-badge { background: #7c4fd0; }
 .route-pin.is-selected .route-pin-badge {
   background: #fff;
 }
