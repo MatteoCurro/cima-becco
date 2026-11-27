@@ -41,7 +41,11 @@ export function hutServiceChapters(place) {
 
 /** Alias distinti dal nome principale, con lingua/storicità mantenute. */
 export function hutAliases(place) {
-  const names=[...(place?.aliases||[]),...(place?.localNames||[])];
+  const stored=place?.facts?.aliases;
+  const raw=(stored?.sourceId||stored?.sourceUrl)?stored.value:null;
+  const fromFact=typeof raw==='string'?raw.split(/[;|]/).map(value=>({value:value.trim()})):
+    Array.isArray(raw)?raw.filter(value=>typeof value==='string').map(value=>({value})):[]; 
+  const names=[...(place?.aliases||[]),...(place?.localNames||[]),...fromFact];
   const seen=new Set([String(place?.name||'').normalize('NFKD').toLocaleLowerCase('it-IT').trim()]);
   return names.filter(item=>{
     const val=String(item?.value||'').trim();
