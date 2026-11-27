@@ -169,8 +169,8 @@ def build_refuge(place, identity, snapshot_date):
                      "retrievedAt": None, "snapshotDate": snapshot_date}],
         "facts": facts, "factsAlternatives": [],
         "relations": [], "media": media, "restrictions": [], "alerts": [],
-        "editorialStatus": "linked", "quality": {"gate": "G1", "seoIndexable": False,
-            "notes": ["Identita OSM non riconciliata con CAI/SAT",
+        "editorialStatus": "raw", "quality": {"gate": "G0", "seoIndexable": False,
+            "notes": ["Identita OSM non ancora riconciliata con CAI/SAT: quality gate G0",
                       "Orari e stato di apertura non verificati in tempo reale"]},
         "weatherRef": None, "climateRef": None,
         "checkedAt": None, "updatedAt": None,
@@ -179,7 +179,7 @@ def build_refuge(place, identity, snapshot_date):
 
 def assign_identities(refuges, registry):
     previous = registry if isinstance(registry, dict) else {}
-    mapping, used_slugs, conflicts = {}, set(), []
+    mapping, used_slugs, conflicts = dict(previous), set(), []
     for place in sorted(refuges, key=lambda item: item["osmUrl"]):
         key = source_ref(place)["key"]
         saved = previous.get(key)
@@ -221,7 +221,11 @@ def nearby_relations(refuge, items, target_kind, max_km, limit):
         if item.get("legacySlug"):
             target["legacySlug"] = item["legacySlug"]
         matches.append({"type": "near", "targetRef": target,
-                        "straightLineKm": round(d, 3), "method": "haversine"})
+                        "straightLineKm": round(d, 3), "method": "haversine",
+                        "provenance": {"refuge": "OpenStreetMap · ODbL-1.0",
+                                       "target": ("GeoNames · CC-BY-4.0"
+                                                  if target_kind == "mountain"
+                                                  else "OpenStreetMap · ODbL-1.0")}})
     matches.sort(key=lambda link: (link["straightLineKm"], link["targetRef"]["name"]))
     return matches[:limit]
 
@@ -320,9 +324,6 @@ def run(root=ROOT, out=None, registry_file=None, strict=False):
             nearby_relations(point, town_candidates, "locality", 12, 3) +
             nearby_relations(point, peaks, "mountain", 6, 3))
     route_links = links_from_routes(data, by_legacy)
-    refs = [{"id": e["id"], "name": e["name"], "sourceKey": source_ref(by_source[next(
-        key for key, val in identities.items() if val["id"] == e["id"])])["key"]}
-        for e in entities]
     # Una digest del sottoinsieme sorgente permette di rilevare aggiornamenti senza
     # spacciare la data di assemblaggio per verifica del singolo campo.
     raw = {"kind": "refuge", "sourceDataset": "public/data/alpine-places.json",
