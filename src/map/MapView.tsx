@@ -685,7 +685,7 @@ export function MapView({
       addRouteStartSource(map);
       addRouteLayers(map);
       void loadAlpinePlaces().then((data) => {
-        if (mapRef.current === map && map.isStyleLoaded() && data.places.length > 0) addAlpinePlaceLayers(map, data.places);
+        if (mapRef.current === map && data.places.length > 0) addAlpinePlaceLayers(map, data.places);
       });
       markersRef.current = new VenueMarkers(map, {
         onSelect: (slug) => onSelectRef.current(slug),
