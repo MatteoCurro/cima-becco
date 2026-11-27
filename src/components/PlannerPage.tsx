@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Map as MapLibreMap, Marker, NavigationControl, type GeoJSONSource } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { SiteFooter, SiteHeader } from './SiteChrome';
@@ -6,6 +6,8 @@ import { MAP_STYLE_URL } from '../map/constants';
 import { installMountainBasemap, MountainBasemapControl } from '../map/mountainBasemap';
 import { calculateTrailRoute, directionsToStart, type PlanWaypoint, type PlannedTrack } from '../lib/cimaRouting';
 import { toGpx } from '../lib/gpx';
+import { loadAlpinePlaces, type AlpinePlace } from '../lib/alpinePlaces';
+import { estimateTrackDuration, formatEstimate } from '../lib/routeTime';
 import { routeFromPoints } from '../lib/routes';
 import { loadLocalRoutes, saveLocalRoutes } from '../lib/localRoutes';
 import '../cimaPlanner.css';
@@ -44,9 +46,28 @@ export function PlannerPage() {
   const [waypoints, setWaypoints] = useState<PlanWaypoint[]>([]);
   const [track, setTrack] = useState<PlannedTrack | null>(null);
   const [name, setName] = useState('Il mio trekking');
+  const [poiQuery, setPoiQuery] = useState('');
+  const [places, setPlaces] = useState<AlpinePlace[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => { void loadAlpinePlaces().then(data => setPlaces(data.places)); }, []);
+
+  const matchingPlaces = useMemo(() => poiQuery.trim().length < 2 ? [] : places
+    .filter(place => place.name.toLocaleLowerCase('it').includes(poiQuery.trim().toLocaleLowerCase('it')))
+    .slice(0, 7), [poiQuery, places]);
+  const planTime = useMemo(() => track ? formatEstimate(estimateTrackDuration(track.points, 'hike', 1, track.elevationAvailable).minutes * 60) : null, [track]);
+
+  function addDestination(place: AlpinePlace) {
+    if (waypoints.length >= 12) {setError('Massimo 12 punti per itinerario.');return;}
+    setWaypoints(previous => [...previous, { lng:place.lng, lat:place.lat, name:place.name }]);
+    setPoiQuery('');
+    setTrack(null);
+    setError(null);
+    setMessage(null);
+    map.current?.flyTo({center:[place.lng,place.lat],zoom:Math.max(map.current.getZoom(),12),duration:600});
+  }
 
   useEffect(() => {
     if (!container.current) return;
@@ -90,7 +111,7 @@ export function PlannerPage() {
       const element = document.createElement('div');
       element.className = 'cb-point';
       element.textContent = index === 0 ? 'P' : index === waypoints.length - 1 ? 'A' : String(index + 1);
-      element.title = 'Trascina per spostare il punto';
+      element.title = point.name ? `${point.name} · trascina per spostare` : 'Trascina per spostare il punto';
       const marker = new Marker({ element, draggable: true }).setLngLat([point.lng, point.lat]).addTo(map.current!);
       marker.on('dragend', () => {
         const coordinate = marker.getLngLat();
@@ -138,7 +159,7 @@ export function PlannerPage() {
     try {
       const route = routeFromPoints(name.trim() || 'Itinerario senza nome', track.points, []);
       route.elevationAvailable = track.elevationAvailable;
-      route.activity = 'trail';
+      route.activity = 'hike';
       route.description = 'Itinerario pianificato digitalmente; non verificato sul terreno.';
       route.source = 'local';
       const saved = loadLocalRoutes().filter((existing) => existing.slug !== route.slug);
@@ -155,15 +176,25 @@ export function PlannerPage() {
       <main className="cb-planner">
         <aside className="cb-side">
           <div className="cb-kicker">CIMA BECCO · PIANIFICA</div>
-          <h1>Disegna il tuo trekking</h1>
-          <p>Indica sulla mappa la partenza, la destinazione e le eventuali tappe. Il motore di routing proverà a seguire i sentieri disponibili.</p>
-          <label className="cb-label" htmlFor="cb-name">Nome del percorso</label>
+          <h1>TRACCIA LA FOLLIA.</h1>
+          <p>Scegli un rifugio, un borgo o clicca sulla carta. Aggiungi tappe, sposta i punti e chiedi un percorso sui sentieri. La linea retta non vale: qui si cammina sul serio.</p>
+          <div className="cb-planner-destinations">
+            <label className="cb-label" htmlFor="cb-poi-search">PUNTA UN RIFUGIO O UN PAESE</label>
+            <input id="cb-poi-search" className="cb-input" type="search" value={poiQuery} onChange={e=>setPoiQuery(e.target.value)} placeholder="Es. Rifugio, Cortina, Cibiana…" autoComplete="off" />
+            {matchingPlaces.length > 0 && <div className="cb-planner-suggest" role="listbox" aria-label="Destinazioni trovate">
+              {matchingPlaces.map(p=><button key={p.slug} type="button" onClick={()=>addDestination(p)}>
+                <strong>{p.name}</strong><small>{p.kind==='rifugio'?'RIFUGIO':'BORGO'}{p.elevationM ? ` · ${p.elevationM} m` : ''} · + AGGIUNGI</small>
+              </button>)}
+            </div>}
+            {poiQuery.trim().length>=2 && !matchingPlaces.length && <small>Nessuna destinazione mappata per questo nome nel catalogo corrente.</small>}
+          </div>
+          <label className="cb-label" htmlFor="cb-name">DAI UN NOME AL PIANO</label>
           <input id="cb-name" className="cb-input" value={name} onChange={(event) => setName(event.target.value)} maxLength={100} />
           <ol className="cb-point-list">
             {waypoints.map((point, index) => (
               <li key={index}>
                 <span>{index === 0 ? 'Partenza' : index === waypoints.length - 1 ? 'Arrivo' : 'Tappa ' + index}</span>
-                <small>{point.lat.toFixed(5)}, {point.lng.toFixed(5)}</small>
+                <small>{point.name ? `${point.name} · ` : ''}{point.lat.toFixed(5)}, {point.lng.toFixed(5)}</small>
                 <button type="button" aria-label={'Rimuovi punto ' + (index + 1)} onClick={() => {
                   setWaypoints((old) => old.filter((_, i) => i !== index)); setTrack(null);
                 }}>×</button>
@@ -172,6 +203,8 @@ export function PlannerPage() {
           </ol>
           {waypoints.length === 0 && <div className="cb-empty">Tocca la mappa per scegliere il punto di partenza.</div>}
           <div className="cb-buttons">
+            <button className="cb-action" type="button" disabled={!waypoints.length||busy} onClick={()=>{setWaypoints(old=>old.slice(0,-1));setTrack(null);}}>↶ Annulla ultimo</button>
+            <button className="cb-action" type="button" disabled={waypoints.length<2||busy} onClick={()=>{setWaypoints(old=>[...old].reverse());setTrack(null);}}>⇄ Inverti</button>
             <button className="cb-action primary" type="button" disabled={waypoints.length < 2 || busy} onClick={() => void calculate()}>
               {busy ? 'Calcolo in corso…' : 'Calcola itinerario'}
             </button>
@@ -186,17 +219,18 @@ export function PlannerPage() {
           {message && <div className="cb-message" role="status">{message}</div>}
           {track && (
             <section className="cb-result">
-              <h2>Il tuo itinerario</h2>
+              <h2>LA TUA PESSIMA IDEA, IN NUMERI.</h2>
               <div className="cb-stats">
                 <div><strong>{(track.distanceM / 1000).toFixed(1)} km</strong><small>Lunghezza</small></div>
                 <div><strong>{track.gainM == null ? 'n/d' : '+' + Math.round(track.gainM) + ' m'}</strong><small>Dislivello</small></div>
+                <div><strong>{planTime || 'n/d'}</strong><small>Tempo stimato a piedi</small></div>
               </div>
               <div className="cb-buttons">
                 <button className="cb-action primary" type="button" onClick={save}>Salva</button>
                 <button className="cb-action" type="button" onClick={() => downloadGPX(name, track)}>Esporta GPX</button>
                 <a className="cb-action" href={directionsToStart(waypoints[0])} target="_blank" rel="noopener noreferrer">Raggiungi la partenza</a>
               </div>
-              <p className="cb-note">Traccia automatica e non verificata sul terreno. Controlla condizioni, difficoltà e restrizioni prima di partire. Le ferrate non vengono generate automaticamente.</p>
+              <p className="cb-note">Tempo e dislivello sono indicativi. Traccia automatica e non verificata sul terreno. Controlla condizioni, difficoltà e restrizioni prima di partire. Le ferrate non vengono generate automaticamente.</p>
             </section>
           )}
           <p className="cb-note">Questa prima versione salva i percorsi soltanto sul dispositivo. La pubblicazione condivisa richiederà il database Cima Becco; il servizio pubblico BRouter usato nei test potrebbe non essere sempre disponibile.</p>
