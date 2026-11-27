@@ -64,8 +64,11 @@ for(const section of ['rifugi','bivacchi','paesi'] as const){
     await first.click();
     await expect(page.locator('.cb-location-profile h1')).toBeVisible();
     await expect(page.locator('.cb-detail-metrics')).toBeVisible();
-    if(section==='rifugi')await expect(page.locator('.cb-refuge-hero')).toBeVisible();
-    else await expect(page.locator('.cb-detail-facts')).toBeVisible();
+    if(section==='paesi')await expect(page.locator('.cb-detail-facts')).toBeVisible();
+    else {
+      await expect(page.locator('.cb-refuge-hero')).toBeVisible();
+      await expect(page.locator('#cb-refuge-stay')).toBeAttached();
+    }
     for(const width of [320,375,390,768,1024,1440]){
       await page.setViewportSize({width,height:844});
       const sizes=await page.evaluate(()=>({
@@ -185,8 +188,8 @@ test('ricerca da URL con parametri: collegamento assoluto alla scheda locale', a
   const suggestion=page.locator('.searchbar-results button').filter({hasText:'Bivacco Comici'}).first();
   await expect(suggestion).toBeVisible({timeout:30_000});
   await suggestion.click();
-  await expect(page).toHaveURL(/\/bivacchi\/osm-w-152273223\/$/,{timeout:30_000});
-  await expect(page.locator('.cb-location-profile h1')).toBeVisible();
+  await expect(page).toHaveURL(/\/bivacchi\/[^/]+\/$/,{timeout:30_000});
+  await expect(page.locator('.cb-refuge-profile--bivacco h1')).toContainText('Bivacco Comici');
 });
 
 test('navbar: la ricerca globale resta disponibile in tutte le sezioni', async ({page})=>{
@@ -460,21 +463,16 @@ test('site chrome: header e footer coprono la viewport, senza max-width ereditat
       await page.goto(url);
       await expect(page.locator('.site-header').first()).toBeVisible();
       await expect(page.locator('.site-footer').first()).toBeAttached({timeout:30000});
-      const boxes=await page.evaluate(()=>{
-        const header=document.querySelector('.site-header')!.getBoundingClientRect();
-        const footer=document.querySelector('.site-footer')!.getBoundingClientRect();
-        const footerInner=document.querySelector('.site-footer-inner')!.getBoundingClientRect();
-        return {
-          header:[header.left,header.right],footer:[footer.left,footer.right],
-          inner:[footerInner.left,footerInner.right],
-          overflow:document.documentElement.scrollWidth,
-        };
-      });
-      for(const [left,right] of [boxes.header,boxes.footer,boxes.inner]){
-        expect(left,JSON.stringify({url,width,boxes})).toBeGreaterThanOrEqual(-2);
-        expect(right,JSON.stringify({url,width,boxes})).toBeGreaterThanOrEqual(width-2);
-      }
-      expect(boxes.overflow,JSON.stringify({url,width,boxes})).toBeLessThanOrEqual(width+2);
+      // L'entrypoint SEO può idratare la SPA durante il primo frame:
+      // misuriamo solo quando header e footer sono nello stesso DOM stabile.
+      await expect.poll(async()=>page.evaluate((viewportWidth)=>{
+        const nodes=['.site-header','.site-footer','.site-footer-inner']
+          .map(selector=>document.querySelector(selector));
+        if(nodes.some(node=>!node))return false;
+        const rectangles=nodes.map(node=>node!.getBoundingClientRect());
+        return rectangles.every(rect=>rect.left>=-2&&rect.right>=viewportWidth-2)
+          &&document.documentElement.scrollWidth<=viewportWidth+2;
+      },width),{timeout:15000,message:'Chrome full width: '+url+' @ '+width}).toBe(true);
     }
   }
 });
