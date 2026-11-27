@@ -30,6 +30,7 @@ export function SiteHeader({ center, sticky = false }: { center?: ReactNode; sti
         </div>
         <div className="site-header-center">{center}</div>
         <div className="site-header-right">
+          <a className="site-header-cta cb-atlas-link" href="#atlante/rifugi" aria-label="Esplora rifugi, borghi e cammini">Atlante</a>
           <a className="site-header-cta cb-plan-link" href="#pianifica" aria-label="Pianifica un percorso">Pianifica</a>
           <a className="site-header-cta" href="#import" onClick={openImportHere} aria-label="Carica GPX" data-tip="Carica GPX">
             <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -59,6 +60,9 @@ export function SiteFooter({ openSourcePill = false }: { openSourcePill?: boolea
             <h3>Vai a vedere</h3>
             <a href="#map">Cime e montagne</a>
             <a href="#routes">Escursioni e ferrate</a>
+            <a href="#atlante/rifugi">Rifugi</a>
+            <a href="#atlante/borghi">Borghi di montagna</a>
+            <a href="#atlante/trekking">Alte Vie e Sentiero Italia</a>
             <a href="#pianifica">Pianifica un percorso</a>
             <button type="button" className="site-footer-link" aria-haspopup="dialog" onClick={() => setCoverageOpen(true)}>Cosa c'è nella mappa</button>
           </div>
