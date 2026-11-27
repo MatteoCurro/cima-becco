@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 /**
  * Inline SVG icons. Kept in code rather than pulled from an icon package so the
@@ -12,27 +12,17 @@ import { useId, type ReactNode } from 'react';
  * public/icons/ — change them together.
  */
 export function Mark({ size = 22 }: { size?: number }) {
-  const gradient = `mark${useId().replace(/:/g, '')}`;
   return (
     <svg className="mark" width={size} height={size} viewBox="0 0 120 120" aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id={gradient} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#e06c44" />
-          <stop offset="0.55" stopColor="#c1502e" />
-          <stop offset="1" stopColor="#9c3a1d" />
-        </linearGradient>
-      </defs>
-      <rect width="120" height="120" rx="26.25" fill={`url(#${gradient})`} />
-      <g fill="none" stroke="#ffffff" strokeWidth="8.5" strokeLinecap="round">
-        <path d="M23 86A37 37 0 0 1 97 86" />
-        <path d="M38 86A22 22 0 0 1 82 86" />
-        <path d="M52.5 86A7.5 7.5 0 0 1 67.5 86" />
-      </g>
-      <circle cx="60" cy="33" r="6.5" fill="#ffffff" />
+      <rect width="120" height="120" rx="27" fill="#476857" />
+      <path d="M18 90 49 31l19 32 12-17 24 44H18Z" fill="#f7f6ed" />
+      <path d="m40 90 17-31 10 18 14-21 17 34H40Z" fill="#b8c7b2" />
+      <path d="m49 31 10 17-8-5-10 7Z" fill="#fdfdf9" />
+      <path d="m80 46 28 12-18 9-10-21Z" fill="#e6c89c" />
+      <path d="M26 96h71" stroke="#f7f6ed" strokeWidth="4" strokeLinecap="round" />
     </svg>
   );
 }
-
 
 /**
  * The globe on the units button. Stroked rather than filled, because the
