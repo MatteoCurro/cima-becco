@@ -137,7 +137,7 @@ function RoutesListInner({ routes, bounds, selectedSlug, onSelect, onHover, onIm
           })}
         </ul>
       )}
-      {rows.length > limit && <button type="button" className="btn btn-light cima-more-routes" onClick={() => setLimit((n) => n + 18)}>Mostra altri percorsi ({rows.length - limit} ancora)</button>
+      {rows.length > limit && <button type="button" className="btn btn-light cima-more-routes" onClick={() => setLimit((n) => n + 18)}>Mostra altri percorsi ({rows.length - limit} ancora)</button>}
     </section>
   );
 }
