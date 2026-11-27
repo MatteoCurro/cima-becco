@@ -18,6 +18,27 @@ class AlpinePlacesTest(unittest.TestCase):
         self.assertEqual(item['elevationM'],2004)
         self.assertEqual(item['osmUrl'],'https://www.openstreetmap.org/node/321')
 
+    def test_six_disjoint_import_cells_cover_the_pilot(self):
+        cells=atlas.alpine_cells()
+        self.assertEqual(len(cells),6)
+        self.assertEqual(min(cell[0] for cell in cells),atlas.BBOX[0])
+        self.assertEqual(min(cell[1] for cell in cells),atlas.BBOX[1])
+        self.assertEqual(max(cell[2] for cell in cells),atlas.BBOX[2])
+        self.assertEqual(max(cell[3] for cell in cells),atlas.BBOX[3])
+        self.assertTrue(all(c[0]<c[2] and c[1]<c[3] for c in cells))
+
+    def test_osm_metadata_from_official_tags(self):
+        raw={'type':'node','id':321,'lat':46.55,'lon':12.4,
+             'tags':{'name':'Rifugio delle Prove','tourism':'alpine_hut','ele':'2004 m',
+                     'beds':'40','operator':'CAI','opening_hours':'Jun-Sep',
+                     'phone':'+390000000','wikimedia_commons':'File:Example Hut.jpg',
+                     'description:it':'Rifugio in quota'}}
+        item=atlas.parse_item(raw)
+        self.assertEqual(item['capacity'],40)
+        self.assertEqual(item['commonsFile'],'Example Hut.jpg')
+        self.assertEqual(item['operator'],'CAI')
+        self.assertEqual(item['openingHours'],'Jun-Sep')
+
     def test_bad_osm_item_rejected(self):
         self.assertIsNone(atlas.parse_item({'type':'node','id':1,'lat':46.5,'lon':12.4,
                                               'tags':{'tourism':'alpine_hut'}}))
