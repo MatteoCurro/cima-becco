@@ -5,9 +5,10 @@ import { SUPABASE_CONFIGURED } from '../lib/api';
 import { HeaderControls } from './HeaderControls';
 import { CoverageModal, useCoverage } from './Coverage';
 import { Mark } from './icons';
+import { exploreGroups } from '../lib/exploreNavigation';
 
 /** Identità Cima Becco: cresta e becco stilizzati, tipografia dal carattere editoriale. */
-export function Wordmark({ size = 36, href = '#' }: { size?: number; href?: string }) {
+export function Wordmark({ size = 36, href = '/#' }: { size?: number; href?: string }) {
   return (
     <a className="wordmark" href={href} aria-label="Cima Becco — home">
       <Mark size={size} />
@@ -22,6 +23,7 @@ export function Wordmark({ size = 36, href = '#' }: { size?: number; href?: stri
  * fixed size, so a sticky header never resizes on scroll.
  */
 export function SiteHeader({ center, sticky = false }: { center?: ReactNode; sticky?: boolean }) {
+  const [exploreOpen, setExploreOpen] = useState(false);
   return (
     <header className={`site-header${sticky ? ' sticky' : ''}`}>
       <div className="site-header-row">
@@ -30,9 +32,9 @@ export function SiteHeader({ center, sticky = false }: { center?: ReactNode; sti
         </div>
         <div className="site-header-center">{center}</div>
         <div className="site-header-right">
-          <a className="site-header-cta cb-atlas-link" href="#routes" aria-label="Esplora i percorsi">Sentieri</a>
-          <a className="site-header-cta cb-plan-link" href="#pianifica" aria-label="Pianifica un percorso">Pianifica</a>
-          <a className="site-header-cta" href="#import" onClick={openImportHere} aria-label="Carica GPX" data-tip="Carica GPX">
+          <button type="button" className="site-header-cta cb-explore-trigger" aria-expanded={exploreOpen} onClick={() => setExploreOpen(v => !v)}>Esplora</button>
+          <a className="site-header-cta cb-plan-link" href="/#pianifica" aria-label="Pianifica un percorso">Pianifica</a>
+          <a className="site-header-cta" href="/#import" onClick={openImportHere} aria-label="Carica GPX" data-tip="Carica GPX">
             <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
               <path d="M8 3v10M3 8h10" />
             </svg>
@@ -42,6 +44,7 @@ export function SiteHeader({ center, sticky = false }: { center?: ReactNode; sti
           {SUPABASE_CONFIGURED && <AccountMenu />}
         </div>
       </div>
+      {exploreOpen && <nav className="cb-explore-menu" aria-label="Esplora Cima Becco">{exploreGroups.map(group => <section key={group.title}><strong>{group.title}</strong>{group.items.map(item => item.href ? <a key={item.label} href={item.href} onClick={() => setExploreOpen(false)}>{item.label}</a> : <span key={item.label}>{item.label} · prossimamente</span>)}</section>)}</nav>}
     </header>
   );
 }
@@ -58,34 +61,34 @@ export function SiteFooter({ openSourcePill = false }: { openSourcePill?: boolea
         <div className="site-footer-cols">
           <div>
             <h3>Vai a vedere</h3>
-            <a href="#map">Cime e montagne</a>
-            <a href="#routes">Escursioni e ferrate</a>
-            <a href="#rifugi">Rifugi</a>
-            <a href="#bivacchi">Bivacchi</a>
-            <a href="#paesi">Paesi di montagna</a>
-            <a href="#atlante/trekking">Alte Vie e Sentiero Italia</a>
-            <a href="#pianifica">Pianifica un percorso</a>
+            <a href="/#map">Cime e montagne</a>
+            <a href="/#routes">Escursioni e ferrate</a>
+            <a href="/#rifugi">Rifugi</a>
+            <a href="/#bivacchi">Bivacchi</a>
+            <a href="/#paesi">Paesi di montagna</a>
+            <a href="/#atlante/trekking">Alte Vie e Sentiero Italia</a>
+            <a href="/#pianifica">Pianifica un percorso</a>
             <button type="button" className="site-footer-link" aria-haspopup="dialog" onClick={() => setCoverageOpen(true)}>Cosa c'è nella mappa</button>
           </div>
           <div>
             <h3>Cima Becco</h3>
-            <a href="#community">Il progetto</a>
-            <a href="#atlante/rifugi">Atlante completo</a>
-            <a href="#statistiche">Statistiche del laboratorio</a>
-            <a href="#data">Fonti e crediti</a>
-            <a href="#privacy">Privacy</a>
-            <a href="#contact">Contatti</a>
+            <a href="/#community">Il progetto</a>
+            <a href="/#atlante/rifugi">Atlante completo</a>
+            <a href="/#statistiche">Statistiche del laboratorio</a>
+            <a href="/#data">Fonti e crediti</a>
+            <a href="/#privacy">Privacy</a>
+            <a href="/#contact">Contatti</a>
           </div>
           <div>
             <h3>Un sentiero in più</h3>
-            <a href="#import" onClick={openImportHere}>Importa un GPX</a>
+            <a href="/#import" onClick={openImportHere}>Importa un GPX</a>
             <button type="button" className="site-footer-link" onClick={requestAddPlace}>Segnala una cima mancante</button>
-            <a href="#terms">Contributi e licenze</a>
+            <a href="/#terms">Contributi e licenze</a>
           </div>
         </div>
         <div className="site-footer-base">
           <span>© Cima Becco · Ogni cima, un nuovo percorso.</span>
-          <span>Un progetto sperimentale. <a href="#data">Fonti, attribuzioni e licenze</a></span>
+          <span>Un progetto sperimentale. <a href="/#data">Fonti, attribuzioni e licenze</a></span>
         </div>
       </div>
       {coverageOpen && <FooterCoverage onClose={() => setCoverageOpen(false)} />}

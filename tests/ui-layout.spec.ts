@@ -91,3 +91,16 @@ test('trekking: scheda condivisa senza overflow',async({page})=>{
     expect(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2)).toBe(false);
   }
 });
+
+test('permalink percorso: mappa e stage occupano la larghezza mobile', async ({page}) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/route/osm-hiking-13956722/');
+  await expect(page.locator('.map-page .stage')).toBeVisible();
+  for(const width of [320,375,390,430,768]) {
+    await page.setViewportSize({width,height:844});
+    for(const selector of ['.map-page .stage','.map-page .map-wrap']) {
+      const box=await page.locator(selector).boundingBox();
+      expect(box?.width ?? 0).toBeGreaterThanOrEqual(width-2);
+    }
+  }
+});
