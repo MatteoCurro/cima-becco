@@ -22,7 +22,7 @@ class CAIPilotFieldInventoryTests(unittest.TestCase):
         names = [x["name"] for x in self.inv["fieldNames"]]
         self.assertEqual(self.inv["totalDistinctFieldNames"], 127)
         self.assertEqual(len(names), 127)
-        self.assertEqual(len(set(names)), 108)
+        self.assertEqual(len(set(names)), 127)
         self.assertEqual(set(x["state"] for x in self.inv["fieldNames"]), {
             "mapped_for_restricted_staging", "field_level_review_needed",
             "internal_reference", "privacy_restricted"})
