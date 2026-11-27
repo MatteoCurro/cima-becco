@@ -22,11 +22,25 @@ MANIFEST = DATA / "routes-manifest.json"
 ENDPOINTS = ("https://overpass.kumi.systems/api/interpreter", "https://overpass.nchc.org.tw/api/interpreter", "https://overpass-api.de/api/interpreter")
 # Pilota Dolomiti: allargare a celle, non caricare l'intero arco alpino in un'unica richiesta.
 BBOX = (46.28, 11.15, 46.95, 12.95)
+PROGRESS = DATA / "alpine-import-progress.json"
+# Sei celle piccole, una al giorno: il vecchio rettangolo richiedeva troppa CPU
+# ai server pubblici Overpass e causava timeout. Manteniamo tutte le altre celle.
+def alpine_cells():
+    south, west, north, east = BBOX
+    cells = []
+    for row in range(3):
+        for col in range(2):
+            cells.append((south+(north-south)*row/3,
+                          west+(east-west)*col/2,
+                          south+(north-south)*(row+1)/3,
+                          west+(east-west)*(col+1)/2))
+    return cells
+
 BANNED = re.compile(r"^(?:unnamed|senza nome|rifugio|hut|bivacco|unknown)$", re.I)
 
 
-def fetch_places():
-    south, west, north, east = BBOX
+def fetch_places(bbox=None):
+    south, west, north, east = bbox if bbox is not None else BBOX
     rect = f"({south},{west},{north},{east})"
     query = (
         "[out:json][timeout:65];("
@@ -187,28 +201,51 @@ def save_stops(places):
 
 
 def run(write,link_only):
+    previous=read_json(OUT,{"places":[]})
+    by_slug={p["slug"]:p for p in previous.get("places",[])}
     if link_only:
-        places=read_json(OUT,{"places":[]}).get("places",[])
+        places=list(by_slug.values())
         if not places:
             print("Nessun POI disponibile. Importa prima l'atlante.")
             return
     else:
-        elements=fetch_places()
-        unique={}
-        for row in elements:
-            item=parse_item(row)
-            if item:unique[item["slug"]]=item
-        places=sorted(unique.values(),key=lambda p:(p["kind"],p["name"].casefold(),p["slug"]))
-        old_places={p["slug"]:p for p in read_json(OUT,{"places":[]}).get("places",[])}
-        # L'aggiornamento settimanale OSM non deve cancellare foto già verificate,
-        # né informazioni editoriali approvate da un eventuale gestore.
-        for place in places:
-            former=old_places.get(place["slug"],{})
-            for field in ("photo","photoCheckedAt"):
-                if field in former and field not in place:
-                    place[field]=former[field]
-        if write:write_json(OUT,{"generatedAt":datetime.now(timezone.utc).date().isoformat(),"source":"OpenStreetMap · ODbL 1.0",
-                               "coverage":"Dolomiti (pilota)", "places":places})
+        tiles=alpine_cells()
+        checkpoint=read_json(PROGRESS,{"nextCell":0})
+        cell_id=int(checkpoint.get("nextCell",0))%len(tiles)
+        try:
+            elements=fetch_places(tiles[cell_id])
+        except Exception as error:
+            if not by_slug:raise
+            # Se Overpass è in manutenzione non invalidare il catalogo
+            # e non avanzare il checkpoint. Il prossimo job ritenta la cella.
+            print(f"AVVISO: Overpass non aggiornato; riuso {len(by_slug)} POI cached. "
+                  f"Cella {cell_id+1}/{len(tiles)} da ritentare: {error}",file=sys.stderr)
+            elements=None
+        if elements is not None:
+            updated=0
+            for row in elements:
+                item=parse_item(row)
+                if not item:continue
+                former=by_slug.get(item["slug"],{})
+                # Conserva foto e attribuzione anche su record OSM aggiornati;
+                # se una singola fonte non fornisce un campo lascia la vecchia
+                # versione finché non avremo una cancellazione verificata.
+                for field,value in former.items():
+                    if field not in item:item[field]=value
+                if item!=former:updated+=1
+                by_slug[item["slug"]]=item
+            if write:
+                write_json(PROGRESS,{"nextCell":(cell_id+1)%len(tiles),
+                    "lastSuccess":datetime.now(timezone.utc).isoformat(timespec='seconds'),
+                    "lastCell":cell_id,"changedPlaces":updated,"cellsTotal":len(tiles)})
+            print(f"Cella OSM {cell_id+1}/{len(tiles)}: {len(elements)} elementi, "
+                  f"{updated} record modificati",file=sys.stderr)
+        places=list(by_slug.values())
+        places.sort(key=lambda p:(p["kind"],p["name"].casefold(),p["slug"]))
+        if write and elements is not None:
+            write_json(OUT,{"generatedAt":datetime.now(timezone.utc).date().isoformat(),
+                "source":"OpenStreetMap · ODbL 1.0","coverage":"Dolomiti (pilota)",
+                "places":places})
     counts={"rifugi":sum(p["kind"]=="rifugio" for p in places),
             "borghi":sum(p["kind"]=="borgo" for p in places)}
     if write:
