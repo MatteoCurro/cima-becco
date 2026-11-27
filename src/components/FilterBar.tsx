@@ -1,0 +1,802 @@
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { createPortal } from 'react-dom';
+import { useUnits } from './UnitsContext';
+import { CloseIcon } from './icons';
+import { lockPageScroll } from '../lib/dom';
+import type { Route, Venue, VenueType } from '../types';
+import {
+  NO_FILTERS,
+  VENUE_TYPE_LABEL,
+  activeFilterCount,
+  filterVenues,
+  rankingHeight,
+  type Bounds,
+  type VenueFilters,
+} from '../lib/venues';
+import { useRouteBookmarks } from '../lib/useRouteBookmarks';
+import { NO_ROUTE_FILTERS, ROUTE_CATEGORIES, filterRoutes, routeHasElevation, routeIntersects, type RouteCategory, type RouteFilters } from '../lib/routes';
+import { ACTIVITY_PATHS } from '../lib/activityGlyphs';
+import { routeEstimateS } from '../lib/routeTime';
+import { DURATION_UNIT_S, distanceKind, durationKind, heightKind } from '../lib/rangeScale';
+import { ValueRange } from './ValueRange';
+import { VENUE_GLYPH_PATH } from '../lib/venueGlyphs';
+
+export type BrowseMode = 'climbs' | 'routes';
+
+interface FilterBarProps {
+  /** The types present in the data, so no chip is offered that returns nothing. */
+  types: VenueType[];
+  /**
+   * Venues inside the current map viewport before filtering. The histogram and
+   * draft count stay anchored to the area on screen while controls change.
+   */
+  visibleVenues: Venue[];
+  filters: VenueFilters;
+  onChange: (filters: VenueFilters) => void;
+  /** How many places you have hearted; the Saved chip only appears once there is one. */
+  savedCount: number;
+}
+
+interface CategoryBarProps extends FilterBarProps {
+  /** The map's current view, so route chips can grey out like climb chips. */
+  viewport: Bounds | null;
+  mode: BrowseMode;
+  onModeChange: (mode: BrowseMode) => void;
+  routes: Route[];
+  routeFilters: RouteFilters;
+  onRouteFiltersChange: (filters: RouteFilters) => void;
+}
+
+type ClimbCategory = 'all' | VenueType | 'photo' | 'liked';
+
+function climbCategoryOf(filters: VenueFilters): ClimbCategory | null {
+  const { types, notableOnly, withPhoto, savedOnly } = filters;
+  if (savedOnly) return types.length === 0 && !notableOnly && !withPhoto ? 'liked' : null;
+  if (types.length === 0 && !notableOnly && !withPhoto) return 'all';
+  if (types.length === 1 && !notableOnly && !withPhoto) return types[0];
+  if (types.length === 0 && !notableOnly && withPhoto) return 'photo';
+  return null;
+}
+
+const STROKE = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
+
+/** Climb categories drawn in the same stroke style as the route activities. */
+const CLIMB_PATHS: Record<string, string> = {
+  hill: 'M2 19 9 7l3.5 5.5L15 9l7 10Z M9 7l1.6 2.8',
+  hdb_block: 'M5 21V4.5h9V21 M14 9h5v12 M3 21h18 M8 8h1.5M8 11.5h1.5M8 15h1.5M11 8h.01M11 11.5h.01M11 15h.01 M16.5 12.5h.01M16.5 16h.01',
+  stairs: 'M3 20h4v-4h4v-4h4V8h4V4 M3 20h18',
+  carpark: 'M4 21V4h16v17 M9 16V8h3.5a2.5 2.5 0 0 1 0 5H9',
+};
+
+const HEART = <path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z" />;
+
+export function CategoryIcon({ id }: { id: string }) {
+  if (id in CLIMB_PATHS) {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" {...STROKE} aria-hidden="true">
+        <path d={CLIMB_PATHS[id]} />
+      </svg>
+    );
+  }
+  if (id in VENUE_GLYPH_PATH) {
+    return (
+      <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+        <path d={VENUE_GLYPH_PATH[id as VenueType]} />
+      </svg>
+    );
+  }
+  const paths: Record<string, ReactNode> = {
+    all: <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></>,
+    photo: <><path d="M3 8h3.5L8 6h8l1.5 2H21v11H3V8z" /><circle cx="12" cy="13" r="3.5" /></>,
+    climb: <path d="M2 20l6-9 4 5 3-4 7 8H2zM15 4l2 3 2-3" />,
+    loop: <><path d="M17 7a7 7 0 1 0 2 5" /><path d="M20 3v5h-5" /></>,
+    short: <><circle cx="6" cy="18" r="2" /><circle cx="18" cy="6" r="2" /><path d="M8 16l8-8" /></>,
+    long: <><circle cx="4" cy="19" r="2" /><circle cx="20" cy="5" r="2" /><path d="M6 18c6-1 3-7 8-9s4-3 4-3" /></>,
+    // A phone: route files kept on this device.
+    device: <><rect x="6" y="2" width="12" height="20" rx="2.5" /><path d="M10 18h4" /></>,
+    // A heart: saved places (climbs) and saved routes.
+    liked: HEART,
+    saved: HEART,
+    run: <path d={ACTIVITY_PATHS.run} />,
+    trail: <path d={ACTIVITY_PATHS.trail} />,
+    cycle: <path d={ACTIVITY_PATHS.cycle} />,
+    globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" /></>,
+  };
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" {...STROKE} aria-hidden="true">
+      {paths[id] ?? paths.all}
+    </svg>
+  );
+}
+
+/**
+ * The strip under the header: which kind of thing you are browsing, then a
+ * row of icon categories, then Filters — Airbnb's category bar, pointed at
+ * climbs and routes instead of homes.
+ */
+function CategoryBarInner({
+  viewport,
+  mode,
+  onModeChange,
+  routes,
+  routeFilters,
+  onRouteFiltersChange,
+  ...climbProps
+}: CategoryBarProps) {
+  const [routeModalOpen, setRouteModalOpen] = useState(false);
+  const routeOpenerRef = useRef<HTMLButtonElement>(null);
+  const routeFilterCount =
+    (routeFilters.minGainM != null ? 1 : 0) +
+    (routeFilters.maxGainM != null ? 1 : 0) +
+    (routeFilters.minDistanceM != null ? 1 : 0) +
+    (routeFilters.maxDistanceM != null ? 1 : 0) +
+    (routeFilters.minDurationS != null ? 1 : 0) +
+    (routeFilters.maxDurationS != null ? 1 : 0);
+
+  // Routes the list would show for this view: the ones crossing it, or every
+  // route when none do (the list falls back to "everywhere" rather than going
+  // blank, so the chips must agree with it).
+  const routePool = useMemo(() => {
+    const inView = viewport ? routes.filter((route) => routeIntersects(route, viewport)) : routes;
+    return inView.length > 0 ? inView : routes;
+  }, [routes, viewport]);
+  const bookmarks = useRouteBookmarks();
+  // Route category ids: `saved` is the hearted routes ("Saved"), always shown
+  // so it can say how to fill it; `device` is GPX files kept on this device
+  // ("On this device"), shown once there is one, or while picked.
+  const hiddenRouteCategory = (id: RouteCategory) =>
+    id === 'device' &&
+    routeFilters.category !== id &&
+    filterRoutes(routes, { ...NO_ROUTE_FILTERS, category: id }, bookmarks).length === 0;
+  const routeSlots = ROUTE_CATEGORIES.filter((category) => !hiddenRouteCategory(category.id)).length;
+  // All, one per type, With photos, and Saved once something is hearted.
+  const climbSlots = 2 + climbProps.types.length + (climbProps.savedCount > 0 || climbProps.filters.savedOnly ? 1 : 0);
+
+  return (
+    <div className="filterbar">
+      {/* One slot count for both modes, so the centred row is the same width
+          in Climbs and Routes and nothing shifts when you switch. */}
+      <div className="filterbar-row" style={{ '--category-slots': Math.max(routeSlots, climbSlots) } as React.CSSProperties}>
+        <div className="mode-switch" role="tablist" aria-label="Browse">
+          {(['climbs', 'routes'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={mode === value}
+              className={`mode-tab${mode === value ? ' on' : ''}`}
+              onClick={() => onModeChange(value)}
+            >
+              {value === 'climbs' ? 'Climbs' : 'Routes'}
+            </button>
+          ))}
+          <span className={`mode-thumb ${mode}`} aria-hidden="true" />
+        </div>
+
+        <span className="filterbar-divider" aria-hidden="true" />
+
+        {mode === 'climbs' ? (
+          <ClimbCategories {...climbProps} />
+        ) : (
+          <>
+            <div className="categories" role="tablist" aria-label="Route type">
+              {ROUTE_CATEGORIES.map((category) => {
+                if (hiddenRouteCategory(category.id)) return null;
+                const active = routeFilters.category === category.id;
+                // Saved and on-device routes can be anywhere; the list shows them all.
+                const pool = category.id === 'device' || category.id === 'saved' ? routes : routePool;
+                const count = filterRoutes(pool, { ...NO_ROUTE_FILTERS, category: category.id }, bookmarks).length;
+                return (
+                  <CategoryButton
+                    key={category.id}
+                    id={category.id}
+                    label={category.label}
+                    shortLabel={category.shortLabel}
+                    active={active}
+                    unavailable={!active && count === 0 && category.id !== 'saved'}
+                    onClick={() => onRouteFiltersChange({ ...routeFilters, category: category.id as RouteCategory })}
+                  />
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              ref={routeOpenerRef}
+              className={`filter-open${routeFilterCount > 0 ? ' on' : ''}`}
+              aria-haspopup="dialog"
+              onClick={() => setRouteModalOpen(true)}
+            >
+              <SlidersIcon />
+              <span className="filter-open-label">Filters</span>
+              {routeFilterCount > 0 && <span className="filter-badge">{routeFilterCount}</span>}
+            </button>
+            {routeModalOpen && (
+              <RouteFilterModal
+                routes={routePool}
+                scope={routePool === routes ? 'everywhere' : 'in this area'}
+                filters={routeFilters}
+                onChange={onRouteFiltersChange}
+                onClose={() => setRouteModalOpen(false)}
+                returnFocusTo={routeOpenerRef}
+              />
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One icon category. `unavailable` greys it out and stops it being picked when
+ * nothing of its kind is in the area on screen, as Airbnb greys out a category
+ * with no homes; the tooltip says why rather than leaving a dead button.
+ */
+function CategoryButton({
+  id,
+  label,
+  shortLabel,
+  active,
+  unavailable = false,
+  onClick,
+}: {
+  id: string;
+  label: string;
+  shortLabel?: string;
+  active: boolean;
+  unavailable?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      aria-label={unavailable ? `${label} (none in this area)` : label}
+      title={unavailable ? `${label}: none in this area. Move the map to find some.` : undefined}
+      className={`category${active ? ' on' : ''}`}
+      disabled={unavailable}
+      onClick={onClick}
+    >
+      <CategoryIcon id={id} />
+      <span className="category-label">{label}</span>
+      {shortLabel && <span className="category-label-short">{shortLabel}</span>}
+    </button>
+  );
+}
+
+
+function RouteFilterModal({
+  routes,
+  scope,
+  filters,
+  onChange,
+  onClose,
+  returnFocusTo,
+}: {
+  routes: Route[];
+  /** Which routes the counts and bars cover, matching the list's heading. */
+  scope: 'in this area' | 'everywhere';
+  filters: RouteFilters;
+  onChange: (filters: RouteFilters) => void;
+  onClose: () => void;
+  returnFocusTo: React.RefObject<HTMLElement>;
+}) {
+  // Every choice applies straight away (the list and map update behind the
+  // dialog); the footer button only closes it.
+  const [closing, setClosing] = useState(false);
+  const bookmarks = useRouteBookmarks();
+  const units = useUnits();
+  const distanceK = useMemo(() => distanceKind(units.units), [units.units]);
+  const gainK = useMemo(() => heightKind(units.units), [units.units]);
+  const count = filterRoutes(routes, filters, bookmarks).length;
+  const close = useCallback(() => setClosing(true), []);
+  // The histograms show what is actually out there. EG's pool skips routes
+  // with no elevation, which a gain bound excludes anyway.
+  const distances = useMemo(() => routes.map((route) => route.distanceM), [routes]);
+  const gains = useMemo(() => routes.filter(routeHasElevation).map((route) => route.gainM), [routes]);
+  // Times go to the slider in five-minute units, so every stop it can land on
+  // is a time the label can print exactly ("~45 min"), never "~38 min".
+  const durationUnits = useMemo(() => routes.map((route) => routeEstimateS(route) / DURATION_UNIT_S), [routes]);
+  // Each histogram ignores its own bounds but respects the others, so a bar
+  // shows what widening that filter would bring back.
+  const withoutOwn = (own: 'distance' | 'gain' | 'duration') =>
+    filterRoutes(
+      routes,
+      {
+        ...filters,
+        ...(own === 'distance' ? { minDistanceM: null, maxDistanceM: null } : {}),
+        ...(own === 'gain' ? { minGainM: null, maxGainM: null } : {}),
+        ...(own === 'duration' ? { minDurationS: null, maxDurationS: null } : {}),
+      },
+      bookmarks,
+    );
+  const matchDistances = withoutOwn('distance').map((route) => route.distanceM);
+  const matchGains = withoutOwn('gain').filter(routeHasElevation).map((route) => route.gainM);
+  const matchDurations = withoutOwn('duration').map((route) => routeEstimateS(route) / DURATION_UNIT_S);
+
+  useEffect(() => {
+    const opener = returnFocusTo.current;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      opener?.focus();
+    };
+  }, [close, returnFocusTo]);
+
+  return createPortal(
+    <div
+      className={`filter-scrim${closing ? ' closing' : ''}`}
+      onMouseDown={(e) => e.target === e.currentTarget && close()}
+    >
+      <div
+        className={`filter-modal filter-modal-sm${closing ? ' closing' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="route-filter-title"
+        onAnimationEnd={(e) => e.target === e.currentTarget && closing && onClose()}
+      >
+        <header className="filter-modal-head">
+          <h2 id="route-filter-title">Route filters</h2>
+          <p className="filter-modal-scope">Routes {scope}</p>
+          <button type="button" className="filter-modal-close" aria-label="Close filters" onClick={close}>
+            <CloseIcon />
+          </button>
+        </header>
+        <div className="filter-modal-body">
+          <section className="filter-group">
+            <h3>Distance</h3>
+            <ValueRange
+              values={distances}
+              matching={matchDistances}
+              min={filters.minDistanceM}
+              max={filters.maxDistanceM}
+              kind={distanceK}
+              minLabel="Minimum distance"
+              maxLabel="Maximum distance"
+              onChange={(minDistanceM, maxDistanceM) => onChange({ ...filters, minDistanceM, maxDistanceM })}
+            />
+          </section>
+          <section className="filter-group">
+            <h3>Elevation gain</h3>
+            <ValueRange
+              values={gains}
+              matching={matchGains}
+              min={filters.minGainM}
+              max={filters.maxGainM}
+              kind={gainK}
+              minLabel="Minimum elevation gain"
+              maxLabel="Maximum elevation gain"
+              onChange={(minGainM, maxGainM) => onChange({ ...filters, minGainM, maxGainM })}
+            />
+          </section>
+          <section className="filter-group">
+            <h3>Estimated time</h3>
+            <ValueRange
+              values={durationUnits}
+              matching={matchDurations}
+              min={filters.minDurationS == null ? null : filters.minDurationS / DURATION_UNIT_S}
+              max={filters.maxDurationS == null ? null : filters.maxDurationS / DURATION_UNIT_S}
+              kind={durationKind}
+              minLabel="Minimum estimated time"
+              maxLabel="Maximum estimated time"
+              onChange={(min, max) =>
+                onChange({
+                  ...filters,
+                  minDurationS: min == null ? null : min * DURATION_UNIT_S,
+                  maxDurationS: max == null ? null : max * DURATION_UNIT_S,
+                })
+              }
+            />
+          </section>
+        </div>
+        <footer className="filter-modal-foot">
+          <button type="button" className="linkish" onClick={() => onChange({ ...NO_ROUTE_FILTERS, category: filters.category })}>
+            Clear all
+          </button>
+          <button
+            type="button"
+            className="filter-apply"
+            onClick={close}
+          >
+            <span aria-live="polite">{count === 0 ? 'No matches' : `Show ${count} route${count === 1 ? '' : 's'}`}</span>
+          </button>
+        </footer>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/**
+ * The chip row under the search bar, and the Filters dialog behind it.
+ *
+ * Every control here is a question the data can answer. The obvious absentee is
+ * routes: `routeSlugs` is empty on all 11,922 venues in the current file, so a
+ * "has a route" chip would be a control that is always wrong to press. Town is
+ * the other one left out — it is populated, but 200-odd towns is a dropdown,
+ * not a row of pills, and it answers "where" which the map already is.
+ *
+ * The row keeps the toggles worth reaching for one-handed; everything that needs
+ * room to be understood — the type choice, the height distribution — lives in
+ * the dialog.
+ */
+function ClimbCategories({ types, visibleVenues, filters, onChange, savedCount }: FilterBarProps) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const openerRef = useRef<HTMLButtonElement>(null);
+
+  const count = activeFilterCount(filters);
+  const active = climbCategoryOf(filters);
+  const pick = (category: ClimbCategory) =>
+    onChange({
+      ...filters,
+      types: category === 'all' || category === 'photo' || category === 'liked' ? [] : [category],
+      notableOnly: false,
+      withPhoto: category === 'photo',
+      savedOnly: category === 'liked',
+    });
+
+  // What the area on screen actually holds, before any filter. A chip for a
+  // kind that is not here (HDB blocks outside Singapore) is greyed out rather
+  // than offered and answered with an empty list.
+  const present = useMemo(() => {
+    const kinds = new Set<ClimbCategory>(['all', 'liked']);
+    for (const venue of visibleVenues) {
+      kinds.add(venue.type);
+      if (venue.photo) kinds.add('photo');
+    }
+    return kinds;
+  }, [visibleVenues]);
+
+  const categories: { id: ClimbCategory; label: string; shortLabel?: string }[] = [
+    { id: 'all', label: 'All', shortLabel: 'All' },
+    ...types.map((type) => ({
+      id: type as ClimbCategory,
+      label: type === 'hill' ? 'Hills & summits' : `${VENUE_TYPE_LABEL[type]}s`,
+      shortLabel: type === 'hill' ? 'Hills' : type === 'hdb_block' ? 'Blocks' : type === 'stairs' ? 'Stairs' : `${VENUE_TYPE_LABEL[type]}s`,
+    })),
+    { id: 'photo', label: 'With photos', shortLabel: 'Photos' },
+    ...(savedCount > 0 || filters.savedOnly ? [{ id: 'liked' as const, label: `Saved (${savedCount})`, shortLabel: 'Saved' }] : []),
+  ];
+
+  return (
+    <>
+      <div className="categories" role="tablist" aria-label="Climb type">
+        {categories.map((category) => (
+          <CategoryButton
+            key={category.id}
+            id={category.id}
+            label={category.label}
+            shortLabel={category.shortLabel}
+            active={active === category.id}
+            // A chip already on stays on and clickable when you pan somewhere
+            // without any: the list says none are here, and panning back finds
+            // them again. Clearing it behind your back would lose the choice.
+            unavailable={active !== category.id && !present.has(category.id)}
+            onClick={() => pick(category.id)}
+          />
+        ))}
+      </div>
+      <button
+        type="button"
+        ref={openerRef}
+        className={`filter-open${count > 0 && active === null ? ' on' : ''}`}
+        aria-haspopup="dialog"
+        aria-expanded={modalOpen}
+        onClick={() => setModalOpen(true)}
+      >
+        <SlidersIcon />
+        <span className="filter-open-label">Filters</span>
+        {count > 0 && <span className="filter-badge">{count}</span>}
+      </button>
+
+      {modalOpen && (
+        <FilterModal
+          types={types}
+          visibleVenues={visibleVenues}
+          filters={filters}
+          onChange={onChange}
+          savedCount={savedCount}
+          onClose={() => setModalOpen(false)}
+          returnFocusTo={openerRef}
+        />
+      )}
+    </>
+  );
+}
+
+/* ─── The dialog ──────────────────────────────────────────────────────── */
+
+interface FilterModalProps extends FilterBarProps {
+  onClose: () => void;
+  returnFocusTo: React.RefObject<HTMLElement>;
+}
+
+/**
+ * Changes apply as you make them: after a short pause (so dragging a height
+ * handle does not re-filter the map on every step) the choice is committed and
+ * the footer count catches up. Closing the dialog any way (X, Escape, the scrim
+ * or the footer button) keeps what is chosen; the footer button only closes.
+ */
+function FilterModal({
+  types,
+  visibleVenues,
+  filters,
+  onChange,
+  onClose,
+  returnFocusTo,
+}: FilterModalProps) {
+  const units = useUnits();
+  const heightK = useMemo(() => heightKind(units.units), [units.units]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const [draft, setDraft] = useState<VenueFilters>(filters);
+  const [draftCount, setDraftCount] = useState(() => filterVenues(visibleVenues, filters).length);
+  const [counting, setCounting] = useState(true);
+  const [entered, setEntered] = useState(false);
+  const [closing, setClosing] = useState(false);
+
+  // The latest choice and the parent's setter, read by the timer and on close
+  // without restarting the timer whenever the parent re-renders.
+  const draftRef = useRef(draft);
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    draftRef.current = draft;
+    onChangeRef.current = onChange;
+  });
+
+  const requestClose = useCallback(() => {
+    if (closing) return;
+    onChangeRef.current(draftRef.current);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) onClose();
+    else setClosing(true);
+  }, [closing, onClose]);
+
+  useEffect(() => {
+    setCounting(true);
+    const timer = window.setTimeout(() => {
+      setDraftCount(filterVenues(visibleVenues, draft).length);
+      setCounting(false);
+      onChangeRef.current(draft);
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [draft, visibleVenues]);
+
+  // Escape and the focus trap are on the document rather than the dialog so
+  // they still fire while a handle inside is being dragged with the pointer
+  // captured, which is exactly when a stuck dialog would be most annoying.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        requestClose();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const node = dialogRef.current;
+      if (!node) return;
+      const focusable = Array.from(
+        node.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && (active === first || !node.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !node.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [requestClose]);
+
+  useEffect(() => {
+    const opener = returnFocusTo.current;
+    const root = document.getElementById('root');
+    const wasInert = root?.inert ?? false;
+    if (root) root.inert = true;
+    const unlock = lockPageScroll();
+    closeRef.current?.focus();
+    return () => {
+      if (root) root.inert = wasInert;
+      unlock();
+      // Sending focus back to the button that opened this is what makes the
+      // dialog dismissable from the keyboard without losing your place — after
+      // Escape the caret would otherwise fall back to the top of the document.
+      opener?.focus();
+    };
+  }, [returnFocusTo]);
+
+  const heights = useMemo(
+    () => visibleVenues.map(rankingHeight).filter((h) => h > 0),
+    [visibleVenues],
+  );
+
+  const selectedType: VenueType | null = draft.types.length === 1 ? draft.types[0] : null;
+
+  // Portalled to the body: .filterbar sits in a stacking context below the
+  // topbar, so a scrim rendered in place would be painted under the search bar
+  // it is supposed to cover.
+  return createPortal(
+    <div
+      className={`filter-scrim${closing ? ' closing' : ''}`}
+      // mousedown, not click: a drag that starts on a handle and ends outside
+      // the dialog fires a click on the scrim, which would shut the dialog the
+      // instant you overshot the end of the slider.
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) requestClose();
+      }}
+    >
+      <div
+        className={`filter-modal${entered ? ' entered' : ''}${closing ? ' closing' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="filter-modal-title"
+        ref={dialogRef}
+        onAnimationEnd={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.animationName === 'modal-in') setEntered(true);
+          if (closing && event.animationName === 'modal-out') onClose();
+        }}
+      >
+        <header className="filter-modal-head">
+          <h2 id="filter-modal-title">Filters</h2>
+          <button
+            type="button"
+            ref={closeRef}
+            className="filter-modal-close"
+            aria-label="Close filters"
+            onClick={requestClose}
+          >
+            <CloseIcon />
+          </button>
+        </header>
+
+        <div className="filter-modal-body">
+          <section className="filter-group">
+            <h3 id="filter-type-label">Place type</h3>
+            {/* One choice: Any, or one specific type. */}
+            <div className="seg" role="radiogroup" aria-labelledby="filter-type-label">
+              <Segment
+                selected={selectedType === null}
+                onSelect={() => setDraft({ ...draft, types: [] })}
+              >
+                Any type
+              </Segment>
+              {types.map((type) => (
+                <Segment
+                  key={type}
+                  selected={selectedType === type}
+                  onSelect={() => setDraft({ ...draft, types: [type] })}
+                >
+                  {VENUE_TYPE_LABEL[type]}
+                </Segment>
+              ))}
+            </div>
+          </section>
+
+          <section className="filter-group">
+            <h3>Elevation range</h3>
+            <ValueRange
+              values={heights}
+              min={draft.minHeightM}
+              max={draft.maxHeightM}
+              kind={heightK}
+              minLabel="Minimum height"
+              maxLabel="Maximum height"
+              onChange={(minHeightM, maxHeightM) => setDraft({ ...draft, minHeightM, maxHeightM })}
+            />
+          </section>
+        </div>
+
+        <footer className="filter-modal-foot">
+          <button type="button" className="linkish" onClick={() => setDraft(NO_FILTERS)}>
+            Clear all
+          </button>
+          <button
+            type="button"
+            className="filter-apply"
+            aria-busy={counting}
+            onClick={requestClose}
+          >
+            {counting ? (
+              <>
+                <span className="dots" aria-hidden="true">
+                  <span className="dot" />
+                  <span className="dot" />
+                  <span className="dot" />
+                </span>
+                <span className="visually-hidden" aria-live="polite">Counting…</span>
+              </>
+            ) : draftCount === 0 ? (
+              'No matches'
+            ) : draftCount >= 1000 ? (
+              'Show over 1,000 venues'
+            ) : (
+              `Show ${draftCount.toLocaleString()} venue${draftCount === 1 ? '' : 's'}`
+            )}
+          </button>
+        </footer>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/* ─── Small parts ─────────────────────────────────────────────────────── */
+
+function Segment({
+  selected,
+  onSelect,
+  children,
+}: {
+  selected: boolean;
+  onSelect: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      tabIndex={selected ? 0 : -1}
+      className={`seg-btn${selected ? ' on' : ''}`}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        const choices = Array.from(e.currentTarget.parentElement!.querySelectorAll<HTMLButtonElement>('[role="radio"]'));
+        const index = choices.indexOf(e.currentTarget);
+        const next = e.key === 'Home' ? 0 : e.key === 'End' ? choices.length - 1
+          : e.key === 'ArrowRight' || e.key === 'ArrowDown' ? (index + 1) % choices.length
+          : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? (index + choices.length - 1) % choices.length : -1;
+        if (next < 0) return;
+        e.preventDefault();
+        choices[next].focus();
+        choices[next].click();
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Kept local rather than in icons.tsx: nothing else in the app uses it. */
+function SlidersIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M1 4h4M9 4h6M1 12h6M11 12h4" />
+      <circle cx="7" cy="4" r="2" />
+      <circle cx="9" cy="12" r="2" />
+    </svg>
+  );
+}
+
+/**
+ * Memoised for the same reason the results list is: the map above re-renders
+ * this on every pan and selection, and none of that touches the chips.
+ */
+export const FilterBar = memo(CategoryBarInner);
