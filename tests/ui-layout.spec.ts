@@ -128,7 +128,8 @@ test('permalink: scheda sentiero completa, mappa responsive e un solo titolo', a
   const panel=page.locator('.route-panel.in-sidebar.is-full-detail');
   await expect(panel).toBeVisible({timeout:45_000});
   await expect(panel.locator('h1.route-title-heading')).toBeVisible();
-  await expect(panel.locator('.cb-detail-metrics')).toBeVisible();
+  await expect(panel.getByLabel('Dati principali del percorso')).toBeVisible();
+  await expect(panel.getByLabel('Quote e pendenze del percorso')).toBeVisible();
   await expect(panel.locator('.route-more-toggle')).toHaveCount(0);
   await expect(page.locator('.site-header input[type=search]')).toBeVisible();
   for(const width of [320,375,390,768,1024,1440]){
