@@ -1,6 +1,8 @@
 import { DATA_BASE, type Bounds } from './venues';
+import type { AtlasEntityMetadata } from './atlasDossier';
+import { mergeRefugeRelease } from './refugeRelease';
 
-export interface AlpinePlace {
+export interface AlpinePlace extends AtlasEntityMetadata {
   slug: string;
   name: string;
   kind: 'rifugio' | 'bivacco' | 'borgo';
@@ -17,7 +19,7 @@ export interface AlpinePlace {
   officialUrl?: string;
   elevationM?: number;
   /** OSM = quota indicata dal mappatore; DEM = terreno stimato. */
-  elevationSource?: 'osm' | 'dem';
+  elevationSource?: 'osm' | 'dem' | 'cai';
   wikidata?: string;
   website?: string;
   operator?: string;
