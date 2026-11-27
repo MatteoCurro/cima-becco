@@ -9,6 +9,7 @@ import { AccountSaved } from './AccountSaved';
 import { AccountStats } from './AccountStats';
 import { AuthModal } from './AuthModal';
 import { SiteFooter, SiteHeader } from './SiteChrome';
+import { PublicProfileSettings } from './PublicProfileSettings';
 
 const VIEW_LABEL = { routes: 'Your routes', stats: 'Stats', saved: 'Saved' } as const;
 
@@ -34,6 +35,7 @@ export function AccountPage() {
               <AccountIdentity user={user} routes={routes} view={view} />
               <div className="ac-content">
                 {view === 'routes' && <AccountRoutes user={user} routes={routes} error={error} onRetry={reload} />}
+                {view === 'routes' && <PublicProfileSettings />}
                 {view === 'stats' && route.page === 'account' && (
                   <AccountStats routes={routes} error={error} onRetry={reload} tab={route.statsTab} />
                 )}
