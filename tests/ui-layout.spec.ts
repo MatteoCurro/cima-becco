@@ -444,3 +444,69 @@ test('catalogo trekking: navigazione di categoria davvero full-width',async({pag
     expect(sizes.scroll).toBeLessThanOrEqual(width+2);
   }
 });
+
+
+test('site chrome: header e footer coprono la viewport, senza max-width ereditati',async({page})=>{
+  test.setTimeout(120_000);
+  for(const width of [320,390,768,1024,1440]){
+    await page.setViewportSize({width,height:900});
+    for(const url of ['/','/#rifugi','/route/osm-hiking-13956722/']){
+      await page.goto(url);
+      await expect(page.locator('.site-header').first()).toBeVisible();
+      await expect(page.locator('.site-footer').first()).toBeAttached({timeout:30000});
+      const boxes=await page.evaluate(()=>{
+        const header=document.querySelector('.site-header')!.getBoundingClientRect();
+        const footer=document.querySelector('.site-footer')!.getBoundingClientRect();
+        const footerInner=document.querySelector('.site-footer-inner')!.getBoundingClientRect();
+        return {
+          header:[header.left,header.right],footer:[footer.left,footer.right],
+          inner:[footerInner.left,footerInner.right],
+          overflow:document.documentElement.scrollWidth,
+        };
+      });
+      for(const [left,right] of [boxes.header,boxes.footer,boxes.inner]){
+        expect(left,JSON.stringify({url,width,boxes})).toBeGreaterThanOrEqual(-2);
+        expect(right,JSON.stringify({url,width,boxes})).toBeGreaterThanOrEqual(width-2);
+      }
+      expect(boxes.overflow,JSON.stringify({url,width,boxes})).toBeLessThanOrEqual(width+2);
+    }
+  }
+});
+
+test('dossier: Vai a non cambia il permalink e porta la sezione sotto la testata',async({page})=>{
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#rifugi');
+  const first=page.locator('.cb-explore-card-detail').first();
+  await expect(first).toBeVisible({timeout:20000});
+  await first.click();
+  const original=page.url();
+  const nav=page.getByRole('navigation',{name:'Naviga questa scheda'});
+  await expect(nav.getByRole('button',{name:/Contatti/})).toBeVisible();
+  await nav.getByRole('button',{name:/Contatti/}).click();
+  expect(page.url()).toBe(original);
+  const top=await page.locator('#cb-place-contacts').evaluate(el=>el.getBoundingClientRect().top);
+  const header=await page.locator('.site-header').evaluate(el=>el.getBoundingClientRect().bottom);
+  expect(top).toBeGreaterThanOrEqual(header-2);
+  expect(top).toBeLessThan(header+60);
+  await nav.getByRole('button',{name:/Mappa/}).click();
+  expect(page.url()).toBe(original);
+  const map=await page.locator('#cb-place-map').boundingBox();
+  expect(map?.y ?? 0).toBeGreaterThanOrEqual(100);
+  expect(map?.y ?? 10000).toBeLessThan(300);
+});
+
+test('Font Awesome: simboli inline SVG, nessun emoji di fallback nelle schede',async({page})=>{
+  await page.goto('/#rifugi');
+  await page.locator('.cb-explore-card-detail').first().click();
+  await expect(page.locator('.cb-location-avatar svg.cb-fa-icon')).toBeVisible();
+  const links=page.locator('.cb-detail-jump button .cb-fa-icon');
+  expect(await links.count()).toBeGreaterThan(3);
+  const computed=await links.first().evaluate(el=>({
+    viewBox:el.getAttribute('viewBox'),paths:el.querySelectorAll('path').length,
+    width:el.getBoundingClientRect().width,
+  }));
+  expect(computed.paths).toBeGreaterThan(0);
+  expect(computed.viewBox).toMatch(/^0 0 /);
+  expect(computed.width).toBeGreaterThan(5);
+});

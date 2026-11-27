@@ -3,7 +3,7 @@ import { scrollToDetailSection } from '../lib/detailNavigation';
 import './detailSections.css';
 
 /** Indice di sezione: button, non hash. Gli hash sono già riservati al router. */
-export interface DetailJumpItem { id:string; label:string; icon?:'map'|'route'|'compass'|'house'|'camera'|'water'|'mountain'; }
+export interface DetailJumpItem { id:string; label:string; icon?:'map'|'route'|'compass'|'house'|'camera'|'water'|'mountain'|'location-dot'; }
 export function DetailJumpNav({items}:{items:readonly DetailJumpItem[]}) {
   if (!items.length) return null;
   return <nav className="cb-detail-jump" aria-label="Naviga questa scheda">

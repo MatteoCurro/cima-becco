@@ -25,7 +25,6 @@
 .cb-route-hero>figcaption{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 15px;color:#fff;background:linear-gradient(transparent,#143c2cae);font-size:11px}
 .cb-route-hero>figcaption span{font-weight:900;letter-spacing:.08em}
 .cb-route-detail-loading{padding:30px;color:#637866;font-size:13px}
-.map-page.is-route-detail .site-footer{width:100%}
 @media(max-width:900px){
  .map-page.is-route-detail .stage .list-pane{flex:none;width:100%;height:auto;overflow:visible}
  .map-page.is-route-detail .stage .map-wrap{order:-1}

@@ -2,6 +2,9 @@ import { routeDetailHref } from '../lib/navigation';
 import { alpinePlaceLink } from '../lib/alpinePlaces';
 import { DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
 import { AtlasDossierBlocks } from './AtlasDossierBlocks';
+import { DetailJumpNav } from './DetailJumpNav';
+import { FaIcon } from './FaIcon';
+import { scrollToDetailSection } from '../lib/detailNavigation';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { endpointIconMarkup } from '../map/endpoints';
@@ -533,6 +536,14 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
           )}
         </div>
       </header>
+      {fullDetail&&<DetailJumpNav items={[
+        {id:'cb-route-summary',label:'In breve',icon:'route'},
+        {id:'cb-route-elevation',label:'Altimetria',icon:'mountain'},
+        ...(route.stops?.length?[{id:'cb-route-destinations',label:'Rifugi e paesi',icon:'house' as const}]:[]),
+        ...(route.waterSources?.length?[{id:'cb-route-water',label:'Acqua',icon:'water' as const}]:[]),
+        {id:'cb-route-technical',label:'Dettagli',icon:'compass'},
+        {id:'cb-route-photos',label:'Foto',icon:'camera'},
+      ]}/>}
       <span className="visually-hidden" role="status">{announced}</span>
       {mine && route.held && (
         <div className="route-held">
@@ -558,7 +569,8 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
         />
       ) : (
         <>
-      <div className="cima-trail-mood">
+      {fullDetail&&<AtlasDossierBlocks record={route} placement="alerts"/>}
+      <div id={fullDetail?'cb-route-summary':undefined} className="cima-trail-mood">
         <strong className={`cima-mood-pill cima-mood-pill--${mood.level}`} title={mood.basis}>{mood.quip}</strong>
         <span className="cima-mood-technical">{mood.label}</span>
         <span className="cima-trail-area">{region}{route.loop ? ' · Anello' : ''}</span>
@@ -572,18 +584,20 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
         ...(route.downloads !== undefined ? [{ label: 'Download', value: String(route.downloads) }] : []),
       ]}/>
 
-      {hasElevation ? (
-        <ElevationProfile points={elevation.points} height={sidebar ? 132 : 72} hoverIndex={hoverIndex} onHoverIndex={onHoverIndex} />
-      ) : (
-        <p className="route-elevation-unavailable">{elevation.pending ? 'Sto stimando il dislivello dal terreno…' : 'Dislivello non disponibile per questo tracciato.'}</p>
-      )}
+      <div id={fullDetail?'cb-route-elevation':undefined} className={fullDetail?'cb-detail-group cb-route-elevation-section':undefined}>
+        {hasElevation ? (
+          <ElevationProfile points={elevation.points} height={sidebar ? 132 : 72} hoverIndex={hoverIndex} onHoverIndex={onHoverIndex} />
+        ) : (
+          <p className="route-elevation-unavailable">{elevation.pending ? 'Sto stimando il dislivello dal terreno…' : 'Dislivello non disponibile per questo tracciato.'}</p>
+        )}
+      </div>
 
       {!fullDetail && route.photos?.[0] && <figure className="cima-route-cover">
         <img src={route.photos[0].url} alt={route.photos[0].caption || displayTitle} loading="lazy" />
         <small>Fotografia: {route.photos[0].author || 'Wikimedia Commons'} · {route.photos[0].license || 'licenza nella fonte'}</small>
       </figure>}
       {route.stops && route.stops.length > 0 && (
-        <section className="cb-route-destinations" aria-label="Rifugi e località vicine alla traccia">
+        <section id={fullDetail?'cb-route-destinations':undefined} className={fullDetail?'cb-route-destinations cb-detail-group':'cb-route-destinations'} aria-label="Rifugi e località vicine alla traccia">
           <h3>RIFUGI &amp; POSTI DOVE FINIRE</h3>
           <p>Questi luoghi sono stati trovati vicino alla traccia. Il sentiero non garantisce accesso diretto.</p>
           <div className="cb-route-destination-list">
@@ -597,13 +611,13 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
         </section>
       )}
       {route.waterSources && route.waterSources.length>0 && (
-        <section className="cb-route-water" aria-label="Punti acqua nei pressi del GPX">
+        <section id={fullDetail?'cb-route-water':undefined} className={fullDetail?'cb-route-water cb-detail-group':'cb-route-water'} aria-label="Punti acqua nei pressi del GPX">
           <strong>QUA L'ACQUA NON LA PORTA LO SHERPA.</strong>
           <p>Nei dati cartografici risultano <b>{route.waterSources.length}</b> punti acqua entro 120 metri dalla traccia.
             {' '}{route.waterSources.filter(w=>w.potable==='yes').length} con indicazione OSM di potabilità; per gli altri non darla per scontata.</p>
           <div className="cb-route-water-points">
             {route.waterSources.slice(0,8).map(w=>(
-              <a key={w.slug} href={fullDetail?'#cb-route-map':routeDetailHref(route.slug,route.source)}>
+              <a key={w.slug} href={routeDetailHref(route.slug,route.source)} onClick={fullDetail?event=>{event.preventDefault();scrollToDetailSection('cb-route-map');}:undefined}>
                 <span>{w.name}</span>
                 <small>{w.potable==='yes'?'POTABILITÀ INDICATA':w.potable==='no'?'NON POTABILE':'NON VERIFICATA'} · {w.distanceM} m dal GPX · APRI SULLA MAPPA</small>
               </a>
@@ -638,6 +652,8 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
       {/* Always rendered, so opening it can slide; inert while folded. */}
       <div className="route-more" id={`route-more-${route.slug}`} ref={moreRef}>
         <div className="route-more-inner">
+          <div id={fullDetail?'cb-route-technical':undefined} className={fullDetail?'cb-detail-group cb-route-technical-section':undefined}>
+            {fullDetail&&<DetailSectionHeading kicker="03 / TRACCIA" title="Dati tecnici e quote"/>}
           {(route.trailRef || route.caiDifficulty || route.viaFerrataScale || route.sacScale || route.officialDescriptionUrl || route.sourceUrl) && (
             <section className="route-official-data" aria-label="Segnavia e dati tecnici">
               <DetailSectionHeading kicker="03 / DETTAGLI TECNICI" title="Segnavia e dati tecnici"/>
@@ -659,8 +675,8 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
             { label: 'Salita per km', value: hasElevation ? units.height(elevation.gainM / km) : unavailable },
           ]}/>
 
-          {fullDetail && <AtlasDossierBlocks record={route} placement="alerts"/>}
           {fullDetail && <AtlasDossierBlocks record={route} placement="core"/>}
+          </div>
           {touches.length > 0 && (
             <div className="gpx-touches route-passes">
               <strong>Luoghi attraversati</strong>
@@ -687,7 +703,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
           {fullDetail && <AtlasDossierBlocks record={route} placement="media"/>}
           {fullDetail && <AtlasDossierBlocks record={route} placement="credits"/>}
 
-          <div className="route-photos">
+          <div id={fullDetail?'cb-route-photos':undefined} className={fullDetail?'route-photos cb-detail-group':'route-photos'}>
             <strong>Fotografie lungo il percorso</strong>
             {(route.photos ?? []).map((photo) => (
               <a key={`${photo.url}-${photo.sourceUrl}`} className="route-photo-thumb" href={photo.sourceUrl} target="_blank" rel="noopener noreferrer" title={[photo.caption, photo.author, photo.license].filter(Boolean).join(' · ')}>
@@ -712,7 +728,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
               </button>
             ))}
             {SUPABASE_CONFIGURED && <button type="button" className="route-photo-add" onClick={() => setAdding(true)}>
-              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+              <FaIcon name="camera" size={14}/>
               Aggiungi foto o segnalazione
             </button>}
           </div>

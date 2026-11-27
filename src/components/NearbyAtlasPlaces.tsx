@@ -6,7 +6,7 @@ import { DetailSectionHeading } from './DetailPrimitives';
 
 export function NearbyAtlasPlaces({ items }: { items: readonly NearbyAtlasPlace[] }) {
   if (!items.length) return null;
-  return <section id="cb-place-nearby" className="cb-location-section cb-nearby-entities" aria-labelledby="cb-place-nearby-title">
+  return <section id="cb-place-nearby" className="cb-location-section cb-detail-group cb-nearby-entities" aria-labelledby="cb-place-nearby-title">
     <DetailSectionHeading kicker="ATLANTE / LUOGHI COLLEGATI" title="ALTRI LUOGHI NEI DINTORNI."
       id="cb-place-nearby-title" description="Distanze geografiche in linea d’aria. Vicinanza non significa accessibilità, collegamento diretto o percorso verificato."/>
     <div className="cb-nearby-entities-grid">
