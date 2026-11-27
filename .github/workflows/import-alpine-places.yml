@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - scripts/import_alpine_places.py
+      - scripts/import_alpine_water.py
+      - tests/test_alpine_water.py
       - tests/test_alpine_places.py
       - .github/workflows/import-alpine-places.yml
   schedule:
@@ -27,15 +29,19 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_alpine_places.py' -v
       - name: Scarica i POI Dolomiti e associa ai sentieri
         run: python scripts/import_alpine_places.py --write
+      - name: Test e aggiornamento punti acqua
+        run: |
+          python -m unittest discover -s tests -p 'test_alpine_water.py' -v
+          python scripts/import_alpine_water.py --write
       - name: Registra nuovi POI e collegamenti
         run: |
-          if [ -z "$(git status --porcelain -- public/data/alpine-places.json public/data/routes-tiles/)" ]; then
+          if [ -z "$(git status --porcelain -- public/data/alpine-places.json public/data/alpine-water.json public/data/routes-tiles/)" ]; then
             echo "Nessun cambiamento POI"
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A public/data/alpine-places.json public/data/routes-tiles/
+          git add -A public/data/alpine-places.json public/data/alpine-water.json public/data/routes-tiles/
           git commit -m "data: rifugi e borghi dalle Dolomiti, tappe verificate per i GPX"
           git fetch origin main
           git rebase origin/main
