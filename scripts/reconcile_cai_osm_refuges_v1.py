@@ -108,8 +108,37 @@ def strict_catalog(records):
     return sorted(records, key=cai_source_id)
 
 
-def identity_candidates(cai_records, osm_entities):
+def official_type_evidence(evidence):
+    """Validate human-reviewed public CAI page evidence, never raw type guesses."""
+    if evidence is None:
+        return {}
+    if isinstance(evidence, dict):
+        evidence = evidence.get("records")
+    if not isinstance(evidence, list):
+        raise ValueError("Evidenze ufficiali CAI devono contenere records[]")
+    mapping = {}
+    for item in evidence:
+        if not isinstance(item, dict):
+            raise ValueError("Voce evidenza CAI invalida")
+        code = cai_source_id(item)
+        page = item.get("officialPage")
+        if page != "https://rifugi.cai.it/shelters/" + code:
+            raise ValueError("La fonte ufficiale non corrisponde al CAI ID: " + code)
+        classification = item.get("classification")
+        normalized_type = str(item.get("officialType", "")).strip().casefold()
+        if ((classification == "refuge" and normalized_type not in
+             {"rifugio custodito", "rifugio incustodito"}) or
+            (classification == "bivouac" and normalized_type != "bivacco")):
+            raise ValueError("Tipologia CAI discordante con evidenza: " + code)
+        if classification not in ("refuge", "bivouac") or code in mapping:
+            raise ValueError("Classificazione CAI non accettata o duplicata")
+        mapping[code] = item
+    return mapping
+
+
+def identity_candidates(cai_records, osm_entities, verified_types=None):
     cai_records = strict_catalog(cai_records)
+    type_evidence = official_type_evidence(verified_types)
     if isinstance(osm_entities, dict):
         osm_entities = osm_entities.get("entities")
     if not isinstance(osm_entities, list):
@@ -120,10 +149,14 @@ def identity_candidates(cai_records, osm_entities):
     osm = [(h, osm_point(h)) for h in osm_entities if h.get("kind") == "refuge"]
     categories = {"excluded_non_refuge": 0, "unverified": 0,
                   "confirmed_refuge_type": 0}
-    matches, unmatched = [], []
+    matches, unmatched, type_conflicts = [], [], []
     for row in cai_records:
         source_id = "cai:shelter:" + cai_source_id(row)
-        kind_status = category(row)
+        verified = type_evidence.get(cai_source_id(row))
+        source_type = dict(row)
+        if verified:
+            source_type["category"] = verified["officialType"]
+        kind_status = category(source_type)
         categories[kind_status] += 1
         # Il listino API può includere elementi non pubblicati; non derivare
         # candidati di pagina da record non visibili sul catalogo pubblico.
@@ -132,8 +165,28 @@ def identity_candidates(cai_records, osm_entities):
                               "typeReview": kind_status})
             continue
         if kind_status == "excluded_non_refuge":
+            # Track potential OSM category problem for future bivouac module
+            # without creating any typed refuge link.
+            point = valid_geojson_point(row.get("geo"))
+            name = row.get("name", row.get("title", ""))
+            if verified and point and tokens(name):
+                for hut, loc in osm:
+                    if loc is None:
+                        continue
+                    d = distance_m(point, loc)
+                    if d <= CANDIDATE_RADIUS_M and name_score(name, hut.get("name", "")) >= STRONG_NAME_SCORE:
+                        type_conflicts.append({
+                            "sourceId": source_id,
+                            "officialType": verified["officialType"],
+                            "officialPage": verified["officialPage"],
+                            "osmRefugeId": hut["id"],
+                            "distanceM": d,
+                            "reviewStatus": "wrong_kind_review_required",
+                            "autoReclassified": False,
+                        })
             unmatched.append({"sourceId": source_id, "reason": "non_refuge_type",
-                              "typeReview": "confirmed_non_refuge"})
+                              "typeReview": "confirmed_non_refuge",
+                              "officialPage": verified["officialPage"] if verified else None})
             continue
         point = valid_geojson_point(row.get("geo"))
         name = row.get("name", row.get("title", ""))
@@ -201,11 +254,14 @@ def identity_candidates(cai_records, osm_entities):
             "categoryStatus": categories,
             "recordsWithCandidates": len(matches),
             "candidatePairs": sum(len(x["suggestions"]) for x in matches),
+            "officiallyVerifiedTypes": sum(1 for r in cai_records if cai_source_id(r) in type_evidence),
+            "osmCategoryConflicts": len(type_conflicts),
             "ambiguousRecords": sum(x["conflict"] for x in matches),
             "unmatchedRecords": len(unmatched),
             "establishedLinks": 0,
         },
         "candidateMatches": matches, "unmatched": unmatched,
+        "typeConflicts": sorted(type_conflicts, key=lambda x: (x["sourceId"], x["osmRefugeId"])),
     }
 
 
@@ -216,10 +272,15 @@ def main():
                    "import-refuges-v1" / "refuges.json")
     p.add_argument("--output", type=Path, default=ROOT / "build" /
                    "restricted-cai" / "candidate-identity-links.json")
+    p.add_argument("--official-type-evidence", type=Path,
+                   default=ROOT / "scripts" / "cai_official_type_evidence_v1.json")
     args = p.parse_args()
     cai = json.loads(args.cai_sample.read_text(encoding="utf-8"))
     osm = json.loads(args.osm_staging.read_text(encoding="utf-8"))
-    report = identity_candidates(cai, osm)
+    evidence = (json.loads(args.official_type_evidence.read_text(encoding="utf-8"))
+                if args.official_type_evidence and args.official_type_evidence.is_file()
+                else None)
+    report = identity_candidates(cai, osm, verified_types=evidence)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, sort_keys=True, ensure_ascii=False, indent=2)
                            + "\n", encoding="utf-8")
