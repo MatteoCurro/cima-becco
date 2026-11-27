@@ -67,6 +67,14 @@ def main():
             result["detailProbe"].append({"caiId":entry["caiId"],"url":detail_url,
                 "responseShape":shape(detail),
                 "topLevelKeys":list(detail)[:40] if isinstance(detail,dict) else [],
+                "firstFieldShape":shape((detail.get("fields") or [None])[0])
+                    if isinstance(detail,dict) and detail.get("fields") else None,
+                "availableFieldNames":list(dict.fromkeys(
+                    str(x.get("slug") or x.get("name") or x.get("field_name") or x.get("label") or x.get("title") or "")[:120]
+                    for x in (detail.get("fields") or []) if isinstance(x,dict)))
+                    if isinstance(detail,dict) else [],
+                "fieldEntryCount":len(detail.get("fields") or []) if isinstance(detail,dict) else 0,
+                "mediaEntryCount":len(detail.get("media") or []) if isinstance(detail,dict) else 0,
                 "nestedTypes":{k:shape(v) for k,v in detail.items()
                     if k in ("data","fields","media","shelter","contacts","services")}
                     if isinstance(detail,dict) else {}})
