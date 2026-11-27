@@ -165,7 +165,7 @@ export function GoogleHealthImport({ elevationModel, venues, existingRoutes, onL
             </p>
           )}
           {workouts.length === 0 ? (
-            <p className="ghealth-row muted">No workouts found — outdoor runs, rides and hikes with GPS show up here.</p>
+            <p className="ghealth-row muted">Nessuna attività a piedi trovata: sono supportate escursioni e trail con traccia GPS.</p>
           ) : (
             <ul className="ghealth-list">
               {workouts.map((workout) => (
