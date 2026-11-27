@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   simulate:
@@ -18,6 +18,8 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -27,8 +29,19 @@ jobs:
         run: node scripts/metadata_atlas_engine.mjs
       - name: Normalizza tutti i metadati sentieri esistenti (no GPS)
         run: node scripts/metadata_route_catalog.mjs
-      - name: Prova 20 schede Wikidata con cache e throttling
-        run: node scripts/metadata_atlas_engine.mjs --fetch --limit 20
+      - name: Acquisizione controllata dei 934 identificativi Wikidata
+        run: node scripts/metadata_atlas_engine.mjs --fetch --limit 934
+      - name: Salva la cache verificabile solo nel branch sperimentale
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add experiments/metadata/wikidata-cache.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "data: cache Wikidata metadati, branch di ricerca"
+          git push origin "HEAD:${HEAD_REF}"
       - name: Conserva report e campione metadata per revisione
         if: always()
         uses: actions/upload-artifact@v4
