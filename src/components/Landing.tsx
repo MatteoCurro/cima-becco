@@ -89,9 +89,9 @@ export function Landing() {
       <main className="home-shell home-main">
         {loadError && (
           <section className="home-load-error" role="alert">
-            <h2>Places and routes could not be loaded</h2>
+            <h2>Mappa in pausa. Non ci piace nemmeno a noi.</h2>
             <p>{loadError}</p>
-            <button type="button" className="btn btn-light" onClick={() => window.location.reload()}>Try again</button>
+            <button type="button" className="btn btn-light" onClick={() => window.location.reload()}>Riprova</button>
           </section>
         )}
         {!loadError && (
@@ -111,7 +111,7 @@ export function Landing() {
             {worldShown.map((country) => (
               <Row
                 key={country.code}
-                title={`Highest peaks in ${country.name}`}
+                title={`Le vette più alte · ${country.name}`}
                 link={climbsIn(country.bounds)}
                 loading={false}
                 collage={collageOf(country.peaks)}
@@ -218,7 +218,7 @@ function buildRows(venues: Venue[], worldRows: ReadonlySet<string>): RowSpec[] {
   ];
   for (const [region, list] of byRegion) {
     if (region === 'Italia' || region === 'Austria' || list.length < 4 || worldRows.has(normalisePlace(region))) continue;
-    rows.push({ title: `Peaks in ${region}`, venues: showcase(list), bounds: boundsFor(region, list), showKind: false });
+    rows.push({ title: `Le cime di ${region}`, venues: showcase(list), bounds: boundsFor(region, list), showKind: false });
   }
   return rows.filter((row) => row.venues.length > 0);
 }
@@ -304,7 +304,7 @@ function Row({ title, link, loading, children, collage = [] }: {
 /** The card at the end of a row: the same place as the title link, for people who scrolled to the end. */
 function SeeAllTile({ link, title, photos }: { link: MapLink; title: string; photos: string[] }) {
   return (
-    <a className="tile tile-see-all" href={link.href} onClick={() => rememberMode(link.mode)} aria-label={`See all: ${title}`}>
+    <a className="tile tile-see-all" href={link.href} onClick={() => rememberMode(link.mode)} aria-label={`Vedi tutte: ${title}`}>
       <span className="tile-media">
         <span className="see-all-card">
           {photos.length > 0 ? (
@@ -316,7 +316,7 @@ function SeeAllTile({ link, title, photos }: { link: MapLink; title: string; pho
           ) : (
             <span className="see-all-arrow" aria-hidden="true"><ChevronRightIcon size={20} /></span>
           )}
-          <span className="see-all-label">See all</span>
+          <span className="see-all-label">VEDI TUTTO</span>
         </span>
       </span>
     </a>
@@ -330,7 +330,7 @@ function tileMeta(venue: Venue, showKind: boolean): string | null {
   const town = townName(venue.town);
   if (town) parts.push(town);
   const routes = venue.routeSlugs.length;
-  if (routes > 0) parts.push(`${routes} route${routes === 1 ? '' : 's'}`);
+  if (routes > 0) parts.push(`${routes} sentier${routes === 1 ? 'o' : 'i'}`);
   return parts.length > 0 ? parts.join(' · ') : null;
 }
 
