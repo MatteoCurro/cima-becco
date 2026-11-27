@@ -70,16 +70,21 @@ def fetch_claims(qids):
     out = {}
     for batch in chunks(qids):
         doc = request(WIKIDATA, {'action': 'wbgetentities', 'format': 'json',
-                                'ids': '|'.join(batch), 'props': 'claims'})
+                                'ids': '|'.join(batch), 'props': 'claims|sitelinks'})
         for qid, entity in doc.get('entities', {}).items():
             claims = entity.get('claims', {})
             item = {}
-            for prop, label in [('P18', 'photo'), ('P373', 'category')]:
+            for prop, label in [('P18', 'photo'), ('P154', 'logo'), ('P373', 'category')]:
                 for claim in claims.get(prop, []):
                     value = claim.get('mainsnak', {}).get('datavalue', {}).get('value')
                     if isinstance(value, str) and value.strip():
                         item[label] = value.strip()
                         break
+            for site, language in [('itwiki','it'),('dewiki','de'),('enwiki','en')]:
+                title = entity.get('sitelinks', {}).get(site, {}).get('title')
+                if title:
+                    item['wiki'] = (language, title)
+                    break
             if item:
                 out[qid] = item
         time.sleep(1.2)
@@ -111,6 +116,145 @@ def nearby_commons_files(place):
     return [row['title'].removeprefix('File:') for row in candidates
             if row.get('title', '').startswith('File:')
             and title_matches_place(place['name'], row['title'])][:5]
+
+
+def wikipedia_page_image(language, title):
+    """Immagine della voce Wikipedia collegata esattamente via Wikidata QID."""
+    if language not in ('it', 'de', 'en') or not title:
+        return None
+    doc = request('https://' + language + '.wikipedia.org/w/api.php', {
+        'action': 'query', 'format': 'json', 'prop': 'pageimages',
+        'titles': title, 'piprop': 'name', 'redirects': '1'})
+    for page in doc.get('query', {}).get('pages', {}).values():
+        filename = page.get('pageimage')
+        if filename and re.search(r'\.(?:jpg|jpeg|png|webp)
+    result = {}
+    for batch in chunks(sorted(set(filenames)), 15):
+        doc = request(COMMONS, {'action': 'query', 'format': 'json',
+                                'titles': '|'.join('File:' + fn.replace('_', ' ') for fn in batch),
+                                'prop': 'imageinfo', 'iiprop': 'url|extmetadata',
+                                'iiurlwidth': '960', 'redirects': '1'})
+        for page in doc.get('query', {}).get('pages', {}).values():
+            info = (page.get('imageinfo') or [None])[0]
+            if not info:
+                continue
+            meta = info.get('extmetadata') or {}
+            license_name = plain(meta.get('LicenseShortName', {}).get('value'))
+            if not VALID_LICENSE.match(license_name):
+                continue
+            filename = page.get('title', '').removeprefix('File:')
+            image = info.get('thumburl') or info.get('url', '')
+            if not image.startswith('https://upload.wikimedia.org/'):
+                continue
+            result[filename.replace('_', ' ').casefold()] = {
+                'url': image,
+                'sourceUrl': 'https://commons.wikimedia.org/wiki/File:' + filename.replace(' ', '_'),
+                'license': license_name,
+                'author': plain(meta.get('Artist', {}).get('value') or info.get('user', ''))
+                          or 'Autore nella pagina Commons',
+                'licenseUrl': plain(meta.get('LicenseUrl', {}).get('value')),
+            }
+        time.sleep(1.2)
+    return result
+
+
+def run(limit=75, geo_limit=60, write=False):
+    data = json.loads(SOURCE.read_text(encoding='utf-8'))
+    places = data.get('places', [])
+    today = datetime.now(timezone.utc).date().isoformat()
+
+    # Preserve direct matches from old pipeline; score P18 > linked category > geo title.
+    direct = [p for p in places if not p.get('photo') and not p.get('photoCheckedAt')
+              and (p.get('commonsFile') or re.fullmatch(r'Q\d+', p.get('wikidata', '')))]
+    direct.sort(key=lambda p: (not bool(p.get('commonsFile')), p.get('kind') == 'borgo',
+                               p.get('name', '').casefold()))
+    direct = direct[:max(0, min(250, limit))]
+    qids = sorted({p['wikidata'] for p in direct if not p.get('commonsFile') and p.get('wikidata')})
+    claims = fetch_claims(qids) if qids else {}
+    direct_files = {}
+    logo_files = {}
+    for place in direct:
+        q = claims.get(place.get('wikidata'), {})
+        filename = place.get('commonsFile') or q.get('photo')
+        if q.get('logo') and not place.get('logo'):
+            logo_files[place['slug']] = q['logo']
+        if not filename and q.get('category'):
+            try:
+                names = commons_category_file(q['category'])
+                filename = next((name for name in names if title_matches_place(place['name'], name)), None)
+                if not filename and place['kind'] == 'borgo':
+                    filename = next(iter(names), None)
+            except Exception as error:
+                print(f"Categoria Commons non disponibile per {place['slug']}: {error}")
+        if not filename and q.get('wiki'):
+            try:
+                filename = wikipedia_page_image(*q['wiki'])
+            except Exception as error:
+                print(f"Immagine Wikipedia non disponibile ({place['slug']}): {error}")
+        if filename:
+            direct_files[place['slug']] = filename
+        time.sleep(.15)
+
+    candidates = [p for p in places if not p.get('photo') and not p.get('photoGeoCheckedAt')
+                  and len(clean_tokens(p.get('name', ''))) >= 1 and len(p.get('name', '')) >= 7]
+    # Prefer refuges and bivouacs; then towns. Retry failures on another run, not on every page.
+    candidates.sort(key=lambda p: (p.get('kind') == 'borgo', -int(bool(p.get('wikidata'))),
+                                   p.get('name', '').casefold()))
+    candidates = candidates[:max(0, min(150, geo_limit))]
+    geo_files = {}
+    for place in candidates:
+        try:
+            names = nearby_commons_files(place)
+            if names:
+                geo_files[place['slug']] = names[0]
+            place['photoGeoCheckedAt'] = today
+        except Exception as error:
+            print(f"Geo Commons temporaneamente non disponibile ({place['slug']}): {error}")
+        time.sleep(1.2)
+
+    filenames = list(direct_files.values()) + list(geo_files.values()) + list(logo_files.values())
+    verified = commons_photos(filenames) if filenames else {}
+    saved = 0
+    for place in direct:
+        filename = direct_files.get(place['slug'], '')
+        photo = verified.get(filename.replace('_', ' ').casefold())
+        if photo:
+            place['photo'] = photo
+            saved += 1
+        if place['slug'] in logo_files:
+            logo = verified.get(logo_files[place['slug']].replace('_', ' ').casefold())
+            if logo:
+                place['logo'] = logo
+        place['photoCheckedAt'] = today
+    for place in candidates:
+        if place.get('photo'):
+            continue
+        filename = geo_files.get(place['slug'], '')
+        photo = verified.get(filename.replace('_', ' ').casefold())
+        if photo:
+            place['photo'] = photo
+            saved += 1
+    if write and (direct or candidates):
+        SOURCE.write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')) + '\n',
+                          encoding='utf-8')
+    print(json.dumps({
+        'directChecked': len(direct), 'geoChecked': len(candidates),
+        'logos': sum(bool(p.get('logo')) for p in places),
+        'newPhotos': saved, 'totalPhotos': sum(bool(p.get('photo')) for p in places),
+    }))
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--limit', type=int, default=75)
+    parser.add_argument('--geo-limit', type=int, default=60)
+    parser.add_argument('--write', action='store_true')
+    options = parser.parse_args()
+    run(options.limit, options.geo_limit, options.write)
+, filename, re.I):
+            if not re.search(r'(?:coat.of.arms|stemma|wappen|flag|bandiera|logo)', filename, re.I):
+                return filename
+    return None
 
 
 def commons_photos(filenames):
