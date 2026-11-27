@@ -1,0 +1,33 @@
+name: Synchronize refuge release with latest main (once)
+
+on:
+  push:
+    branches: [feat/refuges-canonical-import-v1]
+    paths:
+      - .github/workflows/sync-refuge-with-main-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  synchronize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Merge the current main, favor latest UI on conflicting hunks
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-edit -X theirs origin/main
+          test -f src/lib/atlasDossier.ts
+          test -f src/components/AtlasDossierBlocks.tsx
+          test -f scripts/import_cai_refuges_v1.py
+          test -f src/lib/refugeRelease.ts
+          git push origin HEAD:feat/refuges-canonical-import-v1
