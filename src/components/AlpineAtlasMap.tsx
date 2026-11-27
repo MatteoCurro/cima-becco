@@ -33,6 +33,8 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
   const markerRef=useRef<Marker | null>(null);
   const initialized=useRef(false);
   const [ready,setReady]=useState(false);
+  const [showTrails,setShowTrails]=useState(Boolean(selected));
+  const [showWater,setShowWater]=useState(false);
 
   useEffect(()=>{
     if(!container.current||mapRef.current)return;
@@ -105,7 +107,7 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
       const pin=document.createElement('span');
       pin.className='cb-atlas-selected-pin';
       pin.setAttribute('aria-label',selected.name);
-      pin.textContent=kind==='rifugio'?'⌂':'◆';
+      pin.textContent=kind==='rifugio'?'⌂':kind==='bivacco'?'△':'◆';
       markerRef.current=new Marker({element:pin,anchor:'bottom'})
         .setLngLat([selected.lng,selected.lat]).addTo(map);
       map.easeTo({center:[selected.lng,selected.lat],zoom:13,duration:400});
@@ -118,9 +120,24 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=[],height=380,w
     }
   },[selected,kind,places,ready]);
 
+  useEffect(()=>{
+    const map=mapRef.current;if(!map||!ready)return;
+    for(const id of ['cb-atlas-nearby-route-outline','cb-atlas-nearby-route-line']){
+      if(map.getLayer(id))map.setLayoutProperty(id,'visibility',showTrails?'visible':'none');
+    }
+  },[ready,showTrails]);
+  useEffect(()=>{
+    const map=mapRef.current;if(!map||!ready)return;
+    if(map.getLayer('cb-atlas-water-points'))map.setLayoutProperty('cb-atlas-water-points','visibility',showWater?'visible':'none');
+  },[ready,showWater]);
+
   return <div className="cb-atlas-map-wrap">
+    <div className="cb-map-layer-switches" role="group" aria-label="Livelli sulla mappa">
+      {selected&&<button type="button" aria-pressed={showTrails} onClick={()=>setShowTrails(value=>!value)}>Sentieri {showTrails?'✓':'+'}</button>}
+      {water.length>0&&<button type="button" aria-pressed={showWater} onClick={()=>setShowWater(value=>!value)}>Punti acqua {showWater?'✓':'+'}</button>}
+    </div>
     <div ref={container} className="cb-atlas-map" style={{height}} role="application"
-      aria-label={selected? `Mappa topografica di ${selected.name} con sentieri vicini` : `Mappa topografica dedicata a ${kind==='rifugio'?'rifugi':'paesi di montagna'}`}/>
-    <span className="cb-atlas-map-caption">TOPO / SAT · {selected?.name ?? (kind==='rifugio'?'RIFUGI':'PAESI')} · + / − PER ZOOMARE</span>
+      aria-label={selected? `Mappa topografica di ${selected.name} con sentieri vicini` : `Mappa topografica dedicata a ${kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'paesi di montagna'}`}/>
+    <span className="cb-atlas-map-caption">TOPO / SAT · {selected?.name ?? (kind==='rifugio'?'RIFUGI':kind==='bivacco'?'BIVACCHI':'PAESI')} · + / − PER ZOOMARE</span>
   </div>;
 }

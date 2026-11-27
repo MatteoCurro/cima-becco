@@ -26,20 +26,20 @@ interface TrekProject {
 type TreksDataset = { generatedAt: string | null; projects: TrekProject[] };
 const EMPTY: AlpinePlacesDataset = { generatedAt: null, source: 'OpenStreetMap · ODbL 1.0', coverage: 'Dolomiti', places: [] };
 const EMPTY_TREKS: TreksDataset = { generatedAt: null, projects: [] };
-type Section = 'rifugi' | 'borghi' | 'trekking';
+type Section = 'rifugi' | 'bivacchi' | 'borghi' | 'trekking';
 
 function parseAtlas(hash: string): { section: Section; slug: string | null } {
   // The initial part is a section name, not an empty prefix.
   const path = hash.replace(/^#atlante\/?/, '').split('/').filter(Boolean);
-  const section = path[0] === 'borghi' || path[0] === 'trekking' ? path[0] : 'rifugi';
+  const section = path[0] === 'borghi' || path[0] === 'bivacchi' || path[0] === 'trekking' ? path[0] : 'rifugi';
   return { section, slug: path[1] ?? null };
 }
 
-const sectionLabels: Record<Section,string> = { rifugi:'RIFUGI',borghi:'PAESI DI MONTAGNA',trekking:'CAMMINI XXL' };
+const sectionLabels: Record<Section,string> = { rifugi:'RIFUGI',bivacchi:'BIVACCHI',borghi:'PAESI',trekking:'TREKKING A TAPPE' };
 
 function AtlasHeader({ section }: { section: Section }) {
   return <div className="cb-atlas-tabs" role="navigation" aria-label="Esplora atlante">
-    {(['rifugi','borghi','trekking'] as Section[]).map(key =>
+    {(['rifugi','bivacchi','borghi','trekking'] as Section[]).map(key =>
       <a key={key} className={section === key ? 'active' : ''} href={`#atlante/${key}`}>{sectionLabels[key]}</a>)}
   </div>;
 }
@@ -47,7 +47,7 @@ function AtlasHeader({ section }: { section: Section }) {
 function PlaceBadge({ place }: { place: AlpinePlace }) {
   return <span className={`cb-atlas-kind cb-atlas-kind--${place.kind}`}>
     <AlpinePlaceIcon kind={place.kind} size={19}/>
-    {place.kind === 'rifugio' ? 'RIFUGIO' : 'BORGO'}{place.elevationM ? ` · ${place.elevationM.toLocaleString('it-IT')} m` : ''}
+    {place.kind === 'rifugio' ? 'RIFUGIO' : place.kind === 'bivacco' ? 'BIVACCO' : 'PAESE'}{place.elevationM ? ` · ${place.elevationM.toLocaleString('it-IT')} m` : ''}
   </span>;
 }
 
@@ -75,7 +75,7 @@ function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onBack: st
     let active=true;
     setLoading(true);setNearby([]);
     void loadRoutesInBounds(placeBounds(place,4))
-      .then(routes=>{if(active)setNearby(routesNear(routes,place.lng,place.lat,place.kind==='rifugio'?1100:1600,22));})
+      .then(routes=>{if(active)setNearby(routesNear(routes,place.lng,place.lat,place.kind==='borgo'?1600:1100,22));})
       .catch(()=>{if(active)setNearby([]);})
       .finally(()=>{if(active)setLoading(false);});
     return ()=>{active=false;};
@@ -92,57 +92,95 @@ function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onBack: st
   const arrivals=tagged.filter(route=>!departures.includes(route)&&(route.stops??[]).some(stop=>stop.slug===place.slug&&stop.relation==='arrivo'));
   const passes=tagged.filter(route=>!departures.includes(route)&&!arrivals.includes(route));
   const around=nearby.filter(route=>!tagged.includes(route));
-  const placeLine=place.kind==='rifugio'
-    ? `${place.name} è un rifugio mappato nel settore dolomitico${place.elevationM ? `, a circa ${place.elevationM} metri di quota` : ''}.`
-    : `${place.name} è una località montana identificata nei dati OpenStreetMap${place.elevationM ? `, a ${place.elevationM} metri di quota` : ''}.`;
+  const kindLabel=place.kind==='rifugio'?'rifugio alpino':place.kind==='bivacco'?'bivacco':'località montana';
+  const placeLine=place.kind==='borgo'
+    ? `${place.name} è una località di montagna censita nelle Dolomiti.`
+    : `${place.name} è un ${kindLabel} censito nelle Dolomiti.`;
+  const detailRows: { label:string; value:string }[]=[
+    ...(place.operator?[{label:'Gestore o ente indicato',value:place.operator}]:[]),
+    ...(place.capacity!=null?[{label:place.kind==='bivacco'?'Capienza indicata':'Posti letto indicati',value:String(place.capacity)}]:[]),
+    ...(place.openingHours?[{label:'Orari dichiarati',value:place.openingHours}]:[]),
+    ...(place.seasonal?[{label:'Stagionalità',value:place.seasonal}]:[]),
+    ...(place.access?[{label:'Accesso dichiarato in OSM',value:place.access}]:[]),
+    ...(place.fee?[{label:'Indicazione tariffa',value:place.fee}]:[]),
+    ...(place.winterRoom?[{label:'Locale invernale',value:place.winterRoom}]:[]),
+    ...(place.address?[{label:'Indirizzo',value:place.address}]:[]),
+    {label:'Coordinate WGS84',value:`${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`},
+    ...(place.elevationSource?[{label:'Fonte della quota',value:place.elevationSource==='dem'?'Stima del modello altimetrico DEM':'Quota registrata in OpenStreetMap'}]:[]),
+  ];
+  return <article className="cb-atlas-detail cb-atlas-detail-wide cb-place-detail">
+    <a className="cb-atlas-back" href={onBack}>← Torna a {place.kind==='rifugio'?'rifugi':place.kind==='bivacco'?'bivacchi':'paesi'}</a>
+    <header className="cb-place-hero">
+      <PlaceBadge place={place}/>
+      <h1>{place.name}</h1>
+      <p className="cb-atlas-lead">{place.description || placeLine}</p>
+      <div className="cb-place-facts" aria-label="Dati essenziali">
+        <div><strong>{place.elevationM!=null?`${place.elevationM.toLocaleString('it-IT')} m`:'n.d.'}</strong><span>Altitudine{place.elevationSource==='dem'?' stimata':''}</span></div>
+        {place.capacity!=null&&<div><strong>{place.capacity}</strong><span>{place.kind==='bivacco'?'Posti indicati':'Posti letto'}</span></div>}
+        <div><strong>{nearby.length || (loading?'…':'0')}</strong><span>Sentieri nei dintorni</span></div>
+      </div>
+      <div className="cb-place-contact-actions">
+        {place.phone&&<a className="cb-atlas-primary" href={`tel:${place.phone.replace(/[^+\d]/g,'')}`}>CHIAMA LA STRUTTURA</a>}
+        {place.email&&<a className={place.phone?'cb-place-secondary':'cb-atlas-primary'} href={`mailto:${place.email}`}>SCRIVI UNA EMAIL</a>}
+        <a className={place.phone||place.email?'cb-place-secondary':'cb-atlas-primary'} href="#cb-place-map">VEDI SULLA MAPPA ↓</a>
+      </div>
+      {place.kind==='bivacco'&&<p className="cb-place-alert">Bivacco non equivale a rifugio custodito: verifica accessibilità, eventuale chiusura e dotazioni. Non fare affidamento sulla disponibilità di posti.</p>}
+      {place.kind==='rifugio'&&!place.phone&&!place.email&&<p className="cb-place-note">Recapiti non ancora verificati: non interpretiamo l'assenza del dato come indisponibilità della struttura.</p>}
+    </header>
 
-  return <div className="cb-atlas-detail cb-atlas-detail-wide">
-    <a className="cb-atlas-back" href={onBack}>← Torna all'atlante</a>
-    <PlaceBadge place={place}/>
-    <h1>{place.name}</h1>
-    <p className="cb-atlas-lead">{place.description || placeLine} {place.kind==='rifugio'
-      ? 'Controlla apertura, accessi e disponibilità prima di organizzare una sosta.'
-      : 'Una base per muoversi tra i sentieri e le montagne della zona.'}</p>
-    {place.photo && <figure className="cb-atlas-cover">
-      <a href={place.photo.sourceUrl} target="_blank" rel="noopener noreferrer"><img src={place.photo.url} alt={`Fotografia collegata a ${place.name}`} loading="lazy"/></a>
+    {place.photo&&<figure className="cb-atlas-cover cb-place-cover">
+      <img src={place.photo.url} alt={`Fotografia documentata di ${place.name}`} loading="lazy"/>
+      <figcaption>Foto: {place.photo.author} · {place.photo.license}</figcaption>
     </figure>}
-    <div className="cb-atlas-facts">
-      <span><strong>{place.lat.toFixed(4)}, {place.lng.toFixed(4)}</strong>Coordinate</span>
-      {place.elevationM!=null && <span><strong>{place.elevationM.toLocaleString('it-IT')} m</strong>{place.elevationSource==='dem'?'Quota DEM stimata':'Quota indicata in OSM'}</span>}
-      {place.operator&&<span><strong>{place.operator}</strong>Gestore</span>}
-      {place.capacity!=null&&<span><strong>{place.capacity}</strong>Posti letto dichiarati OSM</span>}
-      {place.openingHours&&<span><strong>{place.openingHours}</strong>Orari indicati OSM</span>}
-      {place.address&&<span><strong>{place.address}</strong>Indirizzo indicato OSM</span>}
-      {place.phone&&<span><strong>{place.phone}</strong>Telefono</span>}
-    </div>
-    <div className="cb-atlas-actions">
-      <a className="cb-atlas-primary" href={boundsToHash(placeBounds(place,3))}>ESPLORA LA ZONA ↗</a>
-      {place.website&&<a href={place.website} target="_blank" rel="noopener noreferrer">Sito ufficiale indicato nei dati ↗</a>}
-      {place.wikidata&&<a href={`https://www.wikidata.org/wiki/${place.wikidata}`} target="_blank" rel="noopener noreferrer">Dati enciclopedici ↗</a>}
-    </div>
-    <div className="cb-atlas-section-top"><span>CARTOGRAFIA DEDICATA</span><h2>LA MAPPA NON MENTE. (QUASI.)</h2>
-      <p>Rifugi e località mappati, sentieri vicini e punti acqua. TOPO per leggere il terreno, SAT per guardarlo.</p>
-    </div>
-    <AlpineAtlasMap places={places} kind={place.kind} selected={place} routes={nearby} water={water.map(w=>({lng:w.lng,lat:w.lat,potable:w.potable==='yes'}))} height={360}/>
-    {loading ? <p className="cb-atlas-loading">Sto incrociando i tracciati cartografici nei dintorni…</p> : <>
-      <RouteGroup title="SI PARTE DA QUI" items={departures}/>
-      <RouteGroup title="QUI SI ARRIVA" items={arrivals}/>
-      <RouteGroup title="CI PASSANO VICINO DAVVERO" items={passes}/>
-      <RouteGroup title="ALTRI SENTIERI NEI DINTORNI" items={around}/>
-      {!nearby.length&&<div className="cb-atlas-empty"><p>Nessun tracciato già indicizzato vicino a questa posizione. Non significa che non ci siano sentieri.</p></div>}
+
+    <section className="cb-place-information" aria-label="Informazioni dettagliate">
+      <div className="cb-atlas-section-top"><span>INFORMAZIONI UTILI</span><h2>DATI DEL LUOGO.</h2>
+        <p>Informazioni strutturate riportate dalle fonti disponibili, non conferme di apertura in tempo reale.</p>
+      </div>
+      <dl className="cb-place-details">{detailRows.map(row=><div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>)}</dl>
+      {(place.phone||place.email||place.website)&&<div className="cb-place-recapiti">
+        <h3>CONTATTI E RIFERIMENTI</h3>
+        {place.phone&&<a href={`tel:${place.phone.replace(/[^+\d]/g,'')}`}>Telefono: {place.phone}</a>}
+        {place.email&&<a href={`mailto:${place.email}`}>Email: {place.email}</a>}
+        {place.website&&<a href={place.website} target="_blank" rel="noopener noreferrer">Sito della struttura ↗</a>}
+      </div>}
+    </section>
+
+    <section id="cb-place-map" className="cb-place-map-section">
+      <div className="cb-atlas-section-top"><span>DOVE SI TROVA</span><h2>LA MAPPA DELLA ZONA.</h2>
+        <p>Il luogo e i sentieri vicini. Attiva separatamente i punti acqua; la vicinanza non dimostra l'accesso diretto.</p>
+      </div>
+      <AlpineAtlasMap places={places} kind={place.kind} selected={place} routes={nearby} water={water.map(w=>({lng:w.lng,lat:w.lat,potable:w.potable==='yes'}))} height={380}/>
+    </section>
+
+    {loading?<p className="cb-atlas-loading">Sto recuperando i sentieri nei dintorni…</p>:<>
+      <RouteGroup title="PERCORSI CHE PARTONO DA QUI" items={departures}/>
+      <RouteGroup title="PERCORSI CHE ARRIVANO QUI" items={arrivals}/>
+      <RouteGroup title="PERCORSI DI PASSAGGIO" items={passes}/>
+      <RouteGroup title="ALTRI SENTIERI NELLA ZONA" items={around}/>
+      {!nearby.length&&<p className="cb-place-note">Non ci sono tracce già indicizzate vicino al punto: non significa che non esistano sentieri.</p>}
     </>}
-    {water.length>0&&<section className="cb-local-water">
-      <h2><AlpinePlaceIcon kind="acqua" size={27}/> L'ACQUA NON VIENE CON L'ABBONAMENTO.</h2>
-      <p>Fonti registrate entro circa 1,8 km dalla località. La distanza è in linea d’aria: non garantisce raggiungibilità.</p>
-      <div className="cb-local-water-grid">{water.slice(0,8).map(w=><a key={w.slug} href={w.osmUrl} target="_blank" rel="noopener noreferrer">
-        <strong>{w.name}</strong><small>{w.kind} · {potabilityLabel(w.potable)}{w.seasonal?' · stagionale':''}</small></a>)}</div>
-    </section>}
+
     <AlpineWeatherPanel lat={place.lat} lng={place.lng} name={place.name}/>
+
+    {water.length>0&&<section className="cb-local-water">
+      <h2><AlpinePlaceIcon kind="acqua" size={24}/> ACQUA NEI DINTORNI</h2>
+      <p>Fonti entro circa 1,8 km in linea d'aria. Potabilità, disponibilità e accesso non garantiti.</p>
+      <div className="cb-local-water-grid">{water.slice(0,8).map(w=><div key={w.slug}>
+        <strong>{w.name}</strong><small>{w.kind} · {potabilityLabel(w.potable)}{w.seasonal?' · stagionale':''}</small>
+      </div>)}</div>
+    </section>}
+
     {place.kind==='rifugio'&&<HutClaimRequest place={place}/>}
-    <p className="cb-atlas-sourcing">Dati cartografici: <a href={place.osmUrl} target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>.
-      {place.photo&&<> Foto: {place.photo.author}, {place.photo.license} · <a href={place.photo.sourceUrl} target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>.</>}
-      {' '}Quote, condizioni meteo, fonti d’acqua e sentieri richiedono verifica sul posto.</p>
-  </div>;
+    {place.kind==='rifugio'&&<section className="cb-place-community">
+      <div className="cb-atlas-section-top"><span>LA VOCE DEI CAMMINATORI</span><h2>DOMANDE E RECENSIONI.</h2></div>
+      <p>Stiamo predisponendo le domande sulla struttura e le risposte del gestore verificato, insieme alle recensioni moderate. Non sono ancora aperte alle pubblicazioni: niente messaggi senza una gestione affidabile.</p>
+    </section>}
+    <footer className="cb-atlas-sourcing">Dati geografici: <a href={place.osmUrl} target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>.
+      {place.photo&&<> Immagine: {place.photo.license} · <a href={place.photo.sourceUrl} target="_blank" rel="noopener noreferrer">attribuzione completa</a>.</>}
+      {place.wikidata&&<> Scheda: <a href={`https://www.wikidata.org/wiki/${place.wikidata}`} target="_blank" rel="noopener noreferrer">Wikidata</a>.</>}
+      {' '}Verifica sempre itinerari, accessi e condizioni prima di partire.</footer>
+  </article>;
 }
 
 function TrekDetail({ trek, onBack }: { trek: TrekProject; onBack: string }) {
@@ -177,7 +215,7 @@ export function AlpineAtlasPage() {
   const [query,setQuery] = useState('');
   const [visible,setVisible] = useState(36);
   const {section,slug}=parseAtlas(hash);
-  usePageTitle('Atlante · Rifugi, borghi e trekking');
+  usePageTitle(sectionLabels[section] + ' · Cima Becco');
   useEffect(() => {
     const change = () => {setHash(window.location.hash);setQuery('');setVisible(36);window.scrollTo({top:0});};
     window.addEventListener('hashchange',change);
@@ -196,7 +234,7 @@ export function AlpineAtlasPage() {
   return <div className="cb-atlas-page">
     <SiteHeader sticky/>
     <main className="cb-atlas-shell">
-      <div className="cb-atlas-overline">CIMA BECCO / ATLANTE IN PROGRESS</div>
+      <div className="cb-atlas-overline">CIMA BECCO / ESPLORA</div>
       <AtlasHeader section={section}/>
       {place ? <PlaceDetail place={place} onBack={`#atlante/${section}`} places={allSectionPlaces}/>
         : trek ? <TrekDetail trek={trek} onBack="#atlante/trekking"/>
@@ -205,20 +243,21 @@ export function AlpineAtlasPage() {
           <div className="cb-atlas-intro">
             <div>
               <span className="cb-atlas-eyebrow">{section==='trekking'?'TANTE TAPPE, UNA SOLA FOLLIA':'FUORI DALLA SOLITA ROTTA'}</span>
-              <h1>{section==='rifugi'?'RIFUGI.\nPOI SI VEDE.':section==='borghi'?'BORGHI PICCOLI.\nGITE GROSSE.':'CAMMINI LUNGHI.\nSCUSE CORTE.'}</h1>
+              <h1>{section==='rifugi'?'RIFUGI.\nPOI SI VEDE.':section==='bivacchi'?'BIVACCHI.\nPOCHE SCUSE.':section==='borghi'?'PAESI PICCOLI.\nGITE GROSSE.':'CAMMINI LUNGHI.\nSCUSE CORTE.'}</h1>
               <p>{section==='rifugi'?'Dove fermarti, ricaricare le gambe e scegliere la prossima salita. Rifugi veri, collegati ai sentieri mappati.'
-                :section==='borghi'?'Paesini di montagna da cui partire, non cartoline da mettere sul frigo.'
+                :section==='bivacchi'?'Ripari essenziali in quota, non strutture custodite: mappe e dati verificabili per pianificare con prudenza.'
+                :section==='borghi'?'Località montane da cui partire, con sentieri, cartografia e meteo della zona.'
                   :'Alte Vie e Sentiero Italia: segmenti reali, tappe quando esistono, niente GPX inventati per riempire i buchi.'}</p>
             </div>
-            <div className="cb-atlas-intro-symbol" aria-hidden="true">{section==='rifugi'?'⌂':section==='borghi'?'↟':'↯'}</div>
+            <div className="cb-atlas-intro-symbol" aria-hidden="true">{section==='rifugi'?'⌂':section==='bivacchi'?'△':section==='borghi'?'↟':'↯'}</div>
           </div>
           {section!=='trekking' ? <>
             {allSectionPlaces.length>0&&<section className="cb-atlas-list-map">
-              <div className="cb-atlas-section-top"><span>{section==='rifugi'?'I TETTI AD ALTA QUOTA':'BORGHI DA CUI PARTIRE'}</span>
+              <div className="cb-atlas-section-top"><span>{section==='rifugi'?'I RIFUGI IN QUOTA':section==='bivacchi'?'I RIPARI IN QUOTA':'PAESI DA CUI PARTIRE'}</span>
                 <h2>TUTTI SULLA MAPPA.</h2></div>
-              <AlpineAtlasMap places={allSectionPlaces} kind={section==='rifugi'?'rifugio':'borgo'} height={350}/>
+              <AlpineAtlasMap places={allSectionPlaces} kind={section==='rifugi'?'rifugio':section==='bivacchi'?'bivacco':'borgo'} height={350}/>
             </section>}
-            <div className="cb-atlas-toolbar"><label htmlFor="cb-atlas-query">CERCA UN {section==='rifugi'?'RIFUGIO':'PAESE'}</label>
+            <div className="cb-atlas-toolbar"><label htmlFor="cb-atlas-query">CERCA UN {section==='rifugi'?'RIFUGIO':section==='bivacchi'?'BIVACCO':'PAESE'}</label>
               <input id="cb-atlas-query" type="search" value={query} onChange={e=>{setQuery(e.target.value);setVisible(36);}} placeholder="Scrivi il nome…" />
               <span>{places.length} luoghi presenti</span>
             </div>
@@ -230,7 +269,7 @@ export function AlpineAtlasPage() {
                 <h2>{item.name}</h2>
                 <span className="cb-atlas-card-go">ESPLORA ↗</span>
               </a>)}</div>
-            : <div className="cb-atlas-empty"><h2>{query?'Non c’è questo nome in archivio.':'Stiamo importando i primi rifugi e borghi dalle Dolomiti.'}</h2>
+            : <div className="cb-atlas-empty"><h2>{query?'Non c’è questo nome in archivio.':'Il catalogo di questa categoria non è ancora disponibile.'}</h2>
                 <p>Il catalogo usa località reali di OpenStreetMap; non mostriamo località inventate.</p><a href="#map">Intanto, esplora la mappa ↗</a></div>}
             {places.length>visible && <button type="button" className="cb-atlas-more" onClick={()=>setVisible(n=>n+36)}>ALTRI {Math.min(36,places.length-visible)} LUOGHI ↓</button>}
           </> : <div className="cb-atlas-grid">{treks.projects.map(t=><a key={t.slug} className="cb-atlas-card cb-atlas-trek" href={`#atlante/trekking/${t.slug}`}>
