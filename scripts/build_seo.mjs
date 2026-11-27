@@ -25,6 +25,7 @@ import { makeCentralCredits } from './build_source_credits.mjs';
 import { atlasCanonicalPath,atlasLegacyPath,canonicalAtlasSlug } from '../src/lib/placePermalinks.js';
 import { resolveRefugeTerritory, relatedAtlasPlaces } from '../src/lib/atlasConnections.js';
 import { refugeFact, refugeOverview, refugeSeoDescription, refugeServiceFacts } from '../src/lib/refugeEditorial.js';
+import { refugeSchemaProperties } from '../src/lib/refugeStructuredData.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
@@ -175,6 +176,14 @@ footer{max-width:880px;margin:0 auto;padding:20px;border-top:1px solid var(--lin
 .cima-seo-details div{background:#f0f5ed;border-radius:10px;padding:12px}
 .cima-seo-details dt{font-size:11px;color:#687869}
 .cima-seo-details dd{margin:2px 0 0;font-weight:800}
+.cima-seo-refuge-details{gap:0 24px}
+.cima-seo-refuge-details div{padding:13px 0;border:0;border-bottom:1px solid #e1e8de;
+  background:transparent;border-radius:0}
+.cima-seo-refuge-details dt{font-size:10px;text-transform:uppercase;letter-spacing:.07em}
+.cima-seo-refuge-details dd{font-size:18px;line-height:1.5}
+.cima-seo-refuge-facts li{padding:14px 15px 14px 0;border:0;border-bottom:1px solid #dde8d9;
+  border-radius:0;background:transparent}
+.cima-seo-refuge-facts strong{font-size:clamp(22px,2.8vw,33px)}
 .cima-seo-warning{font-size:13px;color:#6b6249;background:#f6f0e3;padding:12px 16px;border-radius:10px;margin-top:24px}
 .cima-seo-territory{margin:27px 0;padding:24px;border-radius:13px;background:#193f2e;color:#ecf6e7}
 .cima-seo-territory h2{margin:0 0 10px;font-size:27px}
@@ -595,18 +604,13 @@ for (const place of alpinePlaces) {
     description:description.slice(0,285),
     image:photo?.url||null,
     jsonLd:{'@context':'https://schema.org','@graph':[
-      {'@type':place.kind==='rifugio'&&hasDocumentedStay?'LodgingBusiness':'Place',name:place.name,description,
+      {'@type':place.kind==='rifugio'&&hasDocumentedStay?'LodgingBusiness':'Place',
+        '@id':SITE+canonicalPath+'#luogo',name:place.name,description,
         url:SITE+canonicalPath,
         geo:{'@type':'GeoCoordinates',latitude:place.lat,longitude:place.lng,
           ...(place.elevationM?{elevation:place.elevationM}:{})},
         ...(imageUrls.length?{image:imageUrls.slice(0,12)}:{}),
-        ...(place.kind==='rifugio'&&hasDocumentedStay?{
-          additionalProperty:[{'@type':'PropertyValue',name:'Posti letto dichiarati',value:refugeBeds}],
-          ...(refugeServices.length?{amenityFeature:refugeServices.map(item=>({
-            '@type':'LocationFeatureSpecification',name:item.label,value:item.value
-          }))}:{}),
-        }:{}),
-        ...(place.kind==='rifugio'&&place.officialUrl?.startsWith('https://')?{sameAs:place.officialUrl}:{}),
+        ...(place.kind==='rifugio'?refugeSchemaProperties(place):{}),
         hasMap:place.osmUrl,
         ...(place.phone?{telephone:place.phone}:{}),
       },breadcrumbLd([[category==='rifugi'?'Rifugi':category==='bivacchi'?'Bivacchi':'Paesi',appLink(`#${category==='borghi'?'paesi':category}`)],[place.name,null]])]},
@@ -620,7 +624,7 @@ for (const place of alpinePlaces) {
           <figcaption>${escape(m.caption||place.name)} · ${escape(m.author||'Autore non indicato')} · ${escape(m.licence)}
             · <a href="${escape(m.sourceUrl)}" rel="noopener noreferrer">Fonte e licenza</a></figcaption></figure>`).join('')}</div>
       </section>`:''}
-      <ul class="facts cima-seo-facts">
+      <ul class="facts cima-seo-facts ${place.kind==='rifugio'?'cima-seo-refuge-facts':''}">
         ${place.elevationM!=null?`<li><strong>${metres(place.elevationM)}</strong>${place.elevationSource==='dem'?'quota DEM stimata':place.elevationSource==='cai'?'quota dichiarata dal CAI':'quota indicata in OSM'}</li>`:''}
         <li><strong>${escape(place.lat.toFixed(4)+', '+place.lng.toFixed(4))}</strong>coordinate</li>
         <li><strong>${related.length}</strong>sentieri collegati</li>
@@ -647,13 +651,12 @@ for (const place of alpinePlaces) {
         ${place.address?`<div><dt>Indirizzo</dt><dd>${escape(place.address)}</dd></div>`:''}
         ${place.website?`<div><dt>Sito</dt><dd><a href="${escape(place.website)}" rel="noopener noreferrer">Sito della struttura</a></dd></div>`:''}
       </dl>`:''}
-      ${place.kind==='rifugio'&&publishedDetails.length?`<h2>Ospitalità, gestione e storia del rifugio</h2><dl class="cima-seo-details">${publishedDetails.map(({label,value,fact})=>`<div><dt>${escape(label)}</dt><dd>${escape(typeof value==='boolean'?(value?'Sì':'No'):value)}
-        ${fact?.unit?' '+escape(fact.unit):''}${fact?.sourceUpdatedAt?`<small> · Fonte aggiornata: ${escape(fact.sourceUpdatedAt)}</small>`:''}</dd></div>`).join('')}</dl>`:''}
+      ${place.kind==='rifugio'&&publishedDetails.length?`<h2>Ospitalità, gestione e storia del rifugio</h2><dl class="cima-seo-details cima-seo-refuge-details">${publishedDetails.map(({label,value,fact})=>`<div><dt>${escape(label)}</dt><dd>${escape(typeof value==='boolean'?(value?'Sì':'No'):value)}
+        ${fact?.unit?' '+escape(fact.unit):''}</dd></div>`).join('')}</dl>`:''}
       ${place.kind==='rifugio'&&refugeServices.length?`<section><h2>Vivere il rifugio: servizi e dotazioni</h2>
-        <p>Tra le informazioni dichiarate dall'archivio CAI, i servizi segnalati come presenti sono:
-        ${escape(refugeServices.filter(item=>item.value).map(item=>item.label).join(', ')||'nessuno dei servizi censiti')}.
-        ${refugeServices.some(item=>!item.value)?`Non risultano presenti, secondo la medesima fonte: ${escape(refugeServices.filter(item=>!item.value).map(item=>item.label).join(', '))}.`:''}</p>
-        <p>L'assenza del dato non equivale a un servizio mancante. L'acqua disponibile non implica potabilità.</p>
+        ${refugeServices.some(item=>item.value)?`<p>Servizi indicati come disponibili: ${escape(refugeServices.filter(item=>item.value).map(item=>item.label).join(', '))}.</p>`:''}
+        ${refugeServices.some(item=>!item.value)?`<p><strong>Servizi indicati esplicitamente come non disponibili:</strong> ${escape(refugeServices.filter(item=>!item.value).map(item=>item.label).join(', '))}. Per queste voci il dato pubblicato è «No».</p>`:''}
+        <p>I servizi non documentati restano sconosciuti, non automaticamente assenti. L'acqua disponibile non implica potabilità.</p>
       </section>`:''}
       ${place.kind==='rifugio'&&place.description?`<h2>Descrizione del rifugio e territorio</h2><p>${escape(place.description)}</p>`:''}
       ${nearbyEntities.length?`<section><h2>Altri luoghi da esplorare</h2>

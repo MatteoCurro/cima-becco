@@ -80,17 +80,15 @@ function value(place:AlpinePlace,key:string):AtlasFact|null{
   const val=legacy[key];
   return val===undefined||val===null||val===''?null:{value:val,method:'reported'};
 }
+const PROMINENT_FACTS=new Set(['bedsTotal','bedsWinter','capacityReported','nightlyPrice','halfBoardPrice']);
 function FactLines({place,keys}:{place:AlpinePlace;keys:readonly string[]}){
-  const facts=keys.map(key=>({key,fact:value(place,key)})).filter((entry):entry is {key:string;fact:AtlasFact}=>entry.fact!==null);
+  const facts=keys.map(key=>({key,fact:value(place,key)}))
+    .filter((entry):entry is {key:string;fact:AtlasFact}=>entry.fact!==null);
   return facts.length?<dl className="cb-refuge-fact-list">
-    {facts.map(({key,fact})=><div key={key}>
+    {facts.map(({key,fact})=><div key={key}
+      className={'cb-refuge-fact'+(PROMINENT_FACTS.has(key)&&typeof fact.value==='number'?' is-prominent':'')}>
       <dt>{FACT_LABELS[key]||fact.label||key}</dt>
-      <dd>{formatAtlasFact(fact)}
-        {(fact.sourceUpdatedAt||fact.validUntil||fact.method==='estimated')&&<small>
-          {[fact.method==='estimated'?'Stima':null,fact.sourceUpdatedAt?'Fonte aggiornata: '+fact.sourceUpdatedAt:null,
-          fact.validUntil?'Valido fino al: '+fact.validUntil:null].filter(Boolean).join(' · ')}</small>}
-
-      </dd>
+      <dd>{formatAtlasFact(fact)}</dd>
     </div>)}
   </dl>:null;
 }
@@ -111,10 +109,6 @@ function RouteLine({route}:{route:Route}){
     <FaIcon name="arrow-right" size={13}/>
   </a>;
 }
-function SourceLink({url,children}:{url?:string;children:ReactNode}){
-  return url && /^https:\/\//.test(url)?<a href={url} target="_blank" rel="noopener noreferrer">{children}</a>:null;
-}
-
 export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces,water}:RefugeProfileProps){
   const facts=place.facts??{};
   const knownServices=refugeServiceFacts(place);
@@ -146,7 +140,6 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
   const extraRecord={...place,facts:others,history:undefined,historySourceUrl:undefined};
   const galleryLogo=place.media?.find(m=>m.kind==='logo'&&m.reuseAllowed&&m.subjectVerified&&m.url&&m.sourceUrl&&m.licence);
   const logo=place.logo?.url||galleryLogo?.url;
-  const official=place.officialUrl||(place.sourceIds?.cai?'https://rifugi.cai.it/shelters/'+place.sourceIds.cai:undefined);
   const items:DetailJumpItem[]=[
     {id:'cb-refuge-stay',label:'Ospitalità',icon:'bed'},
     ...(knownServices.length?[{id:'cb-refuge-services',label:'Servizi',icon:'wifi' as const}]:[]),
@@ -166,8 +159,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
         <div className="cb-refuge-avatar">{logo?<img src={logo} alt={'Logo di '+place.name}/>:<AlpinePlaceIcon kind="rifugio" size={33}/>}</div>
       </div>
       <div className="cb-refuge-hero-info">
-        <div className="cb-refuge-kicker"><AlpinePlaceIcon kind="rifugio" size={16}/> RIFUGIO ALPINO
-          {place.sourceIds?.cai&&<span> · ARCHIVIO CAI</span>}</div>
+        <div className="cb-refuge-kicker"><AlpinePlaceIcon kind="rifugio" size={16}/> RIFUGIO ALPINO</div>
         <h1>{place.name}</h1>
         <p className="cb-refuge-intro">{refugeOverview(place)}</p>
         <DetailMetrics label="Riepilogo del rifugio" items={[
@@ -182,10 +174,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
           {place.website&&/^https:\/\//.test(place.website)&&<a href={place.website} target="_blank" rel="noopener noreferrer"><FaIcon name="globe" size={15}/> Sito ufficiale</a>}
           <button type="button" onClick={()=>scrollToDetailSection('cb-place-map')}><FaIcon name="map" size={15}/> Mappa</button>
         </div>
-        {(place.sourceIds?.cai||place.checkedAt)&&<p className="cb-refuge-source-label">
-          {place.sourceIds?.cai?'Dati del rifugio integrati dal catalogo CAI. ':''}
-          {place.checkedAt?'Ultima verifica indicata: '+place.checkedAt: 'Apertura, disponibilità e condizioni vanno verificate prima della visita.'}
-        </p>}
+
       </div>
     </header>
     <AtlasDossierBlocks record={place} placement="alerts"/>
@@ -209,25 +198,28 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
         {hasManager&&<FactLines place={place} keys={MANAGEMENT}/>}</div>}
       {!hasStay&&!hasOpen&&!hasContact&&!hasManager&&!hasPrice&&
         <p className="cb-refuge-disclaimer">Le informazioni pratiche non sono ancora documentate. Consulta la scheda della fonte o contatta direttamente la struttura prima di partire.</p>}
-      <SourceLink url={official}>Consulta la scheda del rifugio nel catalogo CAI</SourceLink>
+
     </RefugeBlock>
     {knownServices.length>0&&<RefugeBlock id="cb-refuge-services" kicker="VITA IN RIFUGIO" title="Cosa trovi una volta arrivato">
-      <p className="cb-refuge-section-intro">Un colpo d'occhio a ciò che la struttura dichiara di offrire. I servizi non documentati non sono considerati assenti.</p>
+      <p className="cb-refuge-section-intro">Informazioni pratiche riportate nelle schede della struttura: ciò che non è indicato resta sconosciuto, non automaticamente assente.</p>
       <div className="cb-refuge-service-chapters">
         {serviceChapters.map(chapter=><section key={chapter.id} className="cb-refuge-service-chapter">
           <span className="cb-refuge-chapter-counter">0{serviceChapters.indexOf(chapter)+1}</span>
           <div className="cb-refuge-chapter-copy"><h3>{chapter.title}</h3>
             <p>{chapter.description}</p>
-            {chapter.items.some(item=>item.value)&&<div className="cb-refuge-featured-services">
-              {chapter.items.filter(item=>item.value).map(item=><span key={item.key}>{item.label}</span>)}
-            </div>}
+            {chapter.items.some(item=>item.value)&&<p className="cb-refuge-available-services">
+              <strong>Servizi indicati come disponibili:</strong>{' '}
+              {chapter.items.filter(item=>item.value).map(item=>item.label).join(', ')}.
+            </p>}
             {chapter.items.some(item=>!item.value)&&<p className="cb-refuge-absent-services">
-              <strong>Non presenti secondo la fonte:</strong> {chapter.items.filter(item=>!item.value).map(item=>item.label).join(', ')}.
+              <strong>Servizi indicati esplicitamente come non disponibili:</strong>{' '}
+              {chapter.items.filter(item=>!item.value).map(item=>item.label).join(', ')}.
+              <span className="cb-refuge-service-qualifier"> Per queste voci il dato pubblicato è «No»; non si tratta di informazioni mancanti.</span>
             </p>}
           </div>
         </section>)}
       </div>
-      <p className="cb-refuge-disclaimer">L'acqua censita non è automaticamente potabile; la voce potabilità compare solo quando documentata in modo distinto.</p>
+      <p className="cb-refuge-disclaimer">La disponibilità d'acqua non ne certifica la potabilità: sono due informazioni distinte.</p>
     </RefugeBlock>}
     <RefugeBlock id="cb-refuge-access" kicker="NEL TERRITORIO" title="Come arrivare e sentieri" icon="person-hiking">
       {place.access&&<p className="cb-refuge-section-intro"><strong>Accesso riportato dalla fonte:</strong> {place.access}</p>}
@@ -292,8 +284,8 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
       <HutClaimRequest place={place}/>
     </RefugeBlock>
     <div className="cb-refuge-credits">
-
-      <p>La scheda riporta informazioni raccolte da fonti documentate. Apertura, condizioni del terreno e disponibilità possono cambiare.</p>
+      <p>Informazioni documentate e soggette ad aggiornamento. Apertura, disponibilità e condizioni dei sentieri vanno verificate prima di partire.</p>
+      <a href={import.meta.env.BASE_URL+'fonti-e-crediti/'}>Fonti e crediti del progetto</a>
     </div>
   </div>;
 }

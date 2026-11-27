@@ -35,9 +35,17 @@
   font:850 11px 'Space Grotesk',sans-serif;letter-spacing:.085em}
 .cb-refuge-hero h1{margin:8px 0 12px;color:#19412e;letter-spacing:-.045em;
   font:900 clamp(31px,3vw,48px)/1.03 'Bricolage Grotesque',sans-serif;overflow-wrap:anywhere}
-.cb-refuge-intro{margin:0 0 15px;font:550 14px/1.75 'Space Grotesk',sans-serif;
+.cb-refuge-intro{margin:0 0 18px;font:500 clamp(15px,1.3vw,17px)/1.8 'Space Grotesk',sans-serif;
   color:#405d49;overflow-wrap:anywhere}
-.cb-refuge-hero .cb-detail-metrics{margin:14px 0 15px}
+/* In apertura le cifre sono una banda tipografica, non tre schede concorrenti. */
+.cb-refuge-hero .cb-detail-metrics{display:flex;flex-wrap:wrap;gap:0;
+  margin:17px 0 20px;padding:14px 0;border-top:1px solid #d6e6d1;border-bottom:1px solid #d6e6d1}
+.cb-refuge-hero .cb-detail-metric{flex:1 1 115px;min-width:0;max-width:none;
+  padding:7px 15px 7px 0;border:0;border-radius:0;background:transparent}
+.cb-refuge-hero .cb-detail-metric:not(:last-child){border-right:1px solid #d5e2d1;margin-right:14px}
+.cb-refuge-hero .cb-detail-metric strong{color:#174a32;
+  font:900 clamp(24px,2.5vw,34px)/1.08 'Bricolage Grotesque',sans-serif;letter-spacing:-.035em}
+.cb-refuge-hero .cb-detail-metric span{color:#6d8171;font:750 10px/1.5 'Space Grotesk',sans-serif}
 .cb-refuge-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 10px}
 .cb-refuge-actions a,.cb-refuge-actions button,.cb-refuge-map-link{
   display:inline-flex;justify-content:center;align-items:center;gap:8px;min-height:41px;
@@ -46,30 +54,31 @@
   cursor:pointer;overflow-wrap:anywhere}
 .cb-refuge-actions .cb-refuge-action-primary{color:#fff;background:#b90052;border-color:#b90052}
 .cb-refuge-actions a:hover,.cb-refuge-actions button:hover,.cb-refuge-map-link:hover{border-color:#b90052}
-.cb-refuge-source-label{margin:10px 0 0;color:#758777;font:600 11px/1.6 'Space Grotesk',sans-serif}
-.cb-refuge-block{min-width:0;padding:26px 0 30px}
+.cb-refuge-block{min-width:0;padding:32px 0 36px;border-top:1px solid #e0e9dc}
 .cb-refuge-block-heading{display:flex;align-items:center;gap:12px;margin:0 0 19px}
 .cb-refuge-block-icon{flex:none;display:grid;place-items:center;width:43px;height:43px;border:1px solid #d5e6d2;
   border-radius:9px;background:#eaf4e5;color:#2a5e43}
 .cb-refuge-block-heading>div{min-width:0}
 .cb-refuge-block-heading span:not(.cb-refuge-block-icon){display:block;margin:0 0 5px;color:#a7004c;
   font:850 10px/1.3 'Space Grotesk',sans-serif;letter-spacing:.075em}
-.cb-refuge-block-heading h2{margin:0;color:#1d4633;line-height:1.12;letter-spacing:-.03em;
-  font:850 clamp(22px,2.2vw,30px)/1.15 'Bricolage Grotesque',sans-serif;overflow-wrap:anywhere}
-.cb-refuge-subsection{padding:14px 0;border-top:1px solid #e2eadd}
+.cb-refuge-block-heading h2{margin:0;color:#1d4633;line-height:1.13;letter-spacing:-.04em;
+  font:850 clamp(26px,2.7vw,37px)/1.15 'Bricolage Grotesque',sans-serif;overflow-wrap:anywhere}
+.cb-refuge-subsection{padding:21px 0 17px;border-top:1px solid #e2eadd}
 .cb-refuge-subsection:first-of-type{border-top:0;padding-top:0}
-.cb-refuge-subsection h3,.cb-refuge-route-list h3{display:flex;align-items:center;gap:8px;
-  margin:0 0 13px;color:#284c37;font:850 14px/1.35 'Bricolage Grotesque',sans-serif}
-.cb-refuge-fact-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:0}
-.cb-refuge-fact-list>div{min-width:0;display:grid;align-content:start;gap:5px;padding:12px 13px;
-  border:1px solid #dce8d8;border-radius:7px;background:#f7faf4}
-.cb-refuge-fact-list dt{color:#697c6e;font:750 11px/1.45 'Space Grotesk',sans-serif}
-.cb-refuge-fact-list dd{margin:0;color:#214733;font:850 15px/1.35 'Bricolage Grotesque',sans-serif;
-  overflow-wrap:anywhere}
-.cb-refuge-fact-list dd small{display:block;font:600 10px/1.5 'Space Grotesk',sans-serif;color:#748778}
-.cb-refuge-fact-list dd a{display:inline-flex;align-items:center;gap:4px;margin-left:4px;
-  color:#a8004d;font:700 10px 'Space Grotesk',sans-serif;text-decoration:none}
-.cb-refuge-disclaimer,.cb-refuge-section-intro{color:#5e7566;font:600 12px/1.7 'Space Grotesk',sans-serif}
+.cb-refuge-subsection h3,.cb-refuge-route-list h3{display:flex;align-items:center;gap:9px;
+  margin:0 0 17px;color:#284c37;font:850 clamp(17px,1.6vw,21px)/1.3 'Bricolage Grotesque',sans-serif}
+/* Metadati come tipografia di una pagina: righe editoriali, non mini-card con fonte. */
+.cb-refuge-fact-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  column-gap:23px;row-gap:0;margin:0;min-width:0}
+.cb-refuge-fact{min-width:0;display:flex;flex-direction:column;gap:6px;
+  padding:14px 0 16px;border-bottom:1px solid #dce7d9;background:none}
+.cb-refuge-fact dt{color:#718174;text-transform:uppercase;letter-spacing:.065em;
+  font:800 10px/1.5 'Space Grotesk',sans-serif}
+.cb-refuge-fact dd{margin:0;color:#234734;overflow-wrap:anywhere;
+  font:750 clamp(15px,1.45vw,20px)/1.45 'Bricolage Grotesque',sans-serif}
+.cb-refuge-fact.is-prominent dd{color:#164931;letter-spacing:-.045em;
+  font:850 clamp(25px,2.8vw,37px)/1.13 'Bricolage Grotesque',sans-serif}
+.cb-refuge-disclaimer,.cb-refuge-section-intro{color:#5e7566;font:500 13px/1.75 'Space Grotesk',sans-serif}
 /* Le dotazioni restano in tre capitoli testuali, non in 20 schede uguali. */
 .cb-refuge-service-chapters{display:grid;gap:0;margin:17px 0 8px}
 .cb-refuge-service-chapter{display:grid;grid-template-columns:48px minmax(0,1fr);column-gap:14px;
@@ -79,15 +88,16 @@
   font:900 28px/1 'Bricolage Grotesque',sans-serif;letter-spacing:-.08em}
 .cb-refuge-chapter-copy{min-width:0}
 .cb-refuge-chapter-copy h3{margin:1px 0 7px;color:#1e4634;font:850 clamp(19px,1.7vw,23px)/1.15 'Bricolage Grotesque',sans-serif}
-.cb-refuge-chapter-copy>p{margin:0 0 12px;font:500 12px/1.65 'Space Grotesk',sans-serif;color:#647a68}
-.cb-refuge-featured-services{display:flex;flex-wrap:wrap;gap:7px}
-.cb-refuge-featured-services span{display:inline-block;border:1px solid #d5e5cd;border-radius:999px;
-  padding:7px 11px;background:#edf6e9;color:#27593c;
-  font:800 12px/1.3 'Space Grotesk',sans-serif;overflow-wrap:anywhere}
-.cb-refuge-featured-services span::before{content:'';display:inline-block;margin-right:7px;
-  width:6px;height:6px;border-radius:50%;background:#3c8a50;vertical-align:middle}
-.cb-refuge-chapter-copy>.cb-refuge-absent-services{margin:13px 0 0;font-size:11px;color:#7a8678}
-.cb-refuge-absent-services strong{font-weight:850;color:#66786b}
+.cb-refuge-chapter-copy>p{margin:0 0 12px;font:500 13px/1.7 'Space Grotesk',sans-serif;color:#647a68}
+.cb-refuge-chapter-copy .cb-refuge-available-services,
+.cb-refuge-chapter-copy .cb-refuge-absent-services{margin:12px 0 0;
+  color:#31533e;font:500 clamp(13px,1.2vw,15px)/1.8 'Space Grotesk',sans-serif}
+.cb-refuge-chapter-copy .cb-refuge-available-services strong,
+.cb-refuge-chapter-copy .cb-refuge-absent-services strong{color:#214b33;font-weight:850}
+.cb-refuge-chapter-copy .cb-refuge-absent-services{color:#6d575d}
+.cb-refuge-chapter-copy .cb-refuge-absent-services strong{color:#785057}
+.cb-refuge-service-qualifier{display:block;margin-top:3px;
+  color:#708075;font:500 11px/1.6 'Space Grotesk',sans-serif}
 /* Il toponimo diventa un invito esplorabile, non l'ennesimo dato tabellare. */
 .cb-refuge-territory-feature{margin:7px 0 25px;padding:22px 21px;
   border-radius:10px;background:linear-gradient(135deg,#204c38,#143c2c);color:#effbec}
@@ -104,8 +114,7 @@
   margin:0 0 12px;color:#214833;font:850 clamp(18px,1.8vw,23px)/1.2 'Bricolage Grotesque',sans-serif}
 .cb-refuge-story-prose .cb-refuge-editorial{font-size:15px;line-height:1.85}
 .cb-refuge-territory-details{margin:19px 0 27px}
-.cb-refuge-territory-details .cb-refuge-fact-list>div{background:transparent;
-  border:0;border-bottom:1px solid #dce9db;border-radius:0;padding:9px 0}
+.cb-refuge-territory-details .cb-refuge-fact{padding:12px 0}
 .cb-refuge-history-feature{display:grid;grid-template-columns:minmax(100px,35%) minmax(0,1fr);
   gap:16px;padding:18px 0;border-top:1px solid #d7e6d8}
 .cb-refuge-history-feature:not(:has(.cb-refuge-history-date)){grid-template-columns:1fr}
@@ -116,7 +125,7 @@
   letter-spacing:-.06em;overflow-wrap:anywhere}
 .cb-refuge-history-feature .cb-refuge-fact-list{grid-template-columns:1fr}
 .cb-refuge-archive{padding:12px 0 20px}
-.cb-refuge-archive details{padding:17px 19px;border:1px solid #dce8d8;border-radius:9px;background:#f9fbf7}
+.cb-refuge-archive details{padding:16px 0;border-top:1px solid #dce8d8;border-bottom:1px solid #dce8d8}
 .cb-refuge-archive summary{cursor:pointer;color:#3c624b;font:850 13px/1.6 'Space Grotesk',sans-serif}
 .cb-refuge-archive details[open] summary{margin-bottom:16px}
 .cb-refuge-route-list{display:grid;gap:7px;margin:12px 0 18px}
@@ -127,7 +136,7 @@
 .cb-refuge-route strong{font:800 13px 'Bricolage Grotesque',sans-serif;overflow-wrap:anywhere}
 .cb-refuge-route small{font:600 11px 'Space Grotesk',sans-serif;color:#6f806f}
 .cb-refuge-more{margin:14px 0}.cb-refuge-more summary{cursor:pointer;font:750 12px 'Space Grotesk',sans-serif}
-.cb-refuge-editorial{font:500 14px/1.85 'Space Grotesk',sans-serif;color:#476452;white-space:pre-line;overflow-wrap:anywhere}
+.cb-refuge-editorial{font:500 clamp(15px,1.25vw,17px)/1.9 'Space Grotesk',sans-serif;color:#476452;white-space:pre-line;overflow-wrap:anywhere}
 .cb-refuge-contact-links{display:flex;flex-wrap:wrap;gap:9px;padding:0 0 9px}
 .cb-refuge-contact-links a{display:inline-flex;align-items:center;gap:7px;padding:7px 9px;
   border-radius:5px;background:#f1f6ee;color:#a9004d;font:750 12px/1.4 'Space Grotesk',sans-serif;
@@ -143,6 +152,16 @@
 .cb-refuge-credits a{color:#a80050}
 .cb-refuge-profile .cb-dossier-modules{gap:0}
 .cb-refuge-profile .cb-dossier-section{margin:12px 0}
+.cb-refuge-profile .cb-refuge-archive .cb-dossier-fact,
+.cb-refuge-profile .cb-refuge-archive .cb-dossier-relation{
+  padding:12px 0;background:transparent;border:0;border-bottom:1px solid #e2e9df;border-radius:0}
+.cb-refuge-profile .cb-refuge-archive .cb-dossier-fact dd{font-size:17px}
+.cb-refuge-profile .cb-dossier-relations{gap:0 22px}
+.cb-refuge-profile .cb-dossier-relation{padding:14px 0;border:0;border-bottom:1px solid #dde8da;
+  border-radius:0;background:transparent}
+.cb-refuge-profile .cb-dossier-relation strong{font-size:17px}
+.cb-refuge-profile .cb-refuge-archive .cb-dossier-section{border-top:0}
+.cb-refuge-profile .cb-refuge-credits .cb-dossier-credits{margin:10px 0 0;padding:9px 0;border-top:0}
 @container(max-width:520px){
   .cb-refuge-gallery-stage,.cb-refuge-gallery .cb-place-visual{height:clamp(205px,57vw,310px)}
   .cb-refuge-water-list{grid-template-columns:1fr}
