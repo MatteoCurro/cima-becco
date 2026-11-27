@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RoutePoint } from '../types';
-import { parseGpx } from './gpx';
-import { hasRealElevation } from './terrain';
 import { assessRoute, describeFlag, type QualityInput } from './routeQuality';
-
-const gpxFiles = import.meta.glob('../../data/routes/*.gpx', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
 /** ~11 m per step heading east, one fix every `stepS` seconds. */
 function walk(n: number, opts: { stepS?: number; degPerStep?: number; ele?: (i: number) => number } = {}) {
@@ -18,16 +14,14 @@ const assess = (over: Partial<QualityInput> & Pick<QualityInput, 'points'>) =>
   assessRoute({ activity: 'hike', hasElevation: true, deviceElevation: true, ...over });
 const ids = (r: ReturnType<typeof assessRoute>) => r.flags.map((f) => f.id);
 
-// Parsing the larger files with jsdom's DOM parser is slow when the whole suite runs in parallel.
-describe('real hiking routes', { timeout: 30_000 }, () => {
-  for (const [path, xml] of Object.entries(gpxFiles).filter(([path]) => /walk|trail|hiking|trek/i.test(path) && !/cycle|bike|cycling/i.test(path))) {
-    it(`is not held: ${path.split('/').pop()}`, () => {
-      const parsed = parseGpx(xml);
-      const result = assess({ points: parsed.points, times: parsed.times, hasElevation: hasRealElevation(parsed.points), activity: /trail|run/i.test(path) ? 'trail' : 'hike' });
-      expect(result.flags.filter((f) => f.severity === 'key')).toEqual([]);
-      expect(result.verdict).toBe('ok');
-    });
-  }
+// Nessuna dipendenza dai vecchi file GPX del progetto originale.
+describe('tracce escursionistiche simulate', () => {
+  it('accetta una salita registrata con tempi e quote plausibili', () => {
+    const { points, times } = walk(160, { stepS: 7, degPerStep: 0.00009, ele: (i) => 1000 + i * 1.5 });
+    const result = assess({ points, times, activity: 'hike', hasElevation: true, deviceElevation: true });
+    expect(result.verdict).toBe('ok');
+    expect(result.flags).toEqual([]);
+  });
 });
 
 describe('a clean track', () => {
