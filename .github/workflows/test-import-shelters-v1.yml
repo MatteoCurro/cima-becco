@@ -1,0 +1,73 @@
+name: Test importatore bivacchi e ricoveri (blocco 2)
+on:
+  push:
+    branches: [feat/bivouacs-shelters-canonical-import-v2]
+  pull_request:
+    paths:
+      - scripts/assemble_shelters_release_v1.py
+      - tests/test_assemble_shelters_release_v1.py
+      - .github/workflows/test-import-shelters-v1.yml
+      - scripts/import_cai_refuges_v1.py
+      - src/lib/shelterRelease.ts
+      - scripts/merge_shelters_for_seo.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cima-becco-shelters-v2-tests
+  cancel-in-progress: true
+
+jobs:
+  test-and-stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline import contracts
+        run: python -m unittest discover -s tests -p 'test_assemble_shelters_release_v1.py' -v
+      - name: Full CAI + OSM dataset assembly, offline and deterministic
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/assemble_shelters_release_v1.py
+          sha256sum public/data/atlas/shelters-v1.json > /tmp/shelters-before.sha
+          python scripts/assemble_shelters_release_v1.py
+          sha256sum public/data/atlas/shelters-v1.json > /tmp/shelters-after.sha
+          diff -u /tmp/shelters-before.sha /tmp/shelters-after.sha
+      - name: Validate source coverage, safety and taxonomy
+        shell: bash
+        run: |
+          python -c "import json; from pathlib import Path; d=json.loads(Path('public/data/atlas/shelters-v1.json').read_text()); e=d['entities']; assert d['releaseChannel']=='CAI_OSM_BIVOUACS_SHELTERS'; assert len(e)>350; assert len(e)==len(set(x['id'] for x in e)); assert len(e)==len(set(x['slug'] for x in e)); assert all(x['kind'] in ('bivouac','shelter') for x in e); assert all(not x['quality']['openNowVerified'] for x in e); print(len(e),'bivouacs + shelters')"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: TypeScript e Vitest su host locale
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npm run test
+      - name: SEO e crediti centralizzati su dati reali CAI
+        shell: bash
+        env:
+          VITE_BASE: /
+          SITE_URL: https://www.cimabecco.it
+          VITE_SITE_URL: https://www.cimabecco.it
+        run: |
+          set -euo pipefail
+          npm run build
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-block2-bivouac-pilot
+          path: |
+            build/import-shelters-v1/
+          retention-days: 10

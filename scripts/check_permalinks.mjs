@@ -1,4 +1,5 @@
 import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
+import { mergeSheltersForSeo } from './merge_shelters_for_seo.mjs';
 import { canonicalAtlasSlug, atlasCanonicalPath } from '../src/lib/placePermalinks.js';
 /** Verifica prerender SEO + hydration delle URL profonde sulla build reale. */
 import {readFileSync,readdirSync,existsSync} from 'node:fs';
@@ -36,10 +37,12 @@ if(!sitemap.includes('<loc>'+canonical+'/</loc>'))throw Error('Sitemap non usa i
 if(!robots.includes('Sitemap: '+canonical+'/sitemap.xml'))throw Error('Robots non usa la sitemap principale');
 console.log('OK: dominio canonico, base Vite, sitemap e robots');
 
-const alpine=mergeRefugesForSeo(
+const alpine=mergeSheltersForSeo(mergeRefugesForSeo(
   JSON.parse(readFileSync(join(dist,'data','alpine-places.json'),'utf8')).places,
   existsSync(join(dist,'data','atlas','refuges-v1.json')) ?
     JSON.parse(readFileSync(join(dist,'data','atlas','refuges-v1.json'),'utf8')) : null
+), existsSync(join(dist,'data','atlas','shelters-v1.json')) ?
+    JSON.parse(readFileSync(join(dist,'data','atlas','shelters-v1.json'),'utf8')) : null
 );
 for(const place of alpine){
   const section=place.kind==='rifugio'?'rifugi':place.kind==='bivacco'?'bivacchi':'borghi';

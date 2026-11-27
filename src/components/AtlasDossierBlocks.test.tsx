@@ -26,22 +26,22 @@ describe('dossier condizionale',()=>{
     expect(html).toContain('Canazei');
     expect(html).toContain('Trentino-Alto Adige');
   });
-  it('concentra le fonti CAI e OSM in un unico registro, senza ripeterle sulle relazioni',()=>{
-    const record={
-      sourceIds:{osm:'way/451',cai:'123456'},
-      facts:{wifi:{value:true,sourceId:'cai:shelter:123456',
-        sourceUrl:'https://rifugi.cai.it/shelters/123456'}},
-      relations:[{type:'near' as const,target:{id:'p',name:'Paese',kind:'borgo'},
-        sourceUrl:'https://example.org/relation'}],
-    };
-    const relations=renderToStaticMarkup(<AtlasDossierBlocks record={record}
-      placement="connections" suppressRelationSources/>);
-    expect(relations).toContain('Paese');
-    expect(relations).not.toContain('https://example.org/relation');
-    const credits=renderToStaticMarkup(<AtlasDossierBlocks record={record} placement="credits"/>);
-    expect(credits).toContain('OpenStreetMap · ODbL');
-    expect(credits).toContain('Club Alpino Italiano · Unico Rifugi');
-    expect(credits).toContain('https://example.org/relation');
+  it('mantiene fatti e fotografie ma non stampa attribuzioni nelle singole schede',()=>{
+    const record = {facts:{bedsTotal:{value:8,sourceId:'cai:shelter:123',
+      sourceUrl:'https://rifugi.cai.it/shelters/123',licence:'CAI original'}},
+      media:[{id:'m1',kind:'photo' as const,
+        url:'https://rifugi.cai.it/media/123.jpg',
+        sourceUrl:'https://rifugi.cai.it/shelters/123',
+        author:'Autore fotografo',licence:'Archivio ufficiale',
+        subjectVerified:true,reuseAllowed:true}]};
+    const core=renderToStaticMarkup(<AtlasDossierBlocks record={record} placement="core"/>);
+    const media=renderToStaticMarkup(<AtlasDossierBlocks record={record} placement="media"/>);
+    expect(core).toContain('beds Total');
+    expect(core).not.toContain('https://rifugi.cai.it/shelters/123');
+    expect(media).toContain('https://rifugi.cai.it/media/123.jpg');
+    expect(media).not.toContain('Autore fotografo');
+    expect(media).not.toContain('Archivio ufficiale');
+    expect(renderToStaticMarkup(<AtlasDossierBlocks record={record} placement="credits"/>)).toBe('');
   });
   it('non pubblica fotografie senza permessi o restrizioni scadute',()=>{
     const record={media:[{id:'m',kind:'photo' as const,url:'https://example.org/a.jpg',

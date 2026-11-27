@@ -67,8 +67,7 @@ export function RefugeGallery({place}:{place:AlpinePlace}){
     {selected&&<figcaption className="cb-refuge-gallery-caption">
       <span>{selected.caption || (selected.historical?'Immagine storica del rifugio':'Il rifugio in fotografia')}
         {selected.capturedAt?' · '+selected.capturedAt:''}</span>
-      <small>{selected.author||'Autore non indicato'} · {selected.license} ·
-        {' '}<a href={selected.sourceUrl} target="_blank" rel="noopener noreferrer">Fonte e crediti</a></small>
+
     </figcaption>}
     {valid.length>1&&<div className="cb-refuge-gallery-thumbs" role="group" aria-label="Scegli una fotografia">
       {valid.map((item,i)=><button key={item.url} type="button"

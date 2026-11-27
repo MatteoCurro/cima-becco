@@ -64,7 +64,7 @@ const sectionLabels: Record<Section,string> = { rifugi:'RIFUGI',bivacchi:'BIVACC
 function PlaceBadge({ place }: { place: AlpinePlace }) {
   return <span className={`cb-atlas-kind cb-atlas-kind--${place.kind}`}>
     <AlpinePlaceIcon kind={place.kind} size={19}/>
-    {place.kind === 'rifugio' ? 'RIFUGIO' : place.kind === 'bivacco' ? 'BIVACCO' : 'PAESE'}{place.elevationM ? ` · ${place.elevationM.toLocaleString('it-IT')} m` : ''}
+    {place.kind === 'rifugio' ? 'RIFUGIO' : place.kind === 'bivacco' ? (place.shelterTypeLabel || 'BIVACCO').toLocaleUpperCase('it-IT') : 'PAESE'}{place.elevationM ? ` · ${place.elevationM.toLocaleString('it-IT')} m` : ''}
   </span>;
 }
 
@@ -126,7 +126,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
   const around=nearby.filter(route=>!tagged.includes(route));
   const wiki=place.wikipedia?.match(/^([a-z]{2,3}):(.+)$/);
   const wikiUrl=wiki?`https://${wiki[1]}.wikipedia.org/wiki/${encodeURIComponent(wiki[2].replace(/ /g,'_'))}`:null;
-  const kindLabel=place.kind==='rifugio'?'rifugio alpino':place.kind==='bivacco'?'bivacco':'località montana';
+  const kindLabel=place.kind==='rifugio'?'rifugio alpino':place.kind==='bivacco'?(place.shelterTypeLabel?.toLowerCase()||'bivacco'):'località montana';
   const placeLine=place.kind==='borgo'
     ? `${place.name} è una località di montagna censita nell'Atlante Cima Becco.`
     : `${place.name} è un ${kindLabel} censito nell'Atlante Cima Becco.`;
@@ -169,12 +169,12 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
           {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>{place.kind==='bivacco'?'CHIAMA IL REFERENTE':'CHIAMA'}</a>}
           {place.email&&<a href={'mailto:'+place.email}>SCRIVI</a>}
         </div>
-        {place.kind==='bivacco'&&<p className="cb-location-alert">Bivacco non custodito: verifica accesso, dotazioni e condizioni prima di partire. La capienza indicata non garantisce posto disponibile.</p>}
+        {place.kind==='bivacco'&&<p className="cb-location-alert">Bivacco o ricovero: struttura non necessariamente custodita. Verifica accesso, disponibilità, manutenzione e dotazioni prima di partire. I posti dichiarati non garantiscono una sistemazione libera; acqua segnalata non significa potabile.</p>}
       </div>
       <figure className="cb-location-hero-media">
         <AlpinePlaceVisual key={place.slug} place={place}/>
         <div className="cb-location-avatar">{place.logo?<img src={place.logo.url} alt={'Logo ufficiale di '+place.name}/>:<AlpinePlaceIcon kind={place.kind} size={39}/>}</div>
-        <figcaption>{place.photo?<><span>Foto: {place.photo.author} · {place.photo.license}</span> · <a href={place.photo.sourceUrl} target="_blank" rel="noopener noreferrer">Fonte e licenza ↗</a></>:'Rappresentazione topografica: fotografia del luogo non disponibile'}</figcaption>
+        <figcaption>{place.photo?'Fotografia del luogo':'Rappresentazione topografica: fotografia del luogo non disponibile'}</figcaption>
       </figure>
     </header>
     <DetailJumpNav items={[
@@ -238,13 +238,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
         <AtlasDossierBlocks record={place} placement="connections"/>
         <AtlasDossierBlocks record={place} placement="media"/>
         <footer className="cb-location-credits">
-          <AtlasDossierBlocks record={place} placement="credits"/>
-          Dati del luogo:
-          {place.sourceIds?.osm || !place.sourceIds?.cai ? <> <a href={place.osmUrl} target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>.</> : null}
-          {place.sourceIds?.cai ? <> <a href={place.officialUrl || 'https://rifugi.cai.it/shelters/' + place.sourceIds.cai} target="_blank" rel="noopener noreferrer">Club Alpino Italiano · Unico Rifugi</a>.</> : null}
-          {place.photo&&<> Immagine: {place.photo.author}, {place.photo.license} · <a href={place.photo.sourceUrl} target="_blank" rel="noopener noreferrer">licenza e attribuzione</a>.</>}
-          {place.wikidata&&<> <a href={'https://www.wikidata.org/wiki/'+place.wikidata} target="_blank" rel="noopener noreferrer">Wikidata</a>.</>}
-          {' '}Meteo da modello, dati e condizioni del territorio possono cambiare.
+          Informazioni indicative e aggiornabili: verificare le condizioni reali sul territorio.
         </footer>
         <p className="cb-location-safety"><strong>IN MONTAGNA SERVE LA TESTA.</strong> Posizione, meteo, apertura e condizioni possono cambiare. Verifica con le fonti ufficiali prima di partire.</p>
     </>}
@@ -317,7 +311,7 @@ function TrekDetail({ trek, onBack }: { trek: TrekProject; onBack: string }) {
         <AtlasDossierBlocks record={trek.atlas ?? {}} placement="core"/>
         <AtlasDossierBlocks record={trek.atlas ?? {}} placement="connections"/>
         <AtlasDossierBlocks record={trek.atlas ?? {}} placement="media"/>
-        <footer className="cb-location-credits"><AtlasDossierBlocks record={trek.atlas ?? {}} placement="credits"/>Dati escursionistici e geometrie dei singoli segmenti: verifica sempre fonti, segnaletica e condizioni prima della partenza.</footer>
+        <footer className="cb-location-credits">Dati escursionistici e geometrie dei singoli segmenti: verifica sempre segnaletica e condizioni prima della partenza.</footer>
   </DetailLayout>;
 }
 

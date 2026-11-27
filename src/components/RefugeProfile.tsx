@@ -260,7 +260,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
         <div><h3>Storia documentata</h3>
           <FactLines place={place} keys={HISTORY.filter(key=>key!=='yearBuilt'||!value(place,'yearBuilt'))}/>
           {place.history&&place.historySourceUrl&&<><p className="cb-refuge-editorial">{place.history}</p>
-            <SourceLink url={place.historySourceUrl}>Fonte dell'approfondimento storico</SourceLink></>}
+</>}
         </div>
       </div>}
     </RefugeBlock>}
@@ -274,7 +274,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
       <p className="cb-refuge-disclaimer">Distanze e presenza sulla mappa non garantiscono accessibilità, disponibilità o potabilità.</p>
     </RefugeBlock>}
     <NearbyAtlasPlaces items={nearbyPlaces}/>
-    <AtlasDossierBlocks record={place} placement="connections" suppressRelationSources/>
+    <AtlasDossierBlocks record={place} placement="connections"/>
     {(hasSpecial||Object.keys(others).length>0||place.climate?.length||place.aliases?.length||place.administrativeHierarchy)&&
       <section id="cb-refuge-archive" className="cb-refuge-archive cb-detail-group">
         <details><summary>Altri approfondimenti, toponimi e dati tecnici</summary>
@@ -289,7 +289,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
     </RefugeBlock>
     <div className="cb-refuge-credits">
       <p>Informazioni documentate e soggette ad aggiornamento. Apertura, disponibilità e condizioni dei sentieri vanno verificate prima di partire.</p>
-      <AtlasDossierBlocks record={place} placement="credits"/>
+      <a href={import.meta.env.BASE_URL+'fonti-e-crediti/'}>Fonti e crediti del progetto</a>
     </div>
   </div>;
 }

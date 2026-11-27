@@ -55,7 +55,9 @@ describe('profilo rifugio CAI',()=>{
     const html=renderToStaticMarkup(createElement(RefugeGallery,{place}));
     expect(html).toContain('Fotografia precedente');
     expect(html).toContain('Mostra fotografia 2 di 2');
-    expect(html).toContain('Fonte e crediti');
+    expect(html).not.toContain('Fonte e crediti');
+    expect(html).not.toContain('Archivio CAI');
+    expect(html).not.toContain('Licenza CAI');
     expect(html).not.toContain('no.jpg');
   });
   it('con zero immagini mostra un fallback dichiarato, non una foto di repertorio',()=>{

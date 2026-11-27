@@ -173,9 +173,9 @@ Nel dossier rifugio i fatti principali non sono più tile con bordo, fonte
 e aggiornamento ripetuti. `RefugeProfile.FactLines` rende una griglia
 tipografica fluida di `dt` e `dd` con divisori sottili, gerarchia per
 posti letto e valori economici, etichette leggibili e dimensioni responsive.
-La provenienza **rimane nei dati normalizzati** e si consulta nel pannello
-collassabile `Fonti e crediti del dossier`; le foto mantengono credito e
-licenza. I campi tecnici residuali rimangono nell'archivio collassabile,
+La provenienza **rimane nei dati normalizzati** e si consulta nella pagina centralizzata
+`/fonti-e-crediti/`, che raccoglie anche le attribuzioni fotografiche e le
+licenze per ciascuna risorsa. I campi tecnici residuali rimangono nell'archivio collassabile,
 senza perdere qualità o attributi di provenienza. Non si altera la griglia
 globale `DetailLayout` né i fogli di stile del chrome.
 
