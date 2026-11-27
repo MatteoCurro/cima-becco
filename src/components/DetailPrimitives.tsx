@@ -36,9 +36,11 @@ export function DetailLayout({
   className?: string;
 }) {
   return <article className={`cb-location-profile cb-document-page${className ? ' ' + className : ''}`}>
-    <a className="cb-location-back" href={backHref}>← {backLabel}</a>
     <div className="cb-location-body">
-      <div className="cb-location-content">{children}</div>
+      <div className="cb-location-content">
+        <a className="cb-location-back" href={backHref}>← {backLabel}</a>
+        {children}
+      </div>
       <aside className="cb-location-sidebar" aria-label={sidebarLabel}>{sidebar}</aside>
     </div>
   </article>;

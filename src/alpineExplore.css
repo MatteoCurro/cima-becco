@@ -59,7 +59,8 @@
 .cb-explore-map-preview a{font:850 11px/1.4 'Space Grotesk',sans-serif;color:#b0004b;text-decoration:none}
 .cb-explore-preview-close{position:absolute;z-index:1;top:3px;right:3px;background:#f0f5ed;color:#194032;border:0;border-radius:50%;width:38px;height:38px;font-size:23px;cursor:pointer}
 .cb-explore-mobile-switch{display:none}
-.cb-explore-detail-shell{max-width:1300px;padding:20px clamp(16px,3vw,40px) 65px;margin:auto}
+/* Il dettaglio e la mappa occupano l’intera viewport: il padding appartiene alla colonna editoriale. */
+.cb-explore-detail-shell{display:block;width:100%;max-width:none;min-width:0;margin:0;padding:0}
 .cb-explore-no-data{padding:50px 18px}
 .cb-explore-no-data h1{font:900 36px 'Bricolage Grotesque',sans-serif}
 

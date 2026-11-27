@@ -1,8 +1,7 @@
 /* Solo componenti editoriali delle schede locali. La griglia condivisa è in cimaWorkspace.css. */
 .cb-location-profile{background:#fff;color:#1d4433;min-height:100dvh;position:relative}
-.cb-explore-detail-shell{width:100%;max-width:none;margin:0;padding:0}
 .cb-location-profile *{box-sizing:border-box}
-.cb-location-back{display:inline-flex;align-items:center;min-height:40px;margin:0;padding:8px clamp(15px,3vw,40px);border-bottom:1px solid #dce8d9;background:#f5f8f1;color:#20513d;text-decoration:none;font:800 12px/1.4 'Space Grotesk',sans-serif}
+.cb-location-back{display:inline-flex;align-items:center;min-height:36px;margin:0 0 18px;padding:0;border:0;background:transparent;color:#20513d;text-decoration:none;font:800 12px/1.4 'Space Grotesk',sans-serif}
 .cb-location-back:hover{color:#be0053}
 .cb-location-content{padding:22px clamp(16px,3vw,46px) 48px;background:#fff;container-type:inline-size}
 .cb-location-hero{display:flex;flex-direction:column;gap:0;margin:0 0 25px;width:100%}
