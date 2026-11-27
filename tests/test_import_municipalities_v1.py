@@ -172,6 +172,25 @@ class MunicipalitiesContracts(unittest.TestCase):
         self.assertEqual(entity["facts"]["provinceCapitalFlag"]["value"], False)
         self.assertFalse(entity["quality"]["seoIndexable"])
 
+    def test_south_tyrol_bilingual_name_uses_official_italian_key(self):
+        cols = ISTAT_COLS + ["Denominazione (Italiana e straniera)", "Denominazione altra lingua"]
+        istat = csv_data(cols, [
+            ["021002", "Andriano", "Trentino-Alto Adige", "Bolzano/Bozen", "04", "BZ",
+             "", "", "Andrian/Andriano", "Andrian"],
+        ])
+        dait = csv_data(DAIT_COLS, [
+            ["04", "014", "0001", "ANDRIANO", "BZ", "Rossi", "Mario", "Sindaco", "01/05/2025", "01/05/2025"],
+        ])
+        doc, report = build(istat, dait, retrieved_at="2026-11-27", min_municipalities=1)
+        row = doc["entities"][0]
+        self.assertEqual(row["name"], "Andriano")
+        self.assertEqual(row["slug"], "andriano")
+        self.assertEqual(row["sourceIds"]["dait"], "04/014/0001")
+        self.assertEqual(report["mayorsMatched"], 1)
+        self.assertEqual(report["daitRowsOfficialCrosswalkRejected"], 0)
+        self.assertIn("Andrian", [x["name"] for x in row["aliases"]])
+        self.assertIn("Andrian/Andriano", [x["name"] for x in row["aliases"]])
+
     def test_duplicate_istat_is_hard_error(self):
         source = csv_data(ISTAT_COLS, [
             ["022039", "Canazei", "Trentino-Alto Adige", "Trento", "04", "TN", "", ""],
