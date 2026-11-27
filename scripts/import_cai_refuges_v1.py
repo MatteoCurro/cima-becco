@@ -280,7 +280,16 @@ def fetch_catalogue(api=fetch_json, page_size=80):
         raise ValueError("CAI catalogo incompleto: " + str(len(result)) + "/" + str(total))
     ids = [str(x.get("id_cai", "")) for x in result]
     if len(set(ids)) != len(result) or not all(SAFE_ID.fullmatch(x) for x in ids):
-        raise ValueError("CAI ID duplicati/non validi")
+        from collections import Counter
+        occurrences = Counter(ids)
+        duplicates = sorted(key for key, count in occurrences.items() if count > 1)
+        invalid = sorted(key for key in ids if not SAFE_ID.fullmatch(key))
+        raise ValueError(
+            "CAI ID duplicati/non validi: total=" + str(total) +
+            " unique=" + str(len(occurrences)) +
+            " duplicates=" + repr(duplicates[:12]) +
+            " invalid=" + repr(invalid[:12])
+        )
     return sorted(result, key=lambda x: str(x["id_cai"]))
 
 
