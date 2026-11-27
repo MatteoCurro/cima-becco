@@ -247,23 +247,19 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
         <div className="cb-refuge-route-list">{inArea.slice(0,14).map(route=><RouteLine key={route.slug} route={route}/>)}</div></details>}
       {loadingRoutes&&<p className="cb-refuge-disclaimer">Caricamento dei percorsi cartografati…</p>}
       {!loadingRoutes&&!routes.length&&<p className="cb-refuge-disclaimer">Nessuna traccia indicizzata nelle immediate vicinanze; questo non significa che non esistano sentieri di accesso.</p>}
-      <p className="cb-refuge-disclaimer">La vicinanza a una traccia GPX non certifica che il sentiero conduca al rifugio né che sia percorribile.</p>
+      <p className="cb-refuge-disclaimer">La vicinanza al tracciato non dimostra un accesso diretto né la percorribilità.</p>
       <button type="button" className="cb-refuge-map-link" onClick={()=>scrollToDetailSection('cb-place-map')}><FaIcon name="map" size={14}/> Vedi sulla mappa</button>
     </RefugeBlock>
     {(hasTerritory||hasHistory)&&<RefugeBlock id="cb-refuge-story" kicker="LUOGHI, NOMI E MEMORIA"
       title={isShelter?'Il bivacco e il suo territorio':'Un rifugio, un territorio'}>
       {territoryLinks.length>0&&<aside className="cb-refuge-territory-feature">
-        <span>IL RIFUGIO E I LUOGHI INTORNO</span>
+        <span>{isShelter?'IL BIVACCO E I LUOGHI INTORNO':'IL RIFUGIO E I LUOGHI INTORNO'}</span>
         <p>{territoryLinks.map((item,index)=><span key={item.key}>
           {index>0?' · ':''}{item.label}: {item.href?
             <a href={item.href}>{item.name} <FaIcon name="arrow-up-right-from-square" size={11}/></a>:
             <strong>{item.name}</strong>}
         </span>)}</p>
-        <small>{territoryLinks.some(item=>item.href)
-          ? 'Collegamenti a località omonime individuate nell’Atlante e coerenti con la posizione. I nomi amministrativi restano dichiarazioni della fonte.'
-          : 'Denominazioni dichiarate dalla fonte; collegamenti territoriali non ancora riconciliati.'}</small>
       </aside>}
-}
       {hasTerritory&&<div className="cb-refuge-territory-details">
         <h3>Geografia e toponimi</h3>
         <FactLines place={place} keys={TERRITORY.filter(key=>!territoryLinks.some(item=>item.key===key))}/>
@@ -273,8 +269,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
           <strong>{formatAtlasFact(value(place,'yearBuilt')!)}</strong></div>}
         <div><h3>Storia documentata</h3>
           <FactLines place={place} keys={HISTORY.filter(key=>key!=='yearBuilt'||!value(place,'yearBuilt'))}/>
-          {place.history&&place.historySourceUrl&&<><p className="cb-refuge-editorial">{place.history}</p>
-</>}
+          {place.history&&place.historySourceUrl&&<><p className="cb-refuge-editorial">{place.history}</p></>}
         </div>
       </div>}
     </RefugeBlock>}
@@ -298,7 +293,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
           <AtlasDossierBlocks record={extraRecord} placement="core"/>
         </div>
       </details>
-    </section>
+    </section>}
     <AtlasDossierBlocks record={place} placement="media" excludeImages/>
     {!isShelter&&<RefugeBlock id="cb-refuge-community" kicker="CIMA BECCO / COMMUNITY" title="Conosci questo rifugio?">
       <p>Se rappresenti la struttura, puoi richiedere la gestione della scheda e proporre aggiornamenti.</p>
