@@ -175,7 +175,7 @@ function CategoryBarInner({
               className={`mode-tab${mode === value ? ' on' : ''}`}
               onClick={() => onModeChange(value)}
             >
-              {value === 'climbs' ? 'Climbs' : 'Routes'}
+              {value === 'climbs' ? 'Cime' : 'Percorsi'}
             </button>
           ))}
           <span className={`mode-thumb ${mode}`} aria-hidden="true" />
@@ -346,7 +346,7 @@ function RouteFilterModal({
         onAnimationEnd={(e) => e.target === e.currentTarget && closing && onClose()}
       >
         <header className="filter-modal-head">
-          <h2 id="route-filter-title">Route filters</h2>
+          <h2 id="route-filter-title">Filtri percorsi</h2>
           <p className="filter-modal-scope">Routes {scope}</p>
           <button type="button" className="filter-modal-close" aria-label="Close filters" onClick={close}>
             <CloseIcon />
@@ -408,7 +408,7 @@ function RouteFilterModal({
             className="filter-apply"
             onClick={close}
           >
-            <span aria-live="polite">{count === 0 ? 'No matches' : `Show ${count} route${count === 1 ? '' : 's'}`}</span>
+            <span aria-live="polite">{count === 0 ? 'Nessun risultato' : `Show ${count} route${count === 1 ? '' : 's'}`}</span>
           </button>
         </footer>
       </div>
@@ -464,7 +464,7 @@ function ClimbCategories({ types, visibleVenues, filters, onChange, savedCount }
       label: type === 'hill' ? 'Hills & summits' : `${VENUE_TYPE_LABEL[type]}s`,
       shortLabel: type === 'hill' ? 'Hills' : type === 'hdb_block' ? 'Blocks' : type === 'stairs' ? 'Stairs' : `${VENUE_TYPE_LABEL[type]}s`,
     })),
-    { id: 'photo', label: 'With photos', shortLabel: 'Photos' },
+    { id: 'photo', label: 'Con foto', shortLabel: 'Foto' },
     ...(savedCount > 0 || filters.savedOnly ? [{ id: 'liked' as const, label: `Saved (${savedCount})`, shortLabel: 'Saved' }] : []),
   ];
 
@@ -655,7 +655,7 @@ function FilterModal({
         }}
       >
         <header className="filter-modal-head">
-          <h2 id="filter-modal-title">Filters</h2>
+          <h2 id="filter-modal-title">Filtri</h2>
           <button
             type="button"
             ref={closeRef}
@@ -724,7 +724,7 @@ function FilterModal({
                 <span className="visually-hidden" aria-live="polite">Counting…</span>
               </>
             ) : draftCount === 0 ? (
-              'No matches'
+              'Nessun risultato'
             ) : draftCount >= 1000 ? (
               'Show over 1,000 venues'
             ) : (
