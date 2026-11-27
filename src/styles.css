@@ -278,7 +278,7 @@ button {
 
   .stage {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, var(--cb-detail-column, 42%)) minmax(0, 1fr);
     transition: grid-template-columns 0.35s ease;
   }
 
@@ -342,10 +342,10 @@ button {
 @media (min-width: 900px) {
   .map-wrap > .map {
     position: absolute;
-    inset: 24px 24px 24px 0;
-    width: auto;
-    height: auto;
-    border-radius: 16px !important;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
     overflow: hidden;
   }
 
@@ -363,7 +363,7 @@ button {
   }
 
   .stage.map-expanded .map-wrap > .map {
-    left: 24px;
+    left: 0;
   }
 }
 
@@ -2826,9 +2826,9 @@ button {
 
 .venue-detail-content {
   width: 100%;
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 24px 40px 80px;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
 .venue-detail-title-row,
 .venue-section-heading {
@@ -2910,8 +2910,8 @@ button {
 
 .venue-detail-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 372px;
-  column-gap: 88px;
+  grid-template-columns: minmax(0, var(--cb-detail-column, 42%)) minmax(0, 1fr);
+  column-gap: 0;
   align-items: start;
 }
 .venue-detail-main { min-width: 0; }
