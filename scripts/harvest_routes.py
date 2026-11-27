@@ -22,6 +22,7 @@ TILES_DIR = DATA / 'routes-tiles'
 STATUS = DATA / 'import-status.json'
 MANIFEST = DATA / 'routes-manifest.json'
 SHARD_SIZE = 200
+SHARD_BYTES = 650_000  # geometrie compresse via HTTP, ma limitiamo anche i singoli JSON
 REFRESH_DAYS = 45
 # Aree sovrapposte soltanto per priorita: ogni cella ha un ID geografico unico.
 # Le celle sono di un grado; le Dolomiti e le Alpi vengono lavorate per prime.
@@ -95,12 +96,23 @@ def in_own_cell(route, bbox):
 
 
 def shard_files(tile_id, routes):
+    """Separazione sia per numero tracce sia per bytes: il browser mobile non scarica file giganti."""
+    chunks = []
+    current = []
+    size = 0
+    for route in routes:
+        weight = len(json.dumps(route, separators=(',', ':'), ensure_ascii=False).encode('utf-8'))
+        if current and (len(current) >= SHARD_SIZE or size + weight > SHARD_BYTES):
+            chunks.append(current)
+            current = []
+            size = 0
+        current.append(route)
+        size += weight
+    if current:
+        chunks.append(current)
     return [
-        {
-            'path': f'routes-tiles/{tile_id}_{offset // SHARD_SIZE:03d}.json',
-            'routes': routes[offset:offset + SHARD_SIZE],
-        }
-        for offset in range(0, len(routes), SHARD_SIZE)
+        {'path': f'routes-tiles/{tile_id}_{n:03d}.json', 'routes': chunk}
+        for n, chunk in enumerate(chunks)
     ]
 
 
