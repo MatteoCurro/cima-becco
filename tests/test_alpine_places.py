@@ -18,6 +18,16 @@ class AlpinePlacesTest(unittest.TestCase):
         self.assertEqual(item['elevationM'],2004)
         self.assertEqual(item['osmUrl'],'https://www.openstreetmap.org/node/321')
 
+    def test_osm_bivacco_and_basic_shelter_are_not_refuges(self):
+        bivacco=atlas.parse_item({'type':'node','id':77,'lat':46.6,'lon':12.5,
+            'tags':{'name':'Bivacco di Prova','tourism':'wilderness_hut','capacity':'8','access':'yes'}})
+        self.assertEqual(bivacco['kind'],'bivacco')
+        self.assertEqual(bivacco['capacity'],8)
+        self.assertEqual(bivacco['access'],'yes')
+        shelter=atlas.parse_item({'type':'node','id':78,'lat':46.6,'lon':12.5,
+            'tags':{'name':'Bivacco di Emergenza','amenity':'shelter','shelter_type':'basic_hut'}})
+        self.assertEqual(shelter['kind'],'bivacco')
+
     def test_six_disjoint_import_cells_cover_the_pilot(self):
         cells=atlas.alpine_cells()
         self.assertEqual(len(cells),6)

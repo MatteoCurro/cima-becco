@@ -101,7 +101,7 @@ export type RoutePoint = [number, number, number];
 export interface RouteStop {
   slug: string;
   name: string;
-  kind: 'rifugio' | 'borgo';
+  kind: 'rifugio' | 'bivacco' | 'borgo';
   relation: 'partenza' | 'passaggio' | 'arrivo';
   distanceM: number;
   /** Posizione approssimativa lungo la geometria, da 0 a 1. */

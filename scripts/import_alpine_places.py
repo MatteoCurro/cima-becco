@@ -45,6 +45,7 @@ def fetch_places(bbox=None):
     query = (
         "[out:json][timeout:65];("
         f'nwr["tourism"~"^(alpine_hut|wilderness_hut)$"]{rect};'
+        f'nwr["amenity"="shelter"]["shelter_type"="basic_hut"]{rect};'
         f'nwr["place"~"^(town|village|hamlet)$"]{rect};'
         ");out center tags;"
     )
@@ -83,8 +84,10 @@ def parse_item(row):
     lat, lng = pt.get("lat"), pt.get("lon")
     if not isinstance(lat, (int,float)) or not isinstance(lng, (int,float)):
         return None
-    kind = "rifugio" if tags.get("tourism") in ("alpine_hut", "wilderness_hut") else (
-        "borgo" if tags.get("place") in ("town", "village", "hamlet") else None)
+    kind = ("rifugio" if tags.get("tourism") == "alpine_hut" else
+            "bivacco" if (tags.get("tourism") == "wilderness_hut" or
+                          (tags.get("amenity") == "shelter" and tags.get("shelter_type") == "basic_hut")) else
+            "borgo" if tags.get("place") in ("town", "village", "hamlet") else None)
     if not kind:
         return None
     ident = f"osm-{row.get('type','node')[0]}-{row['id']}"
@@ -115,8 +118,13 @@ def parse_item(row):
             if tags.get("wikimedia_commons","").startswith("File:") else {}),
         **({"wikipedia": clean_name(tags["wikipedia"])}
             if re.fullmatch(r"[a-z]{2,3}:.+", tags.get("wikipedia","")) else {}),
-        **({"capacity": int(tags["beds"])}
-            if tags.get("beds","").isdigit() and 0<int(tags["beds"])<2000 else {}),
+        **({"capacity": int(tags.get("beds") or tags.get("capacity"))}
+            if str(tags.get("beds") or tags.get("capacity") or "").isdigit()
+            and 0 < int(tags.get("beds") or tags.get("capacity")) < 2000 else {}),
+        **({"access": clean_name(tags["access"])} if tags.get("access") else {}),
+        **({"fee": clean_name(tags["fee"])} if tags.get("fee") else {}),
+        **({"winterRoom": clean_name(tags["winter_room"])} if tags.get("winter_room") else {}),
+        **({"seasonal": clean_name(tags["seasonal"])} if tags.get("seasonal") else {}),
 
     }
 
@@ -145,7 +153,7 @@ def route_stops(route, places):
         lng,lat=item["lng"],item["lat"]
         if not (west-.01<=lng<=east+.01 and south-.01<=lat<=north+.01):
             continue
-        threshold=180 if item["kind"]=="rifugio" else 350
+        threshold=180 if item["kind"] in ("rifugio","bivacco") else 350
         best=1e9;index=0
         for i in range(0,len(points)-1):
             # punto contro segmento, include tratti lunghi semplificati
@@ -248,6 +256,7 @@ def run(write,link_only):
                 "source":"OpenStreetMap · ODbL 1.0","coverage":"Dolomiti (pilota)",
                 "places":places})
     counts={"rifugi":sum(p["kind"]=="rifugio" for p in places),
+            "bivacchi":sum(p["kind"]=="bivacco" for p in places),
             "borghi":sum(p["kind"]=="borgo" for p in places)}
     if write:
         counts.update(save_stops(places))
