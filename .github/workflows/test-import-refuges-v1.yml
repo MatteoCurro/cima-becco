@@ -13,6 +13,7 @@ on:
       - tests/test_normalize_cai_refuge_v1.py
       - scripts/reconcile_cai_osm_refuges_v1.py
       - tests/test_reconcile_cai_osm_refuges_v1.py
+      - scripts/cai_official_type_evidence_v1.json
       - scripts/cai_pilot_field_inventory_v1.json
       - tests/test_cai_pilot_field_inventory_v1.py
       - scripts/cai_unmapped_fields_review_plan_v1.json
