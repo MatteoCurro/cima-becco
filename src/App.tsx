@@ -72,14 +72,16 @@ const NO_PHOTOS: RoutePhoto[] = [];
 // fetched once someone actually opens it.
 const MapView = lazy(() => import('./map/MapView').then((m) => ({ default: m.MapView })));
 const PlannerPage = lazy(() => import('./components/PlannerPage').then((m) => ({ default: m.PlannerPage })));
+const AlpineAtlasPage = lazy(() => import('./components/AlpineAtlasPage').then((m) => ({ default: m.AlpineAtlasPage })));
 
-type View = 'landing' | 'planner' | 'map' | 'training' | 'account' | 'settings' | InfoPageId;
+type View = 'landing' | 'planner' | 'atlas' | 'map' | 'training' | 'account' | 'settings' | InfoPageId;
 
 const INFO_PAGES: ReadonlySet<string> = new Set<InfoPageId>(['privacy', 'terms', 'community', 'data', 'contact']);
 
 function viewFromHash(): View {
   const hash = window.location.hash;
   if (hash === '#pianifica') return 'planner';
+  if (hash === '#atlante' || hash.startsWith('#atlante/')) return 'atlas';
   if (hash === '#map' || hash === '#routes' || hash === '#import' || hash.startsWith('#map/') || hash.startsWith('#venue/') || hash.startsWith('#route/')) return 'map';
   if (hash === '#training') return 'training';
   const account = parseAccountHash(hash);
@@ -129,6 +131,8 @@ export default function App() {
         <Landing />
       ) : view === 'planner' ? (
         <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><PlannerPage /></Suspense>
+      ) : view === 'atlas' ? (
+        <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><AlpineAtlasPage /></Suspense>
       ) : view === 'training' ? (
         <TrainingPanel />
       ) : view === 'account' ? (
