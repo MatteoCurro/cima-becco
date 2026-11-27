@@ -40,7 +40,22 @@ for (const dir of ['place', 'country', 'route']) rmSync(join(DIST, dir), { recur
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const venues = readJson(join(DATA, 'venues.json')).venues;
 const routesFile = readJson(join(DATA, 'routes.json'));
-const routes = Array.isArray(routesFile) ? routesFile : routesFile.routes;
+const featured = Array.isArray(routesFile) ? routesFile : routesFile.routes;
+// Il generatore SEO legge gli shard solo in build: nessun download aggiuntivo sul telefono.
+const routeIndex = new Map(featured.map((route) => [route.slug, route]));
+const manifestPath = join(DATA, 'routes-manifest.json');
+if (existsSync(manifestPath)) {
+  const manifest = readJson(manifestPath);
+  for (const tile of manifest.tiles ?? []) {
+    for (const file of tile.files ?? []) {
+      if (!/^routes-tiles\/it_\d+_\d+_\d+\.json$/.test(file)) continue;
+      const shardPath = join(DATA, file);
+      if (!existsSync(shardPath)) continue;
+      for (const route of readJson(shardPath).routes ?? []) routeIndex.set(route.slug, route);
+    }
+  }
+}
+const routes = [...routeIndex.values()].filter((route) => !['cycle', 'run'].includes(route.activity));
 const descriptions = existsSync(join(DATA, 'descriptions.json')) ? readJson(join(DATA, 'descriptions.json')).descriptions ?? {} : {};
 const index = readJson(join(DATA, 'peaks', 'index.json'));
 const peakPhotos = existsSync(join(DATA, 'peaks', 'photos.json')) ? readJson(join(DATA, 'peaks', 'photos.json')).photos ?? {} : {};
@@ -300,8 +315,11 @@ for (const route of routes) {
 <ul class="facts"><li><strong>${km(route.distanceM)}</strong>distance</li>${route.elevationAvailable !== false ? `<li><strong>${metres(route.gainM)}</strong>elevation gain</li><li><strong>${metres(route.lossM)}</strong>elevation loss</li>` : ''}<li><strong>${route.loop ? 'Loop' : 'Point to point'}</strong>shape</li></ul>
 <p>${escape(description)}</p>
 ${passes.length ? `<h2>Passes</h2><ul class="list">${passes.map((venue) => `<li><a href="${placeUrlBySlug.get(venue.slug) ?? appLink(`#venue/${venue.slug}`)}">${escape(venue.name)}</a></li>`).join('')}</ul>` : ''}
-${route.licence ? `<p class="sub">Licence: ${escape(route.licence)}</p>` : ''}
-<p><a class="cta" href="${appLink('#routes')}">Open the route map and download the GPX</a></p>`,
+${route.caiDifficulty ? `<p class="sub">Difficoltà CAI: ${escape(route.caiDifficulty)}</p>` : ''}
+${route.trailRef ? `<p class="sub">Segnavia: ${escape(route.trailRef)}</p>` : ''}
+${route.sourceUrl ? `<p><a href="${escape(route.sourceUrl)}" rel="noopener noreferrer">Fonte del tracciato</a></p>` : ''}
+${route.licence ? `<p class="sub">Licenza: ${escape(route.licence)}</p>` : ''}
+<p><a class="cta" href="${appLink(`#route/${route.slug}`)}">Apri sulla mappa e scarica il GPX</a></p>`,
   });
 }
 
