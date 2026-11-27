@@ -1,117 +1,33 @@
-/* Un solo layout per il documento di un sentiero, sia SEO sia URL runtime.
-   La stessa RoutePanel vive nell'anteprima e nella scheda, senza duplicazioni. */
-.map-page.is-route-detail .map-filters,
-.map-page.is-route-detail .map-wrap .map-expand-ctrl,
-.map-page.is-route-detail .view-toggle{display:none}
-.map-page.is-route-detail .stage{
-  display:grid;
-  grid-template-columns:minmax(0,50%) minmax(0,50%);
-  align-items:stretch;
-  width:100%;
-  min-width:0;
-  height:auto;
-}
+/* Varianti del pannello sentiero: un solo RoutePanel, nel layout comune. */
+.map-page.is-route-detail .map-filters,.map-page.is-route-detail .view-toggle,
+.map-page.is-route-detail .map-expand-ctrl{display:none}
+.map-page.is-route-detail .stage{height:auto;min-height:0}
 .map-page.is-route-detail .stage .list-pane{
-  display:block;
-  position:relative;
-  inset:auto;
-  width:100%;
-  min-width:0;
-  max-width:100%;
-  height:auto;
-  min-height:0;
-  overflow:visible;
-  visibility:visible;
+  position:relative;inset:auto;display:block;min-width:0;height:auto;min-height:0;overflow:visible;visibility:visible;
 }
-.map-page.is-route-detail .stage .list-pane > .route-panel.in-sidebar{
-  display:flex;
-  flex-direction:column;
-  position:relative;
-  inset:auto;
-  width:100%;
-  max-width:100%;
-  height:auto;
-  max-height:none;
-  margin:0;
-  padding:clamp(18px,3vw,42px);
-  overflow:visible;
-  border-radius:0;
-  box-shadow:none;
-  animation:none;
-  background:#fff;
+.map-page.is-route-detail .stage .list-pane>.route-panel.in-sidebar{
+  display:flex;flex-direction:column;position:relative;inset:auto;min-width:0;max-width:100%;width:100%;
+  height:auto;max-height:none;margin:0;padding:20px clamp(16px,3vw,46px) 55px;border:0;border-radius:0;
+  background:#fff;box-shadow:none;overflow:visible;animation:none;
 }
-.map-page.is-route-detail .stage .map-wrap{
-  position:sticky;
-  inset:auto;
-  top:var(--map-top,0px);
-  width:100%;
-  min-width:0;
-  height:calc(100dvh - var(--map-top,0px));
-  min-height:320px;
-  visibility:visible;
-  pointer-events:auto;
-}
-.map-page.is-route-detail .stage .map-wrap > .map{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  border-radius:0!important;
-}
-/* I tooltip CSS delle icone (pseudo-elementi posizionati) allargano
-   il documento a 320px quando la scheda non usa più overflow:hidden.
-   Nella pagina completa le azioni conservano aria-label: non servono tooltip
-   flottanti oltre il bordo. Le anteprime mappa mantengono i loro tooltip. */
-.map-page.is-route-detail .route-panel .gpx-icon-btn[data-tip]::after{
-  display:none;
-}
-.map-page.is-route-detail .route-panel .route-title-heading{
-  font:900 clamp(27px,3vw,42px)/1.08 var(--cb-display);
-  letter-spacing:-.045em;
-  color:var(--cb-ink);
-  margin:0;
-  overflow-wrap:anywhere;
-  white-space:normal;
-}
-.map-page.is-route-detail .route-panel .route-name{
-  display:block;
-  -webkit-line-clamp:unset;
-  line-clamp:unset;
-}
-.cb-route-detail-loading{
-  padding:35px 24px;
-  font:700 14px/1.5 var(--cb-body);
-  color:var(--cb-muted);
-}
-@media(max-width:899px){
-  .map-page.is-route-detail .stage{
-    display:flex;
-    flex-direction:column;
-    height:auto;
-    min-height:0;
-  }
-  .map-page.is-route-detail .stage .list-pane{
-    position:relative;
-    display:block;
-    flex:none;
-    width:100%;
-    height:auto;
-    min-height:0;
-    overflow:visible;
-  }
-  .map-page.is-route-detail .stage .list-pane > .route-panel.in-sidebar{
-    padding:20px clamp(15px,4vw,25px) 30px;
-    height:auto;
-  }
-  .map-page.is-route-detail .stage .map-wrap{
-    position:relative;
-    inset:auto;
-    top:auto;
-    order:-1; /* Prima il tracciato, poi la relazione completa */
-    flex:none;
-    height:clamp(300px,45dvh,430px);
-    min-height:320px;
-  }
-  .map-page.is-route-detail .stage .map-wrap > .map{inset:0}
-  .map-page.is-route-detail .stage:not(.list-open) ~ .site-footer{display:block}
+.map-page.is-route-detail .stage .map-wrap{background:#ddebdc}
+.map-page.is-route-detail .stage .map-wrap>.map{position:absolute;inset:0;width:100%;height:100%;border-radius:0}
+.map-page.is-route-detail .route-panel .route-title-heading{font:900 clamp(30px,3.3vw,50px)/1.06 'Bricolage Grotesque',sans-serif;letter-spacing:-.048em;color:#1d4434;margin:6px 0;white-space:normal;overflow-wrap:anywhere}
+.map-page.is-route-detail .route-panel .route-name{display:block;-webkit-line-clamp:unset;line-clamp:unset}
+.map-page.is-route-detail .route-panel .gpx-icon-btn[data-tip]::after{display:none}
+.map-page.is-route-detail .route-panel .route-more{max-width:100%}
+.map-page.is-route-detail .route-panel .gpx-panel-head{flex-wrap:wrap}
+.map-page.is-route-detail .route-panel .gpx-panel-actions{margin-left:auto;min-width:0}
+.map-page.is-route-detail .route-panel .gpx-panel-head .route-panel-title{flex:1 1 200px;min-width:0}
+.cb-route-hero{height:clamp(195px,24vw,360px);position:relative;margin:0 0 24px;width:100%;overflow:hidden;border-radius:10px;background:#d6e8d1}
+.cb-route-hero>img{height:100%;width:100%;object-fit:cover}
+.cb-route-hero-fallback{height:100%;width:100%;background:radial-gradient(circle at 70% 25%,#f7fac5 0 4%,transparent 5%),repeating-radial-gradient(ellipse at 50% 165%,transparent 0 26px,#b0cebd 27px,#b0cebd 29px,transparent 30px,transparent 52px),linear-gradient(155deg,#d1e5d3,#417c68)}
+.cb-route-hero>figcaption{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 15px;color:#fff;background:linear-gradient(transparent,#143c2cae);font-size:11px}
+.cb-route-hero>figcaption span{font-weight:900;letter-spacing:.08em}
+.cb-route-detail-loading{padding:30px;color:#637866;font-size:13px}
+.map-page.is-route-detail .site-footer{width:100%}
+@media(max-width:900px){
+ .map-page.is-route-detail .stage .list-pane{flex:none;width:100%;height:auto;overflow:visible}
+ .map-page.is-route-detail .stage .map-wrap{order:-1}
+ .map-page.is-route-detail .stage .list-pane>.route-panel.in-sidebar{padding:16px clamp(14px,4vw,26px) 38px}
 }

@@ -482,6 +482,12 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
       {folded && (
         <button type="button" className="route-panel-unfold" onClick={onUnfold} aria-label={`Show details for ${route.name}`} />
       )}
+      {fullDetail&&<figure className="cb-route-hero">
+        {route.photos?.[0]?<img src={route.photos[0].url} loading="lazy" alt={route.photos[0].caption||displayTitle}/>:
+          <div className="cb-route-hero-fallback" role="img" aria-label="Illustrazione topografica del sentiero: fotografia non disponibile"/>}
+        <figcaption><span>{routeActivity(route)==='ferrata'?'VIA FERRATA':'SENTIERO / ESCURSIONE'}</span>
+          {route.photos?.[0]?<small>Foto: {route.photos[0].author||'Wikimedia Commons'} · {route.photos[0].license||'Licenza nella fonte'}</small>:<small>Foto da documentare</small>}</figcaption>
+      </figure>}
       <header className="gpx-panel-head">
         <div className="route-panel-title">
           <RouteTitle name={displayTitle} headingLevel={fullDetail ? 1 : 2} />
@@ -571,7 +577,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
         <p className="route-elevation-unavailable">{elevation.pending ? 'Sto stimando il dislivello dal terreno…' : 'Dislivello non disponibile per questo tracciato.'}</p>
       )}
 
-      {route.photos?.[0] && <figure className="cima-route-cover">
+      {!fullDetail && route.photos?.[0] && <figure className="cima-route-cover">
         <img src={route.photos[0].url} alt={route.photos[0].caption || displayTitle} loading="lazy" />
         <small>Fotografia: {route.photos[0].author || 'Wikimedia Commons'} · {route.photos[0].license || 'licenza nella fonte'}</small>
       </figure>}

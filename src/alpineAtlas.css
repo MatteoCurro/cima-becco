@@ -1,5 +1,5 @@
 .cb-atlas-page{background:#f5f8f0;min-height:100vh;color:#19372b}
-.cb-atlas-shell{width:min(1200px,calc(100% - 36px));margin:0 auto;padding:38px 0 70px}
+.cb-atlas-shell{width:100%;max-width:none;margin:0;padding:clamp(16px,2vw,28px) clamp(14px,2.6vw,42px) 60px}
 .cb-atlas-overline,.cb-atlas-eyebrow{font:900 12px/1.4 'Space Grotesk',sans-serif;letter-spacing:.17em;color:#ff2879}
 .cb-atlas-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0 40px}
 .cb-atlas-tabs a{font:800 13px/1.2 'Space Grotesk',sans-serif;letter-spacing:.035em;padding:13px 16px;border:2px solid #1e4736;border-radius:8px;color:#1e4736;text-decoration:none}

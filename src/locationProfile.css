@@ -1,134 +1,55 @@
-/* Profili Cima Becco: contenuti a sinistra, cartografia persistente nella metà destra. */
-.cb-explore-detail-shell{max-width:none!important;margin:0!important;padding:0!important}
-.cb-location-profile{position:relative;background:#f7faf4;color:#1d4433;min-height:100vh}
+/* Solo componenti editoriali delle schede locali. La griglia condivisa è in cimaWorkspace.css. */
+.cb-location-profile{background:#fff;color:#1d4433;min-height:100dvh;position:relative}
+.cb-explore-detail-shell{width:100%;max-width:none;margin:0;padding:0}
 .cb-location-profile *{box-sizing:border-box}
-.cb-location-back{position:absolute;top:14px;left:clamp(17px,3vw,39px);z-index:8;display:inline-flex;min-height:38px;align-items:center;padding:5px 12px;border:1px solid #d1e0cc;background:#fff;border-radius:8px;color:#204b38;text-decoration:none;font:800 11px 'Space Grotesk',sans-serif}
-.cb-location-back:hover{color:#b0004e}
-.cb-location-body{display:grid;grid-template-columns:minmax(0,50%) minmax(0,50%);align-items:start;min-width:0;width:100%}
-.cb-location-content{padding:67px clamp(18px,3vw,42px) 45px;min-width:0;max-width:100%;background:#fff;box-shadow:6px 0 25px #15362513;container-type:inline-size}
-.cb-location-hero{display:flex;flex-direction:column;gap:0;margin:0 auto 27px;min-width:0;max-width:780px}
-.cb-location-hero-media{order:-1;position:relative;margin:0 0 24px;min-width:0}
-.cb-location-hero-media>.cb-place-visual{height:clamp(230px,25vw,360px);border-radius:11px}
-.cb-location-hero-media figcaption{margin:8px 0 0;color:#67806f;font:550 10px/1.45 'Space Grotesk',sans-serif}
-.cb-location-avatar{width:69px;height:69px;margin:-60px 0 16px 21px;display:grid;place-items:center;background:#f6ffec;border:4px solid #fff;border-radius:13px;box-shadow:0 4px 12px #123c2d35;position:relative;z-index:2;transform:rotate(-4deg)}
-.cb-location-avatar img{width:100%;height:100%;object-fit:contain;border-radius:9px}
-.cb-location-hero-copy>.cb-atlas-kind{margin-bottom:12px}
-.cb-location-hero h1{font:900 clamp(31px,3.4vw,52px)/1.05 'Bricolage Grotesque',sans-serif;letter-spacing:-.057em;overflow-wrap:anywhere;color:#193f30;margin:7px 0 9px}
-.cb-location-lead{font:600 clamp(14px,1.35vw,17px)/1.55 'Space Grotesk',sans-serif;color:#3e6349;margin:0 0 8px}
-.cb-location-story{font:500 13px/1.7 'Space Grotesk',sans-serif;color:#486b53;margin:8px 0 15px}
-.cb-location-cost{border:1px solid #efdbb3;background:#fff9e9;padding:12px 15px;border-radius:9px;margin:10px 0 18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.cb-location-cost>span:first-child{font:850 10px/1.2 'Space Grotesk',sans-serif;color:#8b7037;letter-spacing:.06em}
-.cb-location-cost>strong{font:850 14px/1.3 'Bricolage Grotesque',sans-serif;color:#5f4a25}
-.cb-location-dobloni{margin-left:auto;color:#aa7900;font:700 13px 'Space Grotesk',sans-serif}
-.cb-location-dobloni small{color:#836d4b;font:600 10px 'Space Grotesk',sans-serif}
-.cb-location-actions{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
-.cb-location-actions a,.cb-location-actions button{display:inline-flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;min-height:44px;padding:11px 13px;font:850 11px/1.3 'Space Grotesk',sans-serif;border:1px solid #b4cbb8;background:#f4f8f0;color:#254a36;border-radius:7px;text-decoration:none}
-.cb-location-actions .cb-location-action-primary{background:#c90053;border-color:#c90053;color:#fff}
-.cb-location-actions a:hover,.cb-location-actions button:hover{border-color:#c90053}
-.cb-location-alert{padding:13px 15px;border-left:4px solid #b7863b;background:#fff4dd;border-radius:6px;font:600 12px/1.6 'Space Grotesk',sans-serif;color:#654c23;margin:8px 0}
-.cb-location-section{margin:20px 0 31px}
-.cb-location-dossier{border-top:1px solid #dce8d9;padding-top:22px}
-.cb-location-muted-note{font:500 12px/1.6 'Space Grotesk',sans-serif;color:#687b6c}
-.cb-location-itineraries .cb-atlas-nearby{margin:12px 0}
-.cb-location-itineraries .cb-atlas-nearby h2{font:850 14px/1.3 'Bricolage Grotesque',sans-serif;color:#234837}
+.cb-location-back{display:inline-flex;align-items:center;min-height:40px;margin:0;padding:8px clamp(15px,3vw,40px);border-bottom:1px solid #dce8d9;background:#f5f8f1;color:#20513d;text-decoration:none;font:800 12px/1.4 'Space Grotesk',sans-serif}
+.cb-location-back:hover{color:#be0053}
+.cb-location-content{padding:22px clamp(16px,3vw,46px) 48px;background:#fff;container-type:inline-size}
+.cb-location-hero{display:flex;flex-direction:column;gap:0;margin:0 0 25px;width:100%}
+.cb-location-hero-media{order:-1;position:relative;margin:0 0 22px;min-width:0}
+.cb-location-hero-media>.cb-place-visual{height:clamp(200px,23vw,355px);border-radius:10px}
+.cb-location-hero-media figcaption{font-size:11px;color:#718577;margin-top:8px}
+.cb-location-avatar{width:68px;height:68px;margin:-59px 0 15px 20px;display:grid;place-items:center;position:relative;z-index:2;background:#f4ffeb;border:4px solid #fff;border-radius:12px;box-shadow:0 5px 14px #19412d29}
+.cb-location-avatar img{width:100%;height:100%;object-fit:contain}
+.cb-location-hero h1{font:900 clamp(30px,3.2vw,51px)/1.04 'Bricolage Grotesque',sans-serif;letter-spacing:-.052em;overflow-wrap:anywhere;color:#1b4231;margin:7px 0 13px}
+.cb-location-lead{font:650 15px/1.65 'Space Grotesk',sans-serif;color:#425f49;margin:0 0 10px}
+.cb-location-story{font:500 13px/1.8 'Space Grotesk',sans-serif;color:#4d6a54;margin:10px 0 18px}
+.cb-location-actions,.cb-location-contact-links{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:15px 0}
+.cb-location-actions a,.cb-location-actions button,.cb-location-contact-links a{
+  display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 14px;border-radius:7px;
+  border:1px solid #c5d8c1;background:#eff5eb;color:#204a35;text-decoration:none;cursor:pointer;
+  font:800 12px/1.25 'Space Grotesk',sans-serif;overflow-wrap:anywhere}
+.cb-location-actions .cb-location-action-primary{background:#bf0052;color:#fff;border-color:#bf0052}
+.cb-location-alert,.cb-location-safety{padding:14px 16px;margin:18px 0;background:#fff3dc;border-left:4px solid #bd8a3f;border-radius:5px;color:#6b512d;font:600 12px/1.65 'Space Grotesk',sans-serif}
+.cb-location-section{margin:25px 0 30px}
+.cb-location-dossier{padding-top:22px;border-top:1px solid #dce8d7}
+.cb-location-muted-note{color:#6b8170;font-size:12px;line-height:1.7}
+.cb-location-cost{display:flex;align-items:center;flex-wrap:wrap;gap:9px;padding:14px;margin:12px 0;border:1px solid #e6d2a5;background:#fff8e8;border-radius:7px}
+.cb-location-cost>span:first-child{font-size:11px;font-weight:800;color:#8a703c}
+.cb-location-cost>strong{font:800 15px 'Bricolage Grotesque',sans-serif}
+.cb-location-dobloni{font-size:12px;color:#a56c25}
 .cb-location-water-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-.cb-location-water-grid>div{display:flex;align-items:center;gap:9px;padding:12px;background:#f0f6ee;border:1px solid #dbe8d7;border-radius:8px;min-width:0}
+.cb-location-water-grid>div{display:flex;align-items:center;gap:10px;min-width:0;padding:12px;background:#f1f7ed;border:1px solid #dce8d8;border-radius:7px}
 .cb-location-water-grid>div>div{min-width:0}
-.cb-location-water-grid strong{display:block;font:850 12px/1.3 'Space Grotesk',sans-serif;color:#214a39;overflow-wrap:anywhere}
-.cb-location-water-grid small{display:block;font:500 10px/1.4 'Space Grotesk',sans-serif;color:#708374;margin-top:4px}
-.cb-location-community{margin:35px 0;border-top:1px solid #dbe7d9;padding-top:22px}
-.cb-location-community>p{font:500 13px/1.7 'Space Grotesk',sans-serif;color:#59715c}
-.cb-location-credits{font:500 11px/1.6 'Space Grotesk',sans-serif;color:#6a7e6b;border-top:1px solid #deeadb;padding:20px 0 0;margin:25px 0}
-.cb-location-credits a{color:#aa0050}
-.cb-location-sidebar{position:sticky;top:64px;height:calc(100dvh - 64px);display:flex;flex-direction:column;background:#e1ecdf;min-width:0;max-width:100%;overflow:hidden}
-.cb-location-side-map{position:relative;flex:1 1 auto;min-height:180px;display:flex;flex-direction:column;min-width:0;margin:0;background:#cee0cd}
-.cb-location-side-map .cb-location-sidebar-heading{position:absolute;z-index:9;top:14px;left:14px;background:#fff;border-radius:9px;padding:10px 13px;box-shadow:0 3px 14px #224a2b35;pointer-events:none}
-.cb-location-side-map>.cb-atlas-map-wrap{flex:1;min-height:0;width:100%;border:0;border-radius:0;overflow:hidden}
-.cb-location-side-map .cb-atlas-map{height:100%!important;min-height:0!important}
-.cb-location-side-map>p{position:absolute;bottom:10px;left:12px;z-index:10;background:#fff;padding:7px 10px;border-radius:7px;margin:0;font:700 10px 'Space Grotesk',sans-serif;color:#2c503c;pointer-events:none}
-.cb-location-sidebar-heading{display:flex;flex-direction:column;gap:3px}
-.cb-location-sidebar-heading span{font:850 9px/1.3 'Space Grotesk',sans-serif;color:#bc0051;letter-spacing:.1em}
-.cb-location-sidebar-heading strong{font:850 16px/1.15 'Bricolage Grotesque',sans-serif;color:#1b4532}
-.cb-location-contact-card{flex:0 0 auto;max-height:min(30dvh,230px);overflow-y:auto;background:#fff;padding:14px 17px 15px;box-shadow:0 -8px 25px #1a49331a;border-top:1px solid #cddccc;scrollbar-width:thin}
-.cb-location-contact-card .cb-location-sidebar-heading{margin:0 0 11px}
-.cb-location-contact-row{display:flex;gap:10px;justify-content:space-between;align-items:baseline;padding:5px 0;font:600 11px 'Space Grotesk',sans-serif}
-.cb-location-contact-row small{color:#708070;font:700 10px 'Space Grotesk',sans-serif}
-.cb-location-contact-row strong{color:#204934;font-weight:800;text-align:right;overflow-wrap:anywhere}
-.cb-location-contact-link{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;margin:4px 7px 4px 0;background:#e5f1e3;border-radius:6px;min-height:38px;color:#1c4732;text-decoration:none;font:800 11px 'Space Grotesk',sans-serif;overflow-wrap:anywhere}
-.cb-location-contact-link:hover{background:#d1eacb}
-.cb-location-site-link{background:#fff;border:1px solid #d4e5d0;color:#a70049}
-.cb-location-safety{padding:9px 16px;flex:none;background:#254836;color:#fff}
-.cb-location-safety strong{font:850 10px 'Space Grotesk',sans-serif;letter-spacing:.065em}
-.cb-location-safety p{font:500 10px/1.5 'Space Grotesk',sans-serif;color:#e5f1e7;margin:3px 0 0}
-
-/* Un solo ritmo per la colonna editoriale, lasciando la cartografia a piena ampiezza. */
-.cb-location-content>.cb-location-section,
-.cb-location-content>.cb-meteo-panel,
-.cb-location-content>.cb-location-community,
-.cb-location-content>.cb-location-credits{max-width:780px;margin-left:auto;margin-right:auto}
-.cb-location-hero-copy,.cb-location-dossier,.cb-location-itineraries{min-width:0}
-.cb-location-map-actions{max-width:100%}
-.cb-location-sidebar .cb-atlas-map-wrap{min-width:0}
-.cb-location-contact-row strong{max-width:65%;white-space:normal}
-.cb-location-credits{overflow-wrap:anywhere}
-.cb-location-back{max-width:calc(50% - 36px)}
+.cb-location-water-grid strong,.cb-location-water-grid small{display:block;overflow-wrap:anywhere}
+.cb-location-water-grid small{font-size:11px;color:#637664;margin-top:4px}
+.cb-location-credits{margin-top:35px;padding:18px 0;border-top:1px solid #dae5d8;color:#6e8070;font-size:11px;line-height:1.8;overflow-wrap:anywhere}
+.cb-location-credits a,.cb-location-wiki{color:#aa0050}
+.cb-location-contact-card{padding:15px;background:#f7faf4;border:1px solid #dce9d7;border-radius:10px}
+.cb-location-contact-card p{font-size:13px;line-height:1.6}
+.cb-location-sidebar{background:#dce9d6}
+.cb-location-side-map{position:relative;width:100%;height:100%;min-height:0;display:flex;flex-direction:column}
+.cb-location-side-map>.cb-atlas-map-wrap{width:100%;height:100%;flex:1;min-height:0;border:0;border-radius:0}
+.cb-location-side-map .cb-atlas-map{width:100%;height:100%!important;min-height:0!important}
+.cb-location-sidebar-heading{position:absolute;top:14px;left:14px;z-index:9;max-width:calc(100% - 95px);display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:8px;background:#fff;box-shadow:0 6px 22px #24442c26;pointer-events:none}
+.cb-location-sidebar-heading span{font:850 10px/1.2 'Space Grotesk',sans-serif;color:#c00052;letter-spacing:.075em}
+.cb-location-sidebar-heading strong{font:850 16px/1.3 'Bricolage Grotesque',sans-serif;overflow-wrap:anywhere}
+.cb-location-map-note{position:absolute;bottom:25px;left:12px;z-index:9;max-width:calc(100% - 24px);padding:6px 8px;background:#fff;border-radius:5px;font-size:10px;color:#48644d;pointer-events:none}
+.cb-trek-hero-art{position:relative;height:clamp(185px,22vw,310px);margin:0 0 23px;border-radius:10px;overflow:hidden;background:radial-gradient(circle at 78% 20%,#ffffc5 0 5%,transparent 6%),linear-gradient(150deg,#d9eadb 16%,#669987 58%,#1b5141 100%)}
+.cb-trek-hero-art::after{content:'';position:absolute;inset:0;background:repeating-radial-gradient(ellipse at 44% 170%,transparent 0 26px,#f3ffe866 28px,#f3ffe866 29px,transparent 31px,transparent 49px)}
+.cb-trek-hero-art>span{position:absolute;z-index:1;bottom:18px;left:20px;color:#fff;font-weight:900;letter-spacing:.1em}
+.cb-trek-empty-map{display:grid;place-items:center;min-height:320px;height:100%;padding:20px;color:#315541;background:#e1efdb;text-align:center}
+.cb-trek-profile .cb-location-lead{font-weight:850;color:#b20055}
 .cb-location-content a{overflow-wrap:anywhere}
-/* Card informative: layout dipendente dallo spazio della colonna, non dal viewport. */
-@container (max-width:570px){
-  .cb-meteo-current{grid-template-columns:minmax(0,1fr)}
-  .cb-meteo-current-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .cb-meteo-forecast{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .cb-meteo-season-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .cb-location-water-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .cb-atlas-routes{grid-template-columns:1fr}
-}
-@container (max-width:410px){
-  .cb-detail-metrics{gap:6px}
-  .cb-detail-metrics>div{padding:12px 8px}
-  .cb-detail-metrics strong{font-size:clamp(18px,4vw,25px)}
-  .cb-detail-metrics span{font-size:9px}
-  .cb-detail-facts{gap:7px}
-  .cb-detail-facts>div{padding:10px}
-  .cb-location-water-grid{grid-template-columns:1fr}
-  .cb-location-actions a,.cb-location-actions button{flex:1 1 auto}
-}
-@media(min-width:1320px){
-  .cb-location-content{padding-left:clamp(43px,5.7vw,100px);padding-right:clamp(38px,5.7vw,100px)}
-}
-@media(max-width:1080px){
-  .cb-location-body{grid-template-columns:minmax(0,53%) minmax(0,47%)}
-  .cb-location-content{padding:67px 21px 38px}
-  .cb-location-contact-card{padding:12px}
-  .cb-location-hero h1{font-size:clamp(30px,3.5vw,42px)}
-}
-@media(max-width:900px){
-  .cb-location-body{grid-template-columns:minmax(0,1fr)}
-  .cb-location-content{padding:61px clamp(15px,4vw,36px) 25px;box-shadow:none}
-  .cb-location-back{max-width:calc(100% - 34px);left:clamp(15px,4vw,36px)}
-  .cb-location-sidebar{position:relative;top:auto;height:auto;overflow:visible}
-  .cb-location-side-map{height:clamp(305px,52vw,470px);min-height:305px;flex:none}
-  .cb-location-side-map>.cb-atlas-map-wrap{flex:1;height:100%;min-height:305px}
-  .cb-location-side-map .cb-atlas-map{height:100%!important}
-  .cb-location-contact-card{max-height:none;overflow:visible;padding:18px}
-  .cb-location-safety{padding:14px 18px}
-  .cb-location-hero-media>.cb-place-visual{height:clamp(220px,38vw,365px)}
-}
-@media(max-width:540px){
-  .cb-location-content{padding:57px 14px 24px}
-  .cb-location-hero-media>.cb-place-visual{height:clamp(190px,53vw,280px)}
-  .cb-location-back{left:14px}
-  .cb-location-side-map{height:320px;min-height:320px}
-  .cb-location-side-map>.cb-atlas-map-wrap{min-height:320px}
-  .cb-location-contact-card{padding:14px}
-  .cb-location-avatar{margin-top:-59px}
-}
-
-/* I trekking condividono la griglia dei luoghi: cartografia reale, non una traccia costruita. */
-.cb-trek-profile .cb-location-hero{margin-bottom:24px}
-.cb-trek-profile .cb-location-lead{font-weight:850;color:#b5004d}
-.cb-trek-empty-map{flex:1;display:grid;place-items:center;padding:80px 25px 25px;text-align:center;min-width:0;color:#436b51;font:750 13px/1.6 'Space Grotesk',sans-serif;background:#dfebdc}
-.cb-trek-profile .cb-atlas-routes{min-width:0}
-.cb-trek-profile .cb-atlas-routes a,.cb-trek-profile .cb-atlas-routes>div{min-width:0;overflow-wrap:anywhere}
-.cb-trek-profile .cb-atlas-routes>div a{display:block;margin-top:7px;color:#bc0052;font:750 12px/1.55 'Space Grotesk',sans-serif}
-.cb-location-side-map .cb-atlas-map-caption{overflow-wrap:anywhere}
-@media(max-width:900px){.cb-trek-empty-map{min-height:305px}}
+@container(max-width:460px){.cb-location-water-grid{grid-template-columns:1fr}.cb-atlas-routes{grid-template-columns:1fr}}
+@media(max-width:900px){.cb-location-content{padding:18px clamp(14px,4vw,28px) 38px}.cb-location-hero-media>.cb-place-visual{height:clamp(210px,52vw,320px)}}

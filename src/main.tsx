@@ -5,6 +5,8 @@ import './styles.css';
 import './design.css';
 import './cimaPolish.css';
 import './cimaSystem.css';
+import './cimaWorkspace.css';
+import './exploreNavigation.css';
 import './routeDetail.css';
 import { initAnalytics } from './lib/analytics';
 

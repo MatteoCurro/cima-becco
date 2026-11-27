@@ -1,0 +1,28 @@
+/* CIMA BECCO · una sola grammatica spaziale, valida per esplorazione e schede.
+   Nessun max-width sul main: il testo occupa la sua colonna, la mappa il resto. */
+:root{--cb-detail-column:42%;--cb-shell-gap:0px;--cb-header-offset:64px}
+.cb-document-page,.map-page.is-route-detail{width:100%;min-width:0;max-width:none}
+.cb-location-body,.map-page.is-route-detail .stage{
+  display:grid;grid-template-columns:minmax(0,var(--cb-detail-column)) minmax(0,1fr);
+  align-items:start;gap:var(--cb-shell-gap);width:100%;min-width:0;max-width:none;margin:0;
+}
+.cb-location-content,.map-page.is-route-detail .stage .list-pane{min-width:0;max-width:none;width:100%;overflow-wrap:break-word}
+.cb-location-sidebar,.map-page.is-route-detail .stage .map-wrap{
+  position:sticky;top:var(--cb-header-offset);
+  width:100%;min-width:0;max-width:none;height:calc(100dvh - var(--cb-header-offset));
+  min-height:360px;overflow:hidden;align-self:start;
+}
+.cb-location-content>*,.map-page.is-route-detail .route-panel>*{min-width:0;max-width:100%}
+.cb-location-hero,.cb-location-content>.cb-location-section,.cb-location-content>.cb-meteo-panel,
+.cb-location-content>.cb-location-community,.cb-location-content>.cb-location-credits{
+  max-width:none;margin-left:0;margin-right:0;
+}
+@media(max-width:900px){
+ :root{--cb-header-offset:112px}
+ .cb-location-body,.map-page.is-route-detail .stage{display:flex;flex-direction:column;width:100%;min-height:0;gap:0}
+ .cb-location-content,.map-page.is-route-detail .stage .list-pane{flex:none;max-width:100%;width:100%;overflow:visible}
+ .cb-location-sidebar,.map-page.is-route-detail .stage .map-wrap{
+    position:relative;top:auto;inset:auto;flex:none;width:100%;height:clamp(320px,48dvh,460px);min-height:320px;
+ }
+}
+@media(max-width:420px){:root{--cb-header-offset:106px}}

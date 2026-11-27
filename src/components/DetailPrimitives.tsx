@@ -35,7 +35,7 @@ export function DetailLayout({
   sidebarLabel: string;
   className?: string;
 }) {
-  return <article className={`cb-location-profile${className ? ' ' + className : ''}`}>
+  return <article className={`cb-location-profile cb-document-page${className ? ' ' + className : ''}`}>
     <a className="cb-location-back" href={backHref}>← {backLabel}</a>
     <div className="cb-location-body">
       <div className="cb-location-content">{children}</div>
