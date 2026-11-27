@@ -1,0 +1,39 @@
+name: Enrich alpine place photos
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/enrich_alpine_photos.py
+      - .github/workflows/enrich-alpine-photos.yml
+  schedule:
+    - cron: '34 5 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: cima-alpine-place-photos
+  cancel-in-progress: false
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Arricchisci i luoghi con Commons e Wikidata in piccoli lotti
+        run: python scripts/enrich_alpine_photos.py --write --limit 75
+      - name: Registra solo foto con provenienza e licenza
+        run: |
+          if [ -z "$(git status --porcelain -- public/data/alpine-places.json)" ]; then
+            echo "Nessuna foto nuova o nessun candidato"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/data/alpine-places.json
+          git commit -m "data: arricchisci schede rifugi/borghi con Commons P18"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
