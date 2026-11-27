@@ -367,7 +367,7 @@ function trailArea(route) {
   return 'Italia';
 }
 function routeDestinationNames(route) {
-  const stays = (route.stops || []).filter(s=>s.kind==='rifugio' && s.distanceM<=180);
+  const stays = (route.stops || []).filter(s=>(s.kind==='rifugio'||s.kind==='bivacco') && s.distanceM<=180);
   const preferred = [...stays.filter(s=>s.relation==='arrivo'),...stays];
   const chosen=[];
   for(const stop of preferred) if(!chosen.includes(stop.name) && chosen.length<2) chosen.push(stop.name);
@@ -404,7 +404,7 @@ function trailMood(route) {
 }
 function trailText(route) {
   const raw=(route.description||'').trim();
-  const stops=(route.stops||[]).filter(s=>s.kind==='rifugio').slice(0,4);
+  const stops=(route.stops||[]).filter(s=>(s.kind==='rifugio'||s.kind==='bivacco')).slice(0,4);
   const villages=(route.stops||[]).filter(s=>s.kind==='borgo').slice(0,3);
   const places=[stops.length?'Nei pressi del tracciato: '+stops.map(s=>s.name).join(', ')+'.':'',
     villages.length?'Località attraversate o nelle vicinanze: '+villages.map(s=>s.name).join(', ')+'.':''].filter(Boolean).join(' ');
@@ -476,32 +476,32 @@ for (const route of routes) {
     </dl>
     ${official ? `<p><a href="${escape(official)}" rel="noopener noreferrer" target="_blank">Consulta la scheda del gestore ↗</a></p>` : ''}
     ${passes.length ? `<h2>Cime e luoghi vicini</h2><ul class="list">${passes.map((v) => `<li><a href="${SITE}/place/${v.slug}/">${escape(v.name)}</a></li>`).join('')}</ul>` : ''}
-    ${route.stops?.length ? `<h2>Rifugi e borghi lungo il percorso</h2><p>Luoghi geograficamente vicini al GPX, non accessi garantiti.</p><ul class="list">${route.stops.slice(0,12).map(s=>`<li><a href="${SITE}/${s.kind==='rifugio'?'rifugi':'borghi'}/${s.slug}/">${escape(s.name)}</a> · ${s.kind==='rifugio'?'Rifugio':'Borgo'}</li>`).join('')}</ul>` : ''}
+    ${route.stops?.length ? `<h2>Rifugi, bivacchi e paesi lungo il percorso</h2><p>Luoghi geograficamente vicini al GPX, non accessi garantiti.</p><ul class="list">${route.stops.slice(0,12).map(s=>`<li><a href="${SITE}/${s.kind==='rifugio'?'rifugi':'borghi'}/${s.slug}/">${escape(s.name)}</a> · ${s.kind==='rifugio'?'Rifugio':'Borgo'}</li>`).join('')}</ul>` : ''}
     ${route.activity === 'ferrata' ? '<p class="cima-seo-warning">Una ferrata richiede attrezzatura e competenze specifiche. Il GPX non rappresenta esposizione e difficoltà tecnica.</p>' : '<p class="cima-seo-warning">Traccia e dislivelli sono indicativi: verifica percorribilità e condizioni prima di partire.</p>'}
   </section>
 </article>`,
   });
 }
 
-// Atlante SEO: rifugi e borghi OSM con coordinate e percorsi verificati vicini.
+// Pagine SEO locali per rifugi, bivacchi e borghi OSM con coordinate e percorsi verificati vicini.
 // Evita pagine seriali prive di contenuto: i borghi senza sentieri o fonte propria
 // restano consultabili nell'app ma non vengono generati come pagine indicizzabili.
 for (const place of alpinePlaces) {
   if (!/^osm-[nwr]-\d+$/.test(place.slug)) continue;
   const related=(byStop.get(place.slug)||[]).slice(0,24);
   if (place.kind==='borgo' && !related.length && !place.website && !place.description && !place.photo) continue;
-  const category=place.kind==='rifugio'?'rifugi':'borghi';
-  const kind=place.kind==='rifugio'?'rifugio alpino':'località di montagna';
+  const category=place.kind==='rifugio'?'rifugi':place.kind==='bivacco'?'bivacchi':'borghi';
+  const kind=place.kind==='rifugio'?'rifugio alpino':place.kind==='bivacco'?'bivacco alpino':'località di montagna';
   const altitude=Number.isFinite(place.elevationM)?` a ${metres(place.elevationM)} di quota`:'';
   const nearbyWater=alpineWater.filter(w=>Math.abs(w.lat-place.lat)<.017 && Math.abs(w.lng-place.lng)<.03 &&
     Math.hypot((w.lat-place.lat)*111195,(w.lng-place.lng)*111320*Math.cos(place.lat*Math.PI/180))<1400).slice(0,8);
   const description=(place.description?`${place.description} `:'')+
-    `${place.name} è ${kind==='rifugio alpino'?'un':'una'} ${kind} mappat${place.kind==='rifugio'?'o':'a'} nelle Dolomiti${altitude}.`+
+    `${place.name} è ${kind==='località di montagna'?'una':'un'} ${kind} mappat${place.kind==='borgo'?'a':'o'} nelle Dolomiti${altitude}.`+
     (related.length?` Esplora ${related.length} sentieri collegati geograficamente e GPX.`:' Consulta posizione e sentieri nei dintorni.');
   const photo=place.photo?.url?.startsWith('https://upload.wikimedia.org/') ? place.photo : null;
   page({
     path:`${category}/${place.slug}/`,
-    title:`${place.name} · ${place.kind==='rifugio'?'Rifugio':'Borgo'}, altitudine, sentieri e meteo | Cima Becco`,
+    title:`${place.name} · ${place.kind==='rifugio'?'Rifugio':place.kind==='bivacco'?'Bivacco':'Paese'}, altitudine, sentieri e meteo | Cima Becco`,
     description:description.slice(0,285),
     image:photo?.url||null,
     jsonLd:{'@context':'https://schema.org','@graph':[
@@ -512,28 +512,33 @@ for (const place of alpinePlaces) {
         ...(photo?{image:photo.url}:{}),
         hasMap:place.osmUrl,
         ...(place.phone?{telephone:place.phone}:{}),
-      },breadcrumbLd([[category==='rifugi'?'Rifugi':'Borghi',appLink(`#atlante/${category}`)],[place.name,null]])]},
+      },breadcrumbLd([[category==='rifugi'?'Rifugi':category==='bivacchi'?'Bivacchi':'Paesi',appLink(`#atlante/${category}`)],[place.name,null]])]},
     body:`${crumbs([['Atlante',appLink(`#atlante/${category}`)],[place.name]])}
-      <div class="cima-seo-eyebrow">CIMA BECCO · ${place.kind==='rifugio'?'RIFUGIO':'BORGO'} · DOLOMITI</div>
+      <div class="cima-seo-eyebrow">CIMA BECCO · ${place.kind==='rifugio'?'RIFUGIO':place.kind==='bivacco'?'BIVACCO':'PAESE'} · DOLOMITI</div>
       <h1>${escape(place.name)}</h1>
       <p class="cima-seo-lead">${escape(description)}</p>
       ${photo?`<figure class="cima-seo-photo"><img src="${escape(photo.url)}" alt="${escape(place.name)}" loading="lazy"></figure>`:''}
       <ul class="facts cima-seo-facts">
-        <li><strong>${escape(place.lat.toFixed(4)+', '+place.lng.toFixed(4))}</strong>coordinate</li>
         ${place.elevationM!=null?`<li><strong>${metres(place.elevationM)}</strong>${place.elevationSource==='dem'?'quota DEM stimata':'quota indicata in OSM'}</li>`:''}
+        <li><strong>${escape(place.lat.toFixed(4)+', '+place.lng.toFixed(4))}</strong>coordinate</li>
         <li><strong>${related.length}</strong>sentieri collegati</li>
         ${place.capacity?`<li><strong>${place.capacity}</strong>posti letto OSM</li>`:''}
-        ${nearbyWater.length?`<li><strong>${nearbyWater.length}</strong>punti acqua entro 1,4 km</li>`:''}
+        
       </ul>
       <div class="cima-seo-actions">
-        <a class="cta" href="${appLink(`#atlante/${category}/${place.slug}`)}">MAPPA, METEO LIVE &amp; SENTIERI ↗</a>
-        ${place.website?`<a class="cima-seo-secondary" href="${escape(place.website)}" target="_blank" rel="noopener noreferrer">Sito indicato nei dati ↗</a>`:''}
+        <a class="cta" href="${appLink(`#atlante/${category}/${place.slug}`)}">MAPPA E SENTIERI ↗</a>
+        ${place.phone?`<a class="cima-seo-secondary" href="tel:${escape(place.phone.replace(/[^+\\d]/g,''))}">Chiama la struttura</a>`:''}
+        ${place.email?`<a class="cima-seo-secondary" href="mailto:${escape(place.email)}">Scrivi alla struttura</a>`:''}
       </div>
-      ${place.operator||place.phone||place.openingHours||place.address? `<h2>Informazioni sulla località</h2><dl class="cima-seo-details">
+      ${place.operator||place.phone||place.email||place.openingHours||place.address||place.access||place.capacity? `<h2>Informazioni sulla località</h2><dl class="cima-seo-details">
         ${place.operator?`<div><dt>Gestore</dt><dd>${escape(place.operator)}</dd></div>`:''}
         ${place.phone?`<div><dt>Telefono</dt><dd>${escape(place.phone)}</dd></div>`:''}
+        ${place.email?`<div><dt>Email</dt><dd>${escape(place.email)}</dd></div>`:''}
+        ${place.capacity?`<div><dt>Capienza indicata</dt><dd>${escape(place.capacity)}</dd></div>`:''}
+        ${place.access?`<div><dt>Accesso OSM</dt><dd>${escape(place.access)}</dd></div>`:''}
         ${place.openingHours?`<div><dt>Orari segnalati</dt><dd>${escape(place.openingHours)}</dd></div>`:''}
         ${place.address?`<div><dt>Indirizzo</dt><dd>${escape(place.address)}</dd></div>`:''}
+        ${place.website?`<div><dt>Sito</dt><dd><a href="${escape(place.website)}" rel="noopener noreferrer">Sito della struttura</a></dd></div>`:''}
       </dl>`:''}
       ${related.length?`<h2>Sentieri e itinerari collegati</h2><ul class="list">${related.map(route=>`<li><a href="${SITE}/route/${route.slug}/">${escape(trailName(route))}</a> · ${km(route.distanceM)}</li>`).join('')}</ul>`:''}
       ${nearbyWater.length?`<h2>Fonti e fontanelle nei dintorni</h2><p>Presenza da dati OSM, non prova di raggiungibilità o potabilità.</p><ul class="list">${nearbyWater.map(w=>`<li><a href="${escape(w.osmUrl)}" target="_blank" rel="noopener noreferrer">${escape(w.name)}</a> · ${w.potable==='yes'?'potabilità indicata su OSM':w.potable==='no'?'non potabile':'potabilità ignota'}</li>`).join('')}</ul>`:''}
@@ -549,11 +554,13 @@ for (const place of alpinePlaces) {
 for (const [kind,segment,label,title,blurb] of [
   ['rifugio','rifugi','Rifugi delle Dolomiti','RIFUGI. POI SI VEDE.',
     'Consulta rifugi con posizione, informazioni disponibili, meteo, sentieri e itinerari di avvicinamento nelle Dolomiti.'],
-  ['borgo','borghi','Borghi e località montane','BORGHI PICCOLI. GITE GROSSE.',
+  ['bivacco','bivacchi','Bivacchi delle Dolomiti','BIVACCHI. POCHE SCUSE.',
+    'Bivacchi alpini, ripari essenziali, quote, coordinate e sentieri nelle Dolomiti. Verifica sempre accesso e condizioni.'],
+  ['borgo','borghi','Paesi e località montane','PAESI PICCOLI. GITE GROSSE.',
     'Esplora paesi alpini e punti di partenza con sentieri mappati, meteo e informazioni topografiche.'],
 ]) {
   const list=alpinePlaces
-    .filter(p=>p.kind===kind && (kind==='rifugio'||(byStop.get(p.slug)||[]).length||p.website||p.photo||p.description))
+    .filter(p=>p.kind===kind && (kind==='rifugio'||kind==='bivacco'||(byStop.get(p.slug)||[]).length||p.website||p.photo||p.description))
     .sort((a,b)=>{
       const n=(byStop.get(b.slug)||[]).length-(byStop.get(a.slug)||[]).length;
       return n || a.name.localeCompare(b.name,'it');
@@ -573,7 +580,7 @@ for (const [kind,segment,label,title,blurb] of [
       <h1>${title}</h1>
       <p class="cima-seo-lead">${escape(blurb)}</p>
       <div class="cima-seo-actions"><a class="cta" href="${appLink(`#atlante/${segment}`)}">ESPLORA LA MAPPA COMPLETA ↗</a></div>
-      <p class="sub">${list.length} luoghi con scheda · località e rifugi realmente censiti in OpenStreetMap.</p>
+      <p class="sub">${list.length} luoghi con scheda · luoghi realmente censiti in OpenStreetMap.</p>
       <ul class="list">${list.slice(0,120).map(place=>`<li><a href="${SITE}/${segment}/${place.slug}/">${escape(place.name)}</a>${place.elevationM ? ' · '+metres(place.elevationM) : ''}${(byStop.get(place.slug)||[]).length?' · '+(byStop.get(place.slug)||[]).length+' sentieri':''}</li>`).join('')}</ul>
       <p class="sub">Per trovare anche i luoghi non ancora arricchiti usa la mappa interattiva. I dati OSM e le tracce non certificano condizioni, accessibilità o servizi.</p>`,
   });
