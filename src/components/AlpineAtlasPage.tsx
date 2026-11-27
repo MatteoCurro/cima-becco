@@ -118,7 +118,7 @@ function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onBack: st
     <div className="cb-atlas-actions">
       <a className="cb-atlas-primary" href={boundsToHash(placeBounds(place,3))}>ESPLORA LA ZONA ↗</a>
       {place.website&&<a href={place.website} target="_blank" rel="noopener noreferrer">Sito ufficiale indicato nei dati ↗</a>}
-      {place.wikipedia&&<a href={`https://www.wikidata.org/wiki/${place.wikidata||''}`} target="_blank" rel="noopener noreferrer">Dati enciclopedici ↗</a>}
+      {place.wikidata&&<a href={`https://www.wikidata.org/wiki/${place.wikidata}`} target="_blank" rel="noopener noreferrer">Dati enciclopedici ↗</a>}
     </div>
     <div className="cb-atlas-section-top"><span>CARTOGRAFIA DEDICATA</span><h2>LA MAPPA NON MENTE. (QUASI.)</h2>
       <p>Rifugi e località mappati, sentieri vicini e punti acqua. TOPO per leggere il terreno, SAT per guardarlo.</p>
