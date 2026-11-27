@@ -365,33 +365,56 @@ function trailArea(route) {
   if (lat>40.5 && lat<=43.5) return 'Appennino centrale';
   return 'Italia';
 }
+function routeDestinationNames(route) {
+  const stays = (route.stops || []).filter(s=>s.kind==='rifugio' && s.distanceM<=180);
+  const preferred = [...stays.filter(s=>s.relation==='arrivo'),...stays];
+  const chosen=[];
+  for(const stop of preferred) if(!chosen.includes(stop.name) && chosen.length<2) chosen.push(stop.name);
+  if(!chosen.length) for(const stop of (route.stops||[]).filter(s=>s.kind==='borgo'&&s.distanceM<=350)) {
+    if(!chosen.includes(stop.name) && chosen.length<2)chosen.push(stop.name);
+  }
+  return chosen;
+}
 function trailName(route) {
-  const s = (route.name || '').trim();
-  const area = trailArea(route);
-  if (/^sentiero si$/i.test(s)) return 'Sentiero Italia · ' + area;
-  if (/^sentiero\s+\d+[a-z]?$/i.test(s)) return s + ' · ' + area;
-  if (!s || /^route\s*\d+$/i.test(s)) return (route.activity === 'ferrata' ? 'Via ferrata' : 'Escursione') + ' · ' + area;
+  const s=(route.name||'').trim();
+  const area=trailArea(route);
+  const stops=routeDestinationNames(route);
+  const destination=stops.length?stops.join(' · '):area;
+  if(/^sentiero si$/i.test(s))return 'Sentiero Italia · '+destination;
+  if(/^sentiero\s+\d+[a-z]?$/i.test(s))return s+' · '+destination;
+  if(!s||/^route\s*\d+$/i.test(s))return (route.activity==='ferrata'?'Via ferrata':'Escursione')+' · '+destination;
+  if(stops.length && s.length<54 && !s.toLowerCase().includes(stops[0].toLowerCase()))return s+' · '+stops[0];
   return s;
 }
 function trailMood(route) {
-  if (route.activity === 'ferrata') {
-    const n = parseInt(route.viaFerrataScale || '',10);
-    if (!n) return ['Difficoltà da verificare', ''];
-    if (n<=2) return ['Ferrata poco difficile','Attaccati e vai'];
-    if (n===3) return ['Ferrata impegnativa','Strattona'];
-    return ['Ferrata molto impegnativa',n>=5 ? 'Vai bomber' : 'Braccia in leasing'];
+  if(route.activity==='ferrata') {
+    const n=parseInt(route.viaFerrataScale||'',10);
+    if(!n)return ['Scala ferrata non disponibile','GRADO IN LATITANZA'];
+    if(n<=2)return ['Ferrata poco difficile','BRACCIA IN GITA'];
+    if(n===3)return ['Ferrata impegnativa','AVAMBRACCI IN LEASING'];
+    return ['Ferrata molto impegnativa',n>=5?'IL VUOTO TI FA CIAO':'LA ROCCIA TI SGAMA'];
   }
-  return ({T:['Turistico','Due curve e spiana'],E:['Escursionistico','Si fa sentire'],EE:['Per escursionisti esperti','Non spiana'],EEA:['Esperti con attrezzatura','Vai bomber']})[route.caiDifficulty] || ['Difficoltà da verificare',''];
+  return ({
+    T:['Turistico · CAI T','MERENDEROS'],
+    E:['Escursionistico · CAI E','MUOVI QUELLE GAMBE'],
+    EE:['Escursionisti esperti · CAI EE','OGGI SI BESTEMMIA'],
+    EEA:['Esperti con attrezzatura · CAI EEA','NON FARE IL FENOMENO'],
+  })[route.caiDifficulty] || ['Difficoltà da verificare','GRADO IN LATITANZA'];
 }
 function trailText(route) {
-  const raw = (route.description || '').trim();
-  if (raw && !/Tracciato OSM da verificare|non certifica percorribilità|^GPX route/i.test(raw)) return raw;
-  const area=trailArea(route), len=km(route.distanceM);
-  const start=route.activity==='ferrata' ? 'Questo tratto attrezzato' : 'Questo percorso a piedi';
-  const ref=route.trailRef ? ' Segnavia o riferimento: ' + route.trailRef + '.' : '';
-  const gain=route.elevationAvailable!==false ? ' Il dislivello positivo stimato è '+ metres(route.gainM) + '.' : '';
-  const tech=route.activity==='ferrata' ? ' È una via ferrata: prima di partire consulta una relazione tecnica aggiornata.' : route.caiDifficulty ? ' La classificazione riportata è CAI '+route.caiDifficulty+'.' : '';
-  return start + ' attraversa ' + area + ' per circa '+len + (route.loop ? ', con andamento ad anello' : '') + '.' + ref + gain + tech;
+  const raw=(route.description||'').trim();
+  const stops=(route.stops||[]).filter(s=>s.kind==='rifugio').slice(0,4);
+  const villages=(route.stops||[]).filter(s=>s.kind==='borgo').slice(0,3);
+  const places=[stops.length?'Nei pressi del tracciato: '+stops.map(s=>s.name).join(', ')+'.':'',
+    villages.length?'Località attraversate o nelle vicinanze: '+villages.map(s=>s.name).join(', ')+'.':''].filter(Boolean).join(' ');
+  if(raw && !/Tracciato OSM da verificare|non certifica percorribilità|^GPX route/i.test(raw))
+    return [raw,places].filter(Boolean).join(' ');
+  const area=trailArea(route),len=km(route.distanceM);
+  const start=route.activity==='ferrata'?'Questo tratto attrezzato':'Questo percorso a piedi';
+  const ref=route.trailRef?' Segnavia o riferimento: '+route.trailRef+'.':'';
+  const gain=route.elevationAvailable!==false?' Dislivello positivo stimato: '+metres(route.gainM)+'.':'';
+  const tech=route.activity==='ferrata'?' Ferrata: verifica una relazione tecnica aggiornata.':route.caiDifficulty?' Classificazione riportata CAI '+route.caiDifficulty+'.':'';
+  return [start+' attraversa '+area+' per circa '+len+(route.loop?', ad anello':'')+'.'+ref+gain+tech,places].filter(Boolean).join(' ');
 }
 function routeSketch(route) {
   const pts=route.coordinates || [];
@@ -437,7 +460,7 @@ for (const route of routes) {
   <div class="cima-seo-eyebrow">${route.activity === 'ferrata' ? 'VIA FERRATA' : 'ESCURSIONE'} · ${escape(area)}</div>
   <h1>${escape(title)}</h1>
   <p class="cima-seo-lead">${escape(description)}</p>
-  <div class="cima-seo-tags"><span>${escape(level)}</span>${quip ? `<span class="fun" title="Soprannome editoriale, non scala tecnica">${escape(quip)}</span>` : ''}${route.trailRef ? `<span>Segnavia ${escape(route.trailRef)}</span>` : ''}</div>
+  <div class="cima-seo-tags"><span class="fun" title="Soprannome editoriale, non scala tecnica">${escape(quip)}</span><span>${escape(level)}</span>${route.trailRef ? `<span>Segnavia ${escape(route.trailRef)}</span>` : ''}</div>
   ${image ? `<figure class="cima-seo-photo"><img src="${escape(image.url)}" alt="${escape(image.caption || title)}" loading="lazy"><figcaption>Foto: ${escape(image.author || 'Wikimedia Commons')} · ${escape(image.license || 'Licenza nella fonte')} · <a href="${escape(image.sourceUrl)}">Originale</a></figcaption></figure>` : routeSketch(route)}
   <ul class="facts cima-seo-facts">${stats.map(([label,value]) => `<li><strong>${escape(value)}</strong>${escape(label)}</li>`).join('')}</ul>
   <div class="cima-seo-actions"><a class="cta" href="${appLink(`#route/${route.slug}`)}">Apri sulla mappa · Scarica GPX</a>${original ? `<a class="cima-seo-secondary" href="${escape(original)}" target="_blank" rel="noopener noreferrer">Vedi tracciato OSM ↗</a>` : ''}</div>
@@ -449,10 +472,10 @@ for (const route of routes) {
       ${route.trailRef ? `<div><dt>Numero sentiero</dt><dd>${escape(route.trailRef)}</dd></div>` : ''}
       ${route.operator ? `<div><dt>Gestore indicato</dt><dd>${escape(route.operator)}</dd></div>` : ''}
       ${route.network ? `<div><dt>Rete</dt><dd>${escape(route.network)}</dd></div>` : ''}
-      <div><dt>Origine geometria</dt><dd>OpenStreetMap · ODbL 1.0</dd></div>
     </dl>
     ${official ? `<p><a href="${escape(official)}" rel="noopener noreferrer" target="_blank">Consulta la scheda del gestore ↗</a></p>` : ''}
     ${passes.length ? `<h2>Cime e luoghi vicini</h2><ul class="list">${passes.map((v) => `<li><a href="${SITE}/place/${v.slug}/">${escape(v.name)}</a></li>`).join('')}</ul>` : ''}
+    ${route.stops?.length ? `<h2>Rifugi e borghi lungo il percorso</h2><p>Luoghi geograficamente vicini al GPX, non accessi garantiti.</p><ul class="list">${route.stops.slice(0,12).map(s=>`<li><a href="${SITE}/${s.kind==='rifugio'?'rifugi':'borghi'}/${s.slug}/">${escape(s.name)}</a> · ${s.kind==='rifugio'?'Rifugio':'Borgo'}</li>`).join('')}</ul>` : ''}
     ${route.activity === 'ferrata' ? '<p class="cima-seo-warning">Una ferrata richiede attrezzatura e competenze specifiche. Il GPX non rappresenta esposizione e difficoltà tecnica.</p>' : '<p class="cima-seo-warning">Traccia e dislivelli sono indicativi: verifica percorribilità e condizioni prima di partire.</p>'}
   </section>
 </article>`,
