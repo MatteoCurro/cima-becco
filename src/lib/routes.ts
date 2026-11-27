@@ -61,8 +61,8 @@ export function filterRoutes(routes: Route[], filters: RouteFilters, bookmarks: 
       if (filters.minDurationS != null && durationS < filters.minDurationS) return false;
       if (filters.maxDurationS != null && durationS > filters.maxDurationS) return false;
     }
-    // Non ripubblicare come escursioni le vecchie tracce bike/road-run eventualmente presenti.
-    if (route.activity === ('cycle' as string) || route.activity === ('run' as string)) return false;
+    // Non ripubblicare le tracce di ciclismo o corsa su strada dell'app originale.
+    if ((route.activity as string) === 'cycle' || (route.activity as string) === 'run') return false;
     switch (filters.category) {
       case 'hike':
       case 'trail':
