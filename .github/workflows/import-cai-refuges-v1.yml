@@ -6,6 +6,12 @@ on:
     branches: [feat/refuges-canonical-import-v1]
     paths:
       - .github/workflows/import-cai-refuges-v1.yml
+      - scripts/assemble_refuges_release_v1.py
+      - scripts/import_cai_refuges_v1.py
+      - scripts/publish_refuges_v1.py
+      - tests/test_assemble_refuges_release_v1.py
+      - tests/test_import_cai_refuges_v1.py
+      - tests/test_publish_refuges_v1.py
   schedule:
     - cron: '20 3 * * *'
 
