@@ -13,7 +13,6 @@ import { AlpinePlaceVisual } from './AlpinePlaceVisual';
 import { AlpineAtlasMap } from './AlpineAtlasMap';
 import { MapContextLabel } from './MapContextLabel';
 import { AlpineWeatherPanel } from './AlpineWeatherPanel';
-import { HutClaimRequest } from './HutClaimRequest';
 import { RefugeProfile } from './RefugeProfile';
 import { DetailFacts, DetailLayout, DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
 import { AtlasDossierBlocks } from './AtlasDossierBlocks';
@@ -166,7 +165,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
         ]}/>
         <div className="cb-location-actions">
           <button type="button" className="cb-location-action-primary cb-icon-link" onClick={()=>scrollToDetailSection('cb-place-map')}><FaIcon name="map" size={14}/> ESPLORA SULLA MAPPA</button>
-          {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>{place.kind==='rifugio'?'CHIAMA IL RIFUGIO':place.kind==='bivacco'?'CHIAMA IL REFERENTE':'CHIAMA'}</a>}
+          {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>{place.kind==='bivacco'?'CHIAMA IL REFERENTE':'CHIAMA'}</a>}
           {place.email&&<a href={'mailto:'+place.email}>SCRIVI</a>}
         </div>
         {place.kind==='bivacco'&&<p className="cb-location-alert">Bivacco non custodito: verifica accesso, dotazioni e condizioni prima di partire. La capienza indicata non garantisce posto disponibile.</p>}
@@ -189,7 +188,6 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
         <section id="cb-place-essential" className="cb-detail-group cb-detail-group--first cb-location-section cb-location-dossier" aria-labelledby="cb-location-info-heading">
           <DetailSectionHeading kicker="01 / DATI ESSENZIALI" title="PRIMA DI PARTIRE." id="cb-location-info-heading" description="Informazioni disponibili nelle fonti cartografiche, da verificare con la struttura quando necessario."/>
           <DetailFacts rows={detailRows}/>
-          {place.kind==='rifugio'&&!place.phone&&!place.email&&<p className="cb-location-muted-note">Non abbiamo ancora recapiti verificati per questa struttura: dato mancante non significa che sia chiusa.</p>}
         </section>
         <section id="cb-place-contacts" className="cb-detail-group cb-detail-group--practical cb-location-section cb-location-contact-card" aria-labelledby="cb-location-contact-title">
           <DetailSectionHeading kicker="02 / INFO PRATICHE" id="cb-location-contact-title" title="CONTATTI E ACCESSO."/>
@@ -238,11 +236,6 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
         <NearbyAtlasPlaces items={nearbyPlaces}/>
         <AtlasDossierBlocks record={place} placement="connections"/>
         <AtlasDossierBlocks record={place} placement="media"/>
-        {place.kind==='rifugio'&&<section className="cb-location-community">
-          <DetailSectionHeading kicker="05 / COMUNITÀ" title="PARLA CON CHI CONOSCE IL POSTO."/>
-          <p>Domande ai gestori verificati e recensioni moderate sono previste, ma non ancora disponibili. Non vengono mostrati giudizi o risposte fittizi.</p>
-          <HutClaimRequest place={place}/>
-        </section>}
         <footer className="cb-location-credits">
           <AtlasDossierBlocks record={place} placement="credits"/>
           Dati del luogo:
