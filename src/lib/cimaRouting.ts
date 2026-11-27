@@ -1,7 +1,7 @@
 import type { RoutePoint } from '../types';
 import { computeGain, totalDistanceM } from './elevation';
 
-export interface PlanWaypoint { lng: number; lat: number }
+export interface PlanWaypoint { lng: number; lat: number; name?: string }
 export interface PlannedTrack {
   points: RoutePoint[];
   distanceM: number;
