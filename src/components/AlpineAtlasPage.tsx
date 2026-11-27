@@ -110,16 +110,27 @@ export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onB
   ];
   return <article className="cb-location-profile">
     <a className="cb-location-back" href={onBack}>← Esplora {place.kind==='rifugio'?'i rifugi':place.kind==='bivacco'?'i bivacchi':'i paesi'}</a>
+
+
+    <div className="cb-location-body">
+      <div className="cb-location-content">
     <header className="cb-location-hero">
       <div className="cb-location-hero-copy">
+        <div className="cb-location-avatar">{place.logo?<img src={place.logo.url} alt={'Logo ufficiale di '+place.name}/>:<AlpinePlaceIcon kind={place.kind} size={39}/>}</div>
         <PlaceBadge place={place}/>
         <h1>{place.name}</h1>
-        <p className="cb-location-lead">{place.description || placeLine}</p>
+        <p className="cb-location-lead">{placeLine}</p>
+        {place.description&&<p className="cb-location-story">{place.description}</p>}
         <div className="cb-location-metrics" aria-label="Informazioni principali">
           <div><strong>{place.elevationM!=null?place.elevationM.toLocaleString('it-IT')+' m':'n.d.'}</strong><span>Altitudine{place.elevationSource==='dem'?' stimata':''}</span></div>
           {place.capacity!=null&&<div><strong>{place.capacity}</strong><span>{place.kind==='bivacco'?'Posti indicati':'Posti letto'}</span></div>}
           <div><strong>{loading?'…':nearby.length}</strong><span>Sentieri vicini</span></div>
         </div>
+        {place.fee&&<div className="cb-location-cost">
+          <span>PREZZI / ACCESSO</span>
+          {/^\s*(yes|no)\s*$/i.test(place.fee)?<strong>{place.fee.toLowerCase()==='no'?'Accesso indicato gratuito':'Tariffa presente, importo da verificare'}</strong>:
+            <><strong>{place.fee}</strong>{/\d/.test(place.fee)&&<span className="cb-location-dobloni" title="Indicazione giocosa basata su una tariffa dichiarata; non è un rating">🪙🪙 <small>Tariffa da verificare</small></span>}</>}
+        </div>}
         <div className="cb-location-actions">
           <button type="button" className="cb-location-action-primary" onClick={()=>document.getElementById('cb-place-map')?.scrollIntoView({behavior:'smooth',block:'start'})}>ESPLORA SULLA MAPPA <span aria-hidden="true">↗</span></button>
           {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>CHIAMA IL RIFUGIO</a>}
@@ -132,9 +143,6 @@ export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onB
         <figcaption>{place.photo?'Foto del luogo · attribuzione e licenza in fondo alla pagina':'Rappresentazione topografica: fotografia del luogo non disponibile'}</figcaption>
       </figure>
     </header>
-
-    <div className="cb-location-body">
-      <div className="cb-location-content">
         <section className="cb-location-section cb-location-dossier" aria-labelledby="cb-location-info-heading">
           <div className="cb-location-section-heading">
             <span>01 / DATI ESSENZIALI</span>
@@ -188,7 +196,7 @@ export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onB
       <aside className="cb-location-sidebar" aria-label="Posizione e contatti">
         <section id="cb-place-map" className="cb-location-side-map">
           <div className="cb-location-sidebar-heading"><span>POSIZIONE</span><strong>DOVE SI TROVA.</strong></div>
-          <AlpineAtlasMap places={places} kind={place.kind} selected={place} routes={nearby} water={water.map(w=>({lng:w.lng,lat:w.lat,potable:w.potable==='yes'}))} height={315}/>
+          <AlpineAtlasMap places={places} kind={place.kind} selected={place} routes={nearby} water={water.map(w=>({lng:w.lng,lat:w.lat,potable:w.potable==='yes'}))} height="100%"/>
           <p>Coordinate: {place.lat.toFixed(5)}, {place.lng.toFixed(5)} · Mappa TOPO / satellite</p>
         </section>
         <section className="cb-location-contact-card">

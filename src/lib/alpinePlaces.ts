@@ -6,6 +6,8 @@ export interface AlpinePlace {
   kind: 'rifugio' | 'bivacco' | 'borgo';
   access?: string;
   fee?: string;
+  /** Logo ufficiale verificato/licenziato, mai generato automaticamente. */
+  logo?: {url:string;sourceUrl:string;author:string;license:string};
   winterRoom?: string;
   seasonal?: string;
   lat: number;

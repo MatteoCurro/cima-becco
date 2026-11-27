@@ -1,0 +1,33 @@
+/* Cima Becco · home focalizzata sulla decisione, senza decorazioni concorrenti. */
+.cb-hero-v2{background:#f1f7e9;color:#153c2d;border-bottom:1px solid #d0dfca}
+.cb-hero-v2 *{box-sizing:border-box}
+.cb-hero-v2-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);min-height:min(540px,62vh);max-width:1600px;margin:auto;overflow:hidden}
+.cb-hero-v2-content{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:clamp(25px,5vw,80px) clamp(22px,6vw,100px);min-width:0}
+.cb-hero-v2-eyebrow{display:flex;align-items:center;gap:9px;font:850 11px/1.4 'Space Grotesk',sans-serif;color:#aa004a;letter-spacing:.11em}
+.cb-hero-v2-eyebrow>span{display:inline-grid;place-items:center;width:24px;height:24px;background:#173e2e;color:#e7ffcf;border-radius:50%;font-size:17px;letter-spacing:0}
+.cb-hero-v2 h1{font:900 clamp(46px,5.3vw,84px)/.94 'Bricolage Grotesque',sans-serif;letter-spacing:-.075em;max-width:800px;margin:25px 0 21px;text-wrap:balance;color:#143c2d}
+.cb-hero-v2 h1 em{font-style:normal;color:#c90052}
+.cb-hero-v2-content>p{font:550 clamp(15px,1.5vw,18px)/1.65 'Space Grotesk',sans-serif;color:#3b5b46;max-width:510px;margin:0}
+.cb-hero-v2-actions{display:flex;flex-wrap:wrap;gap:12px;margin:27px 0 17px}
+.cb-hero-v2-actions a,.cb-hero-v2-actions button{display:inline-flex;align-items:center;gap:10px;min-height:51px;border:2px solid #163e2e;border-radius:7px;padding:13px 18px;font:850 12px/1.2 'Space Grotesk',sans-serif;letter-spacing:.025em;cursor:pointer;text-decoration:none}
+.cb-hero-v2-main-link{background:#c90052;color:#fff!important;border-color:#c90052!important;box-shadow:4px 4px 0 #193e2f}
+.cb-hero-v2-main-link span{font-size:19px}
+.cb-hero-v2-near{background:transparent;color:#193e2e}
+.cb-hero-v2-actions a:hover,.cb-hero-v2-actions button:hover{transform:translateY(-2px)}
+.cb-hero-v2-search{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:9px}
+.cb-hero-v2-search>span{font:850 10px 'Space Grotesk',sans-serif;color:#637c69;letter-spacing:.055em}
+.cb-hero-v2-search button{cursor:pointer;display:inline-flex;gap:6px;align-items:center;border:0;background:transparent;color:#a7004e;font:700 12px 'Space Grotesk',sans-serif;text-decoration:underline;text-underline-offset:3px;padding:7px 0}
+.cb-hero-v2-landscape{position:relative;min-height:450px;overflow:hidden}
+.cb-hero-v2-landscape>svg{width:100%;height:100%;position:absolute;inset:0}
+.cb-hero-v2-image-stamp{position:absolute;top:40px;right:35px;width:145px;height:145px;border-radius:50%;transform:rotate(12deg);background:#f71970;color:#fff;border:5px solid #fff;box-shadow:5px 7px 0 #143e2f;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.cb-hero-v2-image-stamp strong{font:900 24px/.95 'Bricolage Grotesque',sans-serif;letter-spacing:-.04em}
+.cb-hero-v2-image-stamp span{font:850 12px/1.2 'Space Grotesk',sans-serif;margin-top:4px}
+.cb-hero-v2-image-caption{position:absolute;bottom:22px;right:24px;background:#163e30;color:#ecffd7;padding:9px 14px;font:850 10px 'Space Grotesk',sans-serif;letter-spacing:.055em}
+.cb-hero-v2-links{border-top:2px solid #d5e4d0;display:flex;align-items:center;justify-content:center;gap:0;max-width:1600px;margin:auto;min-height:59px}
+.cb-hero-v2-links a{min-width:125px;display:flex;justify-content:space-between;gap:20px;align-items:center;padding:16px 26px;font:850 12px 'Space Grotesk',sans-serif;color:#16402f;text-decoration:none;border-right:1px solid #cadcc8}
+.cb-hero-v2-links a:first-child{border-left:1px solid #cadcc8}.cb-hero-v2-links a span{color:#c90052}
+.cb-hero-v2-links a:hover{background:#e2efd9}
+@media(max-width:900px){.cb-hero-v2-grid{grid-template-columns:1fr .7fr;min-height:450px}.cb-hero-v2-content{padding:35px}.cb-hero-v2 h1{font-size:clamp(41px,5vw,64px)}.cb-hero-v2-image-stamp{width:112px;height:112px;right:16px;top:20px}.cb-hero-v2-image-stamp strong{font-size:19px}}
+@media(max-width:690px){.cb-hero-v2-grid{display:flex;flex-direction:column;min-height:0}.cb-hero-v2-content{padding:30px 22px 25px}.cb-hero-v2 h1{font-size:clamp(43px,10vw,64px);margin:17px 0}.cb-hero-v2-content>p{font-size:15px}.cb-hero-v2-landscape{min-height:180px;max-height:180px}.cb-hero-v2-image-stamp{display:none}.cb-hero-v2-image-caption{font-size:9px;bottom:9px;right:12px}.cb-hero-v2-links{display:grid;grid-template-columns:repeat(4,1fr)}.cb-hero-v2-links a{min-width:0;padding:13px 8px;font-size:11px;gap:5px}.cb-hero-v2-links a:first-child{border-left:0}.cb-hero-v2-actions a,.cb-hero-v2-actions button{min-height:48px;padding:11px 14px}}
+@media(max-width:350px){.cb-hero-v2-links{grid-template-columns:repeat(2,1fr)}.cb-hero-v2-links a{border-top:1px solid #cadcc8}}
+@media(prefers-reduced-motion:reduce){.cb-hero-v2-actions a:hover,.cb-hero-v2-actions button:hover{transform:none}}
