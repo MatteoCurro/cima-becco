@@ -16,7 +16,7 @@ type Section = 'rifugi' | 'bivacchi' | 'paesi';
 type Sort = 'richness' | 'altitude' | 'capacity' | 'name';
 const CONFIG: Record<Section,{kind:AlpinePlace['kind'];title:string;lead:string;kicker:string;singular:string}> = {
   rifugi:{kind:'rifugio',title:'RIFUGI.',lead:'Un tetto sopra la testa, qualche metro sotto i piedi. Cerca una struttura e scopri dove si trova davvero.',kicker:'RIPARO · SOSTA · ACCESSI',singular:'rifugio'},
-  bivacchi:{kind:'bivacco',title:'BIVACCHI.',lead:'Pochi comfort e molta montagna. Posizione, accesso dichiarato e sentieri: le informazioni che contano.',kicker:'RIPARI LIBERI · QUOTA',singular:'bivacco'},
+  bivacchi:{kind:'bivacco',title:'BIVACCHI E RICOVERI.',lead:'Bivacchi fissi, capanne sociali e punti d’appoggio: quote, posti e dotazioni dichiarate, senza promesse di apertura o sicurezza.',kicker:'BIVACCHI · CAPANNE · RICOVERI',singular:'bivacco o ricovero'},
   paesi:{kind:'borgo',title:'PAESI.',lead:'Le avventure partono da un posto preciso. Trova la località da cui esplorare i sentieri della zona.',kicker:'LOCALITÀ · PUNTI DI PARTENZA',singular:'paese'},
 };
 function fromHash(){
@@ -138,7 +138,7 @@ export function AlpineExplorePage(){
               <button type="button" className="cb-explore-card-select" onClick={()=>onSelect(place)} aria-label={'Localizza '+place.name+' sulla mappa'}>
                 <AlpinePlaceVisual key={place.slug} place={place} compact/>
                 <span className="cb-explore-card-body">
-                  <span className="cb-explore-card-kicker"><AlpinePlaceIcon kind={place.kind} size={17}/>{place.kind==='borgo'?'PAESE':place.kind==='bivacco'?'BIVACCO':'RIFUGIO'}</span>
+                  <span className="cb-explore-card-kicker"><AlpinePlaceIcon kind={place.kind} size={17}/>{place.kind==='borgo'?'PAESE':place.kind==='bivacco'?(place.shelterTypeLabel || 'BIVACCO').toLocaleUpperCase('it-IT'):'RIFUGIO'}</span>
                   <strong className="cb-explore-card-name">{place.name}</strong>
                   <span className="cb-explore-card-meta">{place.operator||'Dolomiti · dati OpenStreetMap'}</span>
                   <span className="cb-explore-card-facts">
