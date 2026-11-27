@@ -278,19 +278,42 @@ def fetch_catalogue(api=fetch_json, page_size=80):
         result.extend(payload["data"])
     if len(result) != total:
         raise ValueError("CAI catalogo incompleto: " + str(len(result)) + "/" + str(total))
-    ids = [str(x.get("id_cai", "")) for x in result]
-    if len(set(ids)) != len(result) or not all(SAFE_ID.fullmatch(x) for x in ids):
-        from collections import Counter
-        occurrences = Counter(ids)
-        duplicates = sorted(key for key, count in occurrences.items() if count > 1)
-        invalid = sorted(key for key in ids if not SAFE_ID.fullmatch(key))
-        raise ValueError(
-            "CAI ID duplicati/non validi: total=" + str(total) +
-            " unique=" + str(len(occurrences)) +
-            " duplicates=" + repr(duplicates[:12]) +
-            " invalid=" + repr(invalid[:12])
-        )
-    return sorted(result, key=lambda x: str(x["id_cai"]))
+    # Il listato reale CAI ha mostrato un ID ripetuto tra 764 righe.
+    # Se identità interna, nome e coordinate coincidono, è una doppia riga
+    # della stessa struttura. Altrimenti il codice CAI è ambiguo: accantoniamo
+    # tutto il gruppo, senza scegliere il primo e senza fondere due strutture.
+    from collections import defaultdict
+    groups = defaultdict(list)
+    missing = 0
+    for row in result:
+        code = str(row.get("id_cai", ""))
+        if not SAFE_ID.fullmatch(code) or code == "0":
+            missing += 1
+            continue
+        groups[code].append(row)
+    selected, collisions, repeats = [], [], 0
+    for code, variants in sorted(groups.items()):
+        if len(variants) == 1:
+            selected.append(variants[0])
+            continue
+        fingerprints = {(str(v.get("id")), str(v.get("title")),
+                         json.dumps(v.get("geo"), sort_keys=True)) for v in variants}
+        if len(fingerprints) == 1:
+            repeats += len(variants)-1
+            # Preferisci la versione con updated_at più recente SOLO se identità uguale.
+            selected.append(max(variants, key=lambda x: str(x.get("updated_at") or "")))
+        else:
+            collisions.append(code)
+    if len(collisions) + missing > max(10, total // 20):
+        raise ValueError("CAI anomalie identità troppo numerose: " +
+                         str(len(collisions)) + " collisioni, " +
+                         str(missing) + " righe senza ID")
+    if collisions or repeats or missing:
+        print(json.dumps({"catalogueIdentityReview": {
+            "rows": total, "repeatedIdentical": repeats,
+            "ambiguousIdsQuarantined": collisions[:30],
+            "invalidIdRows": missing, "selected": len(selected)}}, sort_keys=True))
+    return selected
 
 
 def build_catalogue(rows, details_by_id, mapping, proposals, previous=None, *, complete=True):
