@@ -24,7 +24,7 @@ function FactTile({ name, fact }: { name: string; fact: AtlasFact }) {
       <small className="cb-dossier-method">{fact.method === 'estimated' ? 'Stima' : 'Calcolo derivato'}</small>}
     {fact.sourceUpdatedAt && <small>Fonte aggiornata: {fact.sourceUpdatedAt}</small>}
     {fact.validUntil && <small>Valido fino al: {fact.validUntil}</small>}
-    {fact.sourceUrl && <small className="cb-dossier-source"><Source url={fact.sourceUrl} label={fact.sourceId || 'Origine del dato'}/></small>}
+
   </div>;
 }
 function Technical({ technical }: { technical: AtlasTechnical }) {
@@ -51,7 +51,7 @@ function RelationItem({ relation }: { relation: AtlasRelation }) {
     {relation.straightLineKm != null && relation.type === 'near' &&
       <small>{relation.straightLineKm.toLocaleString('it-IT', {maximumFractionDigits:1})} km in linea d'aria</small>}
     {suffix && <small>{suffix.replace(/^ · /, '')}</small>}
-    {relation.sourceUrl && <small><Source url={relation.sourceUrl}/></small>}
+
   </li>;
 }
 /** Moduli separati per responsabilità; nessun blocco vuoto, nessuna fonte o immagine inventata. */
@@ -70,6 +70,13 @@ export function AtlasDossierBlocks({ record, placement }: {
 
   if (placement === 'core') {
     const facts = presentAtlasFacts(record.facts);
+    const factGroups = new Map<string, typeof facts>();
+    for (const pair of facts) {
+      const group = pair[1].group || 'Dati documentati';
+      const list = factGroups.get(group) || [];
+      list.push(pair);
+      factGroups.set(group, list);
+    }
     const climate = usableAtlasClimate(record.climate);
     const hasTechnical = Boolean(record.technical && Object.values(record.technical).some(value=>value!==null&&value!==undefined&&value!==''));
     const hasPitches = Boolean(record.pitches?.some(p=>p.id && Number.isFinite(p.ordinal)));
@@ -93,19 +100,21 @@ export function AtlasDossierBlocks({ record, placement }: {
           <ul>{names.map((variant,index)=><li key={variant.value+index}>
             {variant.value}{variant.language?' · '+variant.language:''}
             {variant.historical?' · storico':''}
-            {variant.sourceUrl&&<> · <Source url={variant.sourceUrl} label="Fonte del toponimo"/></>}
+
           </li>)}</ul>
         </div>}
       </Section>}
-      {facts.length > 0 && <Section kicker="ATLANTE / DATI DOCUMENTATI" title="La scheda in dettaglio">
-        <dl className="cb-dossier-facts">{facts.map(([name, fact]) => <FactTile name={name} fact={fact} key={name}/>)}</dl>
-      </Section>}
+      {[...factGroups].map(([group, entries]) => <Section key={group}
+        kicker="ATLANTE / INFORMAZIONI DICHIARATE" title={group === 'Dati documentati' ? 'La scheda in dettaglio' : group}>
+        <dl className="cb-dossier-facts">{entries.map(([name, fact]) =>
+          <FactTile name={name} fact={fact} key={name}/>)}</dl>
+      </Section>)}
       {alternatives.length>0&&<details className="cb-dossier-alternatives"><summary>Valori alternativi e fonti da confrontare ({alternatives.length})</summary>
         <dl className="cb-dossier-facts">{alternatives.map((entry,index)=><FactTile key={entry.key+index} name={entry.key} fact={entry.fact}/>)}</dl>
         <p className="cb-dossier-note">Sono presenti dati discordanti o alternativi: consultare le fonti prima di considerarli definitivi.</p>
       </details>}
       {hasHistory && <Section kicker="STORIA E TERRITORIO" title="Storie di montagna">
-        <p className="cb-dossier-prose">{record.history}</p><Source url={record.historySourceUrl} label="Fonte storica"/>
+        <p className="cb-dossier-prose">{record.history}</p>
       </Section>}
       {hasStages && <Section kicker="CAMMINI / TAPPE" title="Le tappe documentate">
         <ol className="cb-dossier-stages">{record.stages!.filter(stage => stage.id && stage.title && Number.isFinite(stage.ordinal))
@@ -113,7 +122,7 @@ export function AtlasDossierBlocks({ record, placement }: {
             <span>Tappa {stage.ordinal}{stage.official === true ? ' · ufficiale' : stage.official === false ? ' · proposta' : ''}</span>
             <strong>{stage.href ? <a href={stage.href}>{stage.title}</a> : stage.title}</strong>
             <small>{[stage.lengthKm != null ? stage.lengthKm + ' km' : null,stage.gainM != null ? '+' + stage.gainM + ' m' : null].filter(Boolean).join(' · ')}</small>
-            <Source url={stage.sourceUrl} label="Riferimento"/>
+
           </li>)}</ol>
       </Section>}
       {record.technical && <Technical technical={record.technical}/>}
@@ -124,7 +133,7 @@ export function AtlasDossierBlocks({ record, placement }: {
         </tr>)}</tbody></table></div>
       </Section>}
       {climate.map(series => <Section key={series.id} kicker="CLIMA / SERIE DOCUMENTATA" title={series.name}>
-        <p className="cb-dossier-note">Periodo: {series.period} · unità: {series.unit} · <Source url={series.sourceUrl} label="Serie e metodo"/></p>
+        <p className="cb-dossier-note">Periodo: {series.period} · unità: {series.unit}</p>
         <div className="cb-dossier-climate" role="list" aria-label={series.name + ', ' + series.unit}>
         {series.values.filter(v=>v.month>=1&&v.month<=12).sort((a,b)=>a.month-b.month).map(point=><div role="listitem" key={point.month}>
           <span>{new Date(Date.UTC(2026,point.month-1,1)).toLocaleString('it-IT',{month:'short',timeZone:'UTC'})}</span>
@@ -150,7 +159,7 @@ export function AtlasDossierBlocks({ record, placement }: {
           {item.kind === 'video' ? <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer">Apri il video originale ↗</a> :
             <img src={item.url} alt={item.caption || 'Immagine documentata'} loading="lazy"/>}
           <figcaption>{item.caption || 'Immagine del luogo'}{item.capturedAt ? ' · scatto ' + item.capturedAt : ''}
-            <small>{item.author || 'Autore non indicato'} · {item.licence} · <Source url={item.sourceUrl} label="Origine e licenza"/></small>
+            {item.caption && <small>{item.caption}</small>}
           </figcaption>
         </figure>)}</div>
       </Section>}
@@ -166,20 +175,7 @@ export function AtlasDossierBlocks({ record, placement }: {
     </div> : null;
   }
 
-  const sources = new Map<string, string>();
-  for (const f of Object.values(record.facts ?? {})) if (f?.sourceUrl) sources.set(f.sourceUrl, f.sourceId || f.sourceUrl);
-  for (const a of record.factsAlternatives ?? []) if (a.fact?.sourceUrl) sources.set(a.fact.sourceUrl, 'Valore alternativo: '+a.key);
-  for (const n of [...(record.aliases??[]),...(record.localNames??[])]) if (n.sourceUrl) sources.set(n.sourceUrl, 'Toponimo');
-  if (record.geo?.sourceUrl) sources.set(record.geo.sourceUrl, 'Posizione geografica');
-  for (const alert of [...(record.alerts??[]),...(record.restrictions??[])]) if (alert.sourceUrl) sources.set(alert.sourceUrl, 'Avviso / restrizione');
-  for (const r of record.relations ?? []) if (r.sourceUrl) sources.set(r.sourceUrl, 'Relazione documentata');
-  for (const m of record.media ?? []) if (m.sourceUrl) sources.set(m.sourceUrl, 'Media: ' + m.licence);
-  for (const cam of record.webcams ?? []) if (cam.officialUrl) sources.set(cam.officialUrl, 'Webcam: '+cam.operator);
-  if (record.historySourceUrl) sources.set(record.historySourceUrl, 'Archivio storico');
-  for (const c of record.climate ?? []) if (c.sourceUrl) sources.set(c.sourceUrl, 'Serie climatica');
-  return sources.size ? <details className="cb-dossier-credits"><summary>Fonti e crediti del dossier <span>{sources.size}</span></summary>
-    <ul>{[...sources].map(([url,label])=><li key={url}><Source url={url} label={label}/></li>)}</ul>
-    {record.checkedAt && <small>Ultima verifica: {record.checkedAt}</small>}
-    {record.updatedAt && <small>Ultimo aggiornamento della scheda: {record.updatedAt}</small>}
-  </details> : null;
+  // Credits persist in facts/media/relations and are rendered only on
+  // the central /fonti-e-crediti/ page, never inside an individual dossier.
+  return null;
 }
