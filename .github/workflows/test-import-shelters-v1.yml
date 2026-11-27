@@ -43,6 +43,24 @@ jobs:
         shell: bash
         run: |
           python -c "import json; from pathlib import Path; d=json.loads(Path('public/data/atlas/shelters-v1.json').read_text()); e=d['entities']; assert d['releaseChannel']=='CAI_OSM_BIVOUACS_SHELTERS'; assert len(e)>350; assert len(e)==len(set(x['id'] for x in e)); assert len(e)==len(set(x['slug'] for x in e)); assert all(x['kind'] in ('bivouac','shelter') for x in e); assert all(not x['quality']['openNowVerified'] for x in e); print(len(e),'bivouacs + shelters')"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: TypeScript, Vitest e SEO con dati reali CAI
+        shell: bash
+        env:
+          VITE_BASE: /
+          SITE_URL: https://www.cimabecco.it
+          VITE_SITE_URL: https://www.cimabecco.it
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npm run test
+          npm run build
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: cima-becco-block2-bivouac-pilot
