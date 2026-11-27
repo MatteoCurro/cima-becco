@@ -1,0 +1,3061 @@
+/* hillGPX — a full-screen map and listing interface with one mobile breakpoint. */
+
+:root {
+  /* Light-first, the way the reference is: white ground, near-black text, one
+     light grey rule, and a single warm accent used sparingly. The restraint is
+     what makes it feel calm — not the specific hues. */
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --bg-raised: #f7f7f7;
+  --ink: #222222;
+  --muted: #717171;
+  --border: #dddddd;
+  --accent: #c1502e;
+  --danger: #c13515;
+  --shadow-card: 0 6px 16px rgb(0 0 0 / 12%);
+  --radius: 12px;
+  --topbar-h: 64px;
+  --font-sans: 'Figtree', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+
+  /* Type scale */
+  --t1: 13px;
+  --t2: 15px;
+  --t3: 17px;
+  --t4: 20px;
+  --t5: 26px;
+
+  /* Spacing scale — every margin and padding on the landing uses one of these */
+  --s1: 8px;
+  --s2: 16px;
+  --s3: 24px;
+  --s4: 40px;
+  --s5: 64px;
+
+  color-scheme: light;
+}
+
+/* Light only, deliberately. The reference this is modelled on is a light
+   interface, and the map's own basemap and pills are light — following the
+   system into dark mode gave a dark chrome wrapped around a light map, which
+   looked like two designs stapled together. */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+.small {
+  font-size: 13px;
+}
+.muted {
+  color: var(--muted);
+}
+.error {
+  color: var(--danger);
+}
+
+/* Both headers use the same mark-and-name lockup; the nested span keeps "hill"
+   and "GPX" together while the flex gap separates the mark from the name. */
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 620;
+  font-size: var(--t3);
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.wordmark .dot {
+  color: var(--accent);
+}
+.lp-nav .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+/* The landing page and the shared design layer live in design.css. */
+
+.map-skeleton {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-raised);
+}
+
+.map-skeleton-pulse {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--border);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.9; }
+}
+
+/* ─── App shell ───────────────────────────────────────────────────────── */
+
+/* Structured the way Airbnb structures a map search: a slim bar, the map filling
+   everything below it, and detail arriving as cards over the map rather than a
+   column permanently taking a third of the screen. */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.topbar {
+  position: relative;
+  height: 64px;
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  /* Above the filter bar below it, which is opaque and would otherwise paint
+     over the first rows of the search dropdown — tying at 4 let source order
+     decide, and the row that moves the map was the one it hid. */
+  z-index: 5;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: end;
+}
+
+.gpx-link,
+.ghost-btn {
+  flex: none;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: var(--t1);
+  font-weight: 600;
+  cursor: pointer;
+}
+.ghost-btn:hover {
+  background: var(--bg-raised);
+}
+
+.gpx-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 10px 12px;
+  border-radius: 22px;
+  background: none;
+  border: none;
+  text-decoration: none;
+}
+.gpx-link:hover {
+  background: var(--bg-raised);
+  text-decoration: none;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: var(--bg-raised);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: var(--border);
+}
+
+.stage {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.map-wrap {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+}
+
+.list-pane {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: none;
+  min-width: 0;
+  background: #fff;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  container-type: inline-size;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.list-pane::-webkit-scrollbar {
+  display: none;
+}
+
+.list-pane.open {
+  display: block;
+}
+
+.view-toggle {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 20px;
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 20%);
+}
+
+@media (min-width: 900px) {
+  .topbar {
+    height: 80px;
+    padding: 0 40px;
+  }
+
+  .filterbar {
+    padding: 12px 40px;
+  }
+
+  .stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    transition: grid-template-columns 0.35s ease;
+  }
+
+  .list-pane,
+  .list-pane.open {
+    position: relative;
+    inset: auto;
+    display: block;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    visibility: visible;
+    transform: none;
+    transition: visibility 0s;
+  }
+
+  .results {
+    opacity: 1;
+    transition: opacity 0.2s;
+  }
+
+  .map-wrap {
+    position: relative;
+    inset: auto;
+    min-width: 0;
+  }
+
+  .view-toggle {
+    display: none;
+  }
+
+  .results {
+    padding: 24px 40px 40px;
+  }
+}
+
+/* MapLibre puts its own `maplibregl-map` class on this element, and
+   maplibre-gl.css sets `position: relative` on it. That stylesheet is imported
+   from MapView.tsx, so Vite emits it in the code-split MapView chunk which
+   loads AFTER this file — at equal specificity the later rule won, `inset: 0`
+   stopped applying, and the container collapsed to zero height. The map then
+   rendered into MapLibre's 300px fallback and showed nothing.
+
+   `.map-wrap > .map` outranks it, and the explicit 100% sizing means this holds
+   even if the positioning is overridden again. */
+.map-wrap,
+.map-wrap > .map,
+.map-wrap .maplibregl-map {
+  border-radius: 0 !important;
+}
+
+.map-wrap > .map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  container: map / size;
+  transition: left 0.35s ease;
+}
+
+@media (min-width: 900px) {
+  .map-wrap > .map {
+    position: absolute;
+    inset: 24px 24px 24px 0;
+    width: auto;
+    height: auto;
+    border-radius: 16px !important;
+    overflow: hidden;
+  }
+
+  .stage.map-expanded {
+    grid-template-columns: minmax(0, 0fr) minmax(0, 1fr);
+  }
+
+  .stage.map-expanded .list-pane {
+    visibility: hidden;
+    transition: visibility 0s 0.35s;
+  }
+
+  .stage.map-expanded .results {
+    opacity: 0;
+  }
+
+  .stage.map-expanded .map-wrap > .map {
+    left: 24px;
+  }
+}
+
+.pin-anchor {
+  display: block;
+}
+.pin-anchor.is-hidden {
+  display: none;
+}
+
+.pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px 0 9px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: 600 14px/1 var(--font-sans);
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 6%), 0 3px 10px rgb(0 0 0 / 18%);
+  transition: transform .12s ease, background-color .12s ease, box-shadow .12s ease;
+}
+/* Hover only lifts the pill; black is reserved for the one you clicked, so
+   sweeping the pointer across the map never looks like a selection. */
+.pin:hover,
+.pin.is-hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 10%), 0 6px 16px rgb(0 0 0 / 24%);
+}
+.pin.is-selected {
+  background: var(--ink);
+  color: #fff;
+}
+.pin.is-visited:not(.is-selected):not(.is-hover):not(:hover) {
+  background: #f2f2f2;
+  color: #6a6a6a;
+}
+.pin-glyph {
+  display: inline-flex;
+  flex: 0 0 18px;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+.pin-glyph svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+.pin.is-selected .pin-glyph {
+  color: #fff;
+}
+
+/* ─── Venue card ──────────────────────────────────────────────────────── */
+
+.venue-card {
+  position: relative;
+  width: min(320px, calc(100cqw - 32px));
+  max-width: calc(100vw - 48px);
+  max-height: none;
+  overflow: hidden;
+  background: var(--surface);
+  /* No border. A hairline plus a heavy shadow reads as two edges stacked; the
+     reference floats the card on shadow alone and lets the photo run to the
+     corner, which is what makes it sit *above* the map rather than on it. */
+  border: none;
+  border-radius: 16px;
+  box-shadow:
+    0 8px 30px rgb(0 0 0 / 22%),
+    0 0 0 1px rgb(0 0 0 / 5%);
+}
+
+.maplibregl-popup.venue-popup {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  z-index: 10;
+}
+
+.maplibregl-popup.venue-popup .maplibregl-popup-content {
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.maplibregl-popup.venue-popup .maplibregl-popup-tip {
+  display: none;
+}
+
+.card-close {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 90%);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 18%);
+}
+
+.card-photo {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  height: auto;
+  overflow: hidden;
+  border-radius: 16px 16px 0 0;
+}
+
+@container map (max-height: 560px) {
+  .venue-card .card-photo {
+    aspect-ratio: 16 / 7;
+  }
+}
+
+@container map (max-height: 360px) {
+  .venue-card .card-photo {
+    display: none;
+  }
+
+  .venue-card .card-summary {
+    padding-top: 16px;
+  }
+
+  .venue-card .card-title-row {
+    padding-right: 38px;
+    padding-left: 38px;
+  }
+}
+
+/* The empty photo slot, as a link. Hover has to register on the whole box —
+   a 26px icon is too small a target for something this card is asking you to
+   do. */
+.card-photo-add {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+.card-photo-add:hover .card-thumb.placeholder,
+.card-photo-add:focus-visible .card-thumb.placeholder {
+  background: #f0efeb;
+  color: var(--ink);
+}
+.card-photo-add:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.card-photo .card-thumb {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 0;
+  margin: 0;
+}
+
+.card-thumb {
+  display: block;
+  background: var(--bg-raised);
+  overflow: hidden;
+}
+.card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Reserve the box before the file arrives so a scrolling list does not
+     reflow as each image lands. */
+  aspect-ratio: 20 / 19;
+}
+/* No photo: an explicit empty state rather than a stand-in drawing, so an
+   absent picture never reads as a picture. Quiet enough to sit in a scrolling
+   list of real photographs without competing with them. */
+.card-thumb.placeholder {
+  background: var(--bg-raised);
+  color: var(--muted);
+  /* A hairline of its own, so the empty box has an edge against the card. */
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+/* Centring sits here, not on .card-thumb: the list and the card hero both
+   restyle that element (`display: block`, fixed height), and whichever rule
+   came last in this file would win. This box has no such competition. */
+.placeholder-inner {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  text-align: center;
+  padding: var(--s1);
+}
+.placeholder-icon {
+  width: 26px;
+  height: 26px;
+  opacity: 0.7;
+}
+.placeholder-label {
+  font-size: var(--t1);
+  line-height: 1;
+}
+/* The card hero is larger than a list thumbnail, so its empty state carries a
+   larger mark too. */
+.card-photo .placeholder-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.photo-credit {
+  margin: 0 0 var(--s2);
+  font-size: 11px;
+}
+
+.card-summary {
+  display: block;
+  padding: 12px var(--s2) 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.card-summary:hover {
+  background: var(--bg-raised);
+}
+
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.card-title-row h2 {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.card-kind {
+  margin: 0 0 4px;
+  font-size: var(--t1);
+  color: var(--muted);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.venue-card > .photo-credit {
+  margin: 0;
+  padding: 0 var(--s2) 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-note {
+  margin: 0 0 6px;
+  font-size: var(--t2);
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.card-note:last-child {
+  margin-bottom: 0;
+}
+
+.card-height {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+.card-height strong {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.card-height span {
+  font-size: var(--t1);
+  color: var(--muted);
+}
+
+.venue-card h2 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+  line-height: 1.3;
+}
+
+.venue-card h3 {
+  font-size: var(--t2);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 var(--s1);
+}
+
+.route-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.route-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2px 2px 2px 12px;
+  background: none;
+}
+
+.route-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.route-info:hover,
+.route-info.active {
+  color: inherit;
+}
+
+.route-info:hover ~ .route-download,
+.route-row:hover .route-download {
+  color: var(--ink);
+}
+
+.route-download {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.route-download:hover {
+  background: var(--bg-raised);
+  color: var(--accent);
+}
+
+.route-name {
+  font-weight: 600;
+  font-size: var(--t2);
+  color: var(--ink);
+}
+
+/* ─── Results list ────────────────────────────────────────────────────── */
+
+.results {
+  padding: var(--s2);
+}
+
+@media (min-width: 900px) {
+  .results {
+    padding: 24px 40px 40px;
+  }
+}
+
+.results-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s2);
+  margin-bottom: 0;
+}
+
+.results-head h2 {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 24px;
+}
+.results-head p {
+  margin: 2px 0 0;
+}
+
+.results-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px 24px;
+}
+
+@container (max-width: 639px) {
+  .results-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container (min-width: 960px) {
+  .results-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sk-thumb,
+.sk-line {
+  display: block;
+  background: #ebebeb;
+}
+
+.sk-thumb {
+  width: 100%;
+  aspect-ratio: 20 / 15;
+  border-radius: 12px;
+  margin-bottom: 2px;
+}
+
+.sk-line {
+  width: 60%;
+  height: 12px;
+  border-radius: 6px;
+}
+
+.sk-line:nth-child(3) {
+  width: 40%;
+}
+
+.sk-line:nth-child(4) {
+  width: 30%;
+}
+
+.result-item {
+  position: relative;
+}
+
+.result-card {
+  position: relative;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: none;
+  border: none;
+  border-radius: 14px;
+  padding: 0;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.result-card .card-thumb {
+  width: 100%;
+  aspect-ratio: 20 / 15;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-raised);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.result-card .card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Reserve the box before the file arrives so a scrolling list does not
+     reflow as each image lands. */
+  aspect-ratio: 20 / 15;
+}
+
+.result-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 14%);
+}
+
+.result-favorite,
+.card-favorite {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: none;
+  transition: transform 0.1s ease;
+}
+
+.result-favorite svg,
+.card-favorite svg {
+  fill: rgb(0 0 0 / 50%);
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.result-favorite.on svg,
+.card-favorite.on svg {
+  fill: var(--accent);
+}
+
+.result-favorite:hover,
+.card-favorite:hover {
+  background: none;
+  transform: scale(1.1);
+}
+
+.result-card-name {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.35;
+  margin-top: 12px;
+  /* Long block names must not push the card taller than its neighbours. */
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.result-card-meta {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.result-card-gain {
+  font-size: 15px;
+  margin-top: 4px;
+}
+.result-card-gain strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 40px;
+  padding: var(--s2) 0;
+}
+
+.page-btn {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink);
+  font-size: var(--t1);
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-btn:hover:not(:disabled):not(.active) {
+  background: var(--bg-raised);
+}
+
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.page-btn.active {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.page-ellipsis {
+  padding: 0 4px;
+  color: var(--muted);
+  user-select: none;
+}
+
+/* ─── Empty states ────────────────────────────────────────────────────── */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--s4) var(--s2);
+  color: var(--ink);
+}
+
+.empty-state-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  color: var(--muted);
+  margin-bottom: var(--s2);
+}
+
+.empty-state h3 {
+  font-size: var(--t3);
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.empty-state p {
+  font-size: var(--t2);
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0;
+  max-width: 42ch;
+}
+
+/* ─── GPX sheet ───────────────────────────────────────────────────────── */
+
+.sheet {
+  position: absolute;
+  z-index: 6;
+  right: var(--s3);
+  bottom: var(--s3);
+  width: 360px;
+  max-width: calc(100% - var(--s4));
+  background: var(--surface);
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 22%), 0 0 0 1px rgb(0 0 0 / 5%);
+  padding: 24px;
+}
+
+.sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sheet-head h2 {
+  font-size: var(--t3);
+  font-weight: 600;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .sheet {
+    left: var(--s1);
+    right: var(--s1);
+    bottom: var(--s1);
+    width: auto;
+    max-width: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .sheet {
+    right: 48px;
+    bottom: 48px;
+  }
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 20px;
+  border: 1.5px dashed #b0b0b0;
+  border-radius: 12px;
+  text-align: center;
+}
+.dropzone.dragging {
+  border-color: var(--ink);
+  background: var(--bg-raised);
+}
+.dropzone p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.dropzone-browse {
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dropzone-error,
+.gpx-save-error {
+  margin: 0;
+  color: var(--danger) !important;
+  font-size: 13px;
+}
+
+.gpx-panel {
+  position: absolute;
+  z-index: 5;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 22%), 0 0 0 1px rgb(0 0 0 / 5%);
+}
+.gpx-panel-head,
+.gpx-panel-actions,
+.gpx-stats,
+.gpx-touches {
+  display: flex;
+  align-items: center;
+}
+.gpx-panel-head {
+  justify-content: space-between;
+  gap: 16px;
+}
+.gpx-panel-head h2 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gpx-panel-actions {
+  flex: none;
+  gap: 8px;
+}
+.gpx-save,
+.gpx-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+.gpx-save {
+  border: none;
+  background: var(--ink);
+  color: #fff;
+}
+.gpx-save:hover:not(:disabled) {
+  background: #000000;
+  transform: translateY(-1px);
+}
+.gpx-save:disabled {
+  opacity: .5;
+  cursor: default;
+}
+.gpx-download {
+  border: 1px solid var(--border);
+  background: #fff;
+}
+.gpx-download:hover {
+  background: var(--bg-raised);
+}
+.gpx-close {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  cursor: pointer;
+}
+.gpx-stats {
+  gap: 24px;
+  margin-top: 10px;
+}
+.gpx-stat {
+  display: flex;
+  flex-direction: column;
+  font-variant-numeric: tabular-nums;
+}
+.gpx-stat strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.gpx-stat span,
+.gpx-altitude-tag,
+.gpx-touches > span,
+.gpx-saved-note {
+  color: var(--muted);
+  font-size: 13px;
+}
+.gpx-altitude-tag {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--bg-raised);
+}
+.gpx-touches {
+  gap: 8px;
+  margin: 10px 0 6px;
+  min-height: 28px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.gpx-touches > strong {
+  font-size: 13px;
+}
+.gpx-touches button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: none;
+  border-radius: 999px;
+  background: var(--bg-raised);
+  color: var(--ink);
+  font: 600 13px/1.2 var(--font-sans);
+  cursor: pointer;
+}
+.gpx-touches button:hover {
+  background: var(--border);
+}
+.gpx-touches button.on {
+  background: var(--ink);
+  color: #fff;
+}
+.gpx-saved-note {
+  margin: 0 0 4px;
+}
+
+.profile {
+  position: relative;
+}
+.profile-chart {
+  position: relative;
+  margin-left: 34px;
+}
+.profile-guide {
+  stroke: var(--ink);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.profile-dot-html {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+  pointer-events: none;
+}
+.profile-tooltip {
+  position: absolute;
+  top: 2px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.profile-y-labels {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -34px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 11px;
+}
+.profile-axis {
+  display: flex;
+  justify-content: space-between;
+  margin: 2px 0 8px 34px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@media (min-width: 900px) {
+  .gpx-panel {
+    left: 40px;
+    right: 40px;
+    bottom: 40px;
+  }
+}
+
+@media (max-width: 599px) {
+  .gpx-panel-head {
+    position: relative;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-right: 40px;
+  }
+
+  .gpx-panel-head h2 {
+    flex: 1 0 100%;
+    max-width: 100%;
+  }
+
+  .gpx-panel-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .gpx-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+
+  .gpx-stats {
+    flex-wrap: wrap;
+    gap: 12px 20px;
+  }
+
+  .gpx-stat {
+    white-space: nowrap;
+  }
+
+  .hide-narrow {
+    display: none;
+  }
+}
+
+.searchbar-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 14%);
+  overflow: hidden;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.searchbar-results .results-head,
+.searchbar-results .error {
+  margin: 0;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.result-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.result-row:last-child {
+  border-bottom: none;
+}
+
+.result-row:hover {
+  background: var(--bg);
+}
+
+/* An area row moves the camera to a whole town; a venue row opens one card.
+   Marking the difference is what stops "Hougang" reading as another block. */
+.result-row.area-row {
+  border-left: 3px solid var(--accent);
+}
+
+.result-name {
+  font-weight: 600;
+  font-size: var(--t2);
+}
+
+/* ─── Map overlays ────────────────────────────────────────────────────── */
+
+.map-error {
+  position: absolute;
+  top: 62px;
+  left: 10px;
+  right: 58px;
+  z-index: 3;
+  background: var(--danger);
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.locate-hint {
+  position: absolute;
+  bottom: 92px;
+  left: 50%;
+  transform: translateX(-50%);
+  /* Above an open place card (a map popup, z-index 10): the note says why the
+     map shows what it shows, and the card must not hide it. */
+  z-index: 11;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(420px, calc(100% - var(--s3) * 2));
+  padding: 14px 16px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 30px rgb(0 0 0 / 22%),
+    0 0 0 1px rgb(0 0 0 / 5%);
+}
+
+/* Only a location problem is tappable (it asks again); a note just informs. */
+.locate-hint.retry {
+  cursor: pointer;
+}
+.locate-hint.retry:hover {
+  background: var(--bg-raised);
+}
+
+.locate-hint.leaving {
+  animation: locate-hint-out 200ms ease-in forwards;
+}
+
+@keyframes locate-hint-out {
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+}
+
+.locate-hint-icon {
+  display: inline-flex;
+  flex: none;
+  margin-top: 2px;
+  color: var(--accent);
+}
+
+.locate-hint-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.locate-hint-title {
+  margin: 0 0 2px;
+  font-weight: 600;
+  font-size: var(--t2);
+  color: var(--ink);
+}
+
+.locate-hint-text {
+  margin: 0;
+  font-size: var(--t1);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.locate-hint-close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.locate-hint-close:hover {
+  background: var(--bg-raised);
+  color: var(--ink);
+}
+
+.empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+}
+
+.empty pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+/* ─── Filter chips ────────────────────────────────────────────────────── */
+
+/* A second bar under the search, in the flex column with the topbar and the
+   stage rather than inside .stage — the map is absolutely positioned to fill
+   its container, so anything laid over it there would have covered the map
+   instead of shortening it. */
+.filterbar {
+  flex: none;
+  position: relative;
+  z-index: 4;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 4%);
+}
+
+@media (min-width: 900px) {
+  .filterbar {
+    padding: 12px 40px;
+  }
+}
+
+.filterbar-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--s1);
+}
+
+/* The chips scroll sideways instead of wrapping. On a phone this row is five
+   or six pills wide; wrapping it would take two or three lines out of the map,
+   which is the one thing on the screen that has to be big. */
+.filter-chips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--s1);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  /* The overflow clips at the box edge, and the chips' focus ring sits just
+     outside theirs, so the row needs a little room given back by the margin. */
+  padding: 3px 2px;
+  margin: -3px -2px;
+}
+.filter-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-open,
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.filter-open:hover,
+.chip:hover {
+  border-color: var(--ink);
+  background: var(--bg-raised);
+}
+/* Selected chips use Airbnb's quiet grey fill and doubled ink edge, so the
+   state is clear without introducing a second accent-coloured action. */
+.chip.on {
+  background: var(--bg-raised);
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+  color: var(--ink);
+}
+
+.filter-open.on {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* A button that reads as a link — used where the action is a footnote to the
+   thing beside it rather than something to aim at. */
+.linkish {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: var(--t1);
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.filter-group + .filter-group {
+  margin-top: var(--s2);
+  padding-top: var(--s2);
+  border-top: 1px solid var(--border);
+}
+
+.filter-group h3 {
+  margin: 0 0 10px;
+  font-size: var(--t2);
+  font-weight: 600;
+}
+
+/* Inside the panel there is no map to protect, so these wrap rather than
+   scroll — a hidden chip in a dialog you opened to see the chips is worse. */
+.filter-group-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+}
+
+.rec-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 540px) {
+  .rec-tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.rec-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 8px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--ink);
+  text-align: center;
+}
+
+.rec-tile:hover {
+  border-color: var(--ink);
+}
+
+.rec-tile.on {
+  border-color: var(--ink);
+  background: var(--bg-raised);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.rec-tile-icon {
+  display: inline-flex;
+  color: var(--ink);
+}
+
+.rec-tile-label {
+  font-weight: 600;
+}
+
+.filter-note {
+  margin: 10px 0 0;
+}
+
+.filter-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  margin-top: var(--s2);
+  padding-top: var(--s2);
+  border-top: 1px solid var(--border);
+}
+
+.filter-apply {
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 22px;
+  font-size: var(--t2);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filter-apply:hover {
+  filter: brightness(0.95);
+}
+
+.filter-apply:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (max-width: 720px) {
+  .filterbar {
+    padding: 12px 16px;
+  }
+
+  .filterbar-row {
+    justify-content: flex-start;
+  }
+}
+
+/* ─── Map loading capsule and zoom controls ───────────────────────────── */
+
+/* The capsule that appears while the map is fetching. Sits top-centre over the
+   map rather than in a corner: it is a statement about the whole view, and a
+   corner reads as a control you could press. */
+.map-busy {
+  position: absolute;
+  z-index: 5;
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 3px 14px rgb(0 0 0 / 22%);
+  pointer-events: none;
+}
+
+.dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dots > .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.28;
+  animation: map-busy-pulse 1.1s ease-in-out infinite;
+}
+.dots > .dot:nth-child(2) {
+  animation-delay: 0.16s;
+}
+.dots > .dot:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+@keyframes map-busy-pulse {
+  0%,
+  70%,
+  100% {
+    opacity: 0.24;
+    transform: scale(0.82);
+  }
+  35% {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+}
+
+/* Respecting a reduced-motion preference by holding the dots still rather than
+   hiding the capsule — the message still needs to arrive, it just should not
+   move. */
+@media (prefers-reduced-motion: reduce) {
+  .dots > .dot {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+/* MapLibre's default controls are small, square and hairlined. Restyled to the
+   reference's proportions: one floating white stack with a generous hit area
+   and a shadow instead of a border, which matters as much for thumbs as for
+   looks — the default 29px button is below the 44px minimum touch target. */
+.maplibregl-ctrl-group {
+  border-radius: 12px !important;
+  background: var(--surface) !important;
+  box-shadow:
+    0 2px 10px rgb(0 0 0 / 22%),
+    0 0 0 1px rgb(0 0 0 / 4%) !important;
+  overflow: hidden;
+}
+.maplibregl-ctrl-group button {
+  width: 44px !important;
+  height: 44px !important;
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--border) !important;
+}
+.maplibregl-ctrl-group button:hover {
+  background: var(--bg-raised) !important;
+}
+.maplibregl-ctrl-zoom-in,
+.maplibregl-ctrl-zoom-out {
+  position: relative;
+}
+.maplibregl-ctrl-zoom-in::after,
+.maplibregl-ctrl-zoom-out::after {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  font: 400 25px/1 var(--font-sans);
+  pointer-events: none;
+}
+.maplibregl-ctrl-zoom-in::after { content: '+'; }
+.maplibregl-ctrl-zoom-out::after { content: '−'; }
+/* At the zoom limit MapLibre sets aria-disabled and keeps the button focusable. */
+.maplibregl-ctrl-zoom-in[aria-disabled='true'],
+.maplibregl-ctrl-zoom-out[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: default;
+}
+.maplibregl-ctrl-zoom-in:active:not([aria-disabled='true']),
+.maplibregl-ctrl-zoom-out:active:not([aria-disabled='true']) {
+  transform: scale(0.95);
+}
+/* Bottom right: 16 px in from the edges (12 px on a phone). MapView sets
+   --ctrl-lift to carry the stack above a route panel docked along the bottom. */
+.maplibregl-map .maplibregl-ctrl-bottom-right {
+  bottom: var(--ctrl-lift, 0px);
+  transition: bottom 0.25s var(--ease-out);
+}
+.maplibregl-map .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group {
+  margin: 0 16px 16px 0;
+}
+@media (max-width: 719px) {
+  .maplibregl-map .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group {
+    margin: 0 12px 12px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .maplibregl-map .maplibregl-ctrl-bottom-right {
+    transition: none;
+  }
+}
+.maplibregl-ctrl-zoom-in > .maplibregl-ctrl-icon,
+.maplibregl-ctrl-zoom-out > .maplibregl-ctrl-icon {
+  background-image: none !important;
+}
+
+/* The expand button draws an inline SVG rather than MapLibre's background-image
+   icon, so it needs centring of its own: as inline content the glyph would sit
+   at the left of the block button MapLibre's stylesheet makes it. The doubled
+   class outranks that stylesheet's `.maplibregl-ctrl-group button`, which ties
+   with a single class and wins on source order. */
+.maplibregl-ctrl-group.map-expand-ctrl button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.map-expand-ctrl svg {
+  display: block;
+}
+/* The expand control stands out from the white stack: an ink button with a
+   white icon (it keeps its rounded shape on hover), and while a route is open
+   beside the list the icon itself breathes in and out. */
+.maplibregl-ctrl-group.map-expand-ctrl {
+  background: var(--ink) !important;
+}
+.maplibregl-ctrl-group.map-expand-ctrl button {
+  border-radius: inherit;
+  background: var(--ink) !important;
+  color: #fff;
+  transition: background-color 0.15s ease;
+}
+.maplibregl-ctrl-group.map-expand-ctrl button:hover {
+  background: #000 !important;
+}
+.map-expand-ctrl.invite svg {
+  animation: expand-breathe 1.6s ease-in-out infinite;
+}
+@keyframes expand-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.22);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-expand-ctrl.invite svg {
+    animation: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .map-expand-ctrl {
+    display: none;
+  }
+}
+
+/* Text for screen readers only. The capsule says "still working" visually with
+   three dots, which announces as nothing at all. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ─── Filters dialog ──────────────────────────────────────────────────── */
+
+/* The filter panel used to hang off the Filters button as a popover, which put
+   a 360px column of controls over the corner of the map and left no room for
+   anything that needs width — the height histogram in particular. It is a
+   centred dialog now. */
+
+.filter-scrim {
+  position: fixed;
+  inset: 0;
+  /* Above the sticky header and category bar (30) and the badge (40). */
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s3);
+  background: rgb(0 0 0 / 45%);
+  animation: scrim-in .2s ease both;
+}
+
+/* A flex column, which is what makes the header and footer stick: the body is
+   the only part that grows, so it is the only part that scrolls. `position:
+   sticky` would have worked too, but only by letting the scrolled content pass
+   behind two bars that then need their own opaque background to hide it. */
+.filter-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(570px, 100%);
+  max-height: 85vh;
+  overflow: hidden;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 28%);
+  animation: modal-in .26s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.filter-scrim.closing {
+  animation: scrim-out .18s ease-in both;
+}
+
+.filter-modal.closing {
+  animation: modal-out .18s ease-in both;
+}
+
+.filter-modal.entered:not(.closing) {
+  animation: none;
+}
+
+@keyframes scrim-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scrim-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(-24px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes modal-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-16px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-scrim,
+  .filter-modal,
+  .filter-scrim.closing,
+  .filter-modal.closing {
+    animation: none;
+  }
+}
+
+.filter-modal-head {
+  flex: none;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px var(--s3);
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-modal-head h2 {
+  margin: 0;
+  font-size: var(--t3);
+  font-weight: 600;
+}
+
+.filter-modal-head:has(.filter-modal-scope) {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.filter-modal-scope {
+  margin: 0;
+  font-size: var(--t1);
+  color: var(--muted);
+}
+
+.filter-modal-close {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.filter-modal-close:hover {
+  background: var(--bg-raised);
+}
+
+.filter-modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0 var(--s3);
+}
+
+/* Sections are separated by a rule that runs the width of the dialog, so their
+   padding is vertical only and the body carries the side padding. */
+.filter-modal-body .filter-group {
+  padding: var(--s3) 0;
+}
+.filter-modal-body .filter-group + .filter-group {
+  margin-top: 0;
+  padding-top: var(--s3);
+}
+
+.filter-modal-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: 12px var(--s3);
+  border-top: 1px solid var(--border);
+}
+
+/* ─── Segmented control ───────────────────────────────────────────────── */
+
+/* Filter choices: chips that wrap onto as many rows as they need, so a label
+   like "Up to 25 km" is always readable. The chosen one is filled in ink. */
+.seg {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 8px;
+}
+
+.seg-btn {
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+.seg-btn:hover {
+  border-color: var(--ink);
+}
+.seg-btn.on {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #ffffff;
+}
+@media (max-width: 559px) {
+  .seg {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ─── Height range ────────────────────────────────────────────────────── */
+
+/* The handles are 26px circles centred on the ends of the track, so they hang
+   13px past it. The padding gives them that room and — because the histogram
+   sits inside the same box — keeps every bar aligned with the piece of track
+   underneath it. */
+.range {
+  padding: 0 13px;
+}
+
+.range-hist {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 74px;
+}
+
+.range-bar {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  background: #f2f2f2;
+  border-radius: 2px 2px 0 0;
+}
+.range-bar.in {
+  background: color-mix(in srgb, var(--accent) 22%, white);
+}
+/* The routes in this bucket that pass the other filters, over the faint ghost
+   of the ones they hide. */
+.range-bar-match {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #e5e5e5;
+  border-radius: 2px 2px 0 0;
+  transition: height 150ms ease;
+}
+.range-bar.in .range-bar-match {
+  background: var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .range-bar-match { transition: none; }
+}
+
+.range-track {
+  position: relative;
+  height: 4px;
+  margin-top: 2px;
+  border-radius: 999px;
+  background: #e5e5e5;
+  cursor: pointer;
+  /* Without this a drag on a touchscreen scrolls the dialog instead of moving
+     the handle, because the browser claims the gesture before pointermove. */
+  touch-action: none;
+}
+
+.range-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.range-handle {
+  position: absolute;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 24%);
+  cursor: grab;
+  touch-action: none;
+}
+.range-handle:active {
+  cursor: grabbing;
+}
+.range-handle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.range-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.range-fields {
+  display: flex;
+  gap: var(--s2);
+  margin-top: var(--s2);
+}
+
+/* Each bound is a pill you can type into: tap it, type, Enter to apply. */
+.range-field {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  cursor: text;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.range-field:hover { border-color: var(--ink); }
+.range-field:focus-within {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.range-field.invalid {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger);
+}
+
+.range-field-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* 16px or more, or iOS zooms the page when the field is picked up. */
+.range-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  text-align: center;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Full-screen on a phone, at the same breakpoint the venue card and the GPX
+   sheet go full-bleed. A centred 570px card inside a 375px viewport is a card
+   with no margins and a scrollbar anyway, so it may as well own the screen. */
+@media (max-width: 720px) {
+  .filter-scrim {
+    padding: 0;
+  }
+  .filter-modal {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+  }
+  .filter-modal-body,
+  .filter-modal-foot {
+    padding-left: var(--s2);
+    padding-right: var(--s2);
+  }
+}
+
+/* ─── Header controls: units and menu ─────────────────────────────────── */
+
+/* The pair of round buttons at the right of the map header, and the panels
+   they drop. Both panels share every rule here — they are the same object with
+   different contents, and letting them drift apart is how a header ends up
+   looking like two people built it. */
+
+.header-controls {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The positioning parent for the panel. It has to be the individual button
+   rather than .header-controls, or right: 0 would anchor both panels to the
+   right edge of the pair and the units panel would hang off its neighbour. */
+.hdr-anchor {
+  position: relative;
+  display: flex;
+}
+
+.hdr-btn {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.hdr-btn:hover {
+  background: var(--bg-raised);
+}
+
+/* Raised while its panel is down, so the button reads as the thing the panel
+   belongs to rather than as a control the panel happens to sit under. */
+.hdr-btn.open {
+  box-shadow: var(--shadow-card);
+}
+
+.hdr-btn:focus-visible,
+.hdr-choice:focus-visible,
+.hdr-item:focus-visible,
+.hdr-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.hdr-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 10;
+  width: 304px;
+  /* Never wider than the screen it drops onto: at 375px a fixed 304 plus the
+     header's own padding would push the viewport sideways. */
+  max-width: calc(100vw - 24px);
+  background: var(--surface);
+  border: 1px solid rgb(0 0 0 / 6%);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 18%);
+  /* The menu is taller than a short laptop window in landscape, so it scrolls
+     inside itself rather than running off the bottom of the page. */
+  max-height: calc(100dvh - 96px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.hdr-panel-units {
+  max-width: calc(100vw - 84px);
+}
+
+.hdr-panel-menu {
+  width: 320px;
+}
+
+.hdr-group {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hdr-group:last-child {
+  border-bottom: none;
+}
+
+.hdr-title {
+  margin: 4px 10px 6px;
+  font-size: var(--t2);
+  font-weight: 600;
+}
+
+.hdr-note {
+  margin: 0;
+  font-size: var(--t1);
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.hdr-group > .hdr-note {
+  padding: 2px 10px 4px;
+}
+
+.hdr-group > .hdr-note + .hdr-note {
+  padding-top: 8px;
+}
+
+.hdr-choices {
+  display: flex;
+  flex-direction: column;
+}
+
+.hdr-choice,
+.hdr-item {
+  display: flex;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 9px;
+  padding: 9px 10px;
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.hdr-choice {
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hdr-item {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.hdr-item-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.hdr-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--bg-raised);
+  color: var(--accent);
+  flex: none;
+  margin-top: 1px;
+}
+
+.hdr-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.hdr-choice:hover,
+.hdr-item:hover {
+  background: var(--bg-raised);
+}
+
+/* Selected state carries both a tint and a tick. The tick alone is easy to
+   miss in a two-row list, and the tint alone reads as hover. */
+.hdr-choice.selected {
+  background: var(--bg-raised);
+}
+
+.hdr-choice.selected .hdr-choice-label {
+  font-weight: 600;
+}
+
+.hdr-choice.selected svg {
+  color: var(--accent);
+  flex: none;
+}
+
+.hdr-choice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.hdr-choice-label,
+.hdr-item-label {
+  font-size: var(--t2);
+}
+
+.hdr-link {
+  display: inline-block;
+  padding: 6px 10px 2px;
+  font-size: var(--t1);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* ─── Training panel ──────────────────────────────────────────────────── */
+
+.training-page {
+  min-height: 100dvh;
+  background: #fff;
+}
+.training-panel {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 8px 20px 40px;
+}
+
+.training-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.training-panel-head h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.training-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.training-back:hover {
+  background: var(--border);
+}
+
+.training-card {
+  margin: 24px 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 6%);
+}
+
+.training-card h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.training-goal-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.training-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  flex: none;
+}
+
+.training-goal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.training-goal-fields label {
+  font-size: var(--t2);
+  font-weight: 600;
+}
+
+.training-goal-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.training-goal-input input {
+  width: 100px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.training-goal-input input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.training-goal-input span {
+  color: var(--muted);
+  font-size: var(--t2);
+}
+
+.training-progress-track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--bg-raised);
+  overflow: hidden;
+}
+
+.training-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+
+.training-progress-label {
+  margin: 10px 0 0;
+  font-size: var(--t2);
+  color: var(--muted);
+}
+
+.training-progress-label strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.training-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  height: 140px;
+  padding-top: 8px;
+}
+
+.training-chart-col {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.training-chart-bar-wrap {
+  width: 100%;
+  height: 100px;
+  display: flex;
+  align-items: flex-end;
+  background: var(--bg-raised);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.training-chart-bar {
+  width: 100%;
+  background: var(--accent);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.4s ease;
+  min-height: 0;
+}
+
+.training-chart-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  min-height: 14px;
+}
+
+.training-chart-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.training-empty {
+  text-align: center;
+  color: var(--muted);
+}
+
+.training-empty p {
+  margin: 0 0 6px;
+}
+
+.training-sessions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.training-session {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--bg-raised);
+}
+
+.training-session > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.training-session strong {
+  font-size: var(--t2);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.training-session span {
+  font-size: var(--t1);
+  color: var(--muted);
+}
+
+.training-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  flex: none;
+}
+
+.training-delete:hover {
+  background: var(--border);
+  color: var(--danger);
+}
+
+@media (min-width: 900px) {
+  .training-panel-head,
+  .training-card {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .training-panel-head {
+    padding: 24px 0;
+  }
+}
+
+/* ─── Venue detail page ───────────────────────────────────────────────── */
+
+.venue-detail {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: #fff;
+  overflow-y: auto;
+}
+
+.venue-detail-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding: 0 24px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+.venue-detail-topbar .header-controls { margin-left: auto; }
+.venue-detail-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  cursor: pointer;
+}
+.venue-detail-back:hover { background: var(--border); }
+
+.venue-detail-content {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 40px 80px;
+}
+.venue-detail-title-row,
+.venue-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.venue-detail-title-row { margin-bottom: 20px; }
+.venue-detail-title-row h1 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.venue-detail-title-actions,
+.venue-card-actions,
+.venue-route-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.venue-detail-title-actions button,
+.venue-card-actions button,
+.venue-route-actions button,
+.venue-open-map {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.venue-detail-title-actions button:hover,
+.venue-card-actions button:hover,
+.venue-route-actions button:hover,
+.venue-open-map:hover { background: var(--bg-raised); }
+
+.venue-detail-gallery { margin-bottom: 16px; }
+.venue-detail-hero {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
+  background: var(--bg-raised);
+  border-radius: 12px;
+}
+.venue-detail-hero .card-thumb,
+.venue-detail-hero img {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+.venue-detail-gallery .photo-credit {
+  margin: 7px 0 0;
+  text-align: right;
+}
+.venue-detail-empty-photo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  aspect-ratio: 3 / 1;
+  margin-bottom: 16px;
+  padding: 24px;
+  border-radius: 12px;
+  background: #f7f7f7;
+  text-align: center;
+}
+.venue-detail-empty-photo strong { font-size: 16px; font-weight: 600; }
+.venue-detail-empty-photo p { margin: 0; color: var(--muted); font-size: 14px; }
+
+.venue-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 372px;
+  column-gap: 88px;
+  align-items: start;
+}
+.venue-detail-main { min-width: 0; }
+.venue-detail-intro,
+.venue-detail-section { padding: 32px 0; border-bottom: 1px solid var(--border); }
+.venue-detail-intro h2,
+.venue-detail-section h2 {
+  margin: 0 0 10px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.venue-detail-intro p { margin: 0; font-size: 16px; line-height: 1.5; }
+.venue-detail-section p { margin: 0 0 8px; line-height: 1.55; }
+.venue-about-copy.clamped {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+.venue-show-more {
+  padding: 4px 0;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.venue-route-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.venue-route-card { min-width: 0; padding: 14px; border: 1px solid var(--border); border-radius: 12px; }
+.venue-route-profile { overflow: hidden; margin-bottom: 12px; padding: 8px; border-radius: 12px; background: var(--bg-raised); }
+.venue-route-card h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.venue-route-card > p { margin: 0 0 6px; color: var(--muted); font-size: 13px; }
+.local-route-tag { color: var(--muted); font-size: 12px; }
+.venue-route-actions { flex-wrap: wrap; margin-top: 10px; }
+.venue-no-routes { color: var(--muted) !important; font-size: 14px; }
+
+.venue-section-heading { margin-bottom: 16px; }
+.venue-section-heading h2 { margin: 0; }
+.venue-section-heading span { color: var(--muted); font-size: 14px; }
+.nearby-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.nearby-card { display: flex; min-width: 0; flex-direction: column; gap: 4px; color: var(--ink); text-decoration: none; }
+.nearby-card .card-thumb { width: 100%; aspect-ratio: 20 / 15; margin-bottom: 5px; border-radius: 12px; }
+.nearby-card .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.nearby-card strong { overflow: hidden; font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.nearby-card > span { color: var(--muted); font-size: 13px; line-height: 1.35; }
+
+.mini-map,
+.mini-map-fallback { width: 100%; height: 380px; overflow: hidden; border-radius: 12px; background: var(--bg-raised); }
+.venue-location-section { border-bottom: none; }
+.venue-location-line { margin: 12px 0 2px !important; color: var(--muted) !important; font-size: 14px; }
+.venue-open-map { padding-left: 0; }
+
+.venue-detail-side { position: sticky; top: 24px; padding-top: 32px; }
+.venue-actions-card {
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 12%);
+  background: #fff;
+}
+.venue-actions-height { margin: 0; font-size: 16px; }
+.venue-actions-height strong { font-size: 22px; font-weight: 600; }
+.venue-actions-source { margin: 5px 0 18px; color: var(--muted); font-size: 13px; }
+.venue-primary-action,
+.venue-download-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  margin-top: 10px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+.venue-primary-action { border: none; background: var(--accent); color: #fff; }
+.venue-primary-action:hover { background: #a84424; transform: translateY(-1px); }
+.venue-download-action { border: 1px solid var(--ink); background: #fff; }
+.venue-download-action:hover { background: var(--bg-raised); }
+.venue-card-actions { justify-content: space-around; margin-top: 10px; }
+.venue-report { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 20px 0 24px; color: var(--ink); font-size: 13px; text-decoration: underline; }
+.venue-mobile-bar,
+.venue-mobile-secondary-actions { display: none; }
+
+@media (max-width: 899px) {
+  .venue-detail-topbar { padding: 0 16px; }
+  .venue-detail-content { padding: 20px 16px 120px; }
+  .venue-detail-title-row { align-items: flex-start; }
+  .venue-detail-title-row h1 { min-width: 0; font-size: 24px; }
+  .venue-detail-title-actions { flex: none; flex-wrap: nowrap; justify-content: flex-end; }
+  .venue-detail-title-actions button {
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--bg-raised);
+    text-decoration: none;
+  }
+  .venue-detail-title-actions .venue-action-label { display: none; }
+  .venue-detail-hero,
+  .venue-detail-empty-photo { aspect-ratio: 4 / 3; }
+  .venue-detail-layout { display: block; }
+  .venue-detail-side { display: none; }
+  .venue-mobile-secondary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 24px;
+  }
+  .venue-mobile-secondary-actions button,
+  .venue-mobile-secondary-actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--ink);
+    font: 600 13px/1 var(--font-sans);
+    text-decoration: none;
+  }
+  .venue-route-grid { grid-template-columns: minmax(0, 1fr); }
+  .nearby-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .venue-mobile-bar {
+    position: fixed;
+    z-index: 22;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 16px;
+    background: #fff;
+    border-top: 1px solid var(--border);
+  }
+  .venue-mobile-bar p { margin: 0; font-size: 14px; }
+  .venue-mobile-bar strong { display: block; font-size: 18px; }
+  .venue-mobile-bar button { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 20px; border: none; border-radius: 8px; background: var(--accent); color: #fff; font-size: 15px; font-weight: 600; }
+}
+
