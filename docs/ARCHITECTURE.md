@@ -86,3 +86,23 @@ Le dimensioni delle colonne sono governate da **una variabile**, non da numeri d
 5. Non dichiarare "testati iOS Safari" se è stata eseguita solo la suite WebKit.
 
 **Debito tecnico residuale separato:** eliminazione progressiva delle regole morte dentro il corposo `design.css` e `styles.css`, da guidare con analisi delle dipendenze e test browser. Non rimuovere funzionalità che ancora vi si appoggiano.
+
+## Diagnosi del contenitore rifugio (screenshot 27 novembre 2026)
+
+L'elemento `AlpineExplorePage > main.cb-explore-detail-shell` veniva
+definito due volte, nei file `locationProfile.css` e `alpineExplore.css`.
+La definizione successiva imponeva `max-width:1300px; margin:auto;
+padding:20px clamp(16px,3vw,40px) 65px`. La griglia figlia 42/58
+occupava quindi solo l'antenato ristretto; `width:100%` non significava
+100% della viewport.
+
+**Contratto corretto:** `src/alpineExplore.css` è l'unico proprietario
+di `.cb-explore-detail-shell`: `width:100%`, `max-width:none`,
+`padding:0`, `margin:0`. I margini editoriali appartengono a
+`.cb-location-content`. In `DetailLayout` il breadcrumb è un figlio
+della colonna sinistra, non un fratello della griglia: non genera una
+riga sopra la mappa.
+
+Il test Playwright `permalink rifugio: header e griglia flush` misura
+le bounding box effettive a 1664/1280/390 px e segnala ogni antenato
+che restringe il contenuto, senza ricorrere a `overflow-x:hidden`.

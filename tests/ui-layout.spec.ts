@@ -325,3 +325,41 @@ test('scheda luogo: gli strumenti dei livelli non si sovrappongono a note flotta
   });
   expect(positions.layerTop).toBeGreaterThan(positions.headingBottom+8);
 });
+
+test('permalink rifugio: header e griglia flush alla viewport, breadcrumb non sposta la mappa',async({page})=>{
+  test.setTimeout(100_000);
+  for(const width of [1664,1280,390]){
+    await page.setViewportSize({width,height:914});
+    await page.goto('/rifugi/osm-w-39173072/');
+    await expect(page.locator('.cb-location-profile h1')).toContainText('Karlsbader Hütte',{timeout:40000});
+    await expect(page.locator('.cb-location-content > .cb-location-back')).toBeVisible();
+    const layout=await page.evaluate(()=>{
+      const selectors=['.cb-explore-page','.site-header','.site-header-row',
+        '.cb-explore-detail-shell','.cb-location-profile','.cb-location-body',
+        '.cb-location-content','.cb-location-sidebar'];
+      const boxes=Object.fromEntries(selectors.map(selector=>{
+        const el=document.querySelector(selector)!;
+        const r=el.getBoundingClientRect(),style=getComputedStyle(el);
+        return [selector,{left:r.left,right:r.right,top:r.top,width:r.width,
+          maxWidth:style.maxWidth,paddingLeft:style.paddingLeft,marginLeft:style.marginLeft}];
+      }));
+      return {boxes,viewport:innerWidth,scrollWidth:document.documentElement.scrollWidth};
+    });
+    const r=(selector:string)=>layout.boxes[selector] as {left:number;right:number;top:number;width:number;maxWidth:string;paddingLeft:string};
+    for(const selector of ['.cb-explore-page','.site-header','.site-header-row',
+      '.cb-explore-detail-shell','.cb-location-profile','.cb-location-body']){
+      expect(r(selector).left,JSON.stringify({width,selector,layout})).toBeGreaterThanOrEqual(-2);
+      expect(r(selector).left,JSON.stringify({width,selector,layout})).toBeLessThanOrEqual(2);
+      expect(r(selector).right,JSON.stringify({width,selector,layout})).toBeGreaterThanOrEqual(width-2);
+      expect(r(selector).right,JSON.stringify({width,selector,layout})).toBeLessThanOrEqual(width+2);
+    }
+    expect(r('.cb-explore-detail-shell').maxWidth).toBe('none');
+    expect(r('.cb-explore-detail-shell').paddingLeft).toBe('0px');
+    expect(layout.scrollWidth,JSON.stringify(layout)).toBeLessThanOrEqual(width+2);
+    expect(Math.abs(r('.cb-location-sidebar').top-r('.cb-location-body').top)).toBeLessThanOrEqual(2);
+    if(width>900){
+      expect(Math.abs(r('.cb-location-content').width/width-.42)).toBeLessThan(.03);
+      expect(Math.abs(r('.cb-location-sidebar').width/width-.58)).toBeLessThan(.03);
+    }else expect(r('.cb-location-sidebar').width).toBeGreaterThanOrEqual(width-2);
+  }
+});
