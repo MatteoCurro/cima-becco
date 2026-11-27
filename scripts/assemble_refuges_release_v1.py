@@ -217,6 +217,10 @@ def main():
     args=p.parse_args()
     osm,osm_report=build_public(args.stage,load(args.quarantine))
     release,report,review=compile_release(osm,load(args.cai))
+    release["quarantinedOsmIds"] = sorted({
+        x["sourceKey"].removeprefix("osm:").replace(":", "/", 1)
+        for x in osm_report["quarantine"]
+    })
     write(args.out,release)
     write(args.report/"report.json",{**osm_report,**report})
     write(args.report/"match-review.json",review)
