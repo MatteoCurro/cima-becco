@@ -1,0 +1,397 @@
+{
+  "version": 1,
+  "purpose": "Cima Becco canonical metadata registry (non-UI, experimental)",
+  "rules": {
+    "missing": "null, never zero or false",
+    "sourceId": "stable internal id independent from slug",
+    "licensing": "field-level provenance; photo-level attribution",
+    "inferredEquipment": "forbidden",
+    "inferredSafety": "forbidden",
+    "gradeConversion": "preserve original grade and grading system, derived conversion marked",
+    "status": [
+      "raw",
+      "linked",
+      "enriched",
+      "editorially_reviewed"
+    ],
+    "routeTypeDistinction": [
+      "single_pitch",
+      "multi_pitch",
+      "trad",
+      "sport",
+      "mixed",
+      "boulder"
+    ],
+    "linkedRelations": [
+      "located_in",
+      "part_of",
+      "starts_at",
+      "ends_at",
+      "passes_near",
+      "passes_through",
+      "ascends_to",
+      "was_opened_by",
+      "managed_by",
+      "requires_access_through",
+      "restricted_by"
+    ]
+  },
+  "fields": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "source": "explicit"
+    },
+    "aliases": {
+      "type": "string[]",
+      "source": "explicit"
+    },
+    "geolocation": {
+      "type": "GeoPoint|null",
+      "source": "geodata"
+    },
+    "elevationM": {
+      "type": "number|null",
+      "source": "reported|DEM_estimated"
+    },
+    "description": {
+      "type": "string|null",
+      "source": "licensed_or_original"
+    },
+    "grade": {
+      "type": "Grade|null",
+      "source": "explicit_only"
+    },
+    "gradeMandatory": {
+      "type": "Grade|null",
+      "source": "explicit_only"
+    },
+    "pitchesCount": {
+      "type": "integer|null",
+      "source": "explicit_only"
+    },
+    "boltsCount": {
+      "type": "integer|null",
+      "source": "explicit_only",
+      "definition": "protezione fissa intermedia riportata dalla fonte; non includere la sosta salvo indicazione"
+    },
+    "quickdrawsRecommended": {
+      "type": "integer|null",
+      "source": "explicit_only",
+      "mayInferFrom": [],
+      "warning": "NEVER derive from boltsCount"
+    },
+    "boltingType": {
+      "type": "enum|null",
+      "values": [
+        "bolts",
+        "glue_in",
+        "pitons",
+        "trad",
+        "mixed",
+        "none",
+        "unknown"
+      ],
+      "source": "explicit_only"
+    },
+    "anchorType": {
+      "type": "string|null",
+      "source": "explicit_only"
+    },
+    "ropeLengthRecommendedM": {
+      "type": "number|null",
+      "source": "explicit_only"
+    },
+    "routeLengthM": {
+      "type": "number|null",
+      "source": "explicit_only"
+    },
+    "pitchLengthM": {
+      "type": "number|null",
+      "source": "explicit_only"
+    },
+    "gearRequired": {
+      "type": "string[]|null",
+      "source": "explicit_only"
+    },
+    "restriction": {
+      "type": "Restrictions[]",
+      "source": "official_or_documented",
+      "needsValidDate": true
+    },
+    "weather": {
+      "type": "TimeSeries|null",
+      "source": "meteo_api",
+      "mustHave": "timestamp,units,altitude"
+    },
+    "photo": {
+      "type": "Media[]",
+      "source": "licensed",
+      "mustHave": "author,source,licence"
+    },
+    "climbingRock": {
+      "type": "string|null",
+      "source": "OSM|openbeta|verified"
+    },
+    "orientation": {
+      "type": "string|null",
+      "source": "OSM|verified"
+    }
+  },
+  "entityFields": {
+    "municipality": [
+      "name",
+      "aliases",
+      "geolocation",
+      "elevationM",
+      "population",
+      "populationYear",
+      "municipalityCode",
+      "mayor",
+      "mayorMandate",
+      "history",
+      "toponymy",
+      "coatOfArms",
+      "weather",
+      "climate",
+      "media",
+      "nearbyPlaces"
+    ],
+    "hamlet": [
+      "name",
+      "aliases",
+      "geolocation",
+      "municipalityId",
+      "elevationM",
+      "population",
+      "populationYear",
+      "history",
+      "nearbyPlaces",
+      "weather"
+    ],
+    "peak": [
+      "name",
+      "aliases",
+      "geolocation",
+      "elevationM",
+      "prominenceM",
+      "mountainGroup",
+      "firstAscent",
+      "history",
+      "nearbyRoutes",
+      "media"
+    ],
+    "hiking_trail": [
+      "name",
+      "trailRef",
+      "operator",
+      "caiDifficulty",
+      "sacDifficulty",
+      "status",
+      "sourceId",
+      "linkedPlaces"
+    ],
+    "hike": [
+      "name",
+      "distanceM",
+      "gainM",
+      "lossM",
+      "difficulty",
+      "from",
+      "to",
+      "duration",
+      "elevationRange",
+      "linkedTrails",
+      "nearbyPlaces"
+    ],
+    "long_trek": [
+      "name",
+      "operator",
+      "history",
+      "stages",
+      "variants",
+      "officialPage",
+      "estimatedTotalDays",
+      "regions",
+      "relatedHuts"
+    ],
+    "trek_stage": [
+      "trekId",
+      "stageNumber",
+      "from",
+      "to",
+      "distanceM",
+      "gainM",
+      "lossM",
+      "duration",
+      "huts",
+      "variants",
+      "verifiedSource"
+    ],
+    "hut": [
+      "name",
+      "geolocation",
+      "elevationM",
+      "owner",
+      "manager",
+      "openingSeason",
+      "bedsCount",
+      "bookingInfo",
+      "services",
+      "approachTrails",
+      "webcams",
+      "history"
+    ],
+    "bivouac": [
+      "name",
+      "geolocation",
+      "elevationM",
+      "type",
+      "owner",
+      "bedsCount",
+      "equipment",
+      "regulations",
+      "approachTrails"
+    ],
+    "climbing_area": [
+      "name",
+      "geolocation",
+      "crags",
+      "history",
+      "restrictions"
+    ],
+    "crag": [
+      "name",
+      "aliases",
+      "geolocation",
+      "elevationM",
+      "climbingRock",
+      "orientation",
+      "rockQuality",
+      "approach",
+      "parking",
+      "routesCount",
+      "gradeMin",
+      "gradeMax",
+      "sectors",
+      "restrictions",
+      "season",
+      "photos"
+    ],
+    "sector": [
+      "name",
+      "cragId",
+      "geolocation",
+      "orientation",
+      "rock",
+      "shade",
+      "routes",
+      "restrictions"
+    ],
+    "climbing_route": [
+      "name",
+      "cragId",
+      "sectorId",
+      "routeLengthM",
+      "grade",
+      "gradeMandatory",
+      "style",
+      "boltingType",
+      "boltsCount",
+      "quickdrawsRecommended",
+      "anchorType",
+      "ropeLengthRecommendedM",
+      "gearRequired",
+      "pitchesCount",
+      "pitches",
+      "firstAscent",
+      "firstFreeAscent",
+      "reboltedAt",
+      "descent",
+      "restriction",
+      "sources"
+    ],
+    "climbing_pitch": [
+      "routeId",
+      "number",
+      "pitchLengthM",
+      "grade",
+      "boltsCount",
+      "quickdrawsRecommended",
+      "gearRequired",
+      "anchorType",
+      "notes"
+    ],
+    "boulder": [
+      "name",
+      "areaId",
+      "blockId",
+      "grade",
+      "line",
+      "heightM",
+      "landingZone",
+      "crashPads",
+      "sources"
+    ],
+    "climbing_gym": [
+      "name",
+      "geolocation",
+      "website",
+      "openingHours",
+      "admissionPrices",
+      "disciplines",
+      "wallHeight",
+      "autobelay",
+      "boards",
+      "courses",
+      "equipmentRental",
+      "accessibility"
+    ],
+    "alert": [
+      "subjectId",
+      "kind",
+      "description",
+      "source",
+      "validFrom",
+      "validUntil",
+      "lastCheckedAt"
+    ],
+    "person": [
+      "name",
+      "birth",
+      "death",
+      "mountainProfession",
+      "relatedPlaces",
+      "firstAscents",
+      "documentarySources"
+    ],
+    "webcam": [
+      "location",
+      "cameraDirection",
+      "operator",
+      "mediaUrl",
+      "updatedAt",
+      "licence",
+      "liveStatus"
+    ]
+  },
+  "sourceMapping": {
+    "OSM": {
+      "grade": "climbing:grade:french|climbing:grade:uiaa|climbing:grade:font",
+      "pitchesCount": "climbing:pitches",
+      "boltsCount": "climbing:bolts (numeric only)",
+      "routeLengthM": "climbing:length",
+      "orientation": "climbing:orientation",
+      "rock": "climbing:rock",
+      "quickdrawsRecommended": null
+    },
+    "OpenBeta": {
+      "grade": "grades.french|grades.yds|grades.vscale",
+      "boltsCount": "boltsCount",
+      "routeLengthM": "length",
+      "firstAscent": "fa",
+      "quickdrawsRecommended": null,
+      "pitchesCount": null
+    }
+  }
+}
