@@ -4,6 +4,8 @@ on:
     branches: [feat/bivouacs-shelters-canonical-import-v2]
     paths:
       - .github/workflows/verify-block2-release-once.yml
+      - src/lib/refugeEditorial.test.tsx
+      - src/components/RefugeGallery.tsx
 permissions:
   contents: read
 jobs:
