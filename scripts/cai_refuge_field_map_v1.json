@@ -1,0 +1,402 @@
+{
+  "version": "1.0",
+  "source": "cai_refuges",
+  "scope": "mapping planning / local fixture only, no live fetch, no republication",
+  "policy": "Only explicit allowlisted mappings; unknown fields retained in unresolved; privacy/internal fields filtered. Field shape observed in PR8: {name,value,data,updated_at}. Rules are candidates until per-field audit.",
+  "sensitivePrefixes": [
+    "taxCode_",
+    "pec_",
+    "contract_fee_",
+    "contract_start_date_",
+    "contract_end_date_",
+    "user_",
+    "role_contact"
+  ],
+  "sensitiveExact": [
+    "id",
+    "user_id",
+    "branch_id"
+  ],
+  "fields": [
+    {
+      "sourceField": "posti_totali_service",
+      "target": "bedsTotal",
+      "converter": "positive_int",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "posti_letto_invernali_service",
+      "target": "bedsWinter",
+      "converter": "nonnegative_int",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "posti_letto_service",
+      "target": "bedsTotal",
+      "converter": "positive_int",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "openingTime_contact",
+      "target": "openingHours",
+      "converter": "text",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "webAddress_contact",
+      "target": "website",
+      "converter": "https_url",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "webSite_management_property",
+      "target": "website",
+      "converter": "https_url",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "webSite_property",
+      "target": "website",
+      "converter": "https_url",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "fixedPhone_contact",
+      "target": "phone",
+      "converter": "text",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "emailAddress",
+      "target": "email",
+      "converter": "email",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "name_property",
+      "target": "owner",
+      "converter": "text",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "name_management_property",
+      "target": "manager",
+      "converter": "text",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "altitude_geo",
+      "target": "elevationM",
+      "converter": "positive_int",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "alias",
+      "target": "aliases",
+      "converter": "text",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "massif_geo",
+      "target": "mountainGroupId",
+      "converter": "name_candidate_not_id",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges",
+      "notes": "Nome da riconciliare con ID canonico, mai trasformare direttamente"
+    },
+    {
+      "sourceField": "municipality_geo",
+      "target": "municipalityId",
+      "converter": "name_candidate_not_id",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges",
+      "notes": "Nome da riconciliare con ID canonico, mai trasformare direttamente"
+    },
+    {
+      "sourceField": "locality_geo",
+      "target": "localityId",
+      "converter": "name_candidate_not_id",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges",
+      "notes": "Nome da riconciliare con ID canonico, mai trasformare direttamente"
+    },
+    {
+      "sourceField": "description_geo",
+      "target": "description",
+      "converter": "source_text_with_rights_review",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "wifi_service",
+      "target": "wifi",
+      "converter": "reported_bool",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "pagamento_pos_service",
+      "target": "cardPayments",
+      "converter": "reported_bool",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "docce_service",
+      "target": "showers",
+      "converter": "reported_bool",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "elettricita_service",
+      "target": "electricity",
+      "converter": "reported_bool",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "ristorante_service",
+      "target": "meals",
+      "converter": "reported_bool",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "acqua_in_rifugio_service",
+      "target": "drinkingWater",
+      "converter": "water_reported_not_potability",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges",
+      "notes": "Dichiarazione servizio acqua, NON attesta potabilità"
+    },
+    {
+      "sourceField": "accesso_alla_cucina_service",
+      "target": "kitchen",
+      "converter": "reported_bool",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "ammissibilita_animali_domestici_service",
+      "target": "pets",
+      "converter": "reported_bool",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "accessibilita_ai_disabili_service",
+      "target": "accessibility",
+      "converter": "reported_bool",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "defibrillatore_service",
+      "target": "defibrillator",
+      "converter": "reported_bool",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "buildYear_certification",
+      "target": "yearBuilt",
+      "converter": "year",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "rebuildYear_certification",
+      "target": "yearRebuilt",
+      "converter": "year",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "acqua_esterno_service",
+      "target": "outsideWater",
+      "converter": "water_reported_not_potability",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "segnale_gsm_service",
+      "target": "mobileSignal",
+      "converter": "reported_bool",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "camerate_superiore_4_posti_service",
+      "target": "dormitories",
+      "converter": "reported_bool",
+      "canonicalStatus": "mapped_to_existing_registry",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "posti_letto_gestore_service",
+      "target": "managerBeds",
+      "converter": "nonnegative_int",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "servizi_igienici_per_disabili_service",
+      "target": "accessibleToilets",
+      "converter": "reported_bool",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "acqua_calda_service",
+      "target": "hotWater",
+      "converter": "reported_bool",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "vendita_sacco_lenzuolo_service",
+      "target": "sleepingBagLiner",
+      "converter": "reported_bool",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "iso14001_certification",
+      "target": "iso14001",
+      "converter": "reported_bool",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "photovoltaic_certification",
+      "target": "solarPower",
+      "converter": "reported_bool",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "powerGenerator_certification",
+      "target": "generatorPower",
+      "converter": "reported_bool",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "hydroelectric_certification",
+      "target": "hydropower",
+      "converter": "reported_bool",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "water_certification_certification",
+      "target": "waterCertification",
+      "converter": "text",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "self_management_property",
+      "target": "selfManaged",
+      "converter": "reported_bool",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "protected_area_geo",
+      "target": "protectedAreaName",
+      "converter": "name_candidate_not_id",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "valley_geo",
+      "target": "valleyName",
+      "converter": "name_candidate_not_id",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "region_geo",
+      "target": "regionReported",
+      "converter": "text",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "province_geo",
+      "target": "provinceReported",
+      "converter": "text",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    },
+    {
+      "sourceField": "shelter_cin",
+      "target": "hospitalityRegistrationId",
+      "converter": "text",
+      "canonicalStatus": "extension_requires_bibbia_review",
+      "publicationStatus": "blocked_pending_rights_and_identity",
+      "source": "cai_refuges"
+    }
+  ]
+}
