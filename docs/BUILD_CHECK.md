@@ -1,6 +1,6 @@
 # Cima Becco — Verifica compilazione
 
-Verificato da GitHub Actions su commit: `ec45255`
+Verificato da GitHub Actions su commit: `cf3bffc`
 
 - installazione npm: **0**
 - TypeScript: **2**
