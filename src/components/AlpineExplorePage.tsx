@@ -4,8 +4,9 @@ import { AlpinePlaceVisual } from './AlpinePlaceVisual';
 import { AlpinePlaceIcon } from './AlpinePlaceIcon';
 import { PlaceDetail } from './AlpineAtlasPage';
 import { SiteFooter, SiteHeader } from './SiteChrome';
-import { loadAlpinePlaces, type AlpinePlace } from '../lib/alpinePlaces';
+import { alpinePlaceLink, loadAlpinePlaces, type AlpinePlace } from '../lib/alpinePlaces';
 import { usePageTitle } from '../lib/pageTitle';
+import { ExploreNavigation } from './ExploreNavigation';
 import '../alpineExplore.css';
 
 type Section = 'rifugi' | 'bivacchi' | 'paesi';
@@ -15,7 +16,6 @@ const CONFIG: Record<Section,{kind:AlpinePlace['kind'];title:string;lead:string;
   bivacchi:{kind:'bivacco',title:'BIVACCHI.',lead:'Pochi comfort e molta montagna. Posizione, accesso dichiarato e sentieri: le informazioni che contano.',kicker:'RIPARI LIBERI · QUOTA',singular:'bivacco'},
   paesi:{kind:'borgo',title:'PAESI.',lead:'Le avventure partono da un posto preciso. Trova la località da cui esplorare i sentieri della zona.',kicker:'LOCALITÀ · PUNTI DI PARTENZA',singular:'paese'},
 };
-const SECTIONS:Section[]=['rifugi','bivacchi','paesi'];
 function fromHash(){
   const match=/^#(rifugi|bivacchi|paesi)(?:\/([^/?]+))?/.exec(window.location.hash);
   if(match)return {section:match[1] as Section,slug:match[2]||null};
@@ -73,7 +73,7 @@ export function AlpineExplorePage(){
   useEffect(()=>{setLimit(24);setSelected(null);},[query,sort,onlyPhoto,onlyContacts]);
   const onSelect=(p:AlpinePlace)=>{setSelected(p.slug);setMobileTab('map');};
   const count=filtered.length.toLocaleString('it-IT');
-  const detailHref=(p:AlpinePlace)=>import.meta.env.BASE_URL+(nav.section==='paesi'?'borghi':nav.section)+'/'+encodeURIComponent(p.slug)+'/';
+  const detailHref=(p:AlpinePlace)=>alpinePlaceLink(p);
   return <div className="cb-explore-page">
     {nav.slug ? <>
       <SiteHeader sticky/>
@@ -83,32 +83,22 @@ export function AlpineExplorePage(){
       </main>
     </> : <div className="cb-explore-screen">
       <SiteHeader sticky/>
-      <div className="cb-explore-overview">
-        <div className="cb-explore-overview-inner">
-          <div className="cb-explore-heading">
-            <h1>{config.title}</h1>
-            <p>{config.lead}</p>
-          </div>
-          <div className="cb-explore-count"><strong>{loaded?places.length.toLocaleString('it-IT'):'…'}</strong><span>LUOGHI IN ARCHIVIO</span></div>
-        </div>
-        <nav className="cb-explore-categories" aria-label="Categorie da esplorare">
-          <a href="#routes">Sentieri</a><a href="#map">Cime</a>
-          {SECTIONS.map(key=><a key={key} href={'#'+key} aria-current={nav.section===key?'page':undefined}><AlpinePlaceIcon kind={CONFIG[key].kind} size={18}/>{key==='paesi'?'Paesi':key==='rifugi'?'Rifugi':'Bivacchi'}</a>)}
-        </nav>
-      </div>
+      <ExploreNavigation active={nav.section}>
+        <button type="button" className={onlyPhoto?'cb-facet-active':''} aria-pressed={onlyPhoto} onClick={()=>setOnlyPhoto(v=>!v)}>Con foto</button>
+        {nav.section==='rifugi'&&<button type="button" className={onlyContacts?'cb-facet-active':''} aria-pressed={onlyContacts} onClick={()=>setOnlyContacts(v=>!v)}>Con recapiti</button>}
+        <label className="cb-browse-sort">Ordina
+          <select value={sort} onChange={event=>setSort(event.target.value as Sort)}>
+            <option value="richness">Più documentati</option><option value="altitude">Quota più alta</option><option value="name">Nome A–Z</option>
+          </select>
+        </label>
+        <span className="cb-browse-count">{loaded?count:'…'} {nav.section}</span>
+      </ExploreNavigation>
       <main className={'cb-explore-workspace cb-explore-mobile-'+mobileTab}>
         <section className="cb-explore-list" aria-label="Elenco dei luoghi">
           <div className="cb-explore-list-head">
             <label className="cb-explore-search"><span>Cerca per nome</span>
               <input type="search" placeholder={'Cerca un '+config.singular+'…'} value={query} onChange={e=>setQuery(e.target.value)} />
             </label>
-            <div className="cb-explore-filters">
-              <button type="button" className={onlyPhoto?'active':''} aria-pressed={onlyPhoto} onClick={()=>setOnlyPhoto(v=>!v)}>Con foto</button>
-              {nav.section==='rifugi'&&<button type="button" className={onlyContacts?'active':''} aria-pressed={onlyContacts} onClick={()=>setOnlyContacts(v=>!v)}>Con recapiti</button>}
-              <label>Ordina <select value={sort} onChange={e=>setSort(e.target.value as Sort)}>
-                <option value="richness">Più documentati</option><option value="altitude">Quota più alta</option><option value="name">Nome A–Z</option>
-              </select></label>
-            </div>
           </div>
           <div className="cb-explore-result-header"><h2>{loaded?count:'…'} {nav.section} <span>in elenco</span></h2>
             <p>Seleziona una scheda per individuarla sulla mappa, poi apri il dettaglio.</p>

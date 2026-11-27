@@ -28,6 +28,7 @@ import { routeEstimateS } from '../lib/routeTime';
 import { DURATION_UNIT_S, distanceKind, durationKind, heightKind } from '../lib/rangeScale';
 import { ValueRange } from './ValueRange';
 import { VENUE_GLYPH_PATH } from '../lib/venueGlyphs';
+import { ExploreNavigation } from './ExploreNavigation';
 
 export type BrowseMode = 'climbs' | 'routes';
 
@@ -156,83 +157,30 @@ function CategoryBarInner({
     id === 'device' &&
     routeFilters.category !== id &&
     filterRoutes(routes, { ...NO_ROUTE_FILTERS, category: id }, bookmarks).length === 0;
-  const routeSlots = ROUTE_CATEGORIES.filter((category) => !hiddenRouteCategory(category.id)).length;
-  // All, one per type, With photos, and Saved once something is hearted.
-  const climbSlots = 2 + climbProps.types.length + (climbProps.savedCount > 0 || climbProps.filters.savedOnly ? 1 : 0);
 
-  return (
-    <div className="filterbar">
-      {/* One slot count for both modes, so the centred row is the same width
-          in Climbs and Routes and nothing shifts when you switch. */}
-      <div className="filterbar-row" style={{ '--category-slots': Math.max(routeSlots, climbSlots) } as React.CSSProperties}>
-        <div className="mode-switch" role="tablist" aria-label="Browse">
-          {(['climbs', 'routes'] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              role="tab"
-              aria-selected={mode === value}
-              className={`mode-tab${mode === value ? ' on' : ''}`}
-              onClick={() => onModeChange(value)}
-            >
-              {value === 'climbs' ? 'Cime' : 'Percorsi'}
-            </button>
-          ))}
-          <span className={`mode-thumb ${mode}`} aria-hidden="true" />
-        </div>
-
-        <span className="filterbar-divider" aria-hidden="true" />
-
-        {mode === 'climbs' ? (
-          <ClimbCategories {...climbProps} />
-        ) : (
-          <>
-            <div className="categories" role="tablist" aria-label="Route type">
-              {ROUTE_CATEGORIES.map((category) => {
-                if (hiddenRouteCategory(category.id)) return null;
-                const active = routeFilters.category === category.id;
-                // Saved and on-device routes can be anywhere; the list shows them all.
-                const pool = category.id === 'device' || category.id === 'saved' ? routes : routePool;
-                const count = filterRoutes(pool, { ...NO_ROUTE_FILTERS, category: category.id }, bookmarks).length;
-                return (
-                  <CategoryButton
-                    key={category.id}
-                    id={category.id}
-                    label={category.label}
-                    shortLabel={category.shortLabel}
-                    active={active}
-                    unavailable={!active && count === 0 && category.id !== 'saved'}
-                    onClick={() => onRouteFiltersChange({ ...routeFilters, category: category.id as RouteCategory })}
-                  />
-                );
-              })}
-            </div>
-            <button
-              type="button"
-              ref={routeOpenerRef}
-              className={`filter-open${routeFilterCount > 0 ? ' on' : ''}`}
-              aria-haspopup="dialog"
-              onClick={() => setRouteModalOpen(true)}
-            >
-              <SlidersIcon />
-              <span className="filter-open-label">Filters</span>
-              {routeFilterCount > 0 && <span className="filter-badge">{routeFilterCount}</span>}
-            </button>
-            {routeModalOpen && (
-              <RouteFilterModal
-                routes={routePool}
-                scope={routePool === routes ? 'everywhere' : 'in this area'}
-                filters={routeFilters}
-                onChange={onRouteFiltersChange}
-                onClose={() => setRouteModalOpen(false)}
-                returnFocusTo={routeOpenerRef}
-              />
-            )}
-          </>
-        )}
+  return <ExploreNavigation active={mode==='climbs'?'peaks':'routes'} onModeChange={value=>onModeChange(value==='peaks'?'climbs':'routes')}>
+    {mode==='climbs' ? <ClimbCategories {...climbProps}/> : <>
+      <div className="categories" role="group" aria-label="Tipologia di sentiero">
+        {ROUTE_CATEGORIES.map(category=>{
+          if(hiddenRouteCategory(category.id))return null;
+          const active=routeFilters.category===category.id;
+          const pool=category.id==='device'||category.id==='saved'?routes:routePool;
+          const count=filterRoutes(pool,{...NO_ROUTE_FILTERS,category:category.id},bookmarks).length;
+          return <CategoryButton key={category.id} id={category.id} label={category.label} shortLabel={category.shortLabel}
+            active={active} unavailable={!active && count===0 && category.id!=='saved'}
+            onClick={()=>onRouteFiltersChange({...routeFilters,category:category.id as RouteCategory})}/>;
+        })}
       </div>
-    </div>
-  );
+      <button type="button" ref={routeOpenerRef} className={`filter-open${routeFilterCount>0?' on':''}`}
+        aria-haspopup="dialog" onClick={()=>setRouteModalOpen(true)}>
+        <SlidersIcon/><span className="filter-open-label">Filtri</span>
+        {routeFilterCount>0&&<span className="filter-badge">{routeFilterCount}</span>}
+      </button>
+      {routeModalOpen&&<RouteFilterModal routes={routePool} scope={routePool===routes?'everywhere':'in this area'}
+        filters={routeFilters} onChange={onRouteFiltersChange} onClose={()=>setRouteModalOpen(false)}
+        returnFocusTo={routeOpenerRef}/>}
+    </>}
+  </ExploreNavigation>;
 }
 
 /**
