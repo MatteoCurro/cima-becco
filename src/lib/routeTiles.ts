@@ -66,7 +66,10 @@ function intersects(tile: RouteTile, view: Bounds): boolean {
 
 async function loadTile(tile: RouteTile): Promise<Route[]> {
   const chunks: Route[][] = [];
-  for (const file of tile.files) chunks.push(await tileRoutes(file));
+  // Due file in parallelo: veloce anche su reti mobili senza raffiche inutili.
+  for (let i = 0; i < tile.files.length; i += 2) {
+    chunks.push(...(await Promise.all(tile.files.slice(i, i + 2).map(tileRoutes))));
+  }
   return chunks.flat();
 }
 
