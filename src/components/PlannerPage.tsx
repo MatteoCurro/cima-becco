@@ -55,7 +55,7 @@ export function PlannerPage() {
       center: INITIAL_CENTER,
       zoom: 5.7,
       minZoom: 3,
-      attributionControl: true,
+      attributionControl: { compact: true },
     });
     map.current = instance;
     instance.addControl(new NavigationControl({ showCompass: true }), 'top-right');
