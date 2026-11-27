@@ -192,6 +192,11 @@ DAIT_SURNAME = ("cognome",)
 DAIT_NAME = ("nome",)
 DAIT_ROLE = ("carica", "carica ricoperta", "descrizione carica", "funzione", "qualifica")
 DAIT_ELECTION = ("data elezione", "data di elezione", "eletto il")
+DAIT_OFFICE_START = ("data entrata in carica",)
+DAIT_REGION_CODE = ("codice regione",)
+DAIT_PROVINCE_SIGLA = ("sigla provincia",)
+DAIT_PROVINCE_CODE = ("codice provincia",)
+DAIT_MUNICIPAL_NAME = ("denominazione comune",)
 
 def rows_istat(raw):
     matrices = xlsx_matrices(raw) if raw[:2] == b"PK" else csv_matrix(raw)
@@ -236,12 +241,15 @@ def municipality(row, cols, retrieved_at):
     for key, value, unit in values:
         if value is not None:
             facts[key] = fact(value, source_id, ISTAT_URL, unit=unit, as_of=retrieved_at)
+    region_code = field(row, cols, "codice regione")
+    province_sigla = field(row, cols, "sigla automobilistica")
     return {
         "id": "municipality:" + str(uuid5(NAMESPACE, "IT/ISTAT/" + code)),
         "kind": "municipality", "subtype": "italian_municipality",
         "name": name, "slug": slugify(name), "slugAliases": [],
         "sourceIds": {"istat": code}, "geo": {"point": None, "area": None},
         "administrativeHierarchy": {"countryCode": "IT", "region": region, "province": province,
+                                    "regionCodeISTAT": region_code, "provinceAbbreviation": province_sigla,
                                     "municipalityCodeISTAT": code},
         "facts": facts, "factsAlternatives": [], "relations": [], "media": [],
         "aliases": [], "editorialStatus": "raw",
@@ -260,48 +268,108 @@ def valid_date(value):
     return None
 
 def attach_mayors(entities, rows, cols, retrieved_at):
+    """Build an audited DAIT->ISTAT crosswalk; DAIT codice_comune IS NOT ISTAT.
+
+    The DAIT CSV uses codice_regione + its own codice_provincia +
+    codice_comune (often four characters). Never pad this municipal code to
+    six digits and pretend it is ISTAT. Join on an unambiguous triple of
+    official (regionCode, provinceAbbreviation, officialMunicipalityName),
+    record the mapping between source registries and quarantine conflicts.
+    """
     keys = set(cols)
-    kind_key = find_col(keys, *DAIT_ROLE)
+    role_key = find_col(keys, *DAIT_ROLE)
     date_key = find_col(keys, *DAIT_ELECTION)
-    require(kind_key, "DAIT privo della colonna carica")
-    index = defaultdict(list)
-    count_unmatched = 0
+    office_key = find_col(keys, *DAIT_OFFICE_START)
+    region_key = find_col(keys, *DAIT_REGION_CODE)
+    sigla_key = find_col(keys, *DAIT_PROVINCE_SIGLA)
+    name_key = find_col(keys, *DAIT_MUNICIPAL_NAME)
+    province_code_key = find_col(keys, *DAIT_PROVINCE_CODE)
+    commune_code_key = find_col(keys, *DAIT_CODE)
+    require(all((role_key, region_key, sigla_key, name_key, province_code_key, commune_code_key)),
+            "DAIT intestazioni insufficienti per crosswalk ISTAT verificabile")
+    by_official_name = defaultdict(list)
+    for entity in entities:
+        info = entity["administrativeHierarchy"]
+        region = str(info.get("regionCodeISTAT") or "").zfill(2)
+        province = str(info.get("provinceAbbreviation") or "").strip().upper()
+        require(re.fullmatch(r"\d{2}", region) and re.fullmatch(r"[A-Z]{2}", province),
+                "ISTAT privo di regione/sigla per crosswalk DAIT: " + entity["sourceIds"]["istat"])
+        by_official_name[(region, province, header(entity["name"]))].append(entity)
+
+    found = defaultdict(list)
+    rejected = []
+    dait_ids_seen = {}
+    candidate_count = 0
     for row in rows:
-        role = header(get(row, kind_key))
+        role = header(get(row, role_key))
         if role not in ("sindaco", "sindaca"):
             continue
-        code = code6(field(row, cols, *DAIT_CODE))
-        if not code:
-            count_unmatched += 1
-            continue
+        candidate_count += 1
+        region = str(get(row, region_key) or "").zfill(2)
+        sigla = str(get(row, sigla_key) or "").upper().strip()
+        dait_province = str(get(row, province_code_key) or "").zfill(3)
+        dait_municipality = str(get(row, commune_code_key) or "").zfill(4)
+        legal_name = str(get(row, name_key) or "").strip()
+        dait_id = "/".join([region, dait_province, dait_municipality])
         surname = field(row, cols, *DAIT_SURNAME)
         given = field(row, cols, *DAIT_NAME)
-        if not surname or not given:
+        if not (re.fullmatch(r"\d{2}", region) and re.fullmatch(r"\d{3}", dait_province)
+                and re.fullmatch(r"\d{4}", dait_municipality)
+                and re.fullmatch(r"[A-Z]{2}", sigla) and legal_name and given and surname):
+            rejected.append({"daitId": dait_id, "name": legal_name, "reason": "invalid_identity_fields"})
             continue
-        index[code].append((given + " " + surname, valid_date(get(row, date_key)) if date_key else None))
+        official_matches = by_official_name.get((region, sigla, header(legal_name)), [])
+        if len(official_matches) != 1:
+            rejected.append({"daitId": dait_id, "name": legal_name, "province": sigla,
+                             "reason": "official_crosswalk_not_unique" if official_matches else "official_crosswalk_not_found"})
+            continue
+        matched = official_matches[0]
+        code = matched["sourceIds"]["istat"]
+        prior = dait_ids_seen.get(dait_id)
+        if prior is not None and prior != code:
+            rejected.append({"daitId": dait_id, "reason": "dait_id_collision"})
+            continue
+        dait_ids_seen[dait_id] = code
+        found[code].append({
+            "person": given + " " + surname, "daitId": dait_id,
+            "election": valid_date(get(row, date_key)) if date_key else None,
+            "officeStart": valid_date(get(row, office_key)) if office_key else None,
+            "legalName": legal_name, "regionCode": region,
+            "provinceAbbreviation": sigla,
+        })
     attached = ambiguous = 0
     for entity in entities:
         code = entity["sourceIds"]["istat"]
-        entries = sorted(set(index.get(code, [])))
-        if len(entries) > 1:
+        records = found.get(code, [])
+        fingerprints = {(x["person"], x["daitId"], x["election"], x["officeStart"]) for x in records}
+        if len(fingerprints) > 1:
             ambiguous += 1
             entity["quality"]["reviewRequired"] = True
             continue
-        if not entries:
+        if not records:
             continue
-        person, election_day = entries[0]
+        candidate = records[0]
+        source_id = "dait:mayors:" + candidate["daitId"]
+        entity["sourceIds"]["dait"] = candidate["daitId"]
+        entity["facts"]["sindacoNome"] = fact(candidate["person"], source_id, DAIT_URL,
+                                               as_of=retrieved_at)
+        entity["facts"]["carica"] = fact("Sindaco", source_id, DAIT_URL,
+                                         as_of=retrieved_at)
+        if candidate["election"]:
+            entity["facts"]["dataElezione"] = fact(candidate["election"], source_id, DAIT_URL,
+                                                   as_of=retrieved_at)
+        if candidate["officeStart"]:
+            entity["facts"]["mandatoInizio"] = fact(candidate["officeStart"], source_id, DAIT_URL,
+                                                    as_of=retrieved_at)
+        # Source identity is explicit, but tenure end is unknown; a mayor
+        # recorded in a dated snapshot does not mean "currently mayor" forever.
         attached += 1
-        entity["facts"]["sindacoNome"] = fact(person, "dait:mayors:" + code, DAIT_URL,
-                                                     as_of=retrieved_at, valid_at=election_day)
-        entity["facts"]["carica"] = fact("Sindaco", "dait:mayors:" + code, DAIT_URL,
-                                            as_of=retrieved_at)
-        if election_day:
-            entity["facts"]["dataElezione"] = fact(election_day, "dait:mayors:" + code,
-                                                         DAIT_URL, as_of=retrieved_at)
-        # A DAIT snapshot documents the office at extraction, NOT open-ended current tenure.
     return {"mayorsMatched": attached, "mayorsAmbiguous": ambiguous,
-            "daitCodesUnmatched": sorted(set(index) - {e["sourceIds"]["istat"] for e in entities})[:100],
-            "daitRowsWithoutCode": count_unmatched, "daitMayorCandidates": sum(map(len, index.values()))}
+            "daitRowsOfficialCrosswalkReview": rejected[:200],
+            "daitRowsOfficialCrosswalkRejected": len(rejected),
+            "daitOfficialCrosswalkType": "ISTAT_REGION_PLUS_PROVINCE_SIGLA_PLUS_EXACT_NAME",
+            "daitMayorCandidates": candidate_count,
+            "daitCodesMatchedToISTAT": len(dait_ids_seen)}
 
 def reconcile_osm(entities, places, qid_map):
     """Only verified WD ISTAT ID -> QID -> unique OSM QID, never a name-based merge."""
