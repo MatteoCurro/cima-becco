@@ -71,7 +71,8 @@ const FACT_LABELS:Record<string,string>={
 const STAY=['bedsTotal','capacityReported','bedsWinter','winterRoom','winterShelter','dormitories','largeDormitoriesAvailableReported','managerBeds'];
 const OPEN=['openingHoursReported','openingHours','seasonality','openingStatus','accessRules'];
 const SHELTER_STAY=['bedsTotal','capacityReported','bedsWinter','winterRoomReported','winterRoom','winterShelter'];
-const SHELTER_RULES=['keysRequired','emergencyUseOnly','reservationsRequired','usageRules','accessRestrictions','accessRules','currentOpenStatus'];
+const SHELTER_RULES=['keysRequired','emergencyUseOnly','reservationsRequired','usageRules',
+  'accessRestrictions','accessRules','openingHoursReported','openingHours','seasonality','openingStatus','currentOpenStatus'];
 const SHELTER_MANAGER=['owner','owningSection','operatorReported','maintenanceProvider','maintenanceCheckedAt','lastInspectionAt'];
 const MANAGEMENT=['manager','operatorReported','owner','owningSection','selfManaged'];
 const PRICES=['nightlyPrice','halfBoardPrice','memberDiscount','priceValidUntil'];
@@ -84,7 +85,7 @@ const COVERED=new Set([
   ...SHELTER_STAY,...SHELTER_RULES,...SHELTER_MANAGER,
   ...REFUGE_AMENITIES.map(s=>s.key),...BIVOUAC_AMENITIES.map(s=>s.key),
   'elevationM','phone','email','website','accessTrailRef','accessDifficultyOfficial',
-  'accessDurationOfficial','description','address','bookingUrl','iso14001',
+  'accessDurationOfficial','description','address','bookingUrl','iso14001','aliases',
 ]);
 
 function value(place:AlpinePlace,key:string):AtlasFact|null{
@@ -157,7 +158,8 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
       group:HUT_FACT_GROUP_LABELS[entry.group||'']||entry.group||'Ulteriori caratteristiche'}]));
   const extraRecord={...place,facts:others,aliases:[],localNames:[],history:undefined,historySourceUrl:undefined};
   const hasArchive=Boolean(hasSpecial||Object.keys(others).length||place.climate?.length||
-    place.administrativeHierarchy||place.factsAlternatives?.length||place.technical||place.pitches?.length);
+    Object.values(place.administrativeHierarchy||{}).some(Boolean)||
+    place.factsAlternatives?.length||place.technical||place.pitches?.length);
   const galleryLogo=place.media?.find(m=>m.kind==='logo'&&m.reuseAllowed&&m.subjectVerified&&m.url&&m.sourceUrl&&m.licence);
   const logo=place.logo?.url||galleryLogo?.url;
   const items:DetailJumpItem[]=[
