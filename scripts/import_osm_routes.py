@@ -31,9 +31,12 @@ def haversine(a, b):
 
 def fetch_relations():
     s, w, n, e = BBOX
-    # Relations only, with geometry on their member ways. No per-route API requests.
-    query = (f'[out:json][timeout:80];relation["type"="route"]'
-             f'["route"="hiking"]({s},{w},{n},{e});out body geom;')
+    # Solo itinerari a piedi; include relazioni ferrata autonome. Niente MTB/bike.
+    # Le geometrie delle way membri arrivano insieme ai metadati relazione.
+    query = (f'[out:json][timeout:80];('
+             f'relation["type"="route"]["route"="hiking"]({s},{w},{n},{e});'
+             f'relation["type"="route"]["route"~"^(via_ferrata|ferrata)$"]({s},{w},{n},{e});'
+             f');out meta geom;')
     data = urlencode({'data': query}).encode()
     req = Request(API, data=data, headers={
         'User-Agent': 'CimaBecco/0.1 (+https://github.com/MatteoCurro/cima-becco)',
@@ -132,7 +135,11 @@ def to_route(relation):
     if relation.get('type') != 'relation':
         return None
     tags = relation.get('tags') or {}
-    if tags.get('type') != 'route' or tags.get('route') != 'hiking':
+    route_kind = tags.get('route')
+    if tags.get('type') != 'route' or route_kind not in ('hiking', 'via_ferrata', 'ferrata'):
+        return None
+    is_ferrata = route_kind in ('via_ferrata', 'ferrata') or tags.get('via_ferrata') == 'yes'
+    if tags.get('bicycle') == 'designated' and tags.get('foot') == 'no':
         return None
     ref = (tags.get('ref') or '').strip()
     name = (tags.get('name:it') or tags.get('name') or '').strip()
@@ -146,7 +153,7 @@ def to_route(relation):
     if not points or len(points) < 8:
         return None
     length_m = sum(haversine(a, b) for a, b in zip(points, points[1:]))
-    if not 800 <= length_m <= 45000:
+    if not (150 if is_ferrata else 800) <= length_m <= (12000 if is_ferrata else 45000):
         return None
     points = simplify(points)
     if not 2 <= len(points) <= 2500:
@@ -155,8 +162,15 @@ def to_route(relation):
     if not isinstance(rid, int) or rid <= 0:
         return None
     is_loop = haversine(points[0], points[-1]) <= 60
+    operator = (tags.get('operator') or '').strip()
+    cai_operator = 'club alpino italiano' in operator.lower() or operator.lower() == 'cai'
+    cai_difficulty = next((tags[k] for k in ('cai_scale', 'cai:scale', 'difficulty:CAI')
+                           if tags.get(k) in ('T', 'E', 'EE', 'EEA')), None)
+    official_url = next((tags[k] for k in ('website', 'url')
+                         if (tags.get(k) or '').startswith('https://')), None)
+    wikidata = tags.get('wikidata', '')
     return {
-        'slug': f'osm-hiking-{rid}',
+        'slug': f'osm-{"ferrata" if is_ferrata else "hiking"}-{rid}',
         'name': name,
         'venueSlugs': [],
         'distanceM': round(length_m),
@@ -169,7 +183,18 @@ def to_route(relation):
         'country': 'Italy',
         'sourceUrl': f'https://www.openstreetmap.org/relation/{rid}',
         'licence': 'ODbL 1.0 · © OpenStreetMap contributors',
-        'activity': 'trail',
+        'activity': 'ferrata' if is_ferrata else 'hike',
+        **({'trailRef': ref} if ref else {}),
+        **({'caiTrailNumber': ref} if ref and cai_operator else {}),
+        **({'caiDifficulty': cai_difficulty} if cai_difficulty else {}),
+        **({'sacScale': tags['sac_scale']} if tags.get('sac_scale') else {}),
+        **({'viaFerrataScale': tags['via_ferrata_scale']} if tags.get('via_ferrata_scale') else {}),
+        **({'operator': operator} if operator else {}),
+        **({'network': tags['network']} if tags.get('network') else {}),
+        **({'osmcSymbol': tags['osmc:symbol']} if tags.get('osmc:symbol') else {}),
+        **({'officialDescriptionUrl': official_url} if official_url else {}),
+        **({'wikidataId': wikidata} if wikidata.startswith('Q') and wikidata[1:].isdigit() else {}),
+        **({'sourceUpdatedAt': relation['timestamp']} if relation.get('timestamp') else {}),
     }
 
 
