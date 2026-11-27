@@ -25,14 +25,14 @@ describe('editoriale Cima Becco', () => {
     expect(description).not.toMatch(/panoram|dislivello positivo stimato/);
   });
   it('separa difficoltà CAI e tag umoristici', () => {
-    expect(trailMood(route({ caiDifficulty: 'T' })).quip).toBe('Due curve e spiana');
-    expect(trailMood(route({ caiDifficulty: 'EE' })).quip).toBe('Non spiana');
-    expect(trailMood(route({ caiDifficulty: 'EEA' })).label).toBe('Esperti con attrezzatura');
-    expect(trailMood(route({})).quip).toBeNull();
+    expect(trailMood(route({ caiDifficulty: 'T' })).quip).toBe('MERENDEROS');
+    expect(trailMood(route({ caiDifficulty: 'EE' })).quip).toBe('OGGI SI BESTEMMIA');
+    expect(trailMood(route({ caiDifficulty: 'EEA' })).label).toBe('Esperti con attrezzatura · CAI EEA');
+    expect(trailMood(route({})).quip).toBe('GRADO IN LATITANZA');
   });
   it('non attribuisce a una ferrata una difficoltà se manca la scala', () => {
     expect(trailMood(route({ activity: 'ferrata' })).level).toBe('unknown');
-    expect(trailMood(route({ activity: 'ferrata', viaFerrataScale: '3+' })).quip).toBe('Strattona');
+    expect(trailMood(route({ activity: 'ferrata', viaFerrataScale: '3+' })).quip).toBe('AVAMBRACCI IN LEASING');
   });
   it('esclude le homepage CAI/SAT scambiate per schede singole', () => {
     const first = trailSources(route({ officialDescriptionUrl: 'https://www.sat.tn.it/' }));
@@ -42,4 +42,13 @@ describe('editoriale Cima Becco', () => {
     expect(second).toHaveLength(2);
     expect(second[0].label).toBe('Scheda SAT');
   });
+  it('collega solo i rifugi geolocalizzati nei dati importati', () => {
+    const associated=route({stops:[{
+      slug:'osm-n-321',name:'Rifugio Test',kind:'rifugio',relation:'arrivo',distanceM:7,at:0.98,
+    }]});
+    expect(trailTitle(associated)).toContain('Rifugio Test');
+    expect(trailDescription(associated)).toContain('Rifugio Test');
+    expect(trailTitle(route())).not.toContain('Rifugio Test');
+  });
+
 });
