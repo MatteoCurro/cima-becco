@@ -21,6 +21,7 @@ import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon, DownloadIcon, 
 import { FlagIcon, LinkIcon, PlusIcon, ReportModal } from './ReportModal';
 import { useReveal } from './useReveal';
 import { SiteFooter, SiteHeader } from './SiteChrome';
+import { AtlasDossierBlocks } from './AtlasDossierBlocks';
 import { MapContextLabel } from './MapContextLabel';
 import { SEARCH_OPENS_MAP, SearchBar, SiteSearch } from './SearchBar';
 import { RatingLabel } from './ResultsList';
@@ -886,6 +887,7 @@ function VenueDetailInner({
 
           </div>
           <div className="venue-detail-main">
+            <AtlasDossierBlocks record={venue} placement="alerts"/>
             <section className="venue-detail-intro">
               <div className="venue-intro-row">
                 <h2>{heightBlock}</h2>
@@ -938,6 +940,7 @@ function VenueDetailInner({
               </p>
             </section>
 
+            <AtlasDossierBlocks record={venue} placement="core"/>
             <section className="venue-detail-section cb-venue-planning" aria-label="Pianificazione e meteo">
               <PlanCard venue={venue}/>
               <button type="button" className="plan-report" onClick={() => setReporting(true)}><FlagIcon/> Segnala un problema su questo luogo</button>
@@ -1014,6 +1017,9 @@ function VenueDetailInner({
               </section>
             )}
 
+            <AtlasDossierBlocks record={venue} placement="connections"/>
+            <AtlasDossierBlocks record={venue} placement="media"/>
+            <AtlasDossierBlocks record={venue} placement="credits"/>
           </div>
 
           <aside className="venue-detail-side" aria-label={'Mappa di '+venue.name}>

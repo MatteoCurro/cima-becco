@@ -25,3 +25,9 @@
 @media(min-width:901px){.cb-browse-tabs>a,.cb-browse-tabs>.is-upcoming{flex:1 1 0;min-width:0}}
 @media(max-width:900px){.cb-browse-facets .categories{flex:0 0 auto}.cb-browse-facets .category{min-width:96px}.cb-browse-facets .category-label{display:none}.cb-browse-facets .category-label-short{display:inline}}
 @media(max-width:744px){.cb-browse-tabs{padding:6px 10px}.cb-browse-tabs>a,.cb-browse-tabs>.is-upcoming{font-size:12px;min-height:34px;padding:7px 10px}.cb-browse-facets{padding:6px 10px;gap:5px}.cb-browse-facets .category{min-width:70px;min-height:34px;padding:7px 9px}.cb-browse-count{display:none}}
+
+/* Faccette contestuali tipizzate: non aumentano l'altezza della barra. */
+.cb-browse-facets .cb-facet-reset{white-space:nowrap;color:#a70049;border:1px solid #edd0da;background:#fff4f8;font-weight:800}
+.cb-browse-facets .cb-browse-sort{flex:none;min-width:0}
+.cb-browse-sort select{min-width:0}
+@media(max-width:744px){.cb-browse-sort select{max-width:132px}}

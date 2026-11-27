@@ -1,0 +1,65 @@
+/* Solo moduli editoriali. La struttura 42/58 vive in cimaWorkspace.css. */
+.cb-dossier-modules{display:grid;gap:24px;min-width:0}
+.cb-dossier-section{min-width:0;margin:24px 0;padding:22px 0;border-top:1px solid #dce8d7;color:#244634}
+.cb-dossier-heading{margin-bottom:15px}
+.cb-dossier-heading small{display:block;margin-bottom:7px;color:#b20052;font:800 10px/1.4 'Space Grotesk',sans-serif;letter-spacing:.09em}
+.cb-dossier-heading h2{margin:0;font:850 clamp(21px,2.1vw,29px)/1.13 'Bricolage Grotesque',sans-serif;letter-spacing:-.04em}
+.cb-dossier-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0}
+.cb-dossier-fact{display:flex;flex-direction:column;min-width:0;gap:5px;padding:13px 14px;background:#f5f8f1;border:1px solid #dce8d7;border-radius:8px}
+.cb-dossier-fact dt{font:700 11px/1.35 'Space Grotesk',sans-serif;color:#667d6b}
+.cb-dossier-fact dd{margin:0;color:#1d4534;font:850 17px/1.3 'Bricolage Grotesque',sans-serif;overflow-wrap:anywhere}
+.cb-dossier-fact small,.cb-dossier-section small{font-size:11px;line-height:1.5}
+.cb-dossier-section a,.cb-dossier-credits a{color:#a8004c;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
+.cb-dossier-method{color:#8b6535}
+.cb-dossier-source{margin-top:auto;color:#62806b}
+.cb-dossier-prose{font:500 13px/1.8 'Space Grotesk',sans-serif;white-space:pre-line;overflow-wrap:anywhere}
+.cb-dossier-note{font:500 12px/1.6 'Space Grotesk',sans-serif;color:#6b806e}
+.cb-dossier-relations{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.cb-dossier-relation{display:flex;flex-direction:column;gap:4px;min-width:0;padding:13px;border:1px solid #deeadc;border-radius:8px;background:#f8faf5}
+.cb-dossier-relation>span{font:750 10px/1.4 'Space Grotesk',sans-serif;color:#7b8578;text-transform:uppercase;letter-spacing:.06em}
+.cb-dossier-relation strong{font:850 15px/1.2 'Bricolage Grotesque',sans-serif;overflow-wrap:anywhere}
+.cb-dossier-relation small{color:#687e6d}
+.cb-dossier-alerts{display:grid;gap:8px;margin:12px 0 18px}
+.cb-dossier-alert{padding:15px;border-left:4px solid #bc7c2e;background:#fff4df;color:#694b27;border-radius:5px}
+.cb-dossier-alert strong{font:850 14px/1.25 'Bricolage Grotesque',sans-serif}
+.cb-dossier-alert p{font:600 12px/1.6 'Space Grotesk',sans-serif}
+.cb-dossier-alert small{font:600 11px/1.5 'Space Grotesk',sans-serif}
+.cb-dossier-stages{display:grid;gap:8px;padding:0;margin:0;list-style:none}
+.cb-dossier-stages>li{display:grid;gap:4px;padding:12px 14px;border:1px solid #deeadc;border-radius:8px}
+.cb-dossier-stages>li>span{color:#a9004b;font:800 11px 'Space Grotesk',sans-serif}
+.cb-dossier-stages>li>strong{font:850 16px 'Bricolage Grotesque',sans-serif}
+.cb-dossier-stages>li>small{color:#677c6b}
+.cb-dossier-table-wrap{width:100%;overflow-x:auto}
+.cb-dossier-pitches{border-collapse:collapse;width:100%;font-size:12px;text-align:left;white-space:nowrap}
+.cb-dossier-pitches th,.cb-dossier-pitches td{border-bottom:1px solid #dce8d7;padding:11px 10px}
+.cb-dossier-pitches thead{background:#f1f7ed;color:#365f46}
+.cb-dossier-climate{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.cb-dossier-climate>div{display:grid;gap:4px;text-align:center;padding:9px 2px;background:#f2f8ef;border-radius:6px;font-size:11px;min-width:0}
+.cb-dossier-climate strong{font-size:12px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cb-dossier-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cb-dossier-gallery figure{margin:0;min-width:0}
+.cb-dossier-gallery img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:#e1eadf}
+.cb-dossier-gallery figcaption{font:600 11px/1.5 'Space Grotesk',sans-serif}
+.cb-dossier-gallery figcaption small{display:block;color:#6b8270}
+.cb-dossier-webcams{display:grid;gap:10px}
+.cb-dossier-webcams article{padding:14px;border:1px solid #dce8d7;border-radius:8px;display:grid;gap:8px}
+.cb-dossier-webcams strong{font:850 16px 'Bricolage Grotesque',sans-serif}
+.cb-dossier-webcams img{width:100%;max-height:280px;object-fit:contain;background:#e3eee1}
+.cb-dossier-webcams p{margin:0;font:600 12px/1.6 'Space Grotesk',sans-serif;color:#4d6b55}
+.cb-dossier-credits{margin:15px 0;padding:13px 0;border-top:1px solid #dae6d5;font:600 12px 'Space Grotesk',sans-serif}
+.cb-dossier-credits summary{cursor:pointer;color:#29513b;font-weight:850}
+.cb-dossier-credits summary span{float:right;color:#b20052}
+.cb-dossier-credits ul{padding-left:17px;overflow-wrap:anywhere}
+.cb-dossier-credits small{display:block;color:#6f806f;margin:8px 0}
+@container(max-width:460px){.cb-dossier-facts,.cb-dossier-relations,.cb-dossier-gallery{grid-template-columns:1fr}.cb-dossier-climate{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){.cb-dossier-facts,.cb-dossier-relations,.cb-dossier-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.cb-dossier-facts,.cb-dossier-relations,.cb-dossier-gallery{grid-template-columns:1fr}.cb-dossier-climate{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+.cb-dossier-namevariants{display:grid;gap:8px;padding:15px 0;color:#244634}
+.cb-dossier-namevariants>strong{font:800 12px 'Space Grotesk',sans-serif}
+.cb-dossier-namevariants ul{display:flex;flex-wrap:wrap;gap:7px;padding:0;margin:0;list-style:none}
+.cb-dossier-namevariants li{background:#e8f3e5;color:#3c6048;border:1px solid #d6e6d1;
+  padding:7px 10px;border-radius:6px;font:650 11px/1.4 'Space Grotesk',sans-serif}
+.cb-dossier-alternatives{padding:15px;background:#fff8ec;border:1px solid #eedab6;border-radius:8px}
+.cb-dossier-alternatives summary{cursor:pointer;font:850 13px 'Space Grotesk',sans-serif;color:#80602d}
+.cb-dossier-alternatives .cb-dossier-facts{margin-top:14px}

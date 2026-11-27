@@ -1,3 +1,5 @@
+import type { AtlasEntityMetadata } from './lib/atlasDossier';
+
 /**
  * Core domain model.
  *
@@ -34,7 +36,7 @@ export interface VenuePhoto {
   source?: string;
 }
 
-export interface Venue {
+export interface Venue extends AtlasEntityMetadata {
   slug: string;
   name: string;
   type: VenueType;
@@ -118,7 +120,7 @@ export interface RouteWaterSource {
   at: number;
 }
 
-export interface Route {
+export interface Route extends AtlasEntityMetadata {
   slug: string;
   name: string;
 

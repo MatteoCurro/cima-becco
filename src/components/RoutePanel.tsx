@@ -1,6 +1,7 @@
 import { routeDetailHref } from '../lib/navigation';
 import { alpinePlaceLink } from '../lib/alpinePlaces';
 import { DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
+import { AtlasDossierBlocks } from './AtlasDossierBlocks';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { endpointIconMarkup } from '../map/endpoints';
@@ -658,6 +659,8 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
             { label: 'Salita per km', value: hasElevation ? units.height(elevation.gainM / km) : unavailable },
           ]}/>
 
+          {fullDetail && <AtlasDossierBlocks record={route} placement="alerts"/>}
+          {fullDetail && <AtlasDossierBlocks record={route} placement="core"/>}
           {touches.length > 0 && (
             <div className="gpx-touches route-passes">
               <strong>Luoghi attraversati</strong>
@@ -680,6 +683,9 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
           )}
 
           <OverlapChips overlaps={overlaps} onShowRoute={onShowRoute} />
+          {fullDetail && <AtlasDossierBlocks record={route} placement="connections"/>}
+          {fullDetail && <AtlasDossierBlocks record={route} placement="media"/>}
+          {fullDetail && <AtlasDossierBlocks record={route} placement="credits"/>}
 
           <div className="route-photos">
             <strong>Fotografie lungo il percorso</strong>

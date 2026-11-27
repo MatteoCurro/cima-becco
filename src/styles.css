@@ -1263,6 +1263,12 @@ button {
   position: relative;
   margin-left: 34px;
 }
+/* Horizontal inspection of the altitude chart must keep pointer events on touch.
+   Vertical page scrolling is still available on phones. */
+.profile-chart svg {
+  touch-action: pan-y;
+  cursor: crosshair;
+}
 .profile-guide {
   stroke: var(--ink);
   stroke-width: 1;
