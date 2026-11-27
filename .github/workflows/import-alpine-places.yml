@@ -14,7 +14,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: cimabecco-atlas-osm
+  group: cima-alpine-data-writers
   cancel-in-progress: false
 jobs:
   import:
@@ -25,6 +25,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Allinea il catalogo ai file più recenti prima dell'import
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
       - name: Test di associazione geometrica
         run: python -m unittest discover -s tests -p 'test_alpine_places.py' -v
       - name: Scarica i POI Dolomiti e associa ai sentieri
@@ -43,6 +47,12 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A public/data/alpine-places.json public/data/alpine-water.json public/data/routes-tiles/
           git commit -m "data: rifugi e borghi dalle Dolomiti, tappe verificate per i GPX"
-          git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
+          for attempt in 1 2 3 4; do
+            git fetch origin main
+            git rebase origin/main || { echo "Conflitto sui dati: import non pubblicato, nessuna sovrascrittura"; exit 1; }
+            if git push origin HEAD:main; then exit 0; fi
+            echo "Push concorrente, riprovo ($attempt/4)"
+            sleep 7
+          done
+          echo 'Impossibile pubblicare dati senza sovrascrivere altri commit' >&2
+          exit 1
