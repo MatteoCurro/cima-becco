@@ -34,6 +34,8 @@ export function mergeRefugesForSeo(original, release) {
       id: e.id, sourceIds: e.sourceIds || {},
       officialUrl: e.officialUrl,
       facts: rawFacts,
+      media: (e.media || []).filter(m=>m.subjectVerified && m.reuseAllowed && m.url && m.sourceUrl && m.licence),
+      shortSummary: e.shortSummary || old?.shortSummary,
       description: e.description || old?.description,
       photo: first ? {
         url: first.url, sourceUrl: first.sourceUrl,

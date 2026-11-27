@@ -1,5 +1,6 @@
 import { DATA_BASE, type Bounds } from './venues';
 import type { AtlasEntityMetadata } from './atlasDossier';
+import { canonicalAtlasSlug } from './placePermalinks';
 import { mergeRefugeRelease } from './refugeRelease';
 
 export interface AlpinePlace extends AtlasEntityMetadata {
@@ -67,8 +68,13 @@ export function atlasCategory(kind: AlpinePlace['kind']): 'rifugi' | 'bivacchi' 
   return kind === 'rifugio' ? 'rifugi' : kind === 'bivacco' ? 'bivacchi' : 'borghi';
 }
 
-export function alpinePlaceLink(place: Pick<AlpinePlace, 'slug' | 'kind'>): string {
-  return `${import.meta.env.BASE_URL}${atlasCategory(place.kind)}/${encodeURIComponent(place.slug)}/`;
+export function alpinePlaceLink(place: Pick<AlpinePlace, 'slug' | 'kind'> & Partial<Pick<AlpinePlace, 'name' | 'sourceIds'>>): string {
+  // Le tappe GPX legacy conoscono solo lo slug OSM: l'alias pubblico le
+  // indirizza alla scheda canonica, senza inventare nome o identità CAI.
+  const slug=place.kind==='rifugio'&&place.name ? canonicalAtlasSlug({
+    kind:place.kind,name:place.name,slug:place.slug,sourceIds:place.sourceIds,
+  }) : place.slug;
+  return `${import.meta.env.BASE_URL}${atlasCategory(place.kind)}/${encodeURIComponent(slug)}/`;
 }
 
 /** Box comodo per aprire la mappa sul POI, non finge un accesso stradale. */
