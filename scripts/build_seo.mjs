@@ -174,7 +174,7 @@ const APP_ASSETS=[
 ].filter(tag=>/\b(?:src|href)=["']\/(?:[^"']*\/)?assets\//.test(tag)).join('\n');
 const MARK = '<svg viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="25" fill="#143d2f"/><path d="M18 18 Q18 54 42 57 L51 31 L68 55 Q96 50 99 19" fill="none" stroke="#ff2677" stroke-width="13" stroke-linecap="square"/><path d="M30 66 L54 42 L78 62 L69 90 L39 90Z" fill="#e4ffbe"/><path d="M77 63 L108 73 L74 79Z" fill="#ff2677"/><circle cx="57" cy="65" r="3.7" fill="#143d2f"/></svg>';const pages = [];
 
-function page({ path, title, description, image, jsonLd, body }) {
+function page({ path, title, description, image, jsonLd, body, noindex = false }) {
   const url = `${SITE}/${path}`;
   const html = `<!doctype html>
 <html lang="it">
@@ -184,6 +184,7 @@ function page({ path, title, description, image, jsonLd, body }) {
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <title>${escape(title)}</title>
 <meta name="description" content="${escape(description)}">
+${noindex ? '<meta name="robots" content="noindex,follow">' : ''}
 <link rel="canonical" href="${url}">
 <link rel="icon" href="${SITE}/favicon.svg" type="image/svg+xml">
 <meta property="og:site_name" content="Cima Becco">
@@ -319,7 +320,7 @@ for (const venue of venues) {
 // Write the place pages that fit: places with routes, a photo or a written
 // description first, then the tallest.
 const countFiles = (dir) => readdirSync(dir, { withFileTypes: true }).reduce((n, entry) => n + (entry.isDirectory() ? countFiles(join(dir, entry.name)) : 1), 0);
-const reserved = countFiles(DIST) + Object.keys(index.byCountry).length + routes.length + 4;
+const reserved = countFiles(DIST) + Object.keys(index.byCountry).length + routes.length + alpinePlaces.length + trekProjects.length + 12;
 const room = Math.max(0, MAX_FILES - reserved);
 const score = (spec) => (spec.routesHere.length ? 4 : 0) + (spec.photo ? 2 : 0) + (spec.text ? 1 : 0);
 placeSpecs.sort((a, b) => score(b) - score(a) || (b.heightM ?? 0) - (a.heightM ?? 0));
@@ -486,7 +487,7 @@ for (const route of routes) {
     </dl>
     ${official ? `<p><a href="${escape(official)}" rel="noopener noreferrer" target="_blank">Consulta la scheda del gestore ↗</a></p>` : ''}
     ${passes.length ? `<h2>Cime e luoghi vicini</h2><ul class="list">${passes.map((v) => `<li><a href="${SITE}/place/${v.slug}/">${escape(v.name)}</a></li>`).join('')}</ul>` : ''}
-    ${route.stops?.length ? `<h2>Rifugi, bivacchi e paesi lungo il percorso</h2><p>Luoghi geograficamente vicini al GPX, non accessi garantiti.</p><ul class="list">${route.stops.slice(0,12).map(s=>`<li><a href="${SITE}/${s.kind==='rifugio'?'rifugi':'borghi'}/${s.slug}/">${escape(s.name)}</a> · ${s.kind==='rifugio'?'Rifugio':'Borgo'}</li>`).join('')}</ul>` : ''}
+    ${route.stops?.length ? `<h2>Rifugi, bivacchi e paesi lungo il percorso</h2><p>Luoghi geograficamente vicini al GPX, non accessi garantiti.</p><ul class="list">${route.stops.slice(0,12).map(s=>`<li><a href="${SITE}/${s.kind==='rifugio'?'rifugi':s.kind==='bivacco'?'bivacchi':'borghi'}/${s.slug}/">${escape(s.name)}</a> · ${s.kind==='rifugio'?'Rifugio':s.kind==='bivacco'?'Bivacco':'Paese'}</li>`).join('')}</ul>` : ''}
     ${route.activity === 'ferrata' ? '<p class="cima-seo-warning">Una ferrata richiede attrezzatura e competenze specifiche. Il GPX non rappresenta esposizione e difficoltà tecnica.</p>' : '<p class="cima-seo-warning">Traccia e dislivelli sono indicativi: verifica percorribilità e condizioni prima di partire.</p>'}
   </section>
 </article>`,
@@ -499,7 +500,8 @@ for (const route of routes) {
 for (const place of alpinePlaces) {
   if (!/^osm-[nwr]-\d+$/.test(place.slug)) continue;
   const related=(byStop.get(place.slug)||[]).slice(0,24);
-  if (place.kind==='borgo' && !related.length && !place.website && !place.description && !place.photo) continue;
+  // Tutti i luoghi mostrati nel catalogo devono avere una pagina reale: niente link rotti.
+  // I borghi poveri di metadati sono consultabili ma non indicizzabili finché non vengono arricchiti.
   const category=place.kind==='rifugio'?'rifugi':place.kind==='bivacco'?'bivacchi':'borghi';
   const kind=place.kind==='rifugio'?'rifugio alpino':place.kind==='bivacco'?'bivacco alpino':'località di montagna';
   const altitude=Number.isFinite(place.elevationM)?` a ${metres(place.elevationM)} di quota`:'';
@@ -511,6 +513,7 @@ for (const place of alpinePlaces) {
   const photo=place.photo?.url?.startsWith('https://upload.wikimedia.org/') ? place.photo : null;
   page({
     path:`${category}/${place.slug}/`,
+    noindex:place.kind==='borgo' && !related.length && !place.website && !place.description && !place.photo,
     title:`${place.name} · ${place.kind==='rifugio'?'Rifugio':place.kind==='bivacco'?'Bivacco':'Paese'}, altitudine, sentieri e meteo | Cima Becco`,
     description:description.slice(0,285),
     image:photo?.url||null,
@@ -536,7 +539,7 @@ for (const place of alpinePlaces) {
         
       </ul>
       <div class="cima-seo-actions">
-        <a class="cta" href="${appLink(`#${category==='borghi'?'paesi':category}/${place.slug}`)}">MAPPA E SENTIERI ↗</a>
+        <a class="cta" href="${SITE}/${category}/${place.slug}/#cb-place-map">MAPPA E SENTIERI ↗</a>
         ${place.phone?`<a class="cima-seo-secondary" href="tel:${escape(place.phone.replace(/[^+\d]/g,''))}">Chiama la struttura</a>`:''}
         ${place.email?`<a class="cima-seo-secondary" href="mailto:${escape(place.email)}">Scrivi alla struttura</a>`:''}
       </div>
@@ -551,7 +554,7 @@ for (const place of alpinePlaces) {
         ${place.website?`<div><dt>Sito</dt><dd><a href="${escape(place.website)}" rel="noopener noreferrer">Sito della struttura</a></dd></div>`:''}
       </dl>`:''}
       ${related.length?`<h2>Sentieri e itinerari collegati</h2><ul class="list">${related.map(route=>`<li><a href="${SITE}/route/${route.slug}/">${escape(trailName(route))}</a> · ${km(route.distanceM)}</li>`).join('')}</ul>`:''}
-      ${nearbyWater.length?`<h2>Fonti e fontanelle nei dintorni</h2><p>Presenza da dati OSM, non prova di raggiungibilità o potabilità.</p><ul class="list">${nearbyWater.map(w=>`<li><a href="${escape(w.osmUrl)}" target="_blank" rel="noopener noreferrer">${escape(w.name)}</a> · ${w.potable==='yes'?'potabilità indicata su OSM':w.potable==='no'?'non potabile':'potabilità ignota'}</li>`).join('')}</ul>`:''}
+      ${nearbyWater.length?`<h2>Acqua sulla cartografia del luogo</h2><p>${nearbyWater.length} fonti censite: posizione e indicazioni di potabilità sono visibili sulla mappa interattiva, non costituiscono una garanzia di sicurezza.</p><p><a class="cta" href="${SITE}/${category}/${place.slug}/#cb-place-map">Apri la mappa con i punti acqua</a></p>`:''}
       <h2>Meteo attuale e temperature stagionali</h2><p>Apri la scheda interattiva per consultare le condizioni attuali, le previsioni neve e pioggia e le medie stagionali 2021–2025 da Open-Meteo.</p>
       <p class="cima-seo-warning">Il dato geografico non prova accessibilità, stato della struttura, potabilità o percorribilità del sentiero. Verifica prima di partire.</p>
       <p class="sub">Fonte geografica: <a href="${escape(place.osmUrl)}" target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>.
