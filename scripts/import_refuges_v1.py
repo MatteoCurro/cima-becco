@@ -180,13 +180,20 @@ def build_refuge(place, identity, snapshot_date):
 def assign_identities(refuges, registry):
     previous = registry if isinstance(registry, dict) else {}
     mapping, used_slugs, conflicts = dict(previous), set(), []
+    base_counts = {}
+    for place in refuges:
+        base = slugify(place["name"])
+        base_counts[base] = base_counts.get(base, 0) + 1
     for place in sorted(refuges, key=lambda item: item["osmUrl"]):
         key = source_ref(place)["key"]
+        base = slugify(place["name"])
         saved = previous.get(key)
         if saved:
             identity = {"id": saved["id"], "slug": saved["slug"]}
+            if base_counts.get(base, 0) > 1 and identity["slug"] != base:
+                conflicts.append({"sourceKey": key, "proposedSlug": identity["slug"],
+                                  "reason": "homonymous_name_needs_editorial_review"})
         else:
-            base = slugify(place["name"])
             if not base:
                 raise ValueError("Nome non convertibile in slug")
             slug = base
