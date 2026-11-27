@@ -114,20 +114,22 @@ def weather_sample(p):
         months={}
         for i,date in enumerate(days.get("time",[])):
             month=date[:7]; m=months.setdefault(month,{"nTemperature":0,"sumTemp":0.0,
-             "precipMm":0.0,"snowCm":0.0,"daysSnow":0,"nPrecip":0})
+             "precipMm":0.0,"snowCm":0.0,"daysSnow":0,"nPrecip":0,"nSnow":0})
             t=(days.get("temperature_2m_mean") or [])[i]
             rain=(days.get("precipitation_sum") or [])[i]
             snow=(days.get("snowfall_sum") or [])[i]
             if isinstance(t,(int,float)):m["sumTemp"]+=t;m["nTemperature"]+=1
             if isinstance(rain,(int,float)):m["precipMm"]+=rain;m["nPrecip"]+=1
-            if isinstance(snow,(int,float)):m["snowCm"]+=snow;m["daysSnow"]+=int(snow>0)
+            if isinstance(snow,(int,float)):m["snowCm"]+=snow;m["daysSnow"]+=int(snow>0);m["nSnow"]+=1
         res["historic2025"]={
           "method":"ERA5-Land reanalysis, single year 2025; NOT 30-year climate normals",
           "modelGridElevationM":ar.get("elevation"),
           "units":ar.get("daily_units"),
           "months":[{"month":month,"meanTempC":round(m["sumTemp"]/m["nTemperature"],1) if m["nTemperature"] else None,
-             "precipTotalMm":round(m["precipMm"],1),
-             "snowfallTotalCm":round(m["snowCm"],1),"daysSnow":m["daysSnow"]} for month,m in sorted(months.items())]
+             "precipTotalMm":round(m["precipMm"],1) if m["nPrecip"] else None,
+             "snowfallTotalCm":round(m["snowCm"],1) if m["nSnow"] else None,
+             "daysSnow":m["daysSnow"] if m["nSnow"] else None,
+             "observationDays":{"temperature":m["nTemperature"],"precipitation":m["nPrecip"],"snowfall":m["nSnow"]}} for month,m in sorted(months.items())]
         }
     except Exception as ex:
         res["historyError"]=str(ex)[:300]
@@ -171,7 +173,11 @@ def main():
       "wikidataIdsRequested":len(ids),"wikidataRecordsReturned":sum(bool(r["wikidataMetadata"]) for r in records),
       "wikidataFieldsFound":dict(fields),"weather":{"sampled":len(weather),
         "forecastSuccess":sum("forecast" in x for x in weather),
-        "historic2025Success":sum("historic2025" in x for x in weather)},
+        "historic2025Success":sum("historic2025" in x for x in weather),
+        "historicPrecipitationAvailable":sum("historic2025" in x and any(
+            m.get("precipTotalMm") is not None for m in x["historic2025"]["months"]) for x in weather),
+        "historicSnowfallAvailable":sum("historic2025" in x and any(
+            m.get("snowfallTotalCm") is not None for m in x["historic2025"]["months"]) for x in weather)},
       "errors":errs,"examples":records[:8],
       "note":"Small purposive sample, not national coverage. Population/sindaco may be stale; Wikidata is NOT official ISTAT/DAIT."}
     OUT.mkdir(parents=True,exist_ok=True)
