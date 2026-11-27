@@ -21,7 +21,7 @@ export interface AlpineMapOptions {
 
 /** Icone proprietarie disegnate in canvas: casetta/rifugio e paese. */
 function addMapIcons(map: MlMap): void {
-  for (const kind of ['rifugio','borgo'] as const) {
+  for (const kind of ['rifugio','bivacco','borgo'] as const) {
     const key='cb-poi-'+kind;
     if(map.hasImage(key))continue;
     const size=60;
@@ -29,7 +29,7 @@ function addMapIcons(map: MlMap): void {
     canvas.width=canvas.height=size;
     const ctx=canvas.getContext('2d');
     if(!ctx)continue;
-    ctx.fillStyle=kind==='rifugio'?'#ff2677':'#e4ffbe';
+    ctx.fillStyle=kind==='rifugio'?'#ff2677':kind==='bivacco'?'#ffc97a':'#e4ffbe';
     ctx.beginPath();ctx.arc(30,30,28,0,Math.PI*2);ctx.fill();
     ctx.lineWidth=3;ctx.strokeStyle='#173f30';ctx.stroke();
     ctx.fillStyle='#163b2b';
@@ -38,6 +38,9 @@ function addMapIcons(map: MlMap): void {
       ctx.fillRect(17,31,26,17);
       ctx.fillStyle='#fffcf4';ctx.fillRect(26,35,8,13);
       ctx.fillRect(20,35,4,5);ctx.fillRect(36,35,4,5);
+    } else if(kind==='bivacco'){
+      ctx.beginPath();ctx.moveTo(12,44);ctx.lineTo(30,14);ctx.lineTo(48,44);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#fffcf4';ctx.fillRect(26,30,8,14);
     } else {
       ctx.fillRect(13,28,12,20);ctx.fillRect(29,22,14,26);
       ctx.beginPath();ctx.moveTo(10,28);ctx.lineTo(19,18);ctx.lineTo(28,28);ctx.closePath();ctx.fill();
@@ -45,6 +48,16 @@ function addMapIcons(map: MlMap): void {
       ctx.fillStyle='#e4ffbe';ctx.fillRect(17,33,4,6);ctx.fillRect(33,27,5,7);
     }
     map.addImage(key,ctx.getImageData(0,0,size,size),{pixelRatio:2});
+  }
+  if(!map.hasImage('cb-poi-cluster-pill')){
+    const canvas=document.createElement('canvas');canvas.width=100;canvas.height=48;
+    const ctx=canvas.getContext('2d');
+    if(ctx){
+      ctx.fillStyle='#173e30';ctx.strokeStyle='#e9ffc9';ctx.lineWidth=3;
+      ctx.beginPath();ctx.roundRect(2,2,96,44,20);ctx.fill();ctx.stroke();
+      map.addImage('cb-poi-cluster-pill',ctx.getImageData(0,0,100,48),{pixelRatio:2,
+        stretchX:[[35,65]],stretchY:[[18,30]],content:[12,5,88,43]});
+    }
   }
 }
 
@@ -70,25 +83,23 @@ export function addAlpinePlaceLayers(map: MlMap, all: AlpinePlace[], options: Al
     tolerance:0,buffer:16,
   });
   map.addLayer({
-    id:'cb-atlas-clusters',type:'circle',source:sourceId,
+    id:'cb-atlas-clusters',type:'symbol',source:sourceId,
     filter:['has','point_count'],minzoom:4,
-    paint:{
-      'circle-color':['step',['get','point_count'],'#bed4ac',15,'#f2b9d0',80,'#ff2677'],
-      'circle-radius':['step',['get','point_count'],16,15,21,80,27],
-      'circle-stroke-width':2,'circle-stroke-color':'#164630',
+    layout:{
+      'icon-image':'cb-poi-cluster-pill',
+      'icon-text-fit':'both',
+      'icon-text-fit-padding':[9,13,9,13],
+      'text-field':['get','point_count_abbreviated'],
+      'text-font':['Noto Sans Bold'],'text-size':13,
+      'icon-allow-overlap':false,
     },
-  });
-  map.addLayer({
-    id:'cb-atlas-cluster-count',type:'symbol',source:sourceId,
-    filter:['has','point_count'],
-    layout:{'text-field':['get','point_count_abbreviated'],'text-font':['Noto Sans Bold'],'text-size':12},
-    paint:{'text-color':'#173f2e','text-halo-color':'#eff5e7','text-halo-width':1},
+    paint:{'text-color':'#ffffff'},
   });
   map.addLayer({
     id:'cb-atlas-poi-icons',type:'symbol',source:sourceId,
     filter:['!',['has','point_count']],minzoom:9,
     layout:{
-      'icon-image':['match',['get','kind'],'rifugio','cb-poi-rifugio','cb-poi-borgo'],
+      'icon-image':['match',['get','kind'],'rifugio','cb-poi-rifugio','bivacco','cb-poi-bivacco','cb-poi-borgo'],
       'icon-size':['interpolate',['linear'],['zoom'],9,.7,14,1.05],
       'icon-allow-overlap':false,
     },
@@ -115,14 +126,14 @@ export function addAlpinePlaceLayers(map: MlMap, all: AlpinePlace[], options: Al
   const selected=(event:{features?:{properties?:Record<string,unknown>}[];originalEvent?:Event})=>{
     const f=event.features?.[0];
     const slug=f?.properties?.slug, kind=f?.properties?.kind;
-    if(typeof slug!=='string'||(kind!=='rifugio'&&kind!=='borgo'))return;
+    if(typeof slug!=='string'||(kind!=='rifugio'&&kind!=='bivacco'&&kind!=='borgo'))return;
     event.originalEvent?.stopPropagation();
     // Non catturare la lista iniziale dei POI: l'atlante carica il JSON
     // dopo la mappa, e i click devono usare i properties aggiornati del source.
     if(options.onSelect){
       const item=places.find(p=>p.slug===slug);
       if(item)options.onSelect(item);
-    }else window.location.hash=`#atlante/${kind==='rifugio'?'rifugi':'borghi'}/${slug}`;
+    }else window.location.hash=`#atlante/${kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'borghi'}/${slug}`;
   };
   for(const layer of ['cb-atlas-poi-icons','cb-atlas-poi-label']){
     map.on('click',layer,selected);

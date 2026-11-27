@@ -552,19 +552,41 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
         <span className="cima-trail-area">{region}{route.loop ? ' · Anello' : ''}</span>
       </div>
       <p className="cima-route-description">{trailDescription(route)}</p>
-      {route.photos?.[0] && <a className="cima-route-cover" href={route.photos[0].sourceUrl} target="_blank" rel="noopener noreferrer">
+      <div className="gpx-stats">
+        {[
+          ['Distanza', units.distance(route.distanceM)],
+          ['Dislivello positivo', hasElevation ? units.height(elevation.gainM) : unavailable],
+          ['Dislivello negativo', hasElevation ? units.height(elevation.lossM) : unavailable],
+          ['Tempo stimato', formatEstimate(estimate.minutes * 60)],
+          // Community routes only: curated files have no counter.
+          ...(route.downloads !== undefined ? [['Download', String(route.downloads)]] : []),
+        ].map(([label, value]) => (
+          <div className="gpx-stat" key={label} title={label === 'Tempo stimato' ? estimate.caption : undefined}>
+            <strong>{value}</strong>
+            <span>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      {hasElevation ? (
+        <ElevationProfile points={elevation.points} height={sidebar ? 132 : 72} hoverIndex={hoverIndex} onHoverIndex={onHoverIndex} />
+      ) : (
+        <p className="route-elevation-unavailable">{elevation.pending ? 'Sto stimando il dislivello dal terreno…' : 'Dislivello non disponibile per questo tracciato.'}</p>
+      )}
+
+      {route.photos?.[0] && <figure className="cima-route-cover">
         <img src={route.photos[0].url} alt={route.photos[0].caption || displayTitle} loading="lazy" />
         <small>Fotografia: {route.photos[0].author || 'Wikimedia Commons'} · {route.photos[0].license || 'licenza nella fonte'}</small>
-      </a>}
+      </figure>}
       {route.stops && route.stops.length > 0 && (
         <section className="cb-route-destinations" aria-label="Rifugi e località vicine alla traccia">
           <h3>RIFUGI &amp; POSTI DOVE FINIRE</h3>
           <p>Questi luoghi sono stati trovati vicino alla traccia. Il sentiero non garantisce accesso diretto.</p>
           <div className="cb-route-destination-list">
             {route.stops.slice(0, 7).map((stop) => (
-              <a key={stop.slug} href={`#atlante/${stop.kind === 'rifugio' ? 'rifugi' : 'borghi'}/${stop.slug}`}>
+              <a key={stop.slug} href={`#atlante/${stop.kind === 'rifugio' ? 'rifugi' : stop.kind === 'bivacco' ? 'bivacchi' : 'borghi'}/${stop.slug}`}>
                 <strong>{stop.name}</strong>
-                <small>{stop.kind === 'rifugio' ? 'RIFUGIO' : 'BORGO'} · {stop.relation === 'arrivo' ? 'ZONA ARRIVO' : stop.relation === 'partenza' ? 'ZONA PARTENZA' : 'LUNGO IL TRACCIATO'} ↗</small>
+                <small>{stop.kind === 'rifugio' ? 'RIFUGIO' : stop.kind === 'bivacco' ? 'BIVACCO' : 'PAESE'} · {stop.relation === 'arrivo' ? 'ZONA ARRIVO' : stop.relation === 'partenza' ? 'ZONA PARTENZA' : 'LUNGO IL TRACCIATO'} ↗</small>
               </a>
             ))}
           </div>
@@ -591,28 +613,6 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
       {reviewable && !reviewsState.error && (
         <p className="route-rating">{reviewsState.reviews && <RatingLabel rating={reviewsState.rating} />}</p>
       )}
-      <div className="gpx-stats">
-        {[
-          ['Distanza', units.distance(route.distanceM)],
-          ['Dislivello positivo', hasElevation ? units.height(elevation.gainM) : unavailable],
-          ['Dislivello negativo', hasElevation ? units.height(elevation.lossM) : unavailable],
-          // Community routes only: curated files have no counter.
-          ...(route.downloads !== undefined ? [['Download', String(route.downloads)]] : []),
-          ['Tempo stimato', formatEstimate(estimate.minutes * 60)],
-        ].map(([label, value]) => (
-          <div className="gpx-stat" key={label} title={label === 'Tempo stimato' ? estimate.caption : undefined}>
-            <strong>{value}</strong>
-            <span>{label}</span>
-          </div>
-        ))}
-      </div>
-
-      {hasElevation ? (
-        <ElevationProfile points={elevation.points} height={sidebar ? 132 : 72} hoverIndex={hoverIndex} onHoverIndex={onHoverIndex} />
-      ) : (
-        <p className="route-elevation-unavailable">{elevation.pending ? 'Sto stimando il dislivello dal terreno…' : 'Dislivello non disponibile per questo tracciato.'}</p>
-      )}
-
       {endpoints && (
         <p className="route-legend">
           {endpoints.isLoop ? (

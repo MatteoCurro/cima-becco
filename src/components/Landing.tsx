@@ -99,13 +99,20 @@ export function Landing() {
             <Row title="Pessime idee per il weekend" link={ROUTES_LINK} loading={!routes}>
               {routes?.map((route, i) => <RouteTile key={route.slug} route={route} index={i} />)}
             </Row>
-            <section className="cb-home-atlas" aria-label="Atlante di montagna">
-              <div className="cb-home-atlas-head"><span>NON SOLO VETTE</span><h2>LA MONTAGNA NON FINISCE IN CIMA.</h2><p>Scegli un rifugio, un paese di partenza o un cammino lungo: il percorso si trova.</p></div>
-              <div className="cb-home-atlas-grid">
-                <a href="#atlante/rifugi"><small>01 / DESTINAZIONI</small><strong>RIFUGI.<br/>POI SI VEDE.</strong><span>ESPLORA I RIFUGI ↗</span></a>
-                <a href="#atlante/borghi"><small>02 / PUNTI DI PARTENZA</small><strong>BORGHI PICCOLI.<br/>GITE GROSSE.</strong><span>TROVA UN PAESE ↗</span></a>
-                <a href="#atlante/trekking"><small>03 / CHI TE LO FA FARE?</small><strong>CAMMINI XXL.<br/>SCUSE CORTE.</strong><span>ALTE VIE &amp; SENTIERO ITALIA ↗</span></a>
+            <section className="cb-home-atlas" aria-label="Esplora Cima Becco">
+              <div className="cb-home-atlas-head">
+                <span>PARTI DA QUI</span>
+                <h2>LA MONTAGNA, SENZA IL CASINO.</h2>
+                <p>Un solo punto di partenza, cinque modi per esplorare. Scegli quello che cerchi e sulla mappa vedrai solo le informazioni utili.</p>
               </div>
+              <nav className="cb-home-atlas-grid" aria-label="Categorie di esplorazione">
+                <a href="#routes"><small>01 / MUOVERSI</small><strong>SENTIERI<br/>E FERRATE.</strong><span>VEDI I PERCORSI ↗</span></a>
+                <a href="#map"><small>02 / SALIRE</small><strong>CIME<br/>E VETTE.</strong><span>ESPLORA LE CIME ↗</span></a>
+                <a href="#atlante/rifugi"><small>03 / RIPOSARE</small><strong>RIFUGI.<br/>POI SI VEDE.</strong><span>SCOPRI I RIFUGI ↗</span></a>
+                <a href="#atlante/bivacchi"><small>04 / ARRANGIARSI</small><strong>BIVACCHI.<br/>POCHE SCUSE.</strong><span>TROVA UN BIVACCO ↗</span></a>
+                <a href="#atlante/borghi"><small>05 / PARTIRE</small><strong>PAESI.<br/>GITE GROSSE.</strong><span>ESPLORA I PAESI ↗</span></a>
+              </nav>
+              <a className="cb-home-atlas-treks" href="#atlante/trekking">CERCHI UN'AVVENTURA LUNGA? ALTE VIE E TREKKING A TAPPE ↗</a>
             </section>
             {(rows ?? PLACEHOLDER_ROWS).slice(0, COUNTRY_ROWS).map(placeRow)}
             {worldShown.map((country) => (

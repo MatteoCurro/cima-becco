@@ -95,7 +95,7 @@ export function TrailHero() {
           MA CHI TE L’HA <span>FATTO FARE?</span>
         </h1>
         <p className="trail-hero-lead">
-          Rifugi, sentieri, borghi, ferrate e GPX. Il panorama te lo guadagni. Le scuse lasciale a valle.
+          Sentieri, cime, rifugi, bivacchi e paesi di montagna. Il panorama te lo guadagni. Le informazioni essenziali, invece, sono qui.
         </p>
         <div className="trail-hero-actions">
           <button type="button" className="btn btn-dark" onClick={() => openMapWith({ kind: 'near-me' })}>

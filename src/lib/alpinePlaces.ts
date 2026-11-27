@@ -3,7 +3,11 @@ import { DATA_BASE, type Bounds } from './venues';
 export interface AlpinePlace {
   slug: string;
   name: string;
-  kind: 'rifugio' | 'borgo';
+  kind: 'rifugio' | 'bivacco' | 'borgo';
+  access?: string;
+  fee?: string;
+  winterRoom?: string;
+  seasonal?: string;
   lat: number;
   lng: number;
   osmUrl: string;
@@ -46,8 +50,8 @@ export function loadAlpinePlaces(): Promise<AlpinePlacesDataset> {
   return pending;
 }
 
-export function atlasCategory(kind: AlpinePlace['kind']): 'rifugi' | 'borghi' {
-  return kind === 'rifugio' ? 'rifugi' : 'borghi';
+export function atlasCategory(kind: AlpinePlace['kind']): 'rifugi' | 'bivacchi' | 'borghi' {
+  return kind === 'rifugio' ? 'rifugi' : kind === 'bivacco' ? 'bivacchi' : 'borghi';
 }
 
 export function alpinePlaceLink(place: Pick<AlpinePlace, 'slug' | 'kind'>): string {
