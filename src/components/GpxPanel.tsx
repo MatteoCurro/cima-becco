@@ -39,7 +39,7 @@ interface GpxPanelProps {
   onShowRoute: (slug: string) => void;
 }
 
-const ACTIVITIES: RouteActivity[] = ['run', 'trail', 'cycle'];
+const ACTIVITIES: RouteActivity[] = ['hike', 'trail', 'ferrata'];
 
 export function GpxPanel({
   loaded,
@@ -242,14 +242,14 @@ export function GpxPanel({
             if (!busy) void publish();
           }}
         >
-          <h3>Share it with everyone</h3>
+          <h3>Condividi il percorso</h3>
           <label className="field">
-            <span>Route name</span>
+            <span>Nome del percorso</span>
             <input value={name} onChange={(event) => setName(event.target.value)} maxLength={120} required />
           </label>
           <div className="field">
-            <span>Type</span>
-            <div className="chip-row" role="radiogroup" aria-label="Route type">
+            <span>Tipologia</span>
+            <div className="chip-row" role="radiogroup" aria-label="Tipo di percorso">
               {ACTIVITIES.map((value) => (
                 <button
                   key={value}
@@ -264,6 +264,7 @@ export function GpxPanel({
               ))}
             </div>
           </div>
+          {activity === 'ferrata' && <p className="photo-note">Per una via ferrata verifica sempre difficoltà CAI, attrezzatura necessaria, condizioni e tempi ufficiali: un GPX non certifica la sicurezza del tracciato.</p>}
           {user && (
             <CreditChips username={user.username} anonymous={anonymous} onChange={setAnonymous}>
               {anonymous && <span className="photo-note">Credited as anonymous — still in My uploads, so you can delete it later.</span>}
