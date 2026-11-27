@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Map as MapLibreMap, Marker, NavigationControl, type GeoJSONSource } from 'maplibre-gl';
+import { Map as MapLibreMap, Marker, NavigationControl, Popup, type GeoJSONSource } from 'maplibre-gl';
 import type { Route } from '../types';
 import { MAP_STYLE_URL } from '../map/constants';
 import { installMountainBasemap, MountainBasemapControl } from '../map/mountainBasemap';
 import { addAlpinePlaceLayers, alpinePlacesGeoJSON } from '../map/alpineOverlays';
 import type { AlpinePlace } from '../lib/alpinePlaces';
+import type { AlpineWaterPoint } from '../lib/alpineWater';
 
 interface Props {
   places: AlpinePlace[];
@@ -13,7 +14,7 @@ interface Props {
   routes?: Route[];
   height?: number | string;
   onSelect?: (place: AlpinePlace) => void;
-  water?: {lng:number;lat:number;potable:boolean}[];
+  water?: Pick<AlpineWaterPoint,'lat'|'lng'|'name'|'kind'|'potable'>[];
   caption?: string;
 }
 const EMPTY_LINE = {type:'FeatureCollection' as const,features:[]};
@@ -49,7 +50,7 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=NO_ROUTES,heigh
     return Number.isFinite(west) ? [[west,south],[east,north]] as [[number,number],[number,number]] : null;
   },[routes]);
   useEffect(()=>{if(routes.length && !places.length) setShowTrails(true);},[routes.length,places.length]);
-  const [showWater,setShowWater]=useState(false);
+  const [showWater,setShowWater]=useState(true);
 
   useEffect(()=>{
     if(!container.current||mapRef.current)return;
@@ -71,9 +72,26 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=NO_ROUTES,heigh
       map.addLayer({id:'cb-atlas-nearby-route-line',type:'line',source:'cb-atlas-nearby-routes',
         paint:{'line-color':'#f71970','line-width':3.2,'line-opacity':.9}});
       map.addSource('cb-atlas-water',{type:'geojson',data:EMPTY_LINE});
-      map.addLayer({id:'cb-atlas-water-points',type:'circle',source:'cb-atlas-water',minzoom:11,
-        paint:{'circle-radius':5.5,'circle-color':['case',['==',['get','potable'],true],'#168dd5','#7db6bc'],
+      map.addLayer({id:'cb-atlas-water-points',type:'circle',source:'cb-atlas-water',minzoom:8,
+        paint:{'circle-radius':5.5,'circle-color':['case',['==',['get','potable'],'yes'],'#168dd5','#7db6bc'],
           'circle-stroke-color':'#fff','circle-stroke-width':2}});
+      map.on('click','cb-atlas-water-points',(event)=>{
+        const point=event.features?.[0];
+        if(!point||point.geometry.type!=='Point')return;
+        const coordinates=point.geometry.coordinates as [number,number];
+        const node=document.createElement('div');
+        node.className='cb-water-map-popover';
+        const heading=document.createElement('strong');
+        heading.textContent=String(point.properties?.name||'Punto acqua mappato');
+        const detail=document.createElement('small');
+        const potable=String(point.properties?.potable||'unknown');
+        detail.textContent=potable==='yes'?'Potabilità indicata in OSM · verificare sul posto':
+          potable==='no'?'Segnalata NON potabile':'Potabilità non verificata';
+        node.append(heading,detail);
+        new Popup({closeButton:true,maxWidth:'260px'}).setLngLat(coordinates).setDOMContent(node).addTo(map);
+      });
+      map.on('mouseenter','cb-atlas-water-points',()=>{map.getCanvas().style.cursor='pointer';});
+      map.on('mouseleave','cb-atlas-water-points',()=>{map.getCanvas().style.cursor='';});
       initialized.current=true;
       setReady(true);
       sync();
@@ -83,7 +101,7 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=NO_ROUTES,heigh
       (map.getSource('cb-atlas-nearby-routes') as GeoJSONSource).setData(routeGeometry(routes));
       (map.getSource('cb-atlas-water') as GeoJSONSource).setData({
         type:'FeatureCollection',features:water.map(p=>({
-          type:'Feature' as const,properties:{potable:p.potable},
+          type:'Feature' as const,properties:{potable:p.potable,name:p.name,kind:p.kind},
           geometry:{type:'Point' as const,coordinates:[p.lng,p.lat]},
         })),
       });
@@ -110,7 +128,7 @@ export function AlpineAtlasMap({places,kind,selected=null,routes=NO_ROUTES,heigh
     const map=mapRef.current;if(!map||!initialized.current)return;
     (map.getSource('cb-atlas-water') as GeoJSONSource | undefined)?.setData({
       type:'FeatureCollection',features:water.map(p=>({
-        type:'Feature' as const,properties:{potable:p.potable},
+        type:'Feature' as const,properties:{potable:p.potable,name:p.name,kind:p.kind},
         geometry:{type:'Point' as const,coordinates:[p.lng,p.lat]},
       })),
     });

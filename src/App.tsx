@@ -1,4 +1,5 @@
 import { homeHref, routeHref, routeDetailHref } from './lib/navigation';
+import { loadAlpineWater, type AlpineWaterPoint } from './lib/alpineWater';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Landing } from './components/Landing';
 import { ResultsList } from './components/ResultsList';
@@ -72,6 +73,8 @@ const NO_PHOTOS: RoutePhoto[] = [];
 // landing page down to a small bundle that paints immediately; the map is only
 // fetched once someone actually opens it.
 const MapView = lazy(() => import('./map/MapView').then((m) => ({ default: m.MapView })));
+const AlpineAtlasMap = lazy(() => import('./components/AlpineAtlasMap').then(m=>({default:m.AlpineAtlasMap})));
+const NO_ALPINE_PLACES: import('./lib/alpinePlaces').AlpinePlace[] = [];
 const PlannerPage = lazy(() => import('./components/PlannerPage').then((m) => ({ default: m.PlannerPage })));
 const AlpineAtlasPage = lazy(() => import('./components/AlpineAtlasPage').then((m) => ({ default: m.AlpineAtlasPage })));
 const AlpineExplorePage = lazy(() => import('./components/AlpineExplorePage').then((m) => ({ default: m.AlpineExplorePage })));
@@ -1071,6 +1074,21 @@ function MapApp() {
     else pickFromSearch(intent.slug, false);
   }, [dataset, routesReady, intentNonce, handleLocate, searchArea, pickFromSearch, pickRouteFromSearch, selectRoute, allRoutes, allVenues, routeBookmarks, favorites, openVenue]);
 
+  // Solo il percorso selezionato e i veri punti acqua OSM; nessuna coordinata approssimata.
+  const [detailWater,setDetailWater]=useState<AlpineWaterPoint[]>([]);
+  useEffect(()=>{
+    if(!isRouteDetail||!selectedRoute?.waterSources?.length){setDetailWater([]);return;}
+    let mounted=true;
+    const ids=new Set(selectedRoute.waterSources.map(source=>source.slug));
+    void loadAlpineWater().then(dataset=>{
+      if(mounted)setDetailWater(dataset.sources.filter(point=>ids.has(point.slug)));
+    });
+    return ()=>{mounted=false;};
+  },[isRouteDetail,selectedRoute]);
+  const detailRouteMap=useMemo(()=>selectedRoute?[selectedRoute]:[],[selectedRoute]);
+  const detailWaterMap=useMemo(()=>detailWater.map(point=>({lat:point.lat,lng:point.lng,
+    name:point.name,kind:point.kind,potable:point.potable})),[detailWater]);
+
   const routePanel =
     !droppedGpx && selectedRoute ? (
     <RoutePanel
@@ -1205,9 +1223,10 @@ function MapApp() {
             </pre>
           </div>
         ) : (
-          <div className="map-wrap">
+          <div className="map-wrap" id={isRouteDetail?"cb-route-map":undefined}>
             <Suspense fallback={<div className="map-skeleton"><div className="map-skeleton-pulse" /></div>}>
-              {mapNeeded && <MapView
+              {isRouteDetail && <AlpineAtlasMap places={NO_ALPINE_PLACES} kind="borgo" routes={detailRouteMap} water={detailWaterMap} caption="TRACCIA E PUNTI ACQUA" height="100%" />}
+              {!isRouteDetail && mapNeeded && <MapView
                 allRoutes={mode === 'routes' ? planner.listedRoutes : allRoutes}
                 mode={mode}
                 selectedRouteSlug={selectedRouteSlug}

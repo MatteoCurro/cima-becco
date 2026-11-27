@@ -174,7 +174,7 @@ export function PlaceDetail({ place, onBack, places }: { place: AlpinePlace; onB
           {place.operator&&<p><strong>Gestore o ente: </strong>{place.operator}</p>}
           {place.openingHours&&<p><strong>Orari dichiarati: </strong>{place.openingHours}</p>}
           <div className="cb-location-contact-links">
-            {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\\d]/g,'')}>☎ {place.phone}</a>}
+            {place.phone&&<a href={'tel:'+place.phone.replace(/[^+\d]/g,'')}>☎ {place.phone}</a>}
             {place.email&&<a href={'mailto:'+place.email}>✉ {place.email}</a>}
             {place.website&&<a href={place.website} target="_blank" rel="noopener noreferrer">Sito ufficiale ↗</a>}
           </div>

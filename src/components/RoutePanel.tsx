@@ -601,14 +601,12 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
           <p>Nei dati cartografici risultano <b>{route.waterSources.length}</b> punti acqua entro 120 metri dalla traccia.
             {' '}{route.waterSources.filter(w=>w.potable==='yes').length} con indicazione OSM di potabilità; per gli altri non darla per scontata.</p>
           <div className="cb-route-water-points">
-            {route.waterSources.slice(0,8).map(w=>{
-              const parts=/^osm-([nwr])-(\d+)$/.exec(w.slug);
-              const typ=parts?({'n':'node','w':'way','r':'relation'} as const)[parts[1] as 'n'|'w'|'r']:null;
-              const href=typ?`https://www.openstreetmap.org/${typ}/${parts![2]}`:null;
-              return href?<a key={w.slug} href={href} target="_blank" rel="noopener noreferrer">
-                <span>{w.name}</span><small>{w.potable==='yes'?'POTABILITÀ INDICATA':w.potable==='no'?'NON POTABILE':'NON VERIFICATA'} · {w.distanceM} m dal GPX</small>
-              </a>:<span key={w.slug}>{w.name}</span>;
-            })}
+            {route.waterSources.slice(0,8).map(w=>(
+              <a key={w.slug} href={fullDetail?'#cb-route-map':routeDetailHref(route.slug,route.source)}>
+                <span>{w.name}</span>
+                <small>{w.potable==='yes'?'POTABILITÀ INDICATA':w.potable==='no'?'NON POTABILE':'NON VERIFICATA'} · {w.distanceM} m dal GPX · APRI SULLA MAPPA</small>
+              </a>
+            ))}
           </div>
           <small>Prossimità geometrica ≠ accesso, disponibilità o sicurezza dell’acqua. Verifica sul posto.</small>
         </section>
