@@ -1,0 +1,684 @@
+{
+  "version": "1.0",
+  "canonicalSpec": "docs/MODELLO_METADATI_E_LAYOUT.md",
+  "policy": "Plan only; tested access is not validated per-field availability, license or permission to publish. No overwrite of current importers.",
+  "sources": [
+    {
+      "id": "osm",
+      "label": "OpenStreetMap",
+      "url": "https://www.openstreetmap.org",
+      "format": "PBF/Overpass JSON",
+      "rights": "ODbL-1.0; attribuzione e condizioni database derivato",
+      "evidence": "main:scripts/import_alpine_places.py; main:scripts/import_osm_routes.py; PR8:pipeline geography-report.json",
+      "status": "pilot_and_existing_incremental",
+      "licenseGate": "known_with_obligations",
+      "refresh": "celle a rotazione; PBF regionali per bulk",
+      "operations": "reuse_existing_pipeline; do not run competing OSM writers"
+    },
+    {
+      "id": "cai_refuges",
+      "label": "Unico Rifugi CAI",
+      "url": "https://rifugi.cai.it/api/documentation",
+      "format": "REST JSON list, search, detail fields[], media[]",
+      "rights": "diritti di riutilizzo e licenze media NON confermati: nessun bulk publish",
+      "evidence": "PR8:cai-api-access-report.json; cai-shelter-coverage.json; 80/764 list + 4 detail",
+      "status": "tested_pilot",
+      "licenseGate": "requires_review",
+      "refresh": "updatedAt / incrementale SOLO dopo autorizzazione",
+      "operations": "reuse scripts/pilot_cai_api_access.py and pilot_cai_batch_metadata.py from PR8"
+    },
+    {
+      "id": "sat",
+      "label": "Società Alpinisti Tridentini",
+      "url": "https://www.sat.tn.it/sentiero-italia/",
+      "format": "HTML/schede/GPX specifici",
+      "rights": "verificare licenza di ogni contenuto; ODbL dichiarata per dati sentieri ≠ licenza foto/testi/rifugi",
+      "evidence": "PR8:trek-stage-report.json (0 live; 18 snapshot); media-hut-history-report.json (2 hut history sections)",
+      "status": "tested_partial_live_failure",
+      "licenseGate": "per_dataset",
+      "refresh": "controllo aggiornamento fonte; no scraping frequente",
+      "operations": "reuse parser pilot_sat_trekking_stages.py; HTML currently not matching"
+    },
+    {
+      "id": "cai_infomont",
+      "label": "CAI INFOMONT",
+      "url": "https://www.cai.it/sentieri-e-rifugi/infomont/",
+      "format": "download e servizi catasto da valutare",
+      "rights": "ODbL dichiarata ufficialmente per il catasto sentieri, attribuzione CAI",
+      "evidence": "main:docs/FONTI_ESCURSIONISTICHE.md; pagina CAI Infomont",
+      "status": "official_documented_no_adapter",
+      "licenseGate": "known_with_obligations",
+      "refresh": "download regionale incrementale quando possibile",
+      "operations": "network graph + sentiero fisico, non sintesi di escursione"
+    },
+    {
+      "id": "wikidata",
+      "label": "Wikidata",
+      "url": "https://www.wikidata.org/w/api.php",
+      "format": "API wbgetentities, SPARQL con limiti",
+      "rights": "CC0 dati strutturati; le immagini rimandano a Commons con diritti propri",
+      "evidence": "PR8:localities-report.json (37/37 QID, 24 quote, 25 P18), main photo enrichment",
+      "status": "pilot_tested",
+      "licenseGate": "known_open",
+      "refresh": "change-based/batch ragionevoli",
+      "operations": "match QID; proprietà e qualificatori distinti; mai sindaco/pop correnti ufficiali"
+    },
+    {
+      "id": "commons",
+      "label": "Wikimedia Commons",
+      "url": "https://commons.wikimedia.org/w/api.php",
+      "format": "MediaWiki imageinfo extmetadata + file/page",
+      "rights": "licenza, autore, permessi e attribuzioni di OGNI file; P18 ≠ uso libero",
+      "evidence": "PR8:media-hut-history-report.json (6 file, 5 URL licenza); main:scripts/enrich_alpine_photos.py",
+      "status": "pilot_and_existing_enrichment",
+      "licenseGate": "per_asset",
+      "refresh": "batch incrementale; rivalidazione licenze se necessario",
+      "operations": "reuse existing enrich_alpine_photos.py; photo match exact QID/OSM file, no nearby-only"
+    },
+    {
+      "id": "wikipedia",
+      "label": "Wikipedia",
+      "url": "https://it.wikipedia.org/w/api.php",
+      "format": "API sections / links / revision",
+      "rights": "testi con licenza e attribuzione; vietata copia senza rispetto termini, preferire fatti e fonti originali",
+      "evidence": "PR8:media-hut-history-report.json (4 pagine sezioni)",
+      "status": "pilot_structural_only",
+      "licenseGate": "per_content",
+      "refresh": "a revisione",
+      "operations": "non copia massiva narrativa; storia con citazioni e controlli"
+    },
+    {
+      "id": "geonames",
+      "label": "GeoNames",
+      "url": "https://www.geonames.org/export/",
+      "format": "dump TSV incrementale/tiles",
+      "rights": "CC BY 4.0 dati GeoNames, mantenere attribuzione",
+      "evidence": "main:public/data/peaks + worldPeaks.ts; GeoNames official",
+      "status": "existing_catalog",
+      "licenseGate": "known_with_obligations",
+      "refresh": "delta dump / revisita periodica",
+      "operations": "ID geonames+class+country; elevation DEM diversa dalla misurata"
+    },
+    {
+      "id": "istat",
+      "label": "ISTAT",
+      "url": "https://www.istat.it/classificazione/codici-dei-comuni-delle-province-e-delle-regioni/",
+      "format": "CSV/ZIP/xlsx e cataloghi ufficiali",
+      "rights": "controllare licenza del singolo dataset e sua revisione",
+      "evidence": "PR8:public-admin-biographies-webcams.json (cataloghi), pagina ISTAT codici 2026",
+      "status": "catalog_tested_data_import_pending",
+      "licenseGate": "per_dataset",
+      "refresh": "a pubblicazione nuove annualità/snapshot",
+      "operations": "codice ISTAT STRINGA 6 caratteri e validità anagrafica; popolazione con data e perimetro"
+    },
+    {
+      "id": "dait",
+      "label": "DAIT Ministero dell'Interno",
+      "url": "https://dait.interno.gov.it/documenti/sindaciincarica.csv",
+      "format": "CSV",
+      "rights": "verificare licenza e modalità di riuso dataset",
+      "evidence": "PR8:public-admin-biographies-webcams.json (7783 rows, data header 24/08/2026)",
+      "status": "pilot_tested",
+      "licenseGate": "requires_review",
+      "refresh": "quando CSV cambia, non per individuo",
+      "operations": "codice comune + carica + decorrenza; data elezione ≠ validità attuale"
+    },
+    {
+      "id": "regional_geoportal",
+      "label": "Geoportali e catasti regionali",
+      "url": "https://geoportale.regione.emilia-romagna.it/",
+      "format": "ArcGIS/WFS/GeoJSON/GPX/PBF caso per caso",
+      "rights": "licenza per dataset; interoperabilità e precisione",
+      "evidence": "main:docs/FONTI_ESCURSIONISTICHE.md",
+      "status": "candidate_some_downloads_documented",
+      "licenseGate": "per_dataset",
+      "refresh": "a revisione fonte",
+      "operations": "segmenti rete / aree protette e confini validati; non sostituisce CAI ufficiale"
+    },
+    {
+      "id": "regional_meteo",
+      "label": "ARPA, Meteotrentino, Meteo Alto Adige",
+      "url": "https://www.meteotrentino.it/dati/meteo/webcam/",
+      "format": "API/stazioni/bollettini/webcam secondo portale",
+      "rights": "termine e permessi per feed, still e embed singoli",
+      "evidence": "PR8:public-admin-biographies-webcams.json (3 HTTP200; 0 webcam streams parsed)",
+      "status": "portals_access_only",
+      "licenseGate": "requires_review",
+      "refresh": "bollettini su TTL fonte; quota/stazione/timestamp",
+      "operations": "safety alerts non dedotti dal forecast; no image scraping"
+    },
+    {
+      "id": "open_meteo",
+      "label": "Open-Meteo",
+      "url": "https://open-meteo.com/en/docs",
+      "format": "Forecast JSON e historical JSON",
+      "rights": "Free API non commerciale; verificare piano commerciale e attribuzione di modello/dataset",
+      "evidence": "PR8:localities-report.json (2 forecast + 2 archive 2025, storiche precip/neve assenti)",
+      "status": "pilot_tested",
+      "licenseGate": "terms_by_usage",
+      "refresh": "previsioni ogni 3-6h SE consentito; storici per annate, cache separata",
+      "operations": "quota modello, time zone, run, neve caduta ≠ snow depth; 2025 non clima 30 anni"
+    },
+    {
+      "id": "openbeta",
+      "label": "OpenBeta",
+      "url": "https://docs.openbeta.io/introduction/overview/",
+      "format": "GraphQL",
+      "rights": "verificare attribuzione/licenza dataset e media separatamente prima di pubblico",
+      "evidence": "PR7:openbeta-report.json (64 record, 10 boulder); test_openbeta_metadata_pilot.py",
+      "status": "pilot_tested",
+      "licenseGate": "per_dataset_and_media",
+      "refresh": "delta per ID con rate-limit",
+      "operations": "sentinel -1 → null, gradi originali, tiri veri non inventati"
+    },
+    {
+      "id": "openclimbing",
+      "label": "OpenClimbing",
+      "url": "https://www.openstreetmap.org",
+      "format": "derivati OSM",
+      "rights": "stessa filiera OSM, applicare ODbL; verificare diritti aggiuntivi",
+      "evidence": "Bibbia sezione 29: candidato",
+      "status": "candidate_unverified",
+      "licenseGate": "per_dataset",
+      "refresh": "non duplicare l'importatore OSM",
+      "operations": "stessa entità sorgente; dedup OSM node/way/rel"
+    },
+    {
+      "id": "fasi",
+      "label": "FASI / palestre ufficiali",
+      "url": "https://www.federclimb.it/",
+      "format": "sito federazione / sedi e impianti",
+      "rights": "riuso non verificato; contattare prima di massivo",
+      "evidence": "Bibbia sezione 29: candidato",
+      "status": "candidate_unverified",
+      "licenseGate": "requires_review",
+      "refresh": "a evento",
+      "operations": "associazione/società FASI ≠ palestra sede fisica"
+    },
+    {
+      "id": "climbing_guides",
+      "label": "theCrag, guide, catasti locali",
+      "url": "https://www.thecrag.com/",
+      "format": "eventuale API/accordo, guide autorizzate",
+      "rights": "copyright; niente scraping di topo, testi, foto o gradi non autorizzati",
+      "evidence": "Bibbia sezione 29: candidato",
+      "status": "candidate_requires_agreement",
+      "licenseGate": "permission_required",
+      "refresh": "su accordo/licenza",
+      "operations": "chiodatura ≠ rinvii; pitch inesistente non inferito"
+    },
+    {
+      "id": "official_operator",
+      "label": "Siti ufficiali di gestori, enti e rifugi",
+      "url": "https://www.cai.it/",
+      "format": "HTML/feed/API eterogenei",
+      "rights": "permessi e licenze PER risorsa; URL pubblico non è autorizzazione a ripubblicare",
+      "evidence": "PR8:SAT 2 hut pages history; pilots CAI fields",
+      "status": "source_by_entity_to_verify",
+      "licenseGate": "per_content",
+      "refresh": "orari/operatività quando presenti, altrimenti manuale",
+      "operations": "ownership/management separati; booking official canonical URL; timestamp validità"
+    },
+    {
+      "id": "iccd_archives",
+      "label": "ICCD / archivi storici locali e CAI",
+      "url": "https://catalogo.beniculturali.it/",
+      "format": "cataloghi metadati / API da verificare",
+      "rights": "diritti per testi, foto, opere; distinguere data scatto e data caricamento",
+      "evidence": "Bibbia storia e sezione 29",
+      "status": "candidate_unverified",
+      "licenseGate": "per_asset",
+      "refresh": "quando catalogo cambia",
+      "operations": "fatti citati, note temporali, foto storiche con metadati conservativi"
+    },
+    {
+      "id": "europeana",
+      "label": "Europeana",
+      "url": "https://pro.europeana.eu/page/apis",
+      "format": "APIs metadata e aggregati",
+      "rights": "licenze oggetto/aggregatore distinte",
+      "evidence": "Bibbia sezione 29: candidato",
+      "status": "candidate_unverified",
+      "licenseGate": "per_asset",
+      "refresh": "lotti periodici",
+      "operations": "media storico con diritti e specifica fonte originale"
+    },
+    {
+      "id": "gtfs_operators",
+      "label": "GTFS e mobilità degli operatori",
+      "url": "https://gtfs.org/documentation/overview/",
+      "format": "GTFS Static/Realtime autorizzati",
+      "rights": "contratti e attribuzioni dell'operatore per feed",
+      "evidence": "Bibbia 23; nessun import dedicato",
+      "status": "candidate_unverified",
+      "licenseGate": "per_dataset",
+      "refresh": "statico al cambio; realtime su TTL",
+      "operations": "fermata servita ≠ accesso verificato al sentiero"
+    },
+    {
+      "id": "webcam_operator",
+      "label": "Webcam ufficiali e portali gestori",
+      "url": "https://meteo.provincia.bz.it/it/webcams",
+      "format": "landing/stream/still autorizzato",
+      "rights": "embed/link/still richiedono diritti separati; vietato dichiarare live senza timestamp",
+      "evidence": "PR8 webcam portals 3 reachable, metadata not extracted",
+      "status": "portals_access_only",
+      "licenseGate": "permission_required",
+      "refresh": "TTL definito dal provider, link controllato",
+      "operations": "cameraId, location, direction, target, operator, checkedAt, refreshedAt"
+    },
+    {
+      "id": "dem",
+      "label": "DEM georeferenziati con licenza",
+      "url": "https://www.opentopography.org/",
+      "format": "raster / campionamenti",
+      "rights": "licenza per DEM specifico; documentare risoluzione/datum e data",
+      "evidence": "main:scripts/enrich_alpine_elevation.py, scripts/enrich_elevation.py",
+      "status": "existing_inferred_data",
+      "licenseGate": "per_dataset",
+      "refresh": "solo al cambio DEM",
+      "operations": "quota derivata non ufficiale; fonte raster precisa, errore e metodo"
+    },
+    {
+      "id": "atlas_graph",
+      "label": "Grafo derivato Cima Becco",
+      "url": "https://www.cimabecco.it/",
+      "format": "internal typed edge JSON",
+      "rights": "ereditare attribuzioni delle geometrie e POI sorgente",
+      "evidence": "main:routes-manifest.json, route_stops; PR9:links.json",
+      "status": "pilot_implemented",
+      "licenseGate": "inherit_sources",
+      "refresh": "al cambio entità/geometria",
+      "operations": "near vs passes_near vs passes_through vs accessible_from, niente transitivity"
+    },
+    {
+      "id": "community",
+      "label": "Contributi verificati utenti (futuro)",
+      "url": "https://www.cimabecco.it/",
+      "format": "contenuti opt-in, database separato",
+      "rights": "consenso, attribuzione, moderazione, accesso e GDPR",
+      "evidence": "main:docs/SCHEMA_SOCIAL_ATLAS.sql (non distribuito)",
+      "status": "future_not_deployed",
+      "licenseGate": "user_consent",
+      "refresh": "event-driven",
+      "operations": "raw contributions non attestano dati ufficiali; review"
+    },
+    {
+      "id": "park_authorities",
+      "label": "Enti parco e ordinanze ufficiali",
+      "url": "https://www.mase.gov.it/",
+      "format": "regolamenti/bandi / geoportali",
+      "rights": "licenze e versioni per ente",
+      "evidence": "Bibbia 22 e 26, nessun adapter completato",
+      "status": "candidate_unverified",
+      "licenseGate": "per_dataset",
+      "refresh": "alert alla pubblicazione, TTL limitato",
+      "operations": "periodo e area; restrizione ha priorità su descrizioni evergreen"
+    }
+  ],
+  "sections": [
+    {
+      "sectionId": 2,
+      "kind": "municipality",
+      "candidates": [
+        "istat",
+        "dait",
+        "wikidata",
+        "osm",
+        "commons",
+        "regional_meteo",
+        "iccd_archives",
+        "atlas_graph"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 3,
+      "kind": "locality",
+      "candidates": [
+        "istat",
+        "osm",
+        "wikidata",
+        "commons",
+        "regional_meteo",
+        "atlas_graph",
+        "official_operator"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 4,
+      "kind": "summit",
+      "candidates": [
+        "geonames",
+        "osm",
+        "wikidata",
+        "dem",
+        "commons",
+        "cai_infomont",
+        "atlas_graph",
+        "regional_meteo"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 5,
+      "kind": "natural_feature",
+      "candidates": [
+        "osm",
+        "wikidata",
+        "regional_geoportal",
+        "park_authorities",
+        "dem",
+        "commons",
+        "atlas_graph"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 6,
+      "kind": "refuge",
+      "candidates": [
+        "osm",
+        "cai_refuges",
+        "sat",
+        "official_operator",
+        "commons",
+        "wikidata",
+        "atlas_graph",
+        "regional_meteo",
+        "webcam_operator"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 7,
+      "kind": "bivouac",
+      "candidates": [
+        "osm",
+        "cai_refuges",
+        "sat",
+        "official_operator",
+        "commons",
+        "atlas_graph",
+        "regional_meteo"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 8,
+      "kind": "trail_segment",
+      "candidates": [
+        "osm",
+        "cai_infomont",
+        "sat",
+        "regional_geoportal",
+        "park_authorities",
+        "atlas_graph",
+        "dem"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 9,
+      "kind": "day_itinerary",
+      "candidates": [
+        "osm",
+        "cai_infomont",
+        "sat",
+        "official_operator",
+        "atlas_graph",
+        "dem",
+        "commons",
+        "regional_meteo"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 10,
+      "kind": "long_trek",
+      "candidates": [
+        "cai_infomont",
+        "sat",
+        "official_operator",
+        "osm",
+        "atlas_graph",
+        "commons",
+        "regional_meteo"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 11,
+      "kind": "trek_stage",
+      "candidates": [
+        "sat",
+        "cai_infomont",
+        "official_operator",
+        "osm",
+        "atlas_graph",
+        "dem",
+        "regional_meteo"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 12,
+      "kind": "via_ferrata",
+      "candidates": [
+        "osm",
+        "cai_infomont",
+        "sat",
+        "climbing_guides",
+        "official_operator",
+        "park_authorities",
+        "atlas_graph"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 13,
+      "kind": "climbing_area",
+      "candidates": [
+        "osm",
+        "openbeta",
+        "climbing_guides",
+        "regional_geoportal",
+        "commons",
+        "atlas_graph"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 14,
+      "kind": "crag",
+      "candidates": [
+        "osm",
+        "openbeta",
+        "openclimbing",
+        "climbing_guides",
+        "official_operator",
+        "atlas_graph",
+        "park_authorities",
+        "commons"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 15,
+      "kind": "crag_sector",
+      "candidates": [
+        "osm",
+        "openbeta",
+        "climbing_guides",
+        "atlas_graph",
+        "commons"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 16,
+      "kind": "single_pitch",
+      "candidates": [
+        "osm",
+        "openbeta",
+        "climbing_guides",
+        "official_operator",
+        "commons"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 17,
+      "kind": "multipitch",
+      "candidates": [
+        "osm",
+        "openbeta",
+        "climbing_guides",
+        "official_operator",
+        "commons"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 18,
+      "kind": "pitch_anchor",
+      "candidates": [
+        "openbeta",
+        "climbing_guides",
+        "official_operator"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 19,
+      "kind": "boulder",
+      "candidates": [
+        "osm",
+        "openbeta",
+        "climbing_guides",
+        "park_authorities",
+        "commons"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 20,
+      "kind": "climbing_gym",
+      "candidates": [
+        "osm",
+        "fasi",
+        "official_operator",
+        "commons",
+        "atlas_graph"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 21,
+      "kind": "mountaineer_biography",
+      "candidates": [
+        "wikidata",
+        "wikipedia",
+        "iccd_archives",
+        "europeana",
+        "cai_infomont",
+        "commons"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 22,
+      "kind": "park_protection",
+      "candidates": [
+        "park_authorities",
+        "regional_geoportal",
+        "osm",
+        "wikidata",
+        "atlas_graph"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 23,
+      "kind": "mobility",
+      "candidates": [
+        "osm",
+        "gtfs_operators",
+        "official_operator",
+        "regional_geoportal",
+        "atlas_graph"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 24,
+      "kind": "weather_climate",
+      "candidates": [
+        "open_meteo",
+        "regional_meteo",
+        "dem"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 25,
+      "kind": "media_webcam",
+      "candidates": [
+        "commons",
+        "wikidata",
+        "iccd_archives",
+        "europeana",
+        "webcam_operator",
+        "official_operator"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 26,
+      "kind": "temporary_restriction",
+      "candidates": [
+        "park_authorities",
+        "regional_meteo",
+        "official_operator",
+        "sat",
+        "cai_infomont"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    },
+    {
+      "sectionId": 27,
+      "kind": "community_review",
+      "candidates": [
+        "community"
+      ],
+      "implementation": "planned_or_pilot",
+      "qualityGate": "G0_until_verified"
+    }
+  ]
+}
