@@ -52,7 +52,7 @@ def fetch_relations(bbox=None, retries=3):
             if not isinstance(result.get('elements'), list) or result.get('remark'):
                 raise RuntimeError('Overpass ha restituito una risposta incompleta')
             return result
-        except (HTTPError, URLError, TimeoutError, RuntimeError) as exc:
+        except (HTTPError, URLError, TimeoutError, RuntimeError, ValueError) as exc:
             status = getattr(exc, 'code', None)
             # Gli errori di query permanenti non devono essere ripetuti.
             if status is not None and status not in (429, 502, 503, 504):
