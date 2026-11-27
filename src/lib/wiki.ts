@@ -28,12 +28,12 @@ export interface GeneratedDescription {
   sources: string[];
 }
 
-const WIKI = 'https://en.wikipedia.org';
+const WIKI = 'https://it.wikipedia.org';
 const COMMONS = 'https://commons.wikimedia.org/w/api.php';
 
 const STOPWORDS = /\b(mount|mt|gunung|bukit|bt|pulau|hill|peak|puncak|pico|monte|mont|berg|san|shan|yama|dake)\b/g;
 const core = (name: string) =>
-  name.toLowerCase().replace(/\(.*?\)/g, ' ').replace(STOPWORDS, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+  name.normalize('NFD').toLowerCase().replace(/[\u0300-\u036f]/g, '').replace(/\(.*?\)/g, ' ').replace(STOPWORDS, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
 
 function namesMatch(a: string, b: string): boolean {
   const x = core(a);
@@ -101,7 +101,7 @@ interface CommonsResponse {
 }
 
 const OPEN_LICENCE = /^(cc by(-sa)?( \d\.\d)?|cc0|public domain|pd)/i;
-const NOT_A_VIEW = /\b(map|sign|logo|diagram|plaque|chart|flag|coat of arms|locator)\b|\.(svg|pdf|tif)$/i;
+const NOT_A_VIEW = /\b(map|sign|logo|diagram|plaque|chart|flag|coat of arms|locator|trullo|alberobello|cartolina)\b|\.(svg|pdf|tif)$/i;
 const stripHtml = (html: string) => html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 
 const photoCache = new Map<string, Promise<CommonsPhoto[]>>();
@@ -131,7 +131,7 @@ export function commonsPhotos(venue: Venue, limit = 6): Promise<CommonsPhoto[]> 
           };
         })
         .filter((item): item is { title: string; distance: number; photo: CommonsPhoto } =>
-          Boolean(item.photo && OPEN_LICENCE.test(item.photo.licence) && !NOT_A_VIEW.test(item.title)))
+          Boolean(item.photo && OPEN_LICENCE.test(item.photo.licence) && !NOT_A_VIEW.test(item.title) && item.distance <= 500 && namesMatch(item.title.replace(/^File:/i, ''), venue.name)))
         .sort((a, b) => a.distance - b.distance)
         .slice(0, limit)
         .map((item) => item.photo);
