@@ -56,6 +56,32 @@ if (existsSync(manifestPath)) {
   }
 }
 const routes = [...routeIndex.values()].filter((route) => !['cycle', 'run'].includes(route.activity));
+
+// Selezione home già pronta nel pacchetto: niente 4.000 GPX scaricati all'apertura.
+// Preferire sentieri con rifugi realmente identificati, quote e segnavia.
+const picks = routes.filter((r) => r.coordinates?.length >= 2 && r.distanceM >= 1200 && r.distanceM <= 32000)
+  .sort((a,b) => {
+    const score = r => (r.stops?.filter(s=>s.kind==='rifugio').length || 0)*18
+      + (r.stops?.filter(s=>s.kind==='borgo').length || 0)*5
+      + (r.elevationAvailable!==false ? 5 : 0)
+      + (r.caiDifficulty ? 6 : 0)
+      + (r.trailRef ? 3 : 0)
+      + (r.photos?.length ? 3 : 0);
+    return score(b)-score(a) || a.slug.localeCompare(b.slug);
+  });
+const featuredRoutes = [];
+const gridCells = new Set();
+for (const r of picks) {
+  if (featuredRoutes.length >= 20) break;
+  const mid = r.coordinates[Math.floor(r.coordinates.length/2)];
+  const cell = Math.floor(mid[0]*5) + ':' + Math.floor(mid[1]*5);
+  if (gridCells.has(cell) && featuredRoutes.length < 10) continue;
+  gridCells.add(cell);
+  featuredRoutes.push(r);
+}
+mkdirSync(join(DIST,'data'),{recursive:true});
+writeFileSync(join(DIST,'data','featured-routes.json'),JSON.stringify({generatedAt:TODAY,routes:featuredRoutes}));
+
 const descriptions = existsSync(join(DATA, 'descriptions.json')) ? readJson(join(DATA, 'descriptions.json')).descriptions ?? {} : {};
 const index = readJson(join(DATA, 'peaks', 'index.json'));
 const peakPhotos = existsSync(join(DATA, 'peaks', 'photos.json')) ? readJson(join(DATA, 'peaks', 'photos.json')).photos ?? {} : {};
