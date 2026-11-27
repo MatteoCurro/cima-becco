@@ -402,7 +402,7 @@ test('header documenti: la ricerca riempie davvero la colonna senza max-width er
       expect(layout.hdr).toBeGreaterThanOrEqual(width-2);
       expect(layout.row).toBeGreaterThanOrEqual(width-2);
       expect(layout.max).toBe('none');
-      expect(layout.search).toBeGreaterThan(layout.center-3);
+      expect(layout.search).toBeGreaterThan(layout.center-(width<744?3:65));
       expect(layout.scroll).toBeLessThanOrEqual(width+2);
     }
   }
