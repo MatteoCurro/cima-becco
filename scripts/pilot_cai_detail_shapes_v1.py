@@ -13,6 +13,7 @@ from collections import Counter
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -77,6 +78,7 @@ def summarize_detail(data):
     media_custom_names = set()
     media_mimes = Counter()
     media_original_url_schemes = Counter()
+    media_url_hosts = Counter()
     media_uuid_shapes = Counter()
 
     for item in (data.get("media") or [])[:12]:
@@ -84,6 +86,8 @@ def summarize_detail(data):
             mime = item.get("mime_type")
             media_mimes[str(mime)[:80]] += 1
             source = item.get("original_url")
+            if isinstance(source, str):
+                media_url_hosts[(urlsplit(source).hostname or "no_host").casefold()] += 1
             media_original_url_schemes[
                 source.split(":", 1)[0].lower() if isinstance(source, str) and ":" in source
                 else "missing_or_relative"
@@ -116,6 +120,7 @@ def summarize_detail(data):
             "mediaCustomPropertyKeys": sorted(media_custom_names),
             "mediaMimeTypes": dict(sorted(media_mimes.items())),
             "mediaOriginalUrlSchemes": dict(sorted(media_original_url_schemes.items())),
+            "mediaOriginalUrlHosts": dict(sorted(media_url_hosts.items())),
             "mediaUuidShapes": dict(sorted(media_uuid_shapes.items())),
             "mediaCount": len(data.get("media") or []),
             "fields": [
