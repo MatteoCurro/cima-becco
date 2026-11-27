@@ -8,6 +8,8 @@ export interface AlpinePlace {
   lng: number;
   osmUrl: string;
   elevationM?: number;
+  /** OSM = quota indicata dal mappatore; DEM = terreno stimato. */
+  elevationSource?: 'osm' | 'dem';
   wikidata?: string;
   website?: string;
   operator?: string;
