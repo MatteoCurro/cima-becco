@@ -202,7 +202,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
             <span>PREZZI / ACCESSO</span>
             {/^\s*(yes|no)\s*$/i.test(place.fee)?<strong>{place.fee.toLowerCase()==='no'?'Accesso indicato gratuito':'Tariffa presente, importo da verificare'}</strong>:
               <><strong>{place.fee}</strong>{/\d/.test(place.fee)&&<span className="cb-location-dobloni" title="Importo dichiarato; non è un rating"><FaIcon name="coins" size={14}/> <small>Importo dichiarato · verifica con il gestore</small></span>}</>}
-          </div>
+          </div>}
           {!place.phone&&!place.email&&!place.website&&<p className="cb-location-muted-note">Recapiti non disponibili nelle fonti: non significa che la struttura sia chiusa.</p>}
         </section>
         {(place.description||wikiUrl)&&<section id="cb-place-story" className="cb-detail-group cb-location-section">
