@@ -10,7 +10,7 @@ import { hasRealElevation, terrainElevations } from '../lib/terrain';
 import { assessRoute } from '../lib/routeQuality';
 import { toGpx } from '../lib/gpx';
 import { ACTIVITY_LABEL, findOverlaps, routeActivity, routeFingerprint, type RouteOverlap } from '../lib/routeAnalysis';
-import { errorText, publicUrl, uploadRouteThumb } from '../lib/api';
+import { errorText, publicUrl, uploadRouteThumb, SUPABASE_CONFIGURED } from '../lib/api';
 import { editMyRoute, useAuthUser } from '../lib/auth';
 import { updateMyRoute, useMyRoutes } from '../lib/myRoutes';
 import { useRouteReviews } from '../lib/useRouteReviews';
@@ -609,6 +609,23 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
       {/* Always rendered, so opening it can slide; inert while folded. */}
       <div className="route-more" id={`route-more-${route.slug}`} ref={moreRef}>
         <div className="route-more-inner">
+          {(route.trailRef || route.caiDifficulty || route.viaFerrataScale || route.sacScale || route.officialDescriptionUrl || route.sourceUrl) && (
+            <section className="route-official-data" aria-label="Fonti e dati escursionistici">
+              <strong>Informazioni sul percorso</strong>
+              <p className="route-meta muted">
+                {[
+                  route.caiTrailNumber ? `Sentiero CAI ${route.caiTrailNumber}` : route.trailRef ? `Segnavia ${route.trailRef}` : null,
+                  route.caiDifficulty ? `Difficoltà CAI ${route.caiDifficulty}` : null,
+                  route.sacScale ? `Scala SAC: ${route.sacScale}` : null,
+                  route.viaFerrataScale ? `Scala ferrata: ${route.viaFerrataScale}` : null,
+                  route.operator ? `Gestore: ${route.operator}` : null,
+                ].filter(Boolean).join(' · ')}
+              </p>
+              {route.sourceUrl?.startsWith('https://') && <a href={route.sourceUrl} target="_blank" rel="noopener noreferrer">Consulta il tracciato originale</a>}
+              {route.officialDescriptionUrl?.startsWith('https://') && <p><a href={route.officialDescriptionUrl} target="_blank" rel="noopener noreferrer">Consulta la descrizione ufficiale</a></p>}
+              {routeActivity(route) === 'ferrata' && <p className="route-meta muted">Via ferrata: la sola traccia GPX non indica condizioni, difficoltà effettiva né tempi tecnici. Verifica sempre la relazione ufficiale e l'attrezzatura necessaria.</p>}
+            </section>
+          )}
           <div className="gpx-stats">
             {[
               ['Highest', hasElevation ? units.height(maxM) : unavailable],
@@ -646,17 +663,22 @@ export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlu
           <OverlapChips overlaps={overlaps} onShowRoute={onShowRoute} />
 
           <div className="route-photos">
-            <strong>Along the route</strong>
+            <strong>Fotografie lungo il percorso</strong>
+            {(route.photos ?? []).map((photo) => (
+              <a key={`${photo.url}-${photo.sourceUrl}`} className="route-photo-thumb" href={photo.sourceUrl} target="_blank" rel="noopener noreferrer" title={[photo.caption, photo.author, photo.license].filter(Boolean).join(' · ')}>
+                <img src={photo.url} alt={photo.caption || `Fotografia del percorso ${route.name}`} loading="lazy" />
+              </a>
+            ))}
             {routePhotos.map((photo) => (
               <button type="button" key={photo.id} className={`route-photo-thumb ${photo.kind}`} onClick={() => onFocusPhoto(photo)} title={photo.caption || (photo.kind === 'hazard' ? 'Hazard' : 'Photo')}>
                 <img src={photo.url} alt="" loading="lazy" />
                 {photo.kind === 'hazard' && <span aria-label="Hazard">!</span>}
               </button>
             ))}
-            <button type="button" className="route-photo-add" onClick={() => setAdding(true)}>
+            {SUPABASE_CONFIGURED && <button type="button" className="route-photo-add" onClick={() => setAdding(true)}>
               <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
-              Photo or hazard
-            </button>
+              Aggiungi foto o segnalazione
+            </button>}
           </div>
 
           {reviewable && <RouteReviews key={route.slug} routeSlug={route.slug} state={reviewsState} />}
