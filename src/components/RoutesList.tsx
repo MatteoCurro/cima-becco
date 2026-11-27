@@ -1,8 +1,10 @@
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import type { Route } from '../types';
-import { routeDifficulty, routeHasElevation, routeIntersects } from '../lib/routes';
+import { routeIntersects } from '../lib/routes';
+import { trailMood, trailTitle, trailArea } from '../lib/routeEditorial';
+import { useTrailGain } from '../lib/useTrailGain';
 import type { Bounds } from '../lib/venues';
-import { regionOf } from '../lib/regions';
+
 import { RouteThumb } from './RouteThumb';
 import { ActivityTag } from './ActivityIcon';
 import { routeActivity } from '../lib/routeAnalysis';
@@ -29,9 +31,21 @@ interface RoutesListProps {
   savedOnly?: boolean;
 }
 
+function TrailStats({ route }: { route: Route }) {
+  const units = useUnits();
+  const { gain, pending } = useTrailGain(route);
+  return (
+    <span className="result-card-gain cima-route-facts">
+      <span><strong>{units.distance(route.distanceM)}</strong><small>Distanza</small></span>
+      <span><strong>{gain == null ? (pending ? '…' : 'n.d.') : units.height(gain)}</strong><small>Dislivello +{gain != null && route.elevationAvailable === false ? ' · stimato' : ''}</small></span>
+      <span><strong>{formatEstimate(routeEstimateS(route))}</strong><small>Tempo indicativo</small></span>
+    </span>
+  );
+}
+
 /** Routes are shown in the order given: the map page decides it. */
 function RoutesListInner({ routes, bounds, selectedSlug, onSelect, onHover, onImport, onShowAll, ranking = null, savedOnly = false }: RoutesListProps) {
-  const units = useUnits();
+  const [limit, setLimit] = useState(18);
   const inView = useMemo(
     () => (bounds && !ranking ? routes.filter((route) => routeIntersects(route, bounds)) : routes),
     [routes, bounds, ranking],
@@ -40,20 +54,22 @@ function RoutesListInner({ routes, bounds, selectedSlug, onSelect, onHover, onIm
   // have routes reads as broken. Fall back to everything, and say so.
   const showingAll = inView.length === 0 && routes.length > 0;
   const rows = showingAll ? routes : inView;
+  useEffect(() => setLimit(18), [bounds, ranking, savedOnly]);
+  const visible = rows.slice(0, limit);
 
   return (
     <section className="results">
       <header className="results-head">
         <div>
           <h2>
-            {rows.length} route{rows.length === 1 ? '' : 's'}
-            {ranking ? ` ${ranking.title}` : showingAll ? ' everywhere' : ' in this area'}
+            {rows.length} percors{rows.length === 1 ? 'o' : 'i'}
+            {ranking ? ` ${ranking.title}` : showingAll ? ' disponibili' : ' nella zona'}
           </h2>
           {showingAll && (
             <p className="results-sub">
-              None cross the map right now.{' '}
+              Non ci sono percorsi in questa inquadratura.{' '}
               <button type="button" className="linkish" onClick={() => onShowAll(routes)}>
-                Zoom to all routes
+                Mostra tutti sulla mappa
               </button>
             </p>
           )}
@@ -63,20 +79,21 @@ function RoutesListInner({ routes, bounds, selectedSlug, onSelect, onHover, onIm
       {routes.length === 0 && savedOnly ? (
         <div className="empty-state">
           <div className="empty-state-icon"><HeartIcon size={24} /></div>
-          <h3>No saved routes yet</h3>
-          <p>Tap the heart on a route to keep it here, on this device.</p>
+          <h3>Ancora nessun percorso salvato</h3>
+          <p>Tocca il cuore di un itinerario per ritrovarlo qui.</p>
         </div>
       ) : routes.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon"><UploadIcon size={24} /></div>
-          <h3>No routes match</h3>
-          <p>Loosen the filters, or import a GPX from your watch to see its profile here.</p>
-          <button type="button" className="btn btn-dark" onClick={onImport}>Import a GPX</button>
+          <h3>Nessun percorso trovato</h3>
+          <p>Prova a modificare i filtri oppure importa una traccia GPX.</p>
+          <button type="button" className="btn btn-dark" onClick={onImport}>Importa GPX</button>
         </div>
       ) : (
         <ul className="results-grid">
-          {rows.map((route, index) => {
-            const region = route.country ?? regionOf(route.coordinates[0][0], route.coordinates[0][1]);
+          {visible.map((route, index) => {
+            const region = trailArea(route);
+            const mood = trailMood(route);
             return (
               <li
                 key={route.slug}
@@ -85,12 +102,12 @@ function RoutesListInner({ routes, bounds, selectedSlug, onSelect, onHover, onIm
                 onMouseEnter={() => onHover(route.slug)}
                 onMouseLeave={() => onHover(null)}
               >
-                <span className="result-badge">{routeDifficulty(route)}</span>
+                <span className={`result-badge cima-effort cima-effort--${mood.level}`} title={mood.basis}>{mood.label}</span>
                 <RouteBookmarkButton route={route} variant="card" />
                 <button
                   type="button"
                   className="result-action"
-                  aria-label={`Download ${route.name} as GPX`}
+                  aria-label={`Scarica ${trailTitle(route)} in GPX`}
                   onClick={() => downloadRoute(route)}
                 >
                   <DownloadIcon size={16} />
@@ -98,11 +115,11 @@ function RoutesListInner({ routes, bounds, selectedSlug, onSelect, onHover, onIm
                 <button type="button" className="result-card" onClick={() => onSelect(route.slug)}>
                   <RouteThumb route={route} />
                   <span className="result-card-top">
-                    <span className="result-card-name">{route.name}</span>
+                    <span className="result-card-name">{trailTitle(route)}</span>
                     <ActivityTag activity={routeActivity(route)} />
                   </span>
                   <span className="result-card-meta">
-                    {[region, route.loop ? 'Loop' : 'Point to point', route.source === 'local' ? 'On this device' : null]
+                    {[region, route.loop ? 'Anello' : 'Andata', route.source === 'local' ? 'Sul dispositivo' : null]
                       .filter(Boolean)
                       .join(' · ')}
                     {route.downloads !== undefined && (
@@ -112,16 +129,15 @@ function RoutesListInner({ routes, bounds, selectedSlug, onSelect, onHover, onIm
                       </span>
                     )}
                   </span>
-                  <span className="result-card-gain">
-                    <strong>{units.distance(route.distanceM)}</strong> · <strong>{routeHasElevation(route) ? `${units.height(route.gainM)} EG` : 'Elevation unavailable'}</strong> ·{' '}
-                    <strong>{formatEstimate(routeEstimateS(route))}</strong>
-                  </span>
+                  {mood.quip && <span className="cima-route-quip">{mood.quip}</span>}
+                  <TrailStats route={route} />
                 </button>
               </li>
             );
           })}
         </ul>
       )}
+      {rows.length > limit && <button type="button" className="btn btn-light cima-more-routes" onClick={() => setLimit((n) => n + 18)}>Mostra altri percorsi ({rows.length - limit} ancora)</button>
     </section>
   );
 }
