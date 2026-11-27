@@ -90,70 +90,34 @@ const MAX_ROUTES = 3;
 
 type Lookup = { state: 'idle' } | { state: 'searching'; query: string } | { state: 'missing'; query: string };
 
-interface SgAreaFile {
-  /** kind: 'area' (planning area), 'subzone' or 'alias'; b: [west, south, east, north]. */
-  areas: { name: string; kind: string; in?: string; b: number[] }[];
-}
-
-/**
- * Singapore's planning areas, subzones and a few everyday names (Buona Vista,
- * Marina Bay), from URA Master Plan 2019 via scripts/build_sg_areas.py. Photon
- * answers these with a station or a building, and only on submit; here they
- * are suggested as you type and framed by their real extent.
- */
-function neighbourhoodPlaces(file: SgAreaFile): Place[] {
-  return file.areas.map((area) => ({
-    key: `n:${area.name}`,
-    name: area.name,
-    meta: area.kind === 'area' ? 'Planning area · Singapore' : `Neighbourhood · ${area.in ?? 'Singapore'}`,
-    bounds: { west: area.b[0], south: area.b[1], east: area.b[2], north: area.b[3] },
-    peaks: [],
-    // "one north" finds "one-north".
-    aliases: area.name.includes('-') ? [fold(area.name.replace(/-/g, ' '))] : undefined,
-  }));
-}
-
-/**
- * Countries, curated destinations and Singapore's neighbourhoods. Destinations
- * win a name clash (their boxes are hand-drawn), then countries.
- */
+/** Destinazioni curate in Italia e sull'arco alpino confinante. */
 function usePlaces(): Place[] {
   const destinations = useMemo<Place[]>(
     () => DESTINATIONS.map((d) => ({ key: `d:${d.name}`, name: d.name, meta: d.hint, bounds: d.bounds, peaks: [] })),
     [],
   );
   const [countries, setCountries] = useState<Place[]>([]);
-  const [neighbourhoods, setNeighbourhoods] = useState<Place[]>([]);
   useEffect(() => {
     let cancelled = false;
-    void import('../lib/sgAreas.json')
-      .then((module) => {
-        if (!cancelled) setNeighbourhoods(neighbourhoodPlaces(module.default satisfies SgAreaFile));
-      })
-      .catch(() => undefined);
     void countrySummaries().then((summaries) => {
       if (cancelled) return;
-      setCountries(
-        summaries.map((c) => ({
-          key: `c:${c.code}`,
-          name: c.name,
-          meta: `Country · ${formatCount(c.count)} summits`,
-          bounds: c.bounds,
-          peaks: c.peaks,
-          aliases: COUNTRY_ALIASES[c.code],
-        })),
-      );
+      setCountries(summaries
+        .filter((item) => ['IT', 'FR', 'CH', 'AT', 'SI'].includes(item.code))
+        .map((item) => ({
+          key: `c:${item.code}`,
+          name: item.name,
+          meta: `Area alpina · ${formatCount(item.count)} cime`,
+          bounds: item.bounds,
+          peaks: item.peaks,
+          aliases: COUNTRY_ALIASES[item.code],
+        })));
     });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
-  return useMemo(() => {
-    const taken = new Set(destinations.map((d) => d.name.toLowerCase()));
-    const kept = countries.filter((c) => !taken.has(c.name.toLowerCase()));
-    for (const country of kept) taken.add(country.name.toLowerCase());
-    return [...destinations, ...kept, ...neighbourhoods.filter((n) => !taken.has(n.name.toLowerCase()))];
-  }, [destinations, countries, neighbourhoods]);
+  return useMemo(
+    () => [...destinations, ...countries.filter((item) => !destinations.some((dest) => dest.name.toLowerCase() === item.name.toLowerCase()))],
+    [destinations, countries],
+  );
 }
 
 /**
@@ -445,7 +409,7 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
       <p className="small muted results-head" role="status">Looking up “{lookup.query}”…</p>
     ) : lookup.state === 'missing' ? (
       <p className="small muted results-head" role="status">
-        Could not find “{lookup.query}”. Try a hill, a town or a country.
+        Nessun risultato per “{lookup.query}”. Prova una cima o un paesino sperduto.
       </p>
     ) : normalised.length >= 2 && !hasLocal ? (
       <p className="small muted results-head">Press Search to look up “{query.trim()}” on the map.</p>
@@ -473,7 +437,7 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
             ref={inputRef}
             type="search"
             value={query}
-            aria-label="Search countries, hills, routes, blocks and streets"
+            aria-label="Cerca una cima, un sentiero, un rifugio o una località italiana"
             autoComplete="off"
             onFocus={() => setOpen(true)}
             onChange={(e) => {
@@ -488,14 +452,14 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
           />
           <SearchHint hidden={query.length > 0} />
         </label>
-        <button type="submit" className="home-search-go" aria-label="Search">
+        <button type="submit" className="home-search-go" aria-label="Cerca">
           <SearchIcon size={16} />
-          <span>Search</span>
+          <span>Cerca</span>
         </button>
         {open && (status !== null || hasLocal || suggesting) && (
           <div className="searchbar-results">
             {status}
-            {suggesting && <p className="small muted results-head">Popular regions</p>}
+            {suggesting && <p className="small muted results-head">Prova una località</p>}
             {suggesting &&
               suggestions.map((place) => (
                 <button type="button" key={place.key} className="result-row area-row" onClick={() => pickPlace(place)}>
