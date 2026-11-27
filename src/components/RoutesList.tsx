@@ -102,7 +102,7 @@ function RoutesListInner({ routes, bounds, selectedSlug, onSelect, onHover, onIm
                 onMouseEnter={() => onHover(route.slug)}
                 onMouseLeave={() => onHover(null)}
               >
-                <span className={`result-badge cima-effort cima-effort--${mood.level}`} title={mood.basis}>{mood.label}</span>
+                <span className={`result-badge cima-effort cima-effort--${mood.level}`} title={mood.basis}><strong>{mood.quip}</strong><small>{mood.label}</small></span>
                 <RouteBookmarkButton route={route} variant="card" />
                 <button
                   type="button"
@@ -129,7 +129,6 @@ function RoutesListInner({ routes, bounds, selectedSlug, onSelect, onHover, onIm
                       </span>
                     )}
                   </span>
-                  {mood.quip && <span className="cima-route-quip">{mood.quip}</span>}
                   <TrailStats route={route} />
                 </button>
               </li>
