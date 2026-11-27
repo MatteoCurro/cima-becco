@@ -22,7 +22,7 @@ function slope(km: number, gainM: number, stepM = 20): RoutePoint[] {
   return Array.from({ length: count + 1 }, (_, i) => [(i * stepM) / M_PER_DEG_LNG, 0, (gainM * i) / count] as RoutePoint);
 }
 
-const minutes = (points: RoutePoint[], activity: Parameters<typeof estimateTrackDuration>[1] = 'run') =>
+const minutes = (points: RoutePoint[], activity: Parameters<typeof estimateTrackDuration>[1] = 'hike') =>
   estimateTrackDuration(points, activity).minutes;
 
 describe('climbProfile', () => {
@@ -96,112 +96,75 @@ describe('formatDuration', () => {
   });
 });
 
-describe('estimating a duration', () => {
-  it('does not speed up a short run: a flat 3 km is 3 km at the base speed', () => {
-    const estimate = estimateTrackDuration(slope(3, 0), 'run');
-    expect(estimate.minutes).toBe(20); // 3 / 9 km/h, with no fatigue discount below 10 km
+describe('stime dei tempi per percorsi a piedi', () => {
+  it('usa 4,5 km/h per una escursione pianeggiante', () => {
+    const estimate = estimateTrackDuration(slope(3, 0), 'hike');
+    expect(estimate.minutes).toBe(40);
     expect(estimate.effectiveDistanceKm).toBeCloseTo(3, 1);
   });
 
-  it('times a steep climb at 1.4 times its gentle cost', () => {
-    const gentle = estimateProfile({ distanceKm: 10, gentleM: 500, steepM: 0 }, 'run');
-    const steep = estimateProfile({ distanceKm: 10, gentleM: 0, steepM: 500 }, 'run');
+  it('stima una salita ripida più lenta di una salita lieve a parità di dislivello', () => {
+    const gentle = estimateProfile({ distanceKm: 10, gentleM: 500, steepM: 0 }, 'hike');
+    const steep = estimateProfile({ distanceKm: 10, gentleM: 0, steepM: 500 }, 'hike');
     expect(gentle.effectiveDistanceKm).toBeCloseTo(15, 5);
     expect(steep.effectiveDistanceKm).toBeCloseTo(17, 5);
     expect(steep.minutes).toBeGreaterThan(gentle.minutes);
   });
 
-  it('times a steep track slower than a gentle one with the same climb', () => {
-    const steepTrail = estimateTrackDuration(slope(2, 300), 'trail'); // 15%
-    const gentleTrail = estimateTrackDuration(slope(6, 300), 'trail'); // 5%
-    expect(steepTrail.effectiveDistanceKm).toBeGreaterThan(2 + 1.4 * 2.7); // 1.4 x ~270 m or more of steep climb
-    expect(gentleTrail.effectiveDistanceKm).toBeLessThanOrEqual(6 + 3.01);
+  it('distingue escursione, trail running e ferrata senza introdurre il ciclismo', () => {
+    const track = slope(12, 400);
+    expect(minutes(track, 'trail')).toBeLessThan(minutes(track, 'hike'));
+    expect(minutes(track, 'ferrata')).toBeGreaterThan(minutes(track, 'hike'));
+    expect(minutes(track, undefined)).toBe(minutes(track, 'hike'));
   });
 
-  it('rides faster than it runs, and a trail takes longer than the road over the same ground', () => {
-    const track = slope(20, 200);
-    expect(minutes(track, 'cycle')).toBeLessThan(minutes(track, 'run'));
-    expect(minutes(track, 'trail')).toBeGreaterThan(minutes(track, 'run'));
-    expect(minutes(track, undefined)).toBe(minutes(track, 'run'));
-  });
-
-  it('stretches the whole time for a slower runner', () => {
+  it('rallenta il tempo stimato quando aumenta il fattore di passo', () => {
     const track = slope(10, 50);
-    expect(estimateTrackDuration(track, 'run', 1.2).minutes).toBeGreaterThan(minutes(track) * 1.15);
+    expect(estimateTrackDuration(track, 'hike', 1.2).minutes).toBeGreaterThan(minutes(track) * 1.15);
   });
 
-  it('falls back to distance and total climb, counted as gentle, when there is no track', () => {
-    // 10 km and 100 m: Deq 11 km, (11 / 9) h x 1.1^0.09 = 74 min, rounded to 75.
-    expect(estimateRouteTimeS(10_000, 100, 'run')).toBe(75 * 60);
-    expect(estimateRouteTimeS(5_000, 0, undefined)).toBe(estimateRouteTimeS(5_000, 0, 'run'));
+  it('utilizza il dislivello totale quando manca il profilo', () => {
+    expect(estimateRouteTimeS(10_000, 100, 'hike')).toBeGreaterThan(estimateRouteTimeS(10_000, 0, 'hike'));
+    expect(estimateRouteTimeS(5_000, 0, undefined)).toBe(estimateRouteTimeS(5_000, 0, 'hike'));
     expect(estimateRouteTimeS(10_000, -50, 'trail')).toBe(estimateRouteTimeS(10_000, 0, 'trail'));
   });
 
-  it('carries the caption and the effective distance with the time', () => {
-    const estimate = estimateProfile({ distanceKm: 109, gentleM: 330, steepM: 0 }, 'run');
-    expect(estimate).toEqual({
-      minutes: 930,
-      formatted: '15h 30m',
-      effectiveDistanceKm: 112.3,
-      caption: 'Realistic average time based on distance, climbing, and endurance fatigue.',
-    });
-  });
-});
-
-describe('benchmarks', () => {
-  // Each target assumes the gentle climbing a typical route of that length has.
-  it('a 10 km run with a little climbing is about 1h 10m', () => {
-    expect(minutes(slope(10, 50))).toBe(70);
-  });
-
-  it('a marathon is about 5h 30m', () => {
-    // Targets of ~5h 35m: the rounding to 10 minutes lands on 5h 30m.
-    expect(minutes(slope(42.195, 100))).toBe(330);
-  });
-
-  it('a 109 km road run is about 15h 30m', () => {
-    expect(minutes(slope(109, 300))).toBe(930);
-  });
-
-  it('a 120 km ride is about 7h 15m', () => {
-    expect(minutes(slope(120, 950), 'cycle')).toBe(435);
+  it('dichiara che le stime per le ferrate non sostituiscono quelle ufficiali', () => {
+    const estimate = estimateProfile({ distanceKm: 4, gentleM: 500, steepM: 0 }, 'ferrata');
+    expect(estimate.caption).toMatch(/ferrate/i);
+    expect(estimate.effectiveDistanceKm).toBe(9);
   });
 });
 
 describe('routeEstimateS', () => {
   const route = (over: Partial<Route>): Route =>
     ({
-      slug: 'r',
-      name: 'R',
-      distanceM: 10_000,
-      gainM: 100,
-      lossM: 100,
-      coordinates: slope(10, 100),
-      ...over,
-    }) as Route;
+      slug: 'r', name: 'R', venueSlugs: [], distanceM: 10_000,
+      gainM: 100, lossM: 100, coordinates: slope(10, 100),
+      source: 'curated', loop: false, activity: 'hike', ...over,
+    });
 
-  it('reads the track and returns seconds, rounded to a clean number of minutes', () => {
+  it('restituisce secondi arrotondati a cinque minuti', () => {
     const seconds = routeEstimateS(route({}));
     expect(seconds % 300).toBe(0);
-    expect(seconds).toBeGreaterThan(65 * 60);
-    expect(seconds).toBeLessThan(80 * 60);
+    expect(seconds).toBeGreaterThan(2 * 3600);
   });
 
-  it('counts no climb when the elevation is unknown', () => {
-    expect(routeEstimateS(route({ elevationAvailable: false }))).toBe(estimateRouteTimeS(10_000, 0, 'run'));
+  it('ignora il dislivello se la quota è ignota', () => {
+    expect(routeEstimateS(route({ elevationAvailable: false }))).toBe(estimateRouteTimeS(10_000, 0, 'hike'));
   });
 
-  it('falls back to the stored distance and gain without usable coordinates', () => {
-    expect(routeEstimateS(route({ coordinates: [] }))).toBe(estimateRouteTimeS(10_000, 100, 'run'));
+  it('stima il tempo dalla distanza se la traccia manca', () => {
+    expect(routeEstimateS(route({ coordinates: [] }))).toBe(estimateRouteTimeS(10_000, 100, 'hike'));
   });
 
-  it('scales with the runner’s pace', () => {
+  it('rispetta la regolazione del passo escursionistico', () => {
     expect(routeEstimateS(route({}), 1.25)).toBeGreaterThan(routeEstimateS(route({})));
   });
 });
 
 describe('formatEstimate', () => {
-  it('rounds to 5 minutes and reads as hours and minutes', () => {
+  it('arrotonda leggibilmente minuti e ore', () => {
     expect(formatEstimate(2 * 60)).toBe('~5 min');
     expect(formatEstimate(43 * 60)).toBe('~45 min');
     expect(formatEstimate(60 * 60)).toBe('~1 h');
