@@ -24,8 +24,8 @@ jobs:
           python-version: "3.12"
       - name: Verify no values, addresses or media are exported
         run: python -m unittest discover -s tests -p 'test_pilot_cai_detail_shapes_v1.py' -v
-      - name: Inspect only four public CAI classification enums
-        run: python scripts/pilot_cai_detail_shapes_v1.py
+      - name: Inspect only one CAI image source shape without downloading media
+        run: python scripts/pilot_cai_detail_shapes_v1.py --one
       - name: Upload metadata-only source shape audit (never raw field values)
         uses: actions/upload-artifact@v4
         with:
