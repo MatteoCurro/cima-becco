@@ -407,3 +407,18 @@ test('header documenti: la ricerca riempie davvero la colonna senza max-width er
     }
   }
 });
+
+test('hero rifugio: emblema dentro la foto e attribuzione leggibile',async({page})=>{
+  for(const width of [390,1440]){
+    await page.setViewportSize({width,height:900});
+    await page.goto('/rifugi/osm-w-39173072/');
+    const hero=page.locator('.cb-location-hero-media');
+    await expect(hero).toBeVisible({timeout:45_000});
+    const logo=hero.locator('.cb-location-avatar');
+    const credit=hero.locator('figcaption');
+    await expect(logo).toBeVisible();
+    const a=await logo.boundingBox(),b=await credit.boundingBox();
+    expect(a).not.toBeNull();expect(b).not.toBeNull();
+    expect(a!.y+a!.height).toBeLessThan(b!.y);
+  }
+});

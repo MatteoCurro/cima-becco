@@ -131,7 +131,6 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
   >
     <header className="cb-location-hero">
       <div className="cb-location-hero-copy">
-        <div className="cb-location-avatar">{place.logo?<img src={place.logo.url} alt={'Logo ufficiale di '+place.name}/>:<AlpinePlaceIcon kind={place.kind} size={39}/>}</div>
         <PlaceBadge place={place}/>
         <h1>{place.name}</h1>
         <p className="cb-location-lead">{placeLine}</p>
@@ -156,6 +155,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
       </div>
       <figure className="cb-location-hero-media">
         <AlpinePlaceVisual key={place.slug} place={place}/>
+        <div className="cb-location-avatar">{place.logo?<img src={place.logo.url} alt={'Logo ufficiale di '+place.name}/>:<AlpinePlaceIcon kind={place.kind} size={39}/>}</div>
         <figcaption>{place.photo?'Foto del luogo · attribuzione e licenza in fondo alla pagina':'Rappresentazione topografica: fotografia del luogo non disponibile'}</figcaption>
       </figure>
     </header>

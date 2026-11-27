@@ -8,7 +8,7 @@
 .cb-location-hero-media{order:-1;position:relative;margin:0 0 22px;min-width:0}
 .cb-location-hero-media>.cb-place-visual{height:clamp(200px,23vw,355px);border-radius:10px}
 .cb-location-hero-media figcaption{font-size:11px;color:#718577;margin-top:8px}
-.cb-location-avatar{width:68px;height:68px;margin:-59px 0 15px 20px;display:grid;place-items:center;position:relative;z-index:2;background:#f4ffeb;border:4px solid #fff;border-radius:12px;box-shadow:0 5px 14px #19412d29}
+.cb-location-avatar{width:64px;height:64px;position:absolute;top:14px;right:14px;margin:0;display:grid;place-items:center;z-index:2;background:#f4ffeb;border:3px solid #fff;border-radius:11px;box-shadow:0 5px 14px #19412d29}
 .cb-location-avatar img{width:100%;height:100%;object-fit:contain}
 .cb-location-hero h1{font:900 clamp(30px,3.2vw,51px)/1.04 'Bricolage Grotesque',sans-serif;letter-spacing:-.052em;overflow-wrap:anywhere;color:#1b4231;margin:7px 0 13px}
 .cb-location-lead{font:650 15px/1.65 'Space Grotesk',sans-serif;color:#425f49;margin:0 0 10px}
@@ -47,4 +47,4 @@
 .cb-trek-profile .cb-location-lead{font-weight:850;color:#b20055}
 .cb-location-content a{overflow-wrap:anywhere}
 @container(max-width:460px){.cb-location-water-grid{grid-template-columns:1fr}.cb-atlas-routes{grid-template-columns:1fr}}
-@media(max-width:900px){.cb-location-content{padding:18px clamp(14px,4vw,28px) 38px}.cb-location-hero-media>.cb-place-visual{height:clamp(210px,52vw,320px)}}
+@media(max-width:900px){.cb-location-content{padding:18px clamp(14px,4vw,28px) 38px}.cb-location-hero-media>.cb-place-visual{height:clamp(210px,52vw,320px)}.cb-location-avatar{width:54px;height:54px;top:10px;right:10px}}
