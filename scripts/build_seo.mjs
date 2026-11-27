@@ -396,8 +396,8 @@ function trailMood(route) {
   }
   return ({
     T:['Turistico · CAI T','MERENDEROS'],
-    E:['Escursionistico · CAI E','MUOVI QUELLE GAMBE'],
-    EE:['Escursionisti esperti · CAI EE','OGGI SI BESTEMMIA'],
+    E:['Escursionistico · CAI E',route.gainM>=850&&route.elevationAvailable!==false?'GAMBE IN SCIOPERO':'MUOVI QUELLE GAMBE'],
+    EE:['Escursionisti esperti · CAI EE',route.gainM>=900&&route.elevationAvailable!==false?'DO VETO MORE?':'OGGI SI BESTEMMIA'],
     EEA:['Esperti con attrezzatura · CAI EEA','NON FARE IL FENOMENO'],
   })[route.caiDifficulty] || ['Difficoltà da verificare','GRADO IN LATITANZA'];
 }
