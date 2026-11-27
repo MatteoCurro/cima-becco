@@ -109,10 +109,6 @@ function RouteLine({route}:{route:Route}){
     <FaIcon name="arrow-right" size={13}/>
   </a>;
 }
-function SourceLink({url,children}:{url?:string;children:ReactNode}){
-  return url && /^https:\/\//.test(url)?<a href={url} target="_blank" rel="noopener noreferrer">{children}</a>:null;
-}
-
 export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces,water}:RefugeProfileProps){
   const facts=place.facts??{};
   const knownServices=refugeServiceFacts(place);
