@@ -1,0 +1,378 @@
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import type { Venue } from '../types';
+import { HEIGHT_LABEL, inBounds, nearest, photoSrc, rankingHeight, venueHeight, venuePhotos, venuesInBounds, venueKindLabel, type Bounds } from '../lib/venues';
+import { haversineM } from '../lib/elevation';
+import { CardPhotoNav, VenueThumb } from './VenueThumb';
+import { HeartIcon, SearchIcon, StarIcon } from './icons';
+import { useUnits } from './UnitsContext';
+import { regionOf } from '../lib/regions';
+
+/**
+ * The score in a card's first line, right-aligned opposite the name, as on
+ * Airbnb: "★ 4.85 (12)" with reviews, "★ New" without. "New" keeps the slot
+ * filled without inventing a number; nothing is borrowed from other sites.
+ */
+export function RatingLabel({ rating }: { rating?: { average: number; count: number } }) {
+  if (!rating || rating.count === 0) {
+    return (
+      <span className="rating rating-new" aria-label="New, no reviews yet">
+        <StarIcon size={12} filled />
+        New
+      </span>
+    );
+  }
+  const score = rating.average.toFixed(2).replace(/0$/, '');
+  return (
+    <span className="rating" aria-label={`Rated ${score} out of 5, ${rating.count} review${rating.count === 1 ? '' : 's'}`}>
+      <StarIcon size={12} filled />
+      {score}
+      <span className="rating-count">({rating.count})</span>
+    </span>
+  );
+}
+
+/**
+ * One result. The card opens the place's page in a new tab, as Airbnb's
+ * listing cards do, so the map and the list stay exactly where they were.
+ * Places with more than one stored photo get Airbnb's in-card carousel; the
+ * extra files only load when someone steps to them.
+ */
+function ResultCard({
+  venue,
+  index,
+  routeCount,
+  isFavorite,
+  onToggleFavorite,
+  onHover,
+}: {
+  venue: Venue;
+  index: number;
+  routeCount: number;
+  isFavorite: boolean;
+  onToggleFavorite: (slug: string) => void;
+  onHover?: (slug: string | null) => void;
+}) {
+  const units = useUnits();
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const photoCount = useMemo(() => venuePhotos(venue).length, [venue]);
+  const height = venueHeight(venue);
+  const region = regionOf(venue.lng, venue.lat);
+
+  return (
+    <li
+      className="result-item"
+      style={{ '--i': index } as React.CSSProperties}
+      onMouseEnter={() => onHover?.(venue.slug)}
+      onMouseLeave={() => onHover?.(null)}
+    >
+      <button
+        type="button"
+        className={`result-favorite${isFavorite ? ' on' : ''}`}
+        aria-label={isFavorite ? 'Remove favourite' : 'Add to favourites'}
+        onClick={() => onToggleFavorite(venue.slug)}
+      >
+        <HeartIcon size={24} filled={isFavorite} />
+      </button>
+      <a className="result-card" data-slug={venue.slug} href={`#venue/${venue.slug}`} target="_blank" rel="noopener">
+        <VenueThumb venue={venue} index={photoIndex} />
+        <span className="result-card-top">
+          <span className="result-card-name">{venue.name}</span>
+          <RatingLabel rating={venue.rating} />
+        </span>
+        <span className="result-card-meta">
+          {venueKindLabel(venue)}
+          {region && region !== 'Singapore' ? ` in ${region}` : ''}
+          {venue.storeys != null && ` · ${venue.storeys} floors`}
+        </span>
+        <span className="result-card-gain">
+          {height ? (
+            <>
+              <strong>{units.height(height.value)}</strong>{' '}
+              {HEIGHT_LABEL[height.kind]}
+            </>
+          ) : (
+            'Height not recorded'
+          )}
+          {routeCount > 0 && ` · ${routeCount} route${routeCount === 1 ? '' : 's'}`}
+        </span>
+      </a>
+      <CardPhotoNav count={photoCount} index={photoIndex} onIndex={setPhotoIndex} name={venue.name} />
+    </li>
+  );
+}
+
+interface ResultsListProps {
+  venues: Venue[];
+  bounds: { west: number; south: number; east: number; north: number } | null;
+  routeCounts: Map<string, number>;
+  onHover?: (slug: string | null) => void;
+  favorites: Set<string>;
+  onToggleFavorite: (slug: string) => void;
+  /**
+   * The box last searched (a country, a destination), while the map is still
+   * on it: places inside it are listed first. Fitting a short, wide country
+   * pulls its neighbours in at the edges, and Johor's taller summits would
+   * otherwise head a search for Singapore.
+   */
+  searched?: Bounds | null;
+  /** Frame a set of places on the map (used by the "closest places" fallback). */
+  onShowPlaces?: (venues: Venue[]) => void;
+}
+
+const PAGE_SIZE = 24;
+
+type PageItem = number | 'ellipsis';
+
+function pageRange(total: number, current: number): PageItem[] {
+  const pages: PageItem[] = [];
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+    return pages;
+  }
+  if (current <= 4) {
+    pages.push(1, 2, 3, 4, 'ellipsis', total);
+  } else if (current >= total - 3) {
+    pages.push(1, 'ellipsis', total - 3, total - 2, total - 1, total);
+  } else {
+    pages.push(1, 'ellipsis', current - 1, current, current + 1, 'ellipsis', total);
+  }
+  return pages;
+}
+
+function Pagination({
+  current,
+  total,
+  onPage,
+}: {
+  current: number;
+  total: number;
+  onPage: (n: number) => void;
+}) {
+  if (total <= 1) return null;
+  const items = pageRange(total, current);
+  return (
+    <nav className="pagination" aria-label="Result pages">
+      <button
+        type="button"
+        className="page-btn"
+        onClick={() => onPage(current - 1)}
+        disabled={current === 1}
+        aria-label="Previous page"
+      >
+        {'‹'}
+      </button>
+      {items.map((item, i) =>
+        item === 'ellipsis' ? (
+          <span key={`ellipsis-${i}`} className="page-ellipsis" aria-hidden="true">
+            …
+          </span>
+        ) : (
+          <button
+            key={item}
+            type="button"
+            className={`page-btn${item === current ? ' active' : ''}`}
+            onClick={() => onPage(item)}
+            aria-label={`Page ${item}`}
+            aria-current={item === current ? 'page' : undefined}
+          >
+            {item}
+          </button>
+        )
+      )}
+      <button
+        type="button"
+        className="page-btn"
+        onClick={() => onPage(current + 1)}
+        disabled={current === total}
+        aria-label="Next page"
+      >
+        {'›'}
+      </button>
+    </nav>
+  );
+}
+
+/**
+ * The biggest climbs in whatever the map is currently showing.
+ *
+ * Tied to the viewport rather than a fixed list, which is what makes it useful:
+ * pan somewhere and it answers "what is worth climbing *here*". That is also the
+ * honest version of a recommendations feature — nobody has liked or saved
+ * anything yet, so ranking by the one fact we actually measured beats inventing
+ * popularity. Venues that have a photo are surfaced first, because a missing
+ * photo is the easiest clue that an entry still needs attention.
+ */
+function ResultsListInner({
+  venues,
+  bounds,
+  routeCounts,
+  onHover,
+  favorites,
+  onToggleFavorite,
+  onShowPlaces,
+  searched = null,
+}: ResultsListProps) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [page, setPage] = useState(0);
+  // The page of cards last revealed. A new page keeps showing these until its
+  // images have loaded, so panning or zooming the map never flashes skeletons
+  // over cards that were fine a second ago — skeletons are for the first load.
+  const [shown, setShown] = useState<{ key: string; rows: Venue[] }>({ key: '', rows: [] });
+
+  useEffect(() => setPage(0), [venues, bounds]);
+
+  const visible = useMemo(() => {
+    const list = bounds ? venuesInBounds(venues, bounds) : venues;
+    const score = (venue: Venue) =>
+      rankingHeight(venue) + (venue.photo?.file ? 10_000 : 0) + (searched && inBounds(searched, venue.lng, venue.lat) ? 1_000_000 : 0);
+    return [...list].sort((a, b) => score(b) - score(a));
+  }, [venues, bounds, searched]);
+  // An empty list over open water or a blank region reads as broken. Show the
+  // closest places instead, as the routes list does, with a way to go there.
+  const centreLng = bounds ? (bounds.west + bounds.east) / 2 : null;
+  const centreLat = bounds ? (bounds.south + bounds.north) / 2 : null;
+  const isEmpty = visible.length === 0;
+  const nearby = useMemo(
+    () => (isEmpty && centreLng != null && centreLat != null ? nearest(venues, centreLng, centreLat, 12) : []),
+    [isEmpty, venues, centreLng, centreLat],
+  );
+  const showingNearby = nearby.length > 0;
+  const inView = showingNearby ? nearby : visible;
+  const nearestKm = showingNearby && centreLng != null && centreLat != null
+    ? Math.round(haversineM(centreLng, centreLat, nearby[0].lng, nearby[0].lat) / 1000)
+    : 0;
+
+  const total = inView.length;
+  const heading = showingNearby
+    ? 'Nothing mapped here yet — closest places'
+    : total >= 1000
+      ? 'Over 1,000 places'
+      : `${total.toLocaleString()} place${total === 1 ? '' : 's'}`;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const currentPage = Math.max(0, Math.min(page, totalPages - 1));
+  const rows = useMemo(
+    () => inView.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE),
+    [inView, currentPage],
+  );
+  const pageKey = useMemo(() => rows.map((row) => row.slug).join('|'), [rows]);
+  const loading = pageKey !== shown.key;
+
+  useEffect(() => {
+    if (!pageKey) {
+      setShown({ key: '', rows: [] });
+      return;
+    }
+
+    let cancelled = false;
+    let earliestPassed = false;
+    let settled = false;
+    const reveal = () => {
+      if (!cancelled && earliestPassed && settled) setShown({ key: pageKey, rows });
+    };
+    const earliest = window.setTimeout(() => {
+      earliestPassed = true;
+      reveal();
+    }, 250);
+    const latest = window.setTimeout(() => {
+      settled = true;
+      reveal();
+    }, 700);
+
+    Promise.all(
+      rows.map(
+        (venue) =>
+          new Promise<void>((resolve) => {
+            if (!venue.photo?.file) {
+              resolve();
+              return;
+            }
+            const image = new Image();
+            image.onload = () => resolve();
+            image.onerror = () => resolve();
+            image.src = photoSrc(venue.photo);
+          }),
+      ),
+    ).then(() => {
+      settled = true;
+      window.clearTimeout(latest);
+      reveal();
+    });
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(earliest);
+      window.clearTimeout(latest);
+    };
+  }, [pageKey, rows]);
+
+  return (
+    <section className="results" ref={sectionRef}>
+      <header className="results-head">
+        <div>
+          <h2>{heading}</h2>
+          {showingNearby && (
+            <p className="results-sub">
+              The nearest is about {nearestKm.toLocaleString()} km away.{' '}
+              {onShowPlaces && (
+                <button type="button" className="linkish" onClick={() => onShowPlaces(nearby)}>
+                  Show them on the map
+                </button>
+              )}
+            </p>
+          )}
+        </div>
+      </header>
+
+      {total === 0 && !loading ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <SearchIcon size={28} />
+          </div>
+          <h3>No venues match</h3>
+          <p>Try widening the map area, clearing filters, or searching for a town or street name.</p>
+        </div>
+      ) : (
+        <ul className="results-grid" aria-busy={loading}>
+          {loading && shown.rows.length === 0
+            ? rows.map((venue) => (
+                <li key={venue.slug} className="skeleton-card" aria-hidden="true">
+                  <span className="sk-thumb" />
+                  <span className="sk-line" />
+                  <span className="sk-line" />
+                  <span className="sk-line" />
+                </li>
+              ))
+            : shown.rows.map((venue, index) => (
+                <ResultCard
+                  key={venue.slug}
+                  venue={venue}
+                  index={index}
+                  routeCount={venue.routeSlugs.length + (routeCounts.get(venue.slug) ?? 0)}
+                  isFavorite={favorites.has(venue.slug)}
+                  onToggleFavorite={onToggleFavorite}
+                  onHover={onHover}
+                />
+              ))}
+        </ul>
+      )}
+
+      {total > 0 && (
+        <Pagination
+          current={currentPage + 1}
+          total={totalPages}
+          onPage={(nextPage) => {
+            setPage(nextPage - 1);
+            // The page scrolls, not the list pane (the footer sits under list and map).
+            window.scrollTo({ top: 0 });
+          }}
+        />
+      )}
+    </section>
+  );
+}
+
+/**
+ * Memoised: this renders a page of cards with images, and the map above it changes
+ * state far more often than the list's own inputs do.
+ */
+export const ResultsList = memo(ResultsListInner);

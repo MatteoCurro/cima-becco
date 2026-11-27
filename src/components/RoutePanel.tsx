@@ -1,0 +1,685 @@
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { endpointIconMarkup } from '../map/endpoints';
+import { RouteBookmarkButton } from './RouteBookmarkButton';
+import type { Route, RoutePoint, Venue } from '../types';
+import { computeGain, cumulativeDistances, totalDistanceM } from '../lib/elevation';
+import { linkVenues, routeDirectionsUrl, routeEndpoints, routeHasElevation } from '../lib/routes';
+import { regionOf } from '../lib/regions';
+import { hasRealElevation, terrainElevations } from '../lib/terrain';
+import { assessRoute } from '../lib/routeQuality';
+import { toGpx } from '../lib/gpx';
+import { ACTIVITY_LABEL, findOverlaps, routeActivity, routeFingerprint, type RouteOverlap } from '../lib/routeAnalysis';
+import { errorText, publicUrl, uploadRouteThumb } from '../lib/api';
+import { editMyRoute, useAuthUser } from '../lib/auth';
+import { updateMyRoute, useMyRoutes } from '../lib/myRoutes';
+import { useRouteReviews } from '../lib/useRouteReviews';
+import { CreditChips } from './CreditChips';
+import { HeldBadge, QualityNotice } from './QualityNotice';
+import { RouteTrim } from './RouteTrim';
+import { ElevationProfile } from './ElevationProfile';
+import { TypeGlyph } from './TypeGlyph';
+import { useUnits } from './UnitsContext';
+import { downloadRoute } from './VenueCard';
+import { estimateTrackDuration, formatEstimate } from '../lib/routeTime';
+import { ArrowLeftIcon, ChevronRightIcon, CloseIcon, DownloadIcon, MapIcon, PencilIcon, ShareIcon } from './icons';
+import { ShareRouteDialog } from './ShareRouteDialog';
+import type { RoutePhoto } from '../lib/api';
+import { RoutePhotoModal } from './RoutePhotoModal';
+import { FlagIcon, ReportModal } from './ReportModal';
+import { RatingLabel } from './ResultsList';
+import { RouteReviews } from './RouteReviews';
+
+/**
+ * The route's name: it wraps onto up to two lines and never moves. If it is still too long it
+ * ends in "…", and then it is a button that opens the whole name (and closes it again). Short
+ * names are plain text. Everyone, screen readers included, always has the full name.
+ */
+function RouteTitle({ name }: { name: string }) {
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const [cut, setCut] = useState(false);
+  const [open, setOpen] = useState(false);
+  useLayoutEffect(() => {
+    const heading = headingRef.current;
+    if (!heading) return;
+    // Measured on the heading, which stays put when the text swaps between plain and button.
+    const measure = () => {
+      const text = heading.querySelector<HTMLElement>('.route-name');
+      if (text && !open) setCut(text.scrollHeight > text.clientHeight + 1);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(heading);
+    return () => observer.disconnect();
+  }, [name, open]);
+  const text = <span className={`route-name${open ? ' open' : ''}`}>{name}</span>;
+  return (
+    <h2 ref={headingRef} title={name}>
+      {cut || open ? (
+        <button type="button" className="route-name-toggle" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+          {text}
+        </button>
+      ) : (
+        text
+      )}
+    </h2>
+  );
+}
+
+interface RoutePanelProps {
+  route: Route;
+  venuesBySlug: Map<string, Venue>;
+  allRoutes: Route[];
+  hoverIndex: number | null;
+  onHoverIndex: (index: number | null) => void;
+  onClose: () => void;
+  /**
+   * `map`: a card over the map (the expanded map, or a narrow screen).
+   * `sidebar`: the left column of a split page, in place of the list, with every
+   * detail open, so the map beside it can frame the whole route.
+   */
+  placement?: 'map' | 'sidebar';
+  /**
+   * Where both layouts fit (a wide split page), "More details" docks the details into the left
+   * column and "Fewer details" floats the compact card back over the map. Absent where only the
+   * card fits (narrow screens, the expanded map): there it opens in place.
+   */
+  onToggleDock?: () => void;
+  /** Folded to a slim strip (name and the three numbers) while the map is moved by hand. */
+  folded?: boolean;
+  onUnfold?: () => void;
+  spotlightSlug: string | null;
+  onShowVenue: (slug: string) => void;
+  onShowRoute: (slug: string) => void;
+  routePhotos: RoutePhoto[];
+  onFocusPhoto: (photo: RoutePhoto) => void;
+  onPhotoAdded: (photo: RoutePhoto) => void;
+  /** The signed-in owner is editing this route's name, credit and kept range. */
+  editing?: boolean;
+  /** Kept point range while editing; the ends outside it draw ghosted on the map. */
+  editTrim?: [number, number] | null;
+  onEditTrimChange?: (trim: [number, number] | null) => void;
+  onEditStart?: () => void;
+  /** Saved (the updated route) or cancelled (null). */
+  onEditEnd?: (route: Route | null) => void;
+}
+
+const YEAR_MS = 365.25 * 24 * 3600 * 1000;
+
+/** "Recorded 12 Mar 2024 · 2 years ago", with a nudge when a track is old enough that trails may have changed. */
+export function RecordedLine({ recordedAt }: { recordedAt: string | null | undefined }) {
+  // Read once per mount: "2 years ago" does not need to tick while the panel is open.
+  const [now] = useState(() => Date.now());
+  if (!recordedAt) return <p className="route-meta muted">Recording date not in file</p>;
+  const date = new Date(recordedAt);
+  const years = (now - date.getTime()) / YEAR_MS;
+  const ago = years < 1 / 12 ? 'this month' : years < 1 ? `${Math.round(years * 12)} months ago` : `${Math.floor(years)} year${Math.floor(years) === 1 ? '' : 's'} ago`;
+  return (
+    <p className={`route-meta${years >= 3 ? ' stale' : ''}`}>
+      Recorded {date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })} · {ago}
+      {years >= 3 && ' · trails may have changed since'}
+    </p>
+  );
+}
+
+const TIP_W = 290;
+
+/**
+ * Secondary facts (when it was recorded, where EG/EL came from) behind an (i),
+ * not in the way. The card floats over the page in a portal, placed under the
+ * button: inside the panel it was clipped by the panel's own scrolling edge.
+ */
+export function InfoTip({ children, label = 'About these numbers' }: { children: React.ReactNode; label?: string }) {
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLSpanElement>(null);
+  const closeTimer = useRef<number | undefined>(undefined);
+  const open = pos !== null;
+
+  const show = () => {
+    window.clearTimeout(closeTimer.current);
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const left = Math.min(Math.max(12, rect.left + rect.width / 2 - 24), window.innerWidth - TIP_W - 12);
+    setPos({ top: rect.bottom + 8, left });
+  };
+  const hide = () => {
+    window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => setPos(null), 140);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const outside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (!buttonRef.current?.contains(target) && !popRef.current?.contains(target)) setPos(null);
+    };
+    // The button moves with the map panel; a floating card left behind would point at nothing.
+    const away = () => setPos(null);
+    document.addEventListener('mousedown', outside);
+    window.addEventListener('resize', away);
+    window.addEventListener('scroll', away, true);
+    return () => {
+      document.removeEventListener('mousedown', outside);
+      window.removeEventListener('resize', away);
+      window.removeEventListener('scroll', away, true);
+    };
+  }, [open]);
+  useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+
+  // Hover shows it on a mouse; a tap toggles it on touch screens.
+  const hoverable = () => window.matchMedia('(hover: hover)').matches;
+  return (
+    <span className="info-tip" onMouseEnter={() => hoverable() && show()} onMouseLeave={() => hoverable() && hide()}>
+      <button
+        ref={buttonRef}
+        type="button"
+        className="info-tip-btn"
+        aria-label={label}
+        aria-expanded={open}
+        onClick={() => (open && !hoverable() ? setPos(null) : show())}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 11v5.5" />
+          <circle cx="12" cy="7.8" r="0.6" fill="currentColor" />
+        </svg>
+      </button>
+      {pos &&
+        createPortal(
+          <span
+            ref={popRef}
+            className="info-tip-pop floating"
+            role="tooltip"
+            style={{ top: pos.top, left: pos.left, width: TIP_W }}
+            onMouseEnter={() => window.clearTimeout(closeTimer.current)}
+            onMouseLeave={() => hoverable() && hide()}
+          >
+            {children}
+          </span>,
+          document.body,
+        )}
+    </span>
+  );
+}
+
+/** Who added a route and under what licence, shown inside the (i) rather than under the panel. */
+function RouteCredit({ route }: { route: Route }) {
+  if (!route.contributor && !route.licence && !route.sourceUrl) return null;
+  return (
+    <span className="route-meta muted">
+      {route.contributor && <>Added by {route.contributor}. </>}
+      {route.licence && <>{route.licence}. </>}
+      {route.sourceUrl && (
+        <a href={route.sourceUrl} target="_blank" rel="noreferrer">
+          Source
+        </a>
+      )}
+    </span>
+  );
+}
+
+export function ElevationSourceLine({ source }: { source: Route['elevationSource'] | 'dem' }) {
+  const text = source === 'terrain'
+    ? 'EG/EL measured from terrain data (the file had no elevation)'
+    : source === 'dem'
+      ? 'EG/EL from Singapore terrain model'
+      : 'EG/EL from the device that recorded it';
+  return <p className="route-meta muted">{text}</p>;
+}
+
+export function OverlapChips({ overlaps, onShowRoute }: { overlaps: RouteOverlap[]; onShowRoute: (slug: string) => void }) {
+  if (overlaps.length === 0) return null;
+  return (
+    <div className="gpx-touches route-overlaps">
+      <strong>Shares ground with</strong>
+      {overlaps.slice(0, 4).map(({ route, share }) => (
+        <button type="button" key={route.slug} onClick={() => onShowRoute(route.slug)} title={`${Math.round(share * 100)}% of this route runs along ${route.name}`}>
+          {route.name} · {Math.round(share * 100)}%
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Ground elevation for routes whose file had none, measured once per route on demand. */
+function useTerrainFill(route: Route): { points: RoutePoint[]; gainM: number; lossM: number; fromTerrain: boolean; pending: boolean } {
+  const needsFill = !routeHasElevation(route);
+  const [filled, setFilled] = useState<{ slug: string; points: RoutePoint[] | null } | null>(null);
+  useEffect(() => {
+    if (!needsFill) return;
+    let cancelled = false;
+    void terrainElevations(route.coordinates).then((points) => {
+      if (!cancelled) setFilled({ slug: route.slug, points });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [needsFill, route.coordinates, route.slug]);
+  const ready = filled?.slug === route.slug ? filled.points : null;
+  return useMemo(() => {
+    if (!needsFill) return { points: route.coordinates, gainM: route.gainM, lossM: route.lossM, fromTerrain: false, pending: false };
+    if (!ready) return { points: route.coordinates, gainM: 0, lossM: 0, fromTerrain: false, pending: filled?.slug !== route.slug };
+    const { gainM, lossM } = computeGain(ready);
+    return { points: ready, gainM, lossM, fromTerrain: true, pending: false };
+  }, [needsFill, ready, route, filled]);
+}
+
+interface RouteEditFormProps {
+  route: Route;
+  /** Every place the app knows, to re-link the kept range's "Passes" list. */
+  venues: Venue[];
+  username: string;
+  trim: [number, number] | null;
+  onTrimChange: (trim: [number, number] | null) => void;
+  hoverIndex: number | null;
+  onHoverIndex: (index: number | null) => void;
+  onSaved: (route: Route) => void;
+  onCancel: () => void;
+}
+
+/**
+ * Rename, re-credit or re-trim one of your own uploads. Mounted only while
+ * the panel is in edit mode, so its fields always start from the stored
+ * route. The trim drags ghost the ends on the map exactly like the
+ * pre-publish cut; saving swaps the stored GPX for the kept slice.
+ */
+function RouteEditForm({ route, venues, username, trim, onTrimChange, hoverIndex, onHoverIndex, onSaved, onCancel }: RouteEditFormProps) {
+  const [name, setName] = useState(route.name);
+  const [anonymous, setAnonymous] = useState(!route.contributor);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const trimmed = trim !== null;
+  const kept = useMemo(
+    () => (trim ? route.coordinates.slice(trim[0], trim[1] + 1) : route.coordinates),
+    [route.coordinates, trim],
+  );
+  const { gainM, lossM } = useMemo(() => computeGain(kept), [kept]);
+  // Stored points are already simplified and carry no timestamps, so only the checks that survive that run.
+  const keptQuality = useMemo(
+    () => assessRoute({
+      points: kept,
+      activity: route.activity ?? 'run',
+      hasElevation: hasRealElevation(kept),
+      deviceElevation: route.elevationSource === 'gps',
+      spacing: 'simplified',
+    }),
+    [kept, route.activity, route.elevationSource],
+  );
+  const keptDistanceM = useMemo(() => Math.round(totalDistanceM(kept)), [kept]);
+  const keepRange = useMemo<[number, number] | null>(() => {
+    if (!trim) return null;
+    const distances = cumulativeDistances(route.coordinates);
+    const total = distances[distances.length - 1] || 1;
+    return [distances[trim[0]] / total, distances[trim[1]] / total];
+  }, [route.coordinates, trim]);
+
+  const nextName = name.trim();
+  const renamed = nextName !== route.name;
+  const recredited = anonymous !== !route.contributor;
+  const canSave = Boolean(nextName) && !busy && (renamed || recredited || trimmed);
+
+  const save = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const linked = trimmed ? linkVenues(kept, venues).slice(0, 200) : route.venueSlugs;
+      const { gpxPath } = await editMyRoute(route.slug, {
+        name: renamed ? nextName : undefined,
+        anonymous: recredited ? anonymous : undefined,
+        track: trimmed
+          ? {
+              points: kept,
+              distanceM: keptDistanceM,
+              gainM,
+              lossM,
+              venueSlugs: linked,
+              fingerprint: routeFingerprint(kept),
+              gpxText: toGpx(nextName, kept),
+              qualityFlags: keptQuality.flags,
+            }
+          : undefined,
+      });
+      const first = kept[0];
+      const last = kept[kept.length - 1];
+      const updated: Route = {
+        ...route,
+        name: nextName,
+        contributor: anonymous ? undefined : username,
+        coordinates: kept,
+        distanceM: keptDistanceM,
+        gainM,
+        lossM,
+        venueSlugs: linked,
+        loop: trimmed ? Boolean(first && last && Math.hypot(first[0] - last[0], first[1] - last[1]) < 0.001) : route.loop,
+        gpxUrl: gpxPath ? publicUrl('gpx', gpxPath) : route.gpxUrl,
+        // The database re-decides from the flags: a pass releases a held route, a fail holds a published one.
+        held: trimmed ? keptQuality.verdict === 'held' || undefined : route.held,
+      };
+      updateMyRoute(route.slug, {
+        name: updated.name,
+        anonymous,
+        distanceM: updated.distanceM,
+        gainM: updated.gainM,
+        ...(trimmed ? { status: keptQuality.verdict === 'held' ? 'pending' as const : 'approved' as const, qualityFlags: keptQuality.flags } : {}),
+      });
+      onSaved(updated);
+      if (trimmed) {
+        // The card image shows the old line; re-render it like a fresh publish.
+        void import('../map/renderThumb')
+          .then(({ renderRouteThumb }) => renderRouteThumb(updated))
+          .then((thumb) => (thumb ? uploadRouteThumb(updated.slug, thumb.key, thumb.blob) : undefined))
+          .catch(() => undefined);
+      }
+    } catch (caught) {
+      setError(errorText(caught));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="route-edit">
+      <label className="field">
+        <span>Route name</span>
+        <input value={name} onChange={(event) => setName(event.target.value)} maxLength={120} required />
+      </label>
+      <CreditChips username={username} anonymous={anonymous} onChange={setAnonymous} />
+      <ElevationProfile
+        points={route.coordinates}
+        height={96}
+        hoverIndex={hoverIndex}
+        onHoverIndex={onHoverIndex}
+        keepRange={keepRange}
+      />
+      <RouteTrim points={route.coordinates} trim={trim} onChange={onTrimChange} />
+      {trimmed && <QualityNotice flags={keptQuality.flags} heading={keptQuality.verdict === 'held' ? 'Only you will see this route until it is fixed:' : undefined} />}
+      {trimmed && (
+        <p className="route-meta muted small">
+          The stored GPX is replaced with the kept track — the greyed ends leave the archive for good.
+        </p>
+      )}
+      {error && <p className="gpx-import-error" role="alert">{error}</p>}
+      <div className="route-edit-actions">
+        <button type="button" className="btn btn-light" onClick={onCancel} disabled={busy}>
+          Cancel
+        </button>
+        <button type="button" className="btn btn-accent" disabled={!canSave} onClick={() => void save()}>
+          {busy ? 'Saving…' : 'Save changes'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The selected route, over the map with its profile: a side sheet down the
+ * left of a wide map, a sheet along the bottom of a narrow one.
+ *
+ * Compact by default — title, the three numbers people compare routes by, and
+ * a short profile — so the route itself keeps most of the map. "More details"
+ * grows it into the full sheet (every stat, places passed, overlaps, photos).
+ *
+ * While the visitor pans or zooms by hand it folds to a slim strip so the
+ * route's outline is in view; the rest stays mounted (and "More details"
+ * keeps its state), only hidden, and comes back on a tap or once the map
+ * rests. Its size changes never re-frame the map: framing reads the panel
+ * only when the app itself moves the camera.
+ */
+export function RoutePanel({ placement = 'map', onToggleDock, route, venuesBySlug, allRoutes, hoverIndex, onHoverIndex, onClose, folded = false, onUnfold, spotlightSlug, onShowVenue, onShowRoute, routePhotos, onFocusPhoto, onPhotoAdded, editing = false, editTrim = null, onEditTrimChange, onEditStart, onEditEnd }: RoutePanelProps) {
+  const [adding, setAdding] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const sidebar = placement === 'sidebar';
+  const [expandedByHand, setExpanded] = useState(false);
+  const expanded = sidebar || expandedByHand;
+  const user = useAuthUser();
+  const { routes: myUploads } = useMyRoutes();
+  // Only the owner may edit a community route; the upload list is the
+  // authority (server-side ownership — contributor text is just the credit).
+  const mine = route.source === 'community' && Boolean(myUploads?.some((upload) => upload.slug === route.slug));
+  const editMode = editing && mine && Boolean(user);
+  const moreRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    moreRef.current?.toggleAttribute('inert', !expanded);
+  }, [expanded]);
+  // Only approved routes take reviews: nobody else can see a held, rejected or on-device one.
+  const reviewable = route.source !== 'local' && !route.held && !route.rejected;
+  const reviewsState = useRouteReviews(route.slug, reviewable, user?.id ?? null);
+  const units = useUnits();
+  // Only a route anyone can open has a link worth sharing: not one held, rejected or kept on this device.
+  const shareable = reviewable;
+  const directionsHref = routeDirectionsUrl(route.coordinates);
+  const [sharing, setSharing] = useState(false);
+  const elevation = useTerrainFill(route);
+  const hasElevation = routeHasElevation(route) || elevation.fromTerrain;
+  // Terrain-filled elevation counts once it has arrived; the estimate is by distance alone until then.
+  const estimate = useMemo(
+    () => estimateTrackDuration(elevation.points, routeActivity(route), 1, hasElevation),
+    [elevation.points, route, hasElevation],
+  );
+  const endpoints = useMemo(() => routeEndpoints(route.coordinates), [route.coordinates]);
+  // Said once when the route opens: the markers are only on the map, where a screen reader cannot see them.
+  const [announced, setAnnounced] = useState('');
+  useEffect(() => {
+    if (!endpoints) return;
+    const timer = window.setTimeout(
+      () => setAnnounced(`${route.name} selected. ${endpoints.isLoop ? 'Start and finish are at the same point.' : 'Start and finish are marked on the map.'}`),
+      400,
+    );
+    return () => window.clearTimeout(timer);
+  }, [route.slug, route.name, endpoints]);
+  const { minM, maxM } = useMemo(() => computeGain(elevation.points), [elevation.points]);
+  const overlaps = useMemo(() => findOverlaps(route.coordinates, allRoutes, route.slug), [route, allRoutes]);
+  const region = route.country ?? regionOf(route.coordinates[0][0], route.coordinates[0][1]);
+  const touches = route.venueSlugs
+    .map((slug) => venuesBySlug.get(slug))
+    .filter((venue): venue is Venue => Boolean(venue));
+  const km = totalDistanceM(route.coordinates) / 1000 || 1;
+  const unavailable = elevation.pending ? 'Measuring…' : 'Unavailable';
+
+  return (
+    <section className={`gpx-panel route-panel ${expanded ? 'expanded' : 'compact'}${folded ? ' folded' : ''}${sidebar ? ' in-sidebar' : ''}`} aria-label={`Route: ${route.name}`} key={route.slug}>
+      {sidebar ? (
+        <button type="button" className="route-back" onClick={onClose}>
+          <ArrowLeftIcon size={16} />
+          All routes
+        </button>
+      ) : (
+        /* A light runs once round the card's edge when a route opens. */
+        <span className="route-panel-orbit" aria-hidden="true" />
+      )}
+      {folded && (
+        <button type="button" className="route-panel-unfold" onClick={onUnfold} aria-label={`Show details for ${route.name}`} />
+      )}
+      <header className="gpx-panel-head">
+        <div className="route-panel-title">
+          <RouteTitle name={route.name} />
+          <InfoTip>
+            <RecordedLine recordedAt={route.recordedAt} />
+            {hasElevation && <ElevationSourceLine source={elevation.fromTerrain ? 'terrain' : route.elevationSource ?? 'gps'} />}
+            <span className="route-meta muted">{[ACTIVITY_LABEL[routeActivity(route)], region, route.loop ? 'Loop' : 'Point to point'].filter(Boolean).join(' · ')}</span>
+            <RouteCredit route={route} />
+            <button type="button" className="info-tip-action" onClick={() => setReporting(true)}>
+              <FlagIcon />
+              Report an issue with this route
+            </button>
+          </InfoTip>
+        </div>
+        <div className="gpx-panel-actions">
+          {mine && !editMode && (
+            <button
+              type="button"
+              className="gpx-icon-btn"
+              onClick={() => {
+                onUnfold?.();
+                onEditStart?.();
+              }}
+              aria-label={`Edit ${route.name}`}
+              data-tip="Edit route"
+            >
+              <PencilIcon size={15} />
+            </button>
+          )}
+          <RouteBookmarkButton route={route} variant="panel" />
+          {shareable && (
+            <button type="button" className="gpx-icon-btn" onClick={() => setSharing(true)} aria-label="Share this route" aria-haspopup="dialog" data-tip="Share">
+              <ShareIcon size={15} />
+            </button>
+          )}
+          <button type="button" className="gpx-icon-btn" onClick={() => downloadRoute(route)} aria-label="Download GPX" data-tip="Download GPX">
+            <DownloadIcon size={15} />
+          </button>
+          {!sidebar && (
+            <button type="button" className="gpx-close" onClick={onClose} aria-label="Close route">
+              <CloseIcon size={12} />
+            </button>
+          )}
+        </div>
+      </header>
+      <span className="visually-hidden" role="status">{announced}</span>
+      {mine && route.held && (
+        <div className="route-held">
+          <HeldBadge />
+          <QualityNotice
+            flags={(myUploads?.find((upload) => upload.slug === route.slug)?.qualityFlags ?? []).filter((f) => f.severity === 'key')}
+            heading="Held until it is fixed. Trim the problem out, or ask a maintainer to review it."
+          />
+        </div>
+      )}
+
+      {editMode && user ? (
+        <RouteEditForm
+          route={route}
+          venues={[...venuesBySlug.values()]}
+          username={user.username}
+          trim={editTrim}
+          onTrimChange={(next) => onEditTrimChange?.(next)}
+          hoverIndex={hoverIndex}
+          onHoverIndex={onHoverIndex}
+          onSaved={(updated) => onEditEnd?.(updated)}
+          onCancel={() => onEditEnd?.(null)}
+        />
+      ) : (
+        <>
+      {reviewable && !reviewsState.error && (
+        <p className="route-rating">{reviewsState.reviews && <RatingLabel rating={reviewsState.rating} />}</p>
+      )}
+      <div className="gpx-stats">
+        {[
+          ['Distance', units.distance(route.distanceM)],
+          ['EG', hasElevation ? units.height(elevation.gainM) : unavailable],
+          ['EL', hasElevation ? units.height(elevation.lossM) : unavailable],
+          // Community routes only: curated files have no counter.
+          ...(route.downloads !== undefined ? [['Downloads', String(route.downloads)]] : []),
+          ['Est. time', formatEstimate(estimate.minutes * 60)],
+        ].map(([label, value]) => (
+          <div className="gpx-stat" key={label} title={label === 'Est. time' ? estimate.caption : undefined}>
+            <strong>{value}</strong>
+            <span>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      {hasElevation ? (
+        <ElevationProfile points={elevation.points} height={sidebar ? 132 : 72} hoverIndex={hoverIndex} onHoverIndex={onHoverIndex} />
+      ) : (
+        <p className="route-elevation-unavailable">{elevation.pending ? 'Measuring elevation from terrain data…' : 'Elevation is unavailable for this route.'}</p>
+      )}
+
+      {endpoints && (
+        <p className="route-legend">
+          {endpoints.isLoop ? (
+            <span><span aria-hidden="true" dangerouslySetInnerHTML={{ __html: endpointIconMarkup('loop', 18) }} />Start and finish</span>
+          ) : (
+            <>
+              <span><span aria-hidden="true" dangerouslySetInnerHTML={{ __html: endpointIconMarkup('start', 18) }} />Start</span>
+              <span><span aria-hidden="true" dangerouslySetInnerHTML={{ __html: endpointIconMarkup('finish', 18) }} />Finish</span>
+            </>
+          )}
+        </p>
+      )}
+
+      {directionsHref && (
+        <a className="venue-primary-action route-directions" href={directionsHref} target="_blank" rel="noreferrer" aria-label="Get directions to the start (opens in maps)">
+          <MapIcon size={16} />
+          Get directions
+        </a>
+      )}
+
+      {/* Always rendered, so opening it can slide; inert while folded. */}
+      <div className="route-more" id={`route-more-${route.slug}`} ref={moreRef}>
+        <div className="route-more-inner">
+          <div className="gpx-stats">
+            {[
+              ['Highest', hasElevation ? units.height(maxM) : unavailable],
+              ['Lowest', hasElevation ? units.height(minM) : unavailable],
+              ['EG / km', hasElevation ? units.height(elevation.gainM / km) : unavailable],
+            ].map(([label, value]) => (
+              <div className="gpx-stat" key={label}>
+                <strong>{value}</strong>
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {touches.length > 0 && (
+            <div className="gpx-touches route-passes">
+              <strong>Passes</strong>
+              <div className="route-passes-line">
+                {touches.map((venue) => (
+                  <button
+                    type="button"
+                    key={venue.slug}
+                    className={venue.slug === spotlightSlug ? 'on' : undefined}
+                    aria-pressed={venue.slug === spotlightSlug}
+                    title={venue.slug === spotlightSlug ? 'Show the whole route again' : `Show ${venue.name} on the map`}
+                    onClick={() => onShowVenue(venue.slug)}
+                  >
+                    <TypeGlyph type={venue.type} />
+                    {venue.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <OverlapChips overlaps={overlaps} onShowRoute={onShowRoute} />
+
+          <div className="route-photos">
+            <strong>Along the route</strong>
+            {routePhotos.map((photo) => (
+              <button type="button" key={photo.id} className={`route-photo-thumb ${photo.kind}`} onClick={() => onFocusPhoto(photo)} title={photo.caption || (photo.kind === 'hazard' ? 'Hazard' : 'Photo')}>
+                <img src={photo.url} alt="" loading="lazy" />
+                {photo.kind === 'hazard' && <span aria-label="Hazard">!</span>}
+              </button>
+            ))}
+            <button type="button" className="route-photo-add" onClick={() => setAdding(true)}>
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+              Photo or hazard
+            </button>
+          </div>
+
+          {reviewable && <RouteReviews key={route.slug} routeSlug={route.slug} state={reviewsState} />}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="route-more-toggle"
+        onClick={() => (onToggleDock ? onToggleDock() : setExpanded((value) => !value))}
+        aria-expanded={expanded}
+        aria-controls={`route-more-${route.slug}`}
+        aria-label={expanded ? 'Show fewer route details' : 'Show more route details'}
+      >
+        <span>{expanded ? 'Fewer details' : 'More details'}</span>
+        <ChevronRightIcon size={13} />
+      </button>
+        </>
+      )}
+
+      {adding && <RoutePhotoModal route={route} startIndex={hoverIndex ?? Math.floor(route.coordinates.length / 2)} onPreviewIndex={onHoverIndex} onClose={() => setAdding(false)} onAdded={onPhotoAdded} />}
+      {sharing && <ShareRouteDialog route={route} gainM={hasElevation ? elevation.gainM : null} onClose={() => setSharing(false)} />}
+      {reporting && <ReportModal targetType="route" targetSlug={route.slug} targetName={route.name} onClose={() => setReporting(false)} />}
+    </section>
+  );
+}
