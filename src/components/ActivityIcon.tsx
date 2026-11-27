@@ -10,7 +10,7 @@ export function ActivityIcon({ activity, size = 14 }: { activity: RouteActivity;
   );
 }
 
-/** "Trail", "Road run" or "Cycling" with its icon, for route cards. */
+/** Escursione, trail running o ferrata, con icona dedicata. */
 export function ActivityTag({ activity }: { activity: RouteActivity }) {
   return (
     <span className={`activity-tag ${activity}`}>
