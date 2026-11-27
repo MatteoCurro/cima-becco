@@ -9494,3 +9494,30 @@ html,body{font-family:'Space Grotesk',var(--font-sans);color:var(--cima-ink)}
  .cb-basemap-control button{height:31px;min-width:44px}
 }
 @media(max-width:400px){.wordmark-text{font-size:21px!important}.site-header-cta.cb-atlas-link{display:none}}
+
+/* Atlas teaser e hero con isoipse illustrative; nessuna traccia estera. */
+.cb-hero-topo{background:linear-gradient(115deg,#e8f2de,#bad4b1);pointer-events:none}
+.cb-hero-topo-lines{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;transform:translate(calc(var(--px,0)*-8px),calc(var(--py,0)*-5px)) scale(1.04);will-change:transform}
+.cb-hero-topo-stamp{position:absolute;right:3%;bottom:8%;background:#ff2677;color:#fff;font:900 19px 'Barlow Condensed',Impact,sans-serif;letter-spacing:.06em;padding:7px 15px;transform:rotate(-6deg);box-shadow:3px 3px 0 #143d2f;opacity:.9}
+.cb-home-atlas{margin:32px 0 43px;background:#173b2d;border-radius:10px;padding:27px 28px 33px;color:#fff;position:relative;overflow:hidden}
+.cb-home-atlas::after{content:'↟';position:absolute;font:900 240px 'Barlow Condensed',sans-serif;color:#e4ffbe;opacity:.09;top:-105px;right:26px;pointer-events:none}
+.cb-home-atlas-head{position:relative;z-index:1}
+.cb-home-atlas-head>span{font:900 12px 'Space Grotesk',sans-serif;letter-spacing:.15em;color:#ff4d96}
+.cb-home-atlas-head h2{font:900 clamp(28px,4vw,43px)/1.02 'Bricolage Grotesque',sans-serif;letter-spacing:-.055em;color:#fff;margin:9px 0 6px}
+.cb-home-atlas-head p{font:500 14px/1.5 'Space Grotesk',sans-serif;color:#c4d7c1;margin:0 0 23px}
+.cb-home-atlas-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;position:relative;z-index:1}
+.cb-home-atlas-grid a{display:flex;flex-direction:column;min-height:180px;padding:21px;border:2px solid #466d50;background:#244d36;color:white;text-decoration:none;transition:background .15s,transform .15s}
+.cb-home-atlas-grid a:hover{background:#37644a;transform:translateY(-4px);border-color:#ff2677}
+.cb-home-atlas-grid a small{font:900 11px 'Space Grotesk',sans-serif;color:#accca9;letter-spacing:.05em}
+.cb-home-atlas-grid a strong{font:900 clamp(21px,2.6vw,34px)/.93 'Barlow Condensed',Impact,sans-serif;letter-spacing:.015em;flex:1;margin:18px 0}
+.cb-home-atlas-grid a span{font:900 11px 'Space Grotesk',sans-serif;color:#ff478d;letter-spacing:.045em}
+.cb-home-atlas-grid a:nth-child(2){background:#e5ffbf;color:#1e4230;border-color:#c2e293}
+.cb-home-atlas-grid a:nth-child(2) small{color:#597757}
+.cb-home-atlas-grid a:nth-child(3){background:#ff2677;border-color:#ff2677}
+.cb-home-atlas-grid a:nth-child(3) span{color:#e4ffbe}
+.tile-badge.cb-tile-slang{background:#ff2677!important;color:#fff!important;border:2px solid white!important;border-radius:4px!important;max-width:97%;font:900 clamp(17px,2.4vw,26px)/.93 'Barlow Condensed',Impact,sans-serif!important;letter-spacing:0!important;text-transform:uppercase!important;transform:rotate(-3deg);box-shadow:3px 4px 0 #143d2f;padding:7px 10px!important}
+.tile-badge.cb-tile-slang--gentle{background:#e4ffbe!important;color:#173d2c!important}
+.tile-badge.cb-tile-slang--technical{background:#c8004b!important}
+.tile-badge.cb-tile-slang--unknown{background:#244936!important}
+@media(max-width:820px){.cb-home-atlas-grid{grid-template-columns:1fr 1fr}.cb-home-atlas-grid a:nth-child(3){grid-column:1/-1;min-height:140px}}
+@media(max-width:560px){.cb-home-atlas{padding:23px 18px;margin:22px 0 30px}.cb-home-atlas-grid{grid-template-columns:1fr}.cb-home-atlas-grid a:nth-child(3){grid-column:auto}.cb-home-atlas-grid a{min-height:145px}.cb-home-atlas-head h2{font-size:30px}.cb-hero-topo-stamp{font-size:12px;right:5%;bottom:4%}}
