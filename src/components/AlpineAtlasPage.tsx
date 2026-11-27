@@ -14,6 +14,7 @@ import { HutClaimRequest } from './HutClaimRequest';
 import { loadAlpineWater, alpineWaterNear, potabilityLabel, type AlpineWaterPoint } from '../lib/alpineWater';
 import { track } from '../lib/analytics';
 import '../alpineAtlas.css';
+import '../locationProfile.css';
 
 interface TrekProject {
   slug: string;
