@@ -104,3 +104,17 @@ test('permalink percorso: mappa e stage occupano la larghezza mobile', async ({p
     }
   }
 });
+
+test('navbar: stessa larghezza in home, catalogo e permalink', async ({page}) => {
+  for (const width of [320,390,768,1440]) {
+    await page.setViewportSize({width,height:900});
+    for (const path of ['/', '/#rifugi', '/#routes', '/route/osm-hiking-13956722/']) {
+      await page.goto(path);
+      const header=page.locator('.site-header').first();
+      await expect(header).toBeVisible();
+      const box=await header.boundingBox();
+      expect(box!.width).toBeGreaterThanOrEqual(width-2);
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
+    }
+  }
+});

@@ -12,3 +12,5 @@ Falesie e palestre: scheda geografica con metriche e sezioni specifiche, catalog
 TypeScript, unit test, build SEO, browser test a 320/375/390/768/1024/1440 px; controllare larghezza reale dei contenitori (non solo overflow), ricerca da home con query/hash, permalink diretto e da anteprima, back/forward, navbar con/senza ricerca. Safari iOS da verificare su dispositivo o WebKit. Non dichiarare verifiche non eseguite.
 ## Debito residuo
 Migrazione completa dei link legacy e VenueDetail, consolidamento CSS storico, test browser effettivi e uniformità dei controlli mappa. Non confondere anteprima con scheda completa.
+
+La CI responsive viene avviata anche su main e manualmente, con Chromium e WebKit. WebKit desktop headless non equivale a Safari iOS fisico.
