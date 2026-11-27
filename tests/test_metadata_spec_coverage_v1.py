@@ -55,7 +55,7 @@ class MetadataCoverageTests(unittest.TestCase):
         self.assertEqual(by_id["commons"]["licenseGate"], "per_asset")
 
     def test_field_registry_and_source_registry_are_connected_without_false_mappings(self):
-        self.assertEqual(self.result["refugeRegistryFields"], 78)
+        self.assertEqual(self.result["refugeRegistryFields"], 80)
         self.assertEqual(len({s["sectionId"] for s in self.sources["sections"]}), 26)
         for row in self.result["requirements"]:
             self.assertTrue(row["candidateSourcesForEntityKind"])
