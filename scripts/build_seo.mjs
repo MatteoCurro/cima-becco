@@ -341,36 +341,58 @@ function routeSketch(route) {
   const path=pts.filter((_,i)=>i%Math.max(1,Math.ceil(pts.length/240))===0||i===pts.length-1).map((p,i)=>(i?'L':'M')+(ox+(p[0]-minx)*scale).toFixed(1)+' '+(230-oy-(p[1]-miny)*scale).toFixed(1)).join(' ');
   return '<div class="route-sketch"><div class="route-sketch-caption">IL TRACCIATO · '+escape(trailArea(route))+'</div><svg viewBox="0 0 560 230" role="img" aria-label="Anteprima schematica del tracciato"><path d="'+path+'" fill="none" stroke="#355d47" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" /></svg><small>Rappresentazione schematica. Apri la mappa per il dettaglio.</small></div>';
 }
-// Committed GPX routes.
+// Pagine statiche dei sentieri: testo comprensibile, grafico originale della traccia, dati tecnici.
 for (const route of routes) {
+  const title = trailName(route);
+  const [level, quip] = trailMood(route);
+  const area = trailArea(route);
+  const description = trailText(route);
   const passes = (route.venueSlugs ?? []).map((slug) => venues.find((venue) => venue.slug === slug)).filter(Boolean);
-  const where = route.country ? ` in ${route.country}` : '';
-  const description =
-    route.description ||
-    `${route.name}: a ${km(route.distanceM)}${route.loop ? ' loop' : ' point-to-point route'}${where}${route.elevationAvailable !== false ? ` with ${metres(route.gainM)} of elevation gain` : ''}. Free GPX download on Cima Becco.`;
+  const image = route.photos?.[0] || null;
+  const original = route.sourceUrl?.startsWith('https://') ? route.sourceUrl : null;
+  const official = route.officialDescriptionUrl?.startsWith('https://') && (new URL(route.officialDescriptionUrl)).pathname.split('/').filter(Boolean).length >= 2 ? route.officialDescriptionUrl : null;
+  const stats = [
+    ['Distanza', km(route.distanceM)],
+    ['Dislivello positivo', route.elevationAvailable !== false ? metres(route.gainM) + ' (stima)' : 'In elaborazione'],
+    ['Andamento', route.loop ? 'Anello' : 'Percorso lineare'],
+    ['Difficoltà', level],
+  ];
   page({
     path: `route/${route.slug}/`,
-    title: `${route.name} (${km(route.distanceM)}) GPX · Cima Becco`,
-    description,
-    image: null,
+    title: `${title} · GPX e informazioni | Cima Becco`,
+    description: description.slice(0, 280),
+    image: image?.url || null,
     jsonLd: {
       '@context': 'https://schema.org',
       '@graph': [
-        { '@type': 'CreativeWork', name: route.name, description, url: `${SITE}/route/${route.slug}/`, isAccessibleForFree: true, ...(route.licence ? { license: route.licence } : {}) },
-        breadcrumbLd([[route.name, null]]),
+        { '@type': 'CreativeWork', name: title, description, url: `${SITE}/route/${route.slug}/`, isAccessibleForFree: true, ...(image ? { image: image.url } : {}), ...(route.licence ? { license: 'https://opendatacommons.org/licenses/odbl/' } : {}) },
+        breadcrumbLd([[title, null]]),
       ],
     },
-    body: `${crumbs([['Routes', `${SITE}/#routes`], [route.name]])}
-<h1>${escape(route.name)}</h1>
-<p class="sub">GPX route${escape(where)}</p>
-<ul class="facts"><li><strong>${km(route.distanceM)}</strong>distance</li>${route.elevationAvailable !== false ? `<li><strong>${metres(route.gainM)}</strong>elevation gain</li><li><strong>${metres(route.lossM)}</strong>elevation loss</li>` : ''}<li><strong>${route.loop ? 'Loop' : 'Point to point'}</strong>shape</li></ul>
-<p>${escape(description)}</p>
-${passes.length ? `<h2>Passes</h2><ul class="list">${passes.map((venue) => `<li><a href="${placeUrlBySlug.get(venue.slug) ?? appLink(`#venue/${venue.slug}`)}">${escape(venue.name)}</a></li>`).join('')}</ul>` : ''}
-${route.caiDifficulty ? `<p class="sub">Difficoltà CAI: ${escape(route.caiDifficulty)}</p>` : ''}
-${route.trailRef ? `<p class="sub">Segnavia: ${escape(route.trailRef)}</p>` : ''}
-${route.sourceUrl ? `<p><a href="${escape(route.sourceUrl)}" rel="noopener noreferrer">Fonte del tracciato</a></p>` : ''}
-${route.licence ? `<p class="sub">Licenza: ${escape(route.licence)}</p>` : ''}
-<p><a class="cta" href="${appLink(`#route/${route.slug}`)}">Apri sulla mappa e scarica il GPX</a></p>`,
+    body: `${crumbs([['Percorsi', `${SITE}/#routes`], [title]])}
+<article class="cima-seo-trail">
+  <div class="cima-seo-eyebrow">${route.activity === 'ferrata' ? 'VIA FERRATA' : 'ESCURSIONE'} · ${escape(area)}</div>
+  <h1>${escape(title)}</h1>
+  <p class="cima-seo-lead">${escape(description)}</p>
+  <div class="cima-seo-tags"><span>${escape(level)}</span>${quip ? `<span class="fun" title="Soprannome editoriale, non scala tecnica">${escape(quip)}</span>` : ''}${route.trailRef ? `<span>Segnavia ${escape(route.trailRef)}</span>` : ''}</div>
+  ${image ? `<figure class="cima-seo-photo"><img src="${escape(image.url)}" alt="${escape(image.caption || title)}" loading="lazy"><figcaption>Foto: ${escape(image.author || 'Wikimedia Commons')} · ${escape(image.license || 'Licenza nella fonte')} · <a href="${escape(image.sourceUrl)}">Originale</a></figcaption></figure>` : routeSketch(route)}
+  <ul class="facts cima-seo-facts">${stats.map(([label,value]) => `<li><strong>${escape(value)}</strong>${escape(label)}</li>`).join('')}</ul>
+  <div class="cima-seo-actions"><a class="cta" href="${appLink(`#route/${route.slug}`)}">Apri sulla mappa · Scarica GPX</a>${original ? `<a class="cima-seo-secondary" href="${escape(original)}" target="_blank" rel="noopener noreferrer">Vedi tracciato OSM ↗</a>` : ''}</div>
+  <section class="cima-seo-body"><h2>Il percorso</h2><p>${escape(description)}</p>
+    <h2>Segnaletica e informazioni</h2><dl class="cima-seo-details">
+      ${route.caiDifficulty ? `<div><dt>Classificazione CAI</dt><dd>${escape(route.caiDifficulty)}</dd></div>` : ''}
+      ${route.viaFerrataScale ? `<div><dt>Scala ferrata</dt><dd>${escape(route.viaFerrataScale)}</dd></div>` : ''}
+      ${route.sacScale ? `<div><dt>Scala escursionistica SAC</dt><dd>${escape(route.sacScale)}</dd></div>` : ''}
+      ${route.trailRef ? `<div><dt>Numero sentiero</dt><dd>${escape(route.trailRef)}</dd></div>` : ''}
+      ${route.operator ? `<div><dt>Gestore indicato</dt><dd>${escape(route.operator)}</dd></div>` : ''}
+      ${route.network ? `<div><dt>Rete</dt><dd>${escape(route.network)}</dd></div>` : ''}
+      <div><dt>Origine geometria</dt><dd>OpenStreetMap · ODbL 1.0</dd></div>
+    </dl>
+    ${official ? `<p><a href="${escape(official)}" rel="noopener noreferrer" target="_blank">Consulta la scheda del gestore ↗</a></p>` : ''}
+    ${passes.length ? `<h2>Cime e luoghi vicini</h2><ul class="list">${passes.map((v) => `<li><a href="${SITE}/place/${v.slug}/">${escape(v.name)}</a></li>`).join('')}</ul>` : ''}
+    ${route.activity === 'ferrata' ? '<p class="cima-seo-warning">Una ferrata richiede attrezzatura e competenze specifiche. Il GPX non rappresenta esposizione e difficoltà tecnica.</p>' : '<p class="cima-seo-warning">Traccia e dislivelli sono indicativi: verifica percorribilità e condizioni prima di partire.</p>'}
+  </section>
+</article>`,
   });
 }
 
