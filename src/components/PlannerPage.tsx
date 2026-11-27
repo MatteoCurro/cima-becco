@@ -3,6 +3,7 @@ import { Map as MapLibreMap, Marker, NavigationControl, type GeoJSONSource } fro
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { SiteFooter, SiteHeader } from './SiteChrome';
 import { MAP_STYLE_URL } from '../map/constants';
+import { installMountainBasemap, MountainBasemapControl } from '../map/mountainBasemap';
 import { calculateTrailRoute, directionsToStart, type PlanWaypoint, type PlannedTrack } from '../lib/cimaRouting';
 import { toGpx } from '../lib/gpx';
 import { routeFromPoints } from '../lib/routes';
@@ -55,10 +56,11 @@ export function PlannerPage() {
       center: INITIAL_CENTER,
       zoom: 5.7,
       minZoom: 3,
-      attributionControl: { compact: true },
+      attributionControl: { compact: false },
     });
     map.current = instance;
     instance.addControl(new NavigationControl({ showCompass: true }), 'top-right');
+    instance.addControl(new MountainBasemapControl(), 'top-right');
     const click = (event: { lngLat: { lng: number; lat: number } }) => {
       setWaypoints((previous) => previous.length >= 12 ? previous : [...previous, { lng: event.lngLat.lng, lat: event.lngLat.lat }]);
       setTrack(null);
@@ -67,6 +69,7 @@ export function PlannerPage() {
     };
     instance.on('click', click);
     instance.on('load', () => {
+      installMountainBasemap(instance);
       if (!instance.getSource('cb-route')) instance.addSource('cb-route', { type: 'geojson', data: EMPTY_ROUTE });
       instance.addLayer({ id: 'cb-route-outline', type: 'line', source: 'cb-route', paint: { 'line-color': '#fff', 'line-width': 8, 'line-opacity': 0.94 } });
       instance.addLayer({ id: 'cb-route-line', type: 'line', source: 'cb-route', paint: { 'line-color': '#296d58', 'line-width': 5 } });
