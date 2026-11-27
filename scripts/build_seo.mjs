@@ -21,6 +21,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
 import { mergeSheltersForSeo } from './merge_shelters_for_seo.mjs';
+import { makeCentralCredits } from './build_source_credits.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
@@ -92,6 +93,10 @@ const alpinePlaces = mergeSheltersForSeo(mergeRefugesForSeo(
   existsSync(join(DATA, 'atlas', 'refuges-v1.json')) ? readJson(join(DATA, 'atlas', 'refuges-v1.json')) : null
 ), existsSync(join(DATA, 'atlas', 'shelters-v1.json')) ?
   readJson(join(DATA, 'atlas', 'shelters-v1.json')) : null);
+// Keep author, licence and source URL in one searchable credits document.
+const centralCredits = makeCentralCredits(alpinePlaces, routes, peakPhotos, TODAY);
+mkdirSync(join(DIST,'data','atlas'),{recursive:true});
+writeFileSync(join(DIST,'data','atlas','credits-v1.json'),JSON.stringify(centralCredits));
 const trekProjects = existsSync(join(DATA, 'trekking-projects.json')) ? readJson(join(DATA, 'trekking-projects.json')).projects ?? [] : [];
 const alpineWater=existsSync(join(DATA,'alpine-water.json')) ? readJson(join(DATA,'alpine-water.json')).sources ?? [] : [];
 const byStop = new Map();
@@ -210,7 +215,7 @@ ${APP_ASSETS}
 <main>
 ${body}
 </main>
-<footer>Cima Becco · Ogni cima, un nuovo percorso. <a href="${SITE}/#data">Fonti e crediti</a> · <a href="${SITE}/#privacy">Privacy</a></footer>
+<footer>Cima Becco · Ogni cima, un nuovo percorso. <a href="${SITE}/fonti-e-crediti/">Fonti e crediti</a> · <a href="${SITE}/#privacy">Privacy</a></footer>
 </div>
 </body>
 </html>
@@ -260,7 +265,7 @@ function placePage({ slug, name, lat, lng, heightM, kind, country, countryCode, 
 <h1>${escape(name)}</h1>
 <p class="sub">${escape(kind === 'hill' ? 'Hill or mountain' : 'Climb')}${escape(where)}</p>
 <ul class="facts">${heightM ? `<li><strong>${metres(heightM)}</strong>elevation</li>` : ''}<li><strong>${lat.toFixed(4)}, ${lng.toFixed(4)}</strong>coordinates</li>${routesHere.length ? `<li><strong>${routesHere.length}</strong>GPX route${routesHere.length === 1 ? '' : 's'}</li>` : ''}</ul>
-${image ? `<figure><img src="${escape(image)}" alt="${escape(name)}" loading="lazy"><figcaption>${escape([photo.credit && `Photo by ${photo.credit}`, photo.license || photo.licence, photo.source].filter(Boolean).join(' · '))}</figcaption></figure>` : ''}
+${image ? `<figure><img src="${escape(image)}" alt="${escape(name)}" loading="lazy"><figcaption>Fotografia del luogo</figcaption></figure>` : ''}
 <p>${escape(description)}</p>
 ${routesHere.length ? `<h2>GPX routes here</h2><ul class="list">${routesHere.map((route) => `<li><a href="${SITE}/route/${route.slug}/">${escape(route.name)}</a> · ${km(route.distanceM)}</li>`).join('')}</ul>` : ''}
 <p><a class="cta" href="${appLink(`#venue/${slug}`)}">Open ${escape(name)} on the map</a></p>`,
@@ -479,7 +484,7 @@ for (const route of routes) {
   <h1>${escape(title)}</h1>
   <p class="cima-seo-lead">${escape(description)}</p>
   <div class="cima-seo-tags"><span class="fun" title="Soprannome editoriale, non scala tecnica">${escape(quip)}</span><span>${escape(level)}</span>${route.trailRef ? `<span>Segnavia ${escape(route.trailRef)}</span>` : ''}</div>
-  ${image ? `<figure class="cima-seo-photo"><img src="${escape(image.url)}" alt="${escape(image.caption || title)}" loading="lazy"><figcaption>Foto: ${escape(image.author || 'Wikimedia Commons')} · ${escape(image.license || 'Licenza nella fonte')} · <a href="${escape(image.sourceUrl)}">Originale</a></figcaption></figure>` : routeSketch(route)}
+  ${image ? `<figure class="cima-seo-photo"><img src="${escape(image.url)}" alt="${escape(image.caption || title)}" loading="lazy"><figcaption>Fotografia dell’itinerario</figcaption></figure>` : routeSketch(route)}
   <ul class="facts cima-seo-facts">${stats.map(([label,value]) => `<li><strong>${escape(value)}</strong>${escape(label)}</li>`).join('')}</ul>
   <div class="cima-seo-actions"><a class="cta" href="${appLink(`#route/${route.slug}`)}">Apri sulla mappa · Scarica GPX</a>${original ? `<a class="cima-seo-secondary" href="${escape(original)}" target="_blank" rel="noopener noreferrer">Vedi tracciato OSM ↗</a>` : ''}</div>
   <section class="cima-seo-body"><h2>Il percorso</h2><p>${escape(description)}</p>
@@ -565,10 +570,7 @@ for (const place of alpinePlaces) {
       ${nearbyWater.length?`<h2>Acqua sulla cartografia del luogo</h2><p>${nearbyWater.length} fonti censite: posizione e indicazioni di potabilità sono visibili sulla mappa interattiva, non costituiscono una garanzia di sicurezza.</p><p><a class="cta" href="${SITE}/${category}/${place.slug}/#cb-place-map">Apri la mappa con i punti acqua</a></p>`:''}
       <h2>Meteo attuale e temperature stagionali</h2><p>Apri la scheda interattiva per consultare le condizioni attuali, le previsioni neve e pioggia e le medie stagionali 2021–2025 da Open-Meteo.</p>
       <p class="cima-seo-warning">Il dato geografico non prova accessibilità, stato della struttura, potabilità o percorribilità del sentiero. Verifica prima di partire.</p>
-      <p class="sub">Fonti:
-      ${place.sourceIds?.osm||!place.sourceIds?.cai?` <a href="${escape(place.osmUrl)}" target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>`:''}
-      ${place.sourceIds?.cai?` · <a href="${escape(place.officialUrl||'https://rifugi.cai.it/shelters/'+place.sourceIds.cai)}" target="_blank" rel="noopener noreferrer">Club Alpino Italiano · Unico Rifugi</a>`:''}.
-      ${photo?` Foto: ${escape(photo.author||'Autore non indicato')} · ${escape(photo.license)} · <a href="${escape(photo.sourceUrl)}" target="_blank" rel="noopener noreferrer">Fonte</a>`:''}</p>`,
+      <p class="sub">Dati e immagini con provenienza conservata nel <a href="${SITE}/fonti-e-crediti/">registro centralizzato delle fonti e dei crediti</a>.</p>`,
   });
 }
 
@@ -635,6 +637,21 @@ for (const trek of trekProjects) {
   });
 }
 
+// Dedicated, canonical credits page: reusable site shell + searchable
+// image-attribution index in dist/data/atlas/credits-v1.json.
+page({
+  path:'fonti-e-crediti',
+  title:'Fonti, crediti fotografici e dati dell’Atlante | Cima Becco',
+  description:'Provenienza dei dati e delle fotografie di rifugi, bivacchi, capanne, sentieri e cime. Ricerca autore, foto e licenze.',
+  jsonLd:{'@context':'https://schema.org','@type':'AboutPage',
+    name:'Fonti e crediti · Cima Becco',url:SITE+'/fonti-e-crediti/'},
+  body:`${crumbs([['Fonti e crediti']])}
+    <h1>Fonti e crediti</h1>
+    <p class="cima-seo-lead">L’atlante conserva autore, licenza e fonte per ogni fatto o media documentato. Consulta qui le attribuzioni dei dati CAI, OSM, Commons, GeoNames e SAT.</p>
+    <h2>Fotografie e archivio</h2>
+    <p>${centralCredits.counts.total.toLocaleString('it-IT')} attribuzioni fotografiche registrate; la versione interattiva permette di cercare per luogo, autore e licenza.</p>
+    <p><a class="cta" href="${SITE}/fonti-e-crediti/">ESPLORA I CREDITI</a></p>`,
+});
 // The address list for search engines, the rules for crawlers, and a plain
 // summary for AI assistants.
 const urls = [`${SITE}/`, ...pages];
@@ -660,7 +677,7 @@ writeFileSync(
 - Routes: ${SITE}/#routes
 - Every place has a page at ${SITE}/place/<slug>/ and every country at ${SITE}/country/<iso-code>/
 - Sitemap: ${SITE}/sitemap.xml
-- Licences (MIT code, CC BY 4.0 routes and reviews, CC BY-SA photos): ${SITE}/#data
+- Credits and image source references: ${SITE}/fonti-e-crediti/
 
 ## Countries with the most mapped summits
 ${topCountries.map(([code, [count]]) => `- [${countryName(code)}](${SITE}/country/${code.toLowerCase()}/): ${count.toLocaleString('en')} summits`).join('\n')}
