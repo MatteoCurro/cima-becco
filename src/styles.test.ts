@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import design from './design.css?raw';
-import styles from './styles.css?raw';
-import explore from './alpineExplore.css?raw';
-import location from './locationProfile.css?raw';
-import hero from './homeHeroV2.css?raw';
+import { readFileSync } from 'node:fs';
+
+/** Vitest con jsdom può restituire stringhe vuote per gli import CSS ?raw. */
+const readCss = (name: string) => readFileSync(new URL(name, import.meta.url), 'utf8');
+const design = readCss('./design.css');
+const styles = readCss('./styles.css');
+const explore = readCss('./alpineExplore.css');
+const location = readCss('./locationProfile.css');
+const hero = readCss('./homeHeroV2.css');
 
 /** Una regola non chiusa può invalidare tutto il CSS successivo. */
 function unclosed(css: string): { depth: number; negativeAt: number | null } {
