@@ -254,26 +254,18 @@ test('navbar e filtri: occupano l’intera larghezza e non hanno slot fissi',asy
     await page.setViewportSize({width,height:900});
     for(const path of ['/#routes','/#map','/#rifugi','/#paesi']){
       await page.goto(path);
-      const bar=page.locator('.cb-browse-bar');
-      await expect(bar).toBeVisible({timeout:30000});
-      const rects=await page.evaluate(()=>{
+      // WebKit può sostituire il nav una seconda volta durante il mount React.
+      // Misuriamo in modo atomico e attendiamo la stabilizzazione, senza
+      // interpretare boundingBox() di un nodo smontato come larghezza 0.
+      await expect.poll(async()=>page.evaluate(expectedWidth=>{
         const selectors=['.site-header','.site-header-row','.cb-browse-bar','.cb-browse-tabs','.cb-browse-facets'];
-        return selectors.map(selector=>{
-          const el=document.querySelector(selector)!;
-          const r=el.getBoundingClientRect();
-          return {selector,left:r.left,right:r.right,width:r.width};
-        });
-      });
-      for(const r of rects){
-        expect(r.left,JSON.stringify({path,width,r})).toBeGreaterThanOrEqual(-2);
-        expect(r.left,JSON.stringify({path,width,r})).toBeLessThanOrEqual(2);
-        expect(r.right,JSON.stringify({path,width,r})).toBeGreaterThanOrEqual(width-2);
-      }
-      if(width>=901){
-        const last=page.locator('.cb-browse-tabs').locator('a,span.is-upcoming').last();
-        const r=await last.boundingBox();
-        expect((r?.x||0)+(r?.width||0)).toBeGreaterThan(width-48);
-      }
+        const rects=selectors.map(selector=>document.querySelector(selector)?.getBoundingClientRect());
+        const tabs=document.querySelectorAll('.cb-browse-tabs > a, .cb-browse-tabs > span.is-upcoming');
+        const last=tabs.length?tabs[tabs.length-1].getBoundingClientRect():null;
+        if(rects.some(r=>!r)||!last)return false;
+        return rects.every(r=>r && r.left>=-2 && r.left<=2 && r.right>=expectedWidth-2)
+          && last.right>expectedWidth-48;
+      },width),{timeout:20000,message:'Layout navbar e tabs '+path+' a '+width+' px'}).toBe(true);
     }
   }
 });
@@ -420,5 +412,35 @@ test('hero rifugio: emblema dentro la foto e attribuzione leggibile',async({page
     const a=await logo.boundingBox(),b=await credit.boundingBox();
     expect(a).not.toBeNull();expect(b).not.toBeNull();
     expect(a!.y+a!.height).toBeLessThan(b!.y);
+  }
+});
+
+
+test('catalogo rifugi: filtri quota e posti non allargano il documento',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#rifugi');
+  const altitude=page.getByRole('combobox',{name:'Quota minima'});
+  await expect(altitude).toBeVisible({timeout:30000});
+  await altitude.selectOption('1500');
+  await expect(page.getByRole('button',{name:/Azzera filtri/})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2)).toBe(true);
+  await page.getByRole('button',{name:/Azzera filtri/}).click();
+  await expect(altitude).toHaveValue('');
+});
+
+test('catalogo trekking: navigazione di categoria davvero full-width',async({page})=>{
+  for(const width of [390,1024,1440]){
+    await page.setViewportSize({width,height:900});
+    await page.goto('/#atlante/trekking');
+    await expect(page.locator('.cb-browse-bar')).toBeVisible();
+    const sizes=await page.evaluate(()=>{
+      const nav=document.querySelector('.cb-browse-bar')!.getBoundingClientRect();
+      const main=document.querySelector('.cb-atlas-shell')!.getBoundingClientRect();
+      return {navLeft:nav.left,navRight:nav.right,mainWidth:main.width,scroll:document.documentElement.scrollWidth};
+    });
+    expect(sizes.navLeft).toBeGreaterThanOrEqual(-2);
+    expect(sizes.navRight).toBeGreaterThanOrEqual(width-2);
+    expect(sizes.mainWidth).toBeGreaterThanOrEqual(width-2);
+    expect(sizes.scroll).toBeLessThanOrEqual(width+2);
   }
 });

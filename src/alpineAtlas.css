@@ -49,7 +49,7 @@
 .cb-atlas-sourcing{font-size:11px;color:#849082;margin-top:36px}
 .cb-atlas-sourcing a{color:#4e7b5f}
 @media(max-width:800px){.cb-atlas-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cb-atlas-intro{grid-template-columns:1fr auto;padding:26px}.cb-atlas-intro-symbol{font-size:140px}.cb-atlas-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:560px){.cb-atlas-shell{width:calc(100% - 26px);padding-top:18px}.cb-atlas-tabs a{font-size:11px;padding:11px}.cb-atlas-intro{grid-template-columns:1fr;padding:22px;border-radius:10px 26px 10px 10px}.cb-atlas-intro-symbol{display:none}.cb-atlas-grid{grid-template-columns:1fr}.cb-atlas-card{min-height:160px}.cb-atlas-detail{padding:22px}.cb-atlas-facts,.cb-atlas-routes{grid-template-columns:1fr}}
+@media(max-width:560px){.cb-atlas-shell{width:100%;max-width:none;margin:0;padding:18px 14px 50px}.cb-atlas-tabs a{font-size:11px;padding:11px}.cb-atlas-intro{grid-template-columns:1fr;padding:22px;border-radius:10px 26px 10px 10px}.cb-atlas-intro-symbol{display:none}.cb-atlas-grid{grid-template-columns:1fr}.cb-atlas-card{min-height:160px}.cb-atlas-detail{padding:22px}.cb-atlas-facts,.cb-atlas-routes{grid-template-columns:1fr}}
 
 /* Layout rifugi, borghi e schede locali: leggibilità prima dei colori. */
 .cb-atlas-kind{display:inline-flex;align-items:center;gap:7px;color:#1c4b35!important}

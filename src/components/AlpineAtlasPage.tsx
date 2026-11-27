@@ -15,6 +15,11 @@ import { MapContextLabel } from './MapContextLabel';
 import { AlpineWeatherPanel } from './AlpineWeatherPanel';
 import { HutClaimRequest } from './HutClaimRequest';
 import { DetailFacts, DetailLayout, DetailMetrics, DetailSectionHeading } from './DetailPrimitives';
+import { AtlasDossierBlocks } from './AtlasDossierBlocks';
+import { DetailJumpNav } from './DetailJumpNav';
+import { NearbyAtlasPlaces } from './NearbyAtlasPlaces';
+import { nearbyAtlasPlaces } from '../lib/nearbyAtlas';
+import type { AtlasEntityMetadata } from '../lib/atlasDossier';
 import { loadAlpineWater, alpineWaterNear, potabilityLabel, type AlpineWaterPoint } from '../lib/alpineWater';
 import { track } from '../lib/analytics';
 import '../alpineAtlas.css';
@@ -28,6 +33,8 @@ interface TrekProject {
   description: string;
   routeSlugs: string[];
   stages: { number: number; routeSlugs: string[] }[];
+  /** Schema editoriale opzionale; le tappe legacy rimangono distinte. */
+  atlas?: AtlasEntityMetadata;
 }
 type TreksDataset = { generatedAt: string | null; projects: TrekProject[] };
 const EMPTY: AlpinePlacesDataset = { generatedAt: null, source: 'OpenStreetMap · ODbL 1.0', coverage: 'Dolomiti', places: [] };
@@ -78,7 +85,21 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
   const [nearby,setNearby]=useState<Route[]>([]);
   const [loading,setLoading]=useState(true);
   const [water,setWater]=useState<AlpineWaterPoint[]>([]);
+  const [localAtlas,setLocalAtlas]=useState<AlpinePlace[]>([]);
   const mapPlaces=useMemo(()=>[place],[place]);
+  const nearbyPlaces=useMemo(()=>{
+    const linked=(place.relations??[]).map(relation=>relation.target);
+    return nearbyAtlasPlaces(place,localAtlas,{maxKm:8,limit:8}).filter(({place:other})=>{
+      const pathname=alpinePlaceLink(other);
+      return !linked.some(target=>target.id===other.slug ||
+        target.href===pathname || target.href?.replace(/^https?:\/\/[^/]+/,'')===pathname);
+    });
+  },[place,localAtlas]);
+  useEffect(()=>{
+    let alive=true;
+    void loadAlpinePlaces().then(dataset=>{if(alive)setLocalAtlas(dataset.places);});
+    return ()=>{alive=false;};
+  },[]);
   useEffect(()=>{
     let active=true;
     setLoading(true);setNearby([]);
@@ -133,9 +154,10 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
       <div className="cb-location-hero-copy">
         <PlaceBadge place={place}/>
         <h1>{place.name}</h1>
-        <p className="cb-location-lead">{placeLine}</p>
+        <p className="cb-location-lead">{place.shortSummary || placeLine}</p>
         {place.description&&<p className="cb-location-story">{place.description}</p>}
         {wikiUrl&&<a className="cb-location-wiki" href={wikiUrl} target="_blank" rel="noopener noreferrer">Storia e approfondimenti enciclopedici ↗</a>}
+        <AtlasDossierBlocks record={place} placement="alerts"/>
         <DetailMetrics label="Informazioni principali" items={[
           { label: 'Altitudine' + (place.elevationSource === 'dem' ? ' stimata' : ''), value: place.elevationM != null ? place.elevationM.toLocaleString('it-IT') + ' m' : 'n.d.' },
           ...(place.capacity != null ? [{ label: place.kind === 'bivacco' ? 'Posti indicati' : 'Posti letto', value: place.capacity }] : []),
@@ -156,14 +178,22 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
       <figure className="cb-location-hero-media">
         <AlpinePlaceVisual key={place.slug} place={place}/>
         <div className="cb-location-avatar">{place.logo?<img src={place.logo.url} alt={'Logo ufficiale di '+place.name}/>:<AlpinePlaceIcon kind={place.kind} size={39}/>}</div>
-        <figcaption>{place.photo?'Foto del luogo · attribuzione e licenza in fondo alla pagina':'Rappresentazione topografica: fotografia del luogo non disponibile'}</figcaption>
+        <figcaption>{place.photo?<><span>Foto: {place.photo.author} · {place.photo.license}</span> · <a href={place.photo.sourceUrl} target="_blank" rel="noopener noreferrer">Fonte e licenza ↗</a></>:'Rappresentazione topografica: fotografia del luogo non disponibile'}</figcaption>
       </figure>
     </header>
+    <DetailJumpNav items={[
+      {id:"cb-location-info-heading",label:"Informazioni"},
+      {id:"cb-location-contact-title",label:"Contatti"},
+      {id:"cb-place-itineraries",label:"Sentieri"},
+      ...(nearbyPlaces.length?[{id:"cb-place-nearby",label:"Dintorni"}]:[]),
+      {id:"cb-place-map",label:"Mappa"},
+    ]}/>
         <section className="cb-location-section cb-location-dossier" aria-labelledby="cb-location-info-heading">
           <DetailSectionHeading kicker="01 / DATI ESSENZIALI" title="PRIMA DI PARTIRE." id="cb-location-info-heading" description="Informazioni disponibili nelle fonti cartografiche, da verificare con la struttura quando necessario."/>
           <DetailFacts rows={detailRows}/>
           {place.kind==='rifugio'&&!place.phone&&!place.email&&<p className="cb-location-muted-note">Non abbiamo ancora recapiti verificati per questa struttura: dato mancante non significa che sia chiusa.</p>}
         </section>
+        <AtlasDossierBlocks record={place} placement="core"/>
         <section className="cb-location-section cb-location-contact-card" aria-labelledby="cb-location-contact-title">
           <DetailSectionHeading kicker="02 / INFO PRATICHE" id="cb-location-contact-title" title="CONTATTI E ACCESSO."/>
           {place.operator&&<p><strong>Gestore o ente: </strong>{place.operator}</p>}
@@ -177,7 +207,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
         </section>
         <AlpineWeatherPanel lat={place.lat} lng={place.lng} name={place.name}/>
 
-        <section className="cb-location-section cb-location-itineraries" aria-label="Sentieri vicini">
+        <section id="cb-place-itineraries" className="cb-location-section cb-location-itineraries" aria-label="Sentieri vicini">
           <DetailSectionHeading kicker="03 / ESCURSIONI E ACCESSI" title="SENTIERI NEI DINTORNI." description="Tracce disponibili in zona: la vicinanza geometrica al percorso non certifica un accesso diretto."/>
           {loading?<p className="cb-atlas-loading">Recupero i sentieri cartografati…</p>:<>
             <RouteGroup title="PARTONO DA QUI" items={departures}/>
@@ -195,12 +225,16 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
           </div>)}</div>
         </section>}
 
+        <NearbyAtlasPlaces items={nearbyPlaces}/>
+        <AtlasDossierBlocks record={place} placement="connections"/>
+        <AtlasDossierBlocks record={place} placement="media"/>
         {place.kind==='rifugio'&&<section className="cb-location-community">
           <DetailSectionHeading kicker="05 / COMUNITÀ" title="PARLA CON CHI CONOSCE IL POSTO."/>
           <p>Domande ai gestori verificati e recensioni moderate sono previste, ma non ancora disponibili. Non vengono mostrati giudizi o risposte fittizi.</p>
           <HutClaimRequest place={place}/>
         </section>}
         <footer className="cb-location-credits">
+          <AtlasDossierBlocks record={place} placement="credits"/>
           Dati del luogo: <a href={place.osmUrl} target="_blank" rel="noopener noreferrer">OpenStreetMap · ODbL</a>.
           {place.photo&&<> Immagine: {place.photo.author}, {place.photo.license} · <a href={place.photo.sourceUrl} target="_blank" rel="noopener noreferrer">licenza e attribuzione</a>.</>}
           {place.wikidata&&<> <a href={'https://www.wikidata.org/wiki/'+place.wikidata} target="_blank" rel="noopener noreferrer">Wikidata</a>.</>}
@@ -247,6 +281,7 @@ function TrekDetail({ trek, onBack }: { trek: TrekProject; onBack: string }) {
             <h1>{trek.title}</h1>
             <p className="cb-location-lead">{trek.slogan}</p>
             <p className="cb-location-story">{trek.description}</p>
+            <AtlasDossierBlocks record={trek.atlas ?? {}} placement="alerts"/>
             <DetailMetrics label="Dati del trekking" items={[
               { label: 'Segmenti identificati', value: trek.routeSlugs.length },
               { label: 'Tappe esplicite', value: trek.stages.length },
@@ -267,7 +302,10 @@ function TrekDetail({ trek, onBack }: { trek: TrekProject; onBack: string }) {
           <div className="cb-atlas-routes">{trek.routeSlugs.slice(0, 80).map(slug =>
             <a key={slug} href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(slug)}/`}>Apri il segmento cartografico ↗ <small>{slug}</small></a>)}</div>
         </section>}
-        <footer className="cb-location-credits">Dati escursionistici e geometrie dei singoli segmenti: verifica sempre fonti, segnaletica e condizioni prima della partenza.</footer>
+        <AtlasDossierBlocks record={trek.atlas ?? {}} placement="core"/>
+        <AtlasDossierBlocks record={trek.atlas ?? {}} placement="connections"/>
+        <AtlasDossierBlocks record={trek.atlas ?? {}} placement="media"/>
+        <footer className="cb-location-credits"><AtlasDossierBlocks record={trek.atlas ?? {}} placement="credits"/>Dati escursionistici e geometrie dei singoli segmenti: verifica sempre fonti, segnaletica e condizioni prima della partenza.</footer>
   </DetailLayout>;
 }
 
@@ -303,9 +341,9 @@ export function AlpineAtlasPage() {
   const trek=slug?treks.projects.find(p=>p.slug===slug):null;
   return <div className="cb-atlas-page">
     <SiteHeader sticky/>
+    {!slug && <ExploreNavigation active={section==='trekking'?'trekking':section==='borghi'?'paesi':section}/>}
     <main className={slug ? 'cb-atlas-shell cb-atlas-shell--detail' : 'cb-atlas-shell'}>
-      {!slug && <div className="cb-atlas-overline">CIMA BECCO / ESPLORA</div>}
-      {!slug && <ExploreNavigation active={section==='trekking'?'trekking':section==='borghi'?'paesi':section}/>} 
+      {!slug && <div className="cb-atlas-overline">CIMA BECCO / ESPLORA</div>} 
       {place ? <PlaceDetail place={place} onBack={`#atlante/${section}`}/>
         : trek ? <TrekDetail trek={trek} onBack="#atlante/trekking"/>
         : slug ? <div className="cb-atlas-empty"><h1>Questa tappa ci sfugge.</h1><p>Il dato non è ancora disponibile in questo atlante.</p><a href={`#atlante/${section}`}>Vai all'elenco</a></div>

@@ -1,6 +1,7 @@
 import { DATA_BASE, type Bounds } from './venues';
+import type { AtlasEntityMetadata } from './atlasDossier';
 
-export interface AlpinePlace {
+export interface AlpinePlace extends AtlasEntityMetadata {
   slug: string;
   name: string;
   kind: 'rifugio' | 'bivacco' | 'borgo';
