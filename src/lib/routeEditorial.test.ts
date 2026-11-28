@@ -28,7 +28,7 @@ describe('editoriale Cima Becco', () => {
     expect(trailMood(route({ caiDifficulty: 'T' })).quip).toBe('MERENDEROS');
     expect(trailMood(route({ caiDifficulty: 'EE' })).quip).toBe('OGGI SI BESTEMMIA');
     expect(trailMood(route({ caiDifficulty: 'EEA' })).label).toBe('Esperti con attrezzatura · CAI EEA');
-    expect(trailMood(route({})).quip).toBe('GRADO IN LATITANZA');
+    // Quando manca il grado CAI ma è nota la distanza, la fatica è stimabile\n    // e resta distinta dalla difficoltà tecnica sconosciuta.\n    expect(trailMood(route({})).quip).toBe('MUOVI QUELLE GAMBE');\n    expect(trailMood(route({})).label).toMatch(/grado tecnico da verificare/);
   });
   it('non attribuisce a una ferrata una difficoltà se manca la scala', () => {
     expect(trailMood(route({ activity: 'ferrata' })).level).toBe('unknown');
