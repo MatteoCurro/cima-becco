@@ -188,8 +188,11 @@ def municipality_heraldry_filename(filename, municipality):
     name=normalize(municipality)
     basename=normalize(filename.removeprefix("File:").rsplit(".",1)[0])
     if len(name)<3:return False
-    disallowed=r"\\b(principato|vescovile|principality|bishopric|su una casa|on a house|\\bchiesa\\b|\\bchurch\\b|\\bfamiglia\\b|\\bfamily\\b|\\bsan fermo\\b|\\bfrazione\\b|\\bparrocchia\\b|\\btemplate\\b|\\bblank\\b|\\bbozza\\b|\\bprovisional\\b|\\bfake\\b|\\bcampione\\b)\\b"
-    if re.search(disallowed,basename):return False
+    disallowed=("principato","vescovile","principality","bishopric",
+      "su una casa","on a house"," chiesa "," church "," famiglia ",
+      " family "," san fermo "," frazione "," parrocchia ",
+      " template "," blank "," bozza "," provisional "," fake ")
+    if any(term in " "+basename+" " for term in disallowed):return False
     expected=[
        name+" stemma","stemma di "+name,
        "stemma del comune di "+name,"stemma comune di "+name,
