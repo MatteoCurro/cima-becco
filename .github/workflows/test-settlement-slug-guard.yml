@@ -1,0 +1,45 @@
+name: Regression gate localita ambiguous slugs
+on:
+  push:
+    branches: [fix/locality-slug-promotion-gate-20261128]
+    paths:
+      - scripts/enrich_settlements_wikimedia_v1.py
+      - tests/test_enrich_settlements_wikimedia_v1.py
+      - .github/workflows/test-settlement-slug-guard.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/enrich_settlements_wikimedia_v1.py
+      - tests/test_enrich_settlements_wikimedia_v1.py
+      - .github/workflows/test-settlement-slug-guard.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cima-locality-slug-guard-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check new G2 slug gate and legacy URL retention
+        run: python -m unittest discover -s tests -p 'test_enrich_settlements_wikimedia_v1.py' -v
+      - name: Check safe union of historical releases
+        run: python -m unittest discover -s tests -p 'test_merge_settlement_publication_v1.py' -v
+      - name: Audit existing ambiguous production slugs without modifying them
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          doc=json.loads(Path("public/data/atlas/settlements-v1.json").read_text())
+          flagged=[x for x in doc["entities"] if x.get("quality",{}).get("slugRequiresReview")]
+          print("Legacy published ambiguous slugs awaiting separate SEO migration:",len(flagged))
+          for x in flagged:
+            print(x["slug"],x.get("sourceIds",{}).get("wikidata"))
+          assert all(x["quality"]["gate"]=="G2" for x in flagged)
+          PY

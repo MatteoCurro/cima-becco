@@ -234,6 +234,14 @@ def enrich(archive,municipalities,people=None,*,limit=48,offset=0,
             entity["textSources"]=[{k:v for k,v in article.items() if k!="linkedImages"}]
             entity["description"]=article["text"]
             entity["shortSummary"]=None
+            # A verified QID/photo/text does not authorize publishing an
+            # unresolved homonymous slug. The importer explicitly marks these
+            # candidates G0/noindex; keep them in editorial review.
+            if (entity.get("quality") or {}).get("slugRequiresReview"):
+                reasons["ambiguous_slug_pending_editorial_review"]+=1
+                reviewed.append({"wikidata":qid,"slug":entity.get("slug"),
+                                 "reason":"ambiguous_slug_pending_editorial_review"})
+                continue
             entity["quality"]={
                **entity["quality"],"gate":"G2","seoIndexable":True,
                "reviewRequired":False,"photoSourceVerified":True,
