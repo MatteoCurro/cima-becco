@@ -75,7 +75,7 @@ export function MunicipalityProfile({place,routeGroups,loadingRoutes,nearbyPlace
   const mountainPeople=people.filter(p=>p.category==='montagna');
   const culturalPeople=people.filter(p=>p.category==='cultura_e_ricerca');
   const historicalMedia=(place.media||[]).filter(m=>m.kind==='historical_photo'&&
-    m.subjectVerified&&m.reuseAllowed&&m.licence&&m.sourceUrl&&m.url);
+    m.subjectVerified&&m.reuseAllowed&&m.licence&&m.sourceUrl&&m.url&&m.capturedAt);
   const aliases=(place.aliases||[]).filter(a=>a.value&&a.value!==place.name);
   const archive=municipalityArchiveFacts(place);
   const hasArchive=Object.keys(archive).length>0||Boolean(place.factsAlternatives?.length);
@@ -124,7 +124,7 @@ export function MunicipalityProfile({place,routeGroups,loadingRoutes,nearbyPlace
       <figure className="cb-location-hero-media">
         <AlpinePlaceVisual key={place.slug} place={place}/>
         <div className="cb-location-avatar">{place.logo?
-          <img src={place.logo.url} alt={'Stemma di '+place.name}/>:
+          <img src={place.logo.url} alt={(place.logo.symbolType==='coat_of_arms'?'Stemma del Comune di ':'Logo istituzionale di ')+place.name}/>:
           <AlpinePlaceIcon kind="borgo" size={39}/>}</div>
         <figcaption>{place.photo?'Fotografia documentata del territorio':
           'Rappresentazione topografica: fotografia non disponibile'}</figcaption>
@@ -204,7 +204,8 @@ export function MunicipalityProfile({place,routeGroups,loadingRoutes,nearbyPlace
       <AlpineWeatherPanel lat={place.lat} lng={place.lng} name={place.name}/>
     </section>
     {historicalMedia.length>0&&<section id="cb-municipality-archive-photos" className="cb-detail-group cb-location-section">
-      <DetailSectionHeading kicker="MEMORIA DEL TERRITORIO" title="Fotografie storiche"/>
+      <DetailSectionHeading kicker="ARCHIVIO / MEMORIA DEL LUOGO" title="Ieri e oggi"
+        description="Solo fotografie storiche con datazione e identità territoriale documentate, distinte dalle altre immagini d'archivio."/>
       <div className="cb-municipality-historical-gallery">{historicalMedia.map(m=><figure key={m.id}>
         <img src={m.url} alt={m.caption||'Fotografia storica di '+place.name} loading="lazy"/>
         <figcaption>{m.caption||'Immagine storica'}{m.capturedAt?' · '+m.capturedAt:''}</figcaption>
