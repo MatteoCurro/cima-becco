@@ -115,7 +115,7 @@ export function appendSuccessfulImport(pipeline,runId,{report=null,sourceSha=nul
   const snapshot=summarizeImportCatalog();
   const history=importHistory(pipeline);
   if(history.events.some(e=>e.pipeline===pipeline&&e.runId===String(runId)))return history;
-  const sourceIds=pipeline==='comuni'?['comuni']:['rifugi','ricoveri'];
+  const sourceIds=pipeline==='comuni'?['comuni','persone']:['rifugi','ricoveri'];
   const sources=snapshot.sources.filter(s=>sourceIds.includes(s.id));
   const event={
     runId:String(runId),pipeline,status:'success',recordedAt:new Date().toISOString(),
@@ -126,7 +126,8 @@ export function appendSuccessfulImport(pipeline,runId,{report=null,sourceSha=nul
       Object.entries(report).filter(([k,v])=>
         ['municipalities','mayorsMatched','daitRowsOfficialCrosswalkRejected',
          'newG2','newMedia','newWikiText','selectedCandidates','publishedG2',
-         'metricsAdded','matched','failuresCount'].includes(k) &&
+         'metricsAdded','matched','failuresCount',
+         'municipalityPeopleLinks','peopleCatalogued','mountainLinks','otherNotableLinks','sourceAltimetryMatched'].includes(k) &&
         (typeof v==='number'||typeof v==='string'))):{},
   };
   // Delta on equivalent source key only. Baseline is null, never "0 new".
