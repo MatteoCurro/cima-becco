@@ -35,7 +35,7 @@ export function routePresentationCategory(route: Route): RoutePresentationCatego
 }
 
 export interface RoutePhysicalEffort {
-  level: 'gentle' | 'regular' | 'demanding';
+  level: 'gentle' | 'regular' | 'demanding' | 'unknown';
   distanceKm: number | null;
   gainM: number | null;
   risePerKm: number | null;
@@ -56,15 +56,19 @@ export function routePhysicalEffort(
   const gainScore=gainM===null?0:gainM>=1200?3:gainM>=800?2:gainM>=400?1:0;
   const riseScore=risePerKm!==null && distanceKm!==null && distanceKm>=2 && risePerKm>=160?2:0;
   const score=Math.max(distScore,gainScore,riseScore);
-  const level=score>=2?'demanding':score===1?'regular':'gentle';
-  const label=level==='demanding'?'Impegno fisico elevato':level==='regular'?'Impegno fisico intermedio':'Impegno fisico contenuto nei dati disponibili';
+  // A short trace without ascent data must not be presented as an easy outing.
+  // A high recorded distance OR gain may still establish a demanding lower bound.
+  const incomplete=distanceKm===null||gainM===null;
+  const level=score>=2?'demanding':incomplete?'unknown':score===1?'regular':'gentle';
+  const label=level==='demanding'?'Impegno fisico elevato':level==='regular'?'Impegno fisico intermedio':
+    level==='unknown'?'Impegno fisico da verificare':'Impegno fisico contenuto nei dati disponibili';
   const inputs=[
     distanceKm!==null ? distanceKm.toLocaleString('it-IT',{maximumFractionDigits:1})+' km di sviluppo' : null,
     gainM!==null ? Math.round(gainM).toLocaleString('it-IT')+' m di salita' : null,
     risePerKm!==null ? Math.round(risePerKm)+' m di salita per km di percorso' : null,
   ].filter(Boolean).join(', ');
-  const limitation=gainM===null
-    ? 'La quota o il dislivello non sono disponibili: la stima è parziale.'
+  const limitation=incomplete
+    ? 'Sviluppo o dislivello non disponibili: la valutazione è parziale e non consente di escludere un impegno maggiore.'
     : 'La salita media non identifica pendenza dei singoli passaggi, esposizione o attrezzatura.';
   return {level,distanceKm,gainM,risePerKm,label,
     explanation:(inputs?'Valutazione orientativa basata su '+inputs+'. ':'Non sono disponibili metriche sufficienti. ')+limitation};
