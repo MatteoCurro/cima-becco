@@ -1,4 +1,4 @@
-import { homeHref, routeHref, routeDetailHref } from './lib/navigation';
+import { homeHref, routeHref, routeDetailHref, initialMapMode, lastMapMode } from './lib/navigation';
 import { loadAlpineWater, type AlpineWaterPoint } from './lib/alpineWater';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Landing } from './components/Landing';
@@ -295,7 +295,7 @@ function MapApp() {
   const [peakLooked, setPeakLooked] = useState<string | null>(null);
   const [filters, setFilters] = useState<VenueFilters>(NO_FILTERS);
   const [mode, setMode] = useState<BrowseMode>(() =>
-    window.location.hash === '#routes' || routeSlugFromHash(window.location.hash) || cleanEntity()?.kind==='route' || sessionStorage.getItem('hillgpx:mode') === 'routes' ? 'routes' : 'climbs',
+    initialMapMode(window.location.hash,lastMapMode(),isRouteDetail),
   );
   const [routeFilters, setRouteFilters] = useState<RouteFilters>(NO_ROUTE_FILTERS);
   const [selectedRouteSlug, setSelectedRouteSlug] = useState<string | null>(null);
@@ -348,13 +348,20 @@ function MapApp() {
 
   useEffect(() => {
     const onHash = () => {
-      // The footer's "Routes" link while the map is already open.
-      if (window.location.hash === '#routes') {
+      // URL and content must stay synchronized even if MapApp stays mounted.
+      const hash=window.location.hash;
+      if (hash === '#routes') {
         setMode('routes');
         setSelectedSlug(null);
         return;
       }
-      if (window.location.hash !== '#import') return;
+      if (hash === '#map' || (hash.startsWith('#map/') && hash !== '#map/near-me')) {
+        setMode('climbs');
+        setSelectedRouteSlug(null);
+        setHoveredRouteSlug(null);
+        return;
+      }
+      if (hash !== '#import') return;
       setGpxOpen(true);
       history.replaceState(null, '', '#map');
     };
@@ -395,7 +402,7 @@ function MapApp() {
   }, []);
 
   useEffect(() => {
-    sessionStorage.setItem('hillgpx:mode', mode);
+    try { sessionStorage.setItem('hillgpx:mode', mode); } catch { /* Browsing without storage. */ }
   }, [mode]);
 
   // Hearted world summits are kept loaded so "Saved" shows them wherever the map is.
