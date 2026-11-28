@@ -29,6 +29,7 @@ import { hutAliases,hutServiceFacts,shelterSeoDescription } from '../src/lib/hut
 import { shelterSchemaProperties } from '../src/lib/shelterStructuredData.js';
 import { refugeSchemaProperties } from '../src/lib/refugeStructuredData.js';
 
+import { summarizeImportCatalog, importHistory } from './import_metrics_v1.mjs';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
 const DATA = join(ROOT, 'public', 'data');
@@ -111,6 +112,11 @@ const municipalities=municipalityRelease?.releaseChannel==='ISTAT_DAIT_MUNICIPAL
 const centralCredits = makeCentralCredits(alpinePlaces, routes, peakPhotos, TODAY,municipalities);
 mkdirSync(join(DIST,'data','atlas'),{recursive:true});
 writeFileSync(join(DIST,'data','atlas','credits-v1.json'),JSON.stringify(centralCredits));
+// Lightweight, public catalogue observability; regenerate on every deploy from
+// exactly the JSON included in this build. No browser-user analytics mixed in.
+const importTelemetry=summarizeImportCatalog();
+importTelemetry.history=importHistory().events;
+writeFileSync(join(DIST,'data','atlas','import-insights-v1.json'),JSON.stringify(importTelemetry));
 const trekProjects = existsSync(join(DATA, 'trekking-projects.json')) ? readJson(join(DATA, 'trekking-projects.json')).projects ?? [] : [];
 const alpineWater=existsSync(join(DATA,'alpine-water.json')) ? readJson(join(DATA,'alpine-water.json')).sources ?? [] : [];
 const byStop = new Map();
