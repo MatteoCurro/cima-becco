@@ -40,6 +40,18 @@
 
 ---
 
+### Correzione trasversale OSM — malghe, casere e baite (28/11/2026)
+
+Audit sullo snapshot `alpine-places.json` (2.326 POI al controllo): 31 record che iniziano con «Malga» e 29 con «Casera» sono segnalati **rifugio** esclusivamente a causa del mapping `tourism=alpine_hut`; altri 15 iniziano con «Baita» e necessitano verifiche separate. **Non sono 60 casi automaticamente dimostrati come bivacchi**: alcune malghe gestite hanno posti letto, alcune sono punti ristoro, altre sono ripari, altre ancora non sono aperte.
+
+Fonte diretta e ID certo: `way/175876228` Casera Campigàt e `way/199050050` Casera/Malga Valbona passano fra i ricoveri. *Malga Bosch Brusà* (Falcade, quota segnalata 1.867 m) entra con identità di fonte locale `official:falcade:bosch-brusa`, sottotipo `support_point`, senza inventare un OSM ID; pasti stagionali storici e ricovero esclusivamente d'emergenza non dimostrano apertura o ospitalità notturna. Le fonti sono nel registro `public/data/atlas/alpine-structure-evidence-v1.json`.
+
+La trasformazione UI/SEO usa **lo stesso adapter** `src/lib/ruralStructureEvidence.js` dopo la riconciliazione CAI/OSM. Per gli altri nomi rurali privi di classificazione diretta: `rural_type_unverified` G0/noindex, preservando vecchi permalink /rifugi come redirect e conservando OSM, foto e tracce. L'importatore `scripts/import_alpine_places.py` aggiunge query per `restaurant/cafe`, `farmstay/attraction`, `cabin/farm_auxiliary` e salva la coda `public/data/atlas/rural-classification-candidates-v1.json`, non una nuova categoria di bivacchi inventati. Doppia scansione quotidiana a celle dell'area OSM, con checkpoint: non equivale a due scansioni complete di tutte le celle ogni giorno.
+
+**Gate di pubblicazione:** test Python importer e Vitest adapter, TypeScript, build reale, redirect canonici, noindex support point G1 e G0, controlli browser. Questo blocco non altera i mapping del CAI e non modifica i record CAI verificati senza nuova evidenza. Per importazioni regionali future, ampliare i confini geografici e integrare sorgenti istituzionali senza deduplicare per nome.
+
+---
+
 ## Blocco 2 — Bivacchi, capanne sociali e punti d'appoggio
 
 **Modello canonico:** [shelter_field_registry_v1.json](../scripts/shelter_field_registry_v1.json), **81 slot** programmati a priorità P0/P1/P2, senza considerarli automaticamente valorizzati. Distinzioni vincolanti: `Bivacco` ≠ `Capanna sociale` ≠ `Punto d'appoggio` ≠ `Rifugio custodito/incustodito`. L'ultima differenza è nella fonte ufficiale CAI, mai inferita dal nome. La UI raccoglie le prime tre sotto la famiglia di navigazione «Bivacchi e ricoveri» mantenendo sottotipo e etichetta ufficiale.
