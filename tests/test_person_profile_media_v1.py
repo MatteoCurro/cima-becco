@@ -29,7 +29,8 @@ def test_item(file="Person A.jpg"):
     }
 def source(url,params):
     if "commons.wikimedia.org" in url:
-        return {"query":{"pages":{"23":{"title":"File:Person A.jpg","imageinfo":[{
+        requested=params.get("titles","File:Person A.jpg").split("|")[0]
+        return {"query":{"pages":{"23":{"title":requested,"imageinfo":[{
            "thumburl":"https://upload.wikimedia.org/commons/thumb/person.jpg",
            "descriptionurl":"https://commons.wikimedia.org/wiki/File:Person_A.jpg",
            "timestamp":"2021-01-01T00:00:00Z",
