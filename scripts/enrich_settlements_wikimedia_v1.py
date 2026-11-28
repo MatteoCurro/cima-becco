@@ -48,13 +48,22 @@ def haversine(a,b):
     return 6371.0088*2*math.asin(min(1.0, math.sqrt(max(0,h))))
 
 def names_agree(name,item):
-    candidates = [value.get("value") for value in (item.get("labels") or {}).values()
-                  if isinstance(value,dict)]
-    sitelink = ((item.get("sitelinks") or {}).get("itwiki") or {}).get("title")
-    if sitelink:
-        candidates.append(str(sitelink).split("(",1)[0].strip())
+    """Italian Wikidata label must agree when present: article title cannot
+    silently override a contradicting entity label (false positive gate).
+    """
     norm=header(name)
-    return bool(norm) and any(header(candidate)==norm for candidate in candidates)
+    if not norm:return False
+    labels=item.get("labels") or {}
+    preferred=labels.get("it")
+    if isinstance(preferred,dict) and preferred.get("value"):
+        return header(preferred["value"])==norm
+    # Without an Italian label, accept a single documented English/local
+    # label or exact itwiki title, never broad fuzzy edit-distance matches.
+    fallback=[v.get("value") for v in labels.values()
+              if isinstance(v,dict) and v.get("value")]
+    title=((item.get("sitelinks") or {}).get("itwiki") or {}).get("title")
+    if title:fallback.append(str(title).split("(",1)[0].strip())
+    return any(header(v)==norm for v in fallback)
 
 def find_istat(legacy, official, municipality_by_qid, parent_claims, wd_point):
     """QID P131 + matching 2021 parent + exact name + unique near point."""
