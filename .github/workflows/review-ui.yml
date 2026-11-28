@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: npm
       - uses: actions/setup-python@v5
         with:
@@ -54,7 +54,7 @@ jobs:
       - name: Install headless Chromium for responsive review
         run: npx playwright install --with-deps chromium webkit
       - name: Validate layout in real browser (desktop and mobile)
-        run: npx playwright test tests/ui-layout.spec.ts --project=chromium --project=webkit
+        run: npx playwright test tests/ui-layout.spec.ts tests/home-navigation.spec.ts --project=chromium --project=webkit
       - name: Keep screenshots and traces on failure
         if: failure()
         uses: actions/upload-artifact@v4

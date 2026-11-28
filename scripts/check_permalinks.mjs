@@ -49,6 +49,14 @@ const alpineBase=mergeSheltersForSeo(mergeRefugesForSeo(
 const evidencePath=join(dist,'data','atlas','alpine-structure-evidence-v1.json');
 const evidence=existsSync(evidencePath)?JSON.parse(readFileSync(evidencePath,'utf8')):null;
 const alpine=applyRuralStructureEvidence(alpineBase,evidence);
+const settlementsPath=join(dist,'data','atlas','settlements-v1.json');
+const settlementRelease=existsSync(settlementsPath)?
+  JSON.parse(readFileSync(settlementsPath,'utf8')):null;
+const indexedSettlements=new Map(
+  (settlementRelease?.releaseChannel==='ISTAT21_OSM_SETTLEMENTS'&&settlementRelease?.isPublished?
+    settlementRelease.entities:[]).filter(e=>e.quality?.gate==='G2'&&e.quality?.seoIndexable&&
+    e.sourceIds?.osm).map(e=>[e.sourceIds.osm,e])
+);
 for(const place of alpine){
   const section=place.kind==='rifugio'?'rifugi':place.kind==='bivacco'?'bivacchi':'borghi';
   const canonical=atlasCanonicalPath(place).replace(/^\//,'');
@@ -60,7 +68,11 @@ for(const place of alpine){
       JSON.parse(readFileSync(join(dist,'data','atlas','municipalities-v1.json'),'utf8')).entities.some(e=>
        e.sourceIds?.osm===place.osmUrl.replace('https://www.openstreetmap.org/','') &&
        canonicalHtml.includes('/comuni/'+e.slug+'/') && canonicalHtml.includes('noindex,follow'));
-    if(!authorized)throw Error('Canonical SEO del luogo assente: '+canonical);
+    const replacement=place.kind==='borgo'?
+      indexedSettlements.get(place.osmUrl.replace('https://www.openstreetmap.org/','')):null;
+    const redirected=Boolean(replacement && canonicalHtml.includes('/borghi/'+replacement.slug+'/') &&
+      canonicalHtml.includes('noindex,follow') && canonicalHtml.includes('http-equiv="refresh"'));
+    if(!authorized&&!redirected)throw Error('Canonical SEO del luogo assente: '+canonical);
   }
   if((place.kind==='rifugio'||place.kind==='bivacco')&&canonicalAtlasSlug(place)!==place.slug){
     const legacy=join(dist,section,place.slug,'index.html');

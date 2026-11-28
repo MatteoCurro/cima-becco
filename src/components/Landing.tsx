@@ -17,11 +17,12 @@ import { VenueThumb } from './VenueThumb';
 import { TrailHero } from './TrailHero';
 import { RouteBookmarkButton } from './RouteBookmarkButton';
 import { useUnits } from './UnitsContext';
+import { homeHref } from '../lib/navigation';
 
 type Mode = 'climbs' | 'routes';
 
 function rememberMode(mode: Mode) {
-  sessionStorage.setItem('hillgpx:mode', mode);
+  try { sessionStorage.setItem('hillgpx:mode', mode); } catch { /* Private mode. */ }
 }
 
 /** Where a row, its title and its "See all" card go: a real link, so it can be opened in a new tab too. */
@@ -241,6 +242,20 @@ function Row({ title, link, loading, children, collage = [] }: {
     setEdges({ start: el.scrollLeft < 4, end: el.scrollLeft + el.clientWidth >= el.scrollWidth - 4 });
   };
   useEffect(update, [loading, children]);
+  // Vertical wheel scrolls the page. Shift + wheel scrolls the horizontal
+  // carousel; horizontal trackpad gestures remain browser-native.
+  useEffect(() => {
+    const el=trackRef.current;
+    if(!el)return;
+    const onWheel=(event:WheelEvent)=>{
+      if(!event.shiftKey || Math.abs(event.deltaY)<=Math.abs(event.deltaX) ||
+        el.scrollWidth<=el.clientWidth+2)return;
+      event.preventDefault();
+      el.scrollLeft+=event.deltaY;
+    };
+    el.addEventListener('wheel',onWheel,{passive:false});
+    return ()=>el.removeEventListener('wheel',onWheel);
+  },[]);
 
   const page = (dir: number) => {
     const el = trackRef.current;
@@ -260,15 +275,16 @@ function Row({ title, link, loading, children, collage = [] }: {
           </h2>
         )}
         <div className="home-row-nav">
-          <button type="button" aria-label="Previous" disabled={edges.start} onClick={() => page(-1)}>
+          <button type="button" aria-label="Scorri a sinistra" disabled={edges.start} onClick={() => page(-1)}>
             <ChevronLeftIcon size={12} />
           </button>
-          <button type="button" aria-label="Next" disabled={edges.end} onClick={() => page(1)}>
+          <button type="button" aria-label="Scorri a destra" disabled={edges.end} onClick={() => page(1)}>
             <ChevronRightIcon size={12} />
           </button>
         </div>
       </header>
-      <div className="home-row-track" ref={trackRef} onScroll={update}>
+      <div className="home-row-track" ref={trackRef} onScroll={update}
+        tabIndex={0} role="region" aria-label={'Esplora: '+title}>
         {loading
           ? Array.from({ length: 7 }, (_, i) => (
               <div key={i} className="tile skeleton-card" aria-hidden="true">
@@ -331,7 +347,7 @@ function PlaceTile({ venue, index, showKind = false }: { venue: Venue; index: nu
   const height = venueHeight(venue);
   const meta = tileMeta(venue, showKind);
   return (
-    <a className="tile" href={`#venue/${venue.slug}`} target="_blank" rel="noopener" style={{ '--i': index } as React.CSSProperties}>
+    <a className="tile" href={homeHref('venue/'+encodeURIComponent(venue.slug))} target="_blank" rel="noopener" style={{ '--i': index } as React.CSSProperties}>
       <span className="tile-media">
         <VenueThumb venue={venue} />
       </span>

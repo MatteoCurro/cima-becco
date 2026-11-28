@@ -24,6 +24,7 @@ export function summarizeImportCatalog(){
   const municipalities=file('atlas/municipalities-v1.json');
   const refuges=file('atlas/refuges-v1.json');
   const shelters=file('atlas/shelters-v1.json');
+  const settlements=file('atlas/settlements-v1.json');
   const places=file('alpine-places.json');
   const routes=file('routes-manifest.json');
   const people=file('atlas/people-v1.json');
@@ -32,6 +33,8 @@ export function summarizeImportCatalog(){
   const mun=municipalities?.entities||[];
   const ref=refuges?.entities||[];
   const she=shelters?.entities||[];
+  const set=settlements?.releaseChannel==='ISTAT21_OSM_SETTLEMENTS'&&settlements?.isPublished===true?
+    settlements.entities||[]:[];
   const osm=places?.places||[];
   const all=[...ref,...she];
   const mcover={
@@ -70,6 +73,19 @@ export function summarizeImportCatalog(){
                 'Posti dichiarati':coverage(she,e=>available(e,'bedsTotal')),
                 'Fotografie':coverage(she,e=>(e.media||[]).some(m=>m.kind==='photo'&&m.reuseAllowed&&m.subjectVerified))},
       denominator:she.length},
+    {id:'localita',name:'Località G2 ISTAT 2021 / OSM',count:set.length,
+      facts:set.reduce((s,e)=>s+countFacts(e),0),media:countMedia(set),
+      relations:set.reduce((s,e)=>s+(e.relations||[]).length,0),
+      checkedAt:settlements?.generatedAt||null,
+      coverage:{
+        'Punti verificati':coverage(set,e=>Boolean(e.geo?.point&&e.sourceIds?.wikidata)),
+        'Residenti censimento 2021':coverage(set,e=>available(e,'popolazione')&&available(e,'populationReferenceDate')),
+        'Testo con QID verificato':coverage(set,e=>Boolean(e.textSources?.length)),
+        'Fotografia verificata':coverage(set,e=>(e.media||[]).some(m=>m.kind==='photo'&&m.reuseAllowed&&m.subjectVerified)),
+        'Fotografia storica datata':coverage(set,e=>(e.media||[]).some(m=>m.kind==='historical_photo'&&m.capturedAt&&m.subjectVerified)),
+        'Comune attribuito':coverage(set,e=>(e.relations||[]).some(r=>r.type==='part_of'&&r.verified)),
+        'Persone collegate':coverage(set,e=>(e.connectedPeople||[]).some(p=>p.verified)),
+      },denominator:set.length},
     {id:'luoghi',name:'Località OSM (archivio)',count:osm.length,
       facts:0,media:osm.filter(e=>e.photo?.sourceUrl&&e.photo?.license).length,
       relations:0,checkedAt:places?.generatedAt||null,coverage:{},denominator:osm.length},
@@ -96,7 +112,8 @@ export function summarizeImportCatalog(){
     schemaVersion:'1.0',generatedAt:new Date().toISOString(),
     semantics:'published_catalogue_not_visitor_analytics',
     sources,total:{
-      publicEntities:mun.length+ref.length+she.length,
+      publicEntities:mun.length+ref.length+she.length+set.length,
+      settlements:set.length,
       municipalities:mun.length,refuges:ref.length,shelters:she.length,
       peopleInGraph:peopleEntities.length,
       verifiedPeoplePortraits:peopleEntities.filter(e=>(e.media||[]).some(m=>m.kind==='photo'&&m.reuseAllowed&&m.subjectVerified&&m.portraitCandidate)).length,
@@ -109,10 +126,11 @@ export function summarizeImportCatalog(){
       municipalitiesEverAttempted:progress?.statistics?.processedDistinct||0,
       municipalitiesPendingRetry:progress?.statistics?.pendingRevisit||0,
       osmPlaces:osm.length,routes:Number(routes?.routeCount)||0,
-      sourcedFacts:totalFacts,attributedMedia:countMedia([...mun,...all,...peopleEntities]),
+      sourcedFacts:totalFacts,attributedMedia:countMedia([...mun,...all,...set,...peopleEntities]),
       documentedRelations:sources.reduce((sum,s)=>sum+s.relations,0)},
     quality:{
       municipalitiesG2:mun.filter(e=>e.quality?.gate==='G2').length,
+      settlementsG2:set.filter(e=>e.quality?.gate==='G2').length,
       missingMunicipalElevation:mun.filter(e=>!(
         available(e,'quotaCentroM')||available(e,'elevationReportedM')||
         available(e,'altitudineTerritorioMinM')||available(e,'altitudineTerritorioMediaM')||
@@ -123,19 +141,20 @@ export function summarizeImportCatalog(){
   };
 }
 export function importHistory(pipeline){
-  const pipelines=pipeline?[pipeline]:['comuni','rifugi-ricoveri'];
+  const pipelines=pipeline?[pipeline]:['comuni','rifugi-ricoveri','localita'];
   const sources=pipelines.map(p=>read(HISTORY(p)));
   const events=sources.flatMap(doc=>doc?.schemaVersion==='1.0'&&Array.isArray(doc.events)?doc.events:[]);
   events.sort((a,b)=>String(a.recordedAt||'').localeCompare(String(b.recordedAt||'')));
   return {schemaVersion:'1.0',description:'Verified successful import snapshots, no invented history',events};
 }
 export function appendSuccessfulImport(pipeline,runId,{report=null,sourceSha=null}={}){
-  if(!['comuni','rifugi-ricoveri'].includes(pipeline))throw Error('Pipeline sconosciuta');
+  if(!['comuni','rifugi-ricoveri','localita'].includes(pipeline))throw Error('Pipeline sconosciuta');
   if(!runId||!/^[0-9]+$/.test(String(runId)))throw Error('GitHub Actions run ID obbligatorio');
   const snapshot=summarizeImportCatalog();
   const history=importHistory(pipeline);
   if(history.events.some(e=>e.pipeline===pipeline&&e.runId===String(runId)))return history;
-  const sourceIds=pipeline==='comuni'?['comuni','persone']:['rifugi','ricoveri'];
+  const sourceIds=pipeline==='comuni'?['comuni','persone']:
+    pipeline==='localita'?['localita']:['rifugi','ricoveri'];
   const sources=snapshot.sources.filter(s=>sourceIds.includes(s.id));
   const event={
     runId:String(runId),pipeline,status:'success',recordedAt:new Date().toISOString(),

@@ -45,6 +45,7 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
       licence:licence.slice(0,150),mediaUrl:mediaUrl||null,
     });
   };
+  const textCredits=[];
   for(const p of places) {
     if(!p?.slug || !p.kind)continue;
     if(p.photo?.url)add(p.kind,p.slug,p.name,p.photo.sourceUrl,p.photo.author,p.photo.license,p.photo.url);
@@ -52,8 +53,19 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
       if((m.kind==='photo'||m.kind==='historical_photo'||m.kind==='logo') &&
          m.reuseAllowed && m.subjectVerified)
         add(p.kind,p.slug,p.name,m.sourceUrl,m.author||'Archivio della fonte',m.licence,m.url);
+    // G2 insediamenti: estratti documentati legati alla stessa scheda e QID.
+    // Le fonti mantengono la licenza originale (es. CC BY-SA 4.0).
+    if(p.kind==='borgo' && p.sourceIds?.wikidata && p.subtype!=='italian_municipality') {
+      for(const source of p.textSources||[]){
+        if(source.text && source.sourceId && source.sourceUrl?.startsWith('https://') && source.licence)
+          textCredits.push({kind:'borgo',slug:p.slug,name:p.name,
+            entityUrl:'/borghi/'+encodeURIComponent(p.slug)+'/',
+            sourceUrl:source.sourceUrl,author:'Contributori di Wikipedia',
+            licence:source.licence,sourceId:source.sourceId,
+            sourceUpdatedAt:source.sourceUpdatedAt||null});
+      }
+    }
   }
-  const textCredits=[];
   for(const municipality of municipalities) {
     if(!municipality?.slug || municipality.kind!=='municipality')continue;
     const name=municipality.name;

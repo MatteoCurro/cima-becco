@@ -13,3 +13,14 @@ export function navigateHome(hash: string): void {
 export function routeDetailHref(slug: string, source: 'curated' | 'community' | 'local'): string {
   return source === 'curated' ? routeHref(slug) : homeHref('route/' + encodeURIComponent(slug));
 }
+
+/** An explicit map URL takes precedence over the previous tab's preference. */
+export function initialMapMode(hash: string, remembered: string | null, routeDetail = false): 'routes' | 'climbs' {
+  if (routeDetail || hash === '#routes' || hash.startsWith('#route/')) return 'routes';
+  if (hash === '#map' || hash.startsWith('#map/') || hash.startsWith('#venue/')) return 'climbs';
+  return remembered === 'routes' ? 'routes' : 'climbs';
+}
+/** Navigation must work with storage blocked by privacy settings. */
+export function lastMapMode(): string | null {
+  try { return sessionStorage.getItem('hillgpx:mode'); } catch { return null; }
+}

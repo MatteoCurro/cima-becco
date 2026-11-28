@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import './siteChrome.css';
 import './brandMark.css';
 import './fontAwesome.css';
@@ -29,15 +29,32 @@ export function Wordmark({ size = 36, href = '/#' }: { size?: number; href?: str
  */
 export function SiteHeader({ center = <SiteSearch />, sticky = false }: { center?: ReactNode; sticky?: boolean }) {
   const [exploreOpen, setExploreOpen] = useState(false);
+  const headerRef=useRef<HTMLElement>(null);
+  useEffect(()=>{
+    if(!exploreOpen)return;
+    const closeOutside=(event:PointerEvent)=>{
+      if(event.target instanceof Node && !headerRef.current?.contains(event.target))setExploreOpen(false);
+    };
+    const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape')setExploreOpen(false);};
+    const onHash=()=>setExploreOpen(false);
+    document.addEventListener('pointerdown',closeOutside);
+    document.addEventListener('keydown',onKey);
+    window.addEventListener('hashchange',onHash);
+    return ()=>{
+      document.removeEventListener('pointerdown',closeOutside);
+      document.removeEventListener('keydown',onKey);
+      window.removeEventListener('hashchange',onHash);
+    };
+  },[exploreOpen]);
   return (
-    <header className={`site-header${sticky ? ' sticky' : ''}`}>
+    <header ref={headerRef} className={`site-header${sticky ? ' sticky' : ''}`}>
       <div className="site-header-row">
         <div className="site-header-left">
           <Wordmark />
         </div>
         <div className="site-header-center">{center}</div>
         <div className="site-header-right">
-          <button type="button" className="site-header-cta cb-explore-trigger" aria-expanded={exploreOpen} onClick={() => setExploreOpen(v => !v)}><FaIcon name="compass" size={14}/> Esplora</button>
+          <button type="button" className="site-header-cta cb-explore-trigger" aria-controls="cb-explore-menu" aria-expanded={exploreOpen} onClick={() => setExploreOpen(v => !v)}><FaIcon name="compass" size={14}/> Esplora</button>
           <a className="site-header-cta cb-plan-link" href="/#pianifica" aria-label="Pianifica un percorso"><FaIcon name="route" size={14}/> Pianifica</a>
           <a className="site-header-cta" href="/#import" onClick={openImportHere} aria-label="Carica GPX" data-tip="Carica GPX">
             <FaIcon name="arrow-up-right-from-square" size={14}/>
@@ -47,7 +64,7 @@ export function SiteHeader({ center = <SiteSearch />, sticky = false }: { center
           {SUPABASE_CONFIGURED && <AccountMenu />}
         </div>
       </div>
-      {exploreOpen && <nav className="cb-explore-menu" aria-label="Esplora Cima Becco">{exploreGroups.map(group => <section key={group.title}><strong>{group.title}</strong>{group.items.map(item => item.href ? <a key={item.label} href={item.href} onClick={() => setExploreOpen(false)}>{item.label}</a> : <span key={item.label}>{item.label} · prossimamente</span>)}</section>)}<section><strong>Strumenti</strong><a href="/#pianifica" onClick={() => setExploreOpen(false)}>Pianifica un percorso</a></section></nav>}
+      {exploreOpen && <nav id="cb-explore-menu" className="cb-explore-menu" aria-label="Esplora Cima Becco">{exploreGroups.map(group => <section key={group.title}><strong>{group.title}</strong>{group.items.map(item => item.href ? <a key={item.label} href={item.href} onClick={() => setExploreOpen(false)}>{item.label}</a> : <span key={item.label}>{item.label} · prossimamente</span>)}</section>)}<section><strong>Strumenti</strong><a href="/#pianifica" onClick={() => setExploreOpen(false)}>Pianifica un percorso</a></section></nav>}
     </header>
   );
 }

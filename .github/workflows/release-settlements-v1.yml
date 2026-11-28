@@ -1,0 +1,194 @@
+name: Release localita ISTAT21/OSM G2
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release-settlements-v1.yml
+      - scripts/import_settlements_v1.py
+      - scripts/enrich_settlement_istat_geometry_v1.py
+      - scripts/enrich_settlements_wikimedia_v1.py
+      - scripts/enrich_settlement_history_v1.py
+      - scripts/merge_settlements_for_seo.mjs
+      - scripts/build_seo.mjs
+      - scripts/build_source_credits.mjs
+      - scripts/import_metrics_v1.mjs
+      - src/lib/settlementRelease.ts
+      - src/lib/alpinePlaces.ts
+      - src/components/AlpineAtlasPage.tsx
+      - docs/MODELLO_METADATI_E_LAYOUT.md
+  schedule:
+    - cron: '10 6 * * *'
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: cima-becco-localita-g2-release
+  cancel-in-progress: false
+jobs:
+  verify-and-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Test di identità, coordinate, persone e media
+        run: |
+          set -euo pipefail
+          python -m pip install pyproj==3.7.2
+          python -m unittest discover -s tests -p 'test_import_settlements_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_settlement_istat_geometry_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_settlements_wikimedia_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_settlement_history_v1.py' -v
+      - name: Cache basi ISTAT 2021 statiche
+        uses: actions/cache@v4
+        with:
+          path: build/import-settlements-v1/input
+          key: cima-becco-istat-localities-2021-official-v1
+      - name: Scarica e verifica ZIP ISTAT
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/import-settlements-v1/input
+          for region in 04 05; do
+            path="build/import-settlements-v1/input/R$region"_21.zip
+            if [ ! -s "$path" ]; then
+              curl --fail --location --silent --show-error --retry 3 --retry-delay 6 \
+                --connect-timeout 20 --max-time 240 \
+                -A 'CimaBecco-OpenDataPilot/1.0 (https://www.cimabecco.it)' \
+                "https://www.istat.it/storage/cartografia/basi_territoriali/2021/R$region"_21.zip \
+                -o "$path"
+            fi
+            unzip -t "$path" >/dev/null
+          done
+          path=build/import-settlements-v1/input/LocalitaPuntuali_21.zip
+          if [ ! -s "$path" ]; then
+            curl --fail --location --silent --show-error --retry 3 --retry-delay 6 \
+              --connect-timeout 20 --max-time 240 \
+              -A 'CimaBecco-OpenDataPilot/1.0 (https://www.cimabecco.it)' \
+              https://www.istat.it/storage/cartografia/basi_territoriali/2021/LocalitaPuntuali_21.zip \
+              -o "$path"
+          fi
+          unzip -t "$path" >/dev/null
+      - name: Identifica località, relazioni, coordinate e censimento 2021
+        run: |
+          set -euo pipefail
+          python scripts/import_settlements_v1.py \
+            --istat-source build/import-settlements-v1/input/R04_21.zip \
+            --istat-source build/import-settlements-v1/input/R05_21.zip \
+            --osm public/data/alpine-places.json \
+            --municipalities public/data/atlas/municipalities-v1.json \
+            --refuges public/data/atlas/refuges-v1.json \
+            --shelters public/data/atlas/shelters-v1.json \
+            --out build/import-settlements-v1
+          python scripts/enrich_settlement_istat_geometry_v1.py \
+            --settlements build/import-settlements-v1/settlements.json \
+            --points build/import-settlements-v1/input/LocalitaPuntuali_21.zip \
+            --refuges public/data/atlas/refuges-v1.json \
+            --shelters public/data/atlas/shelters-v1.json \
+            --out build/import-settlements-v1/settlements.json \
+            --report build/import-settlements-v1/geometry-report.json
+      - name: Dossier G2 Wikimedia incrementali
+        shell: bash
+        run: |
+          set -euo pipefail
+          previous=()
+          if [ -f public/data/atlas/settlements-v1.json ]; then
+            previous=(--previous public/data/atlas/settlements-v1.json)
+          fi
+          offset=$(( ((GITHUB_RUN_NUMBER - 1) * 80) % 770 ))
+          python scripts/enrich_settlements_wikimedia_v1.py \
+            --settlements build/import-settlements-v1/settlements.json \
+            --municipalities public/data/atlas/municipalities-v1.json \
+            --people public/data/atlas/people-v1.json \
+            --max-new 80 --offset "$offset" \
+            "${previous[@]}" \
+            --out public/data/atlas/settlements-v1.json \
+            --report build/import-settlements-v1/wikimedia-report.json
+          python scripts/enrich_settlement_history_v1.py \
+            --settlements public/data/atlas/settlements-v1.json \
+            --out public/data/atlas/settlements-v1.json \
+            --report build/import-settlements-v1/history-report.json \
+            --max 8 --cycle "$GITHUB_RUN_NUMBER"
+      - name: Verifica qualità G2 e provenienza
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          d=json.loads(Path("public/data/atlas/settlements-v1.json").read_text())
+          rows=d["entities"]
+          assert rows and d["isPublished"] and d["releaseChannel"]=="ISTAT21_OSM_SETTLEMENTS"
+          assert len(rows)==len({e["id"] for e in rows})==len({e["slug"] for e in rows})
+          assert len(rows)==len({e["sourceIds"]["wikidata"] for e in rows})
+          for e in rows:
+              assert e["kind"]=="settlement" and e["quality"]["gate"]=="G2"
+              assert e["quality"]["seoIndexable"] and not e["quality"].get("reviewRequired")
+              assert len(e.get("description") or "")>=120
+              assert re.fullmatch(r"Q[1-9]\d*",e["sourceIds"]["wikidata"])
+              assert e["geo"]["point"]
+              assert any(m["kind"]=="photo" and m.get("reuseAllowed") and m.get("subjectVerified")
+                  and m.get("licence") and m.get("author") and str(m.get("sourceUrl","")).startswith("https://")
+                  for m in e["media"])
+              assert any(t.get("text") and t.get("sourceId") and t.get("licence") and
+                  str(t.get("sourceUrl","")).startswith("https://") for t in e["textSources"])
+              assert not any(k in e["facts"] for k in ("sindacoNome","mandatoInizio","superficieKm2"))
+              assert all(r.get("verified") for r in e["relations"] if r["type"]=="part_of")
+              if "popolazione" in e["facts"]:
+                  assert e["facts"]["popolazione"]["validFrom"]=="2021-12-31"
+                  assert e["facts"]["populationReferenceDate"]["value"]=="2021-12-31"
+              for m in e["media"]:
+                  if m.get("kind")=="historical_photo":
+                      assert m.get("capturedAt") and m.get("historicalDateMethod") and m.get("subjectMethod")
+          geo=json.loads(Path("build/import-settlements-v1/geometry-report.json").read_text())
+          assert geo["counts"]["matched"]>8000,geo
+          print("Localita G2",len(rows),"punti ISTAT",geo["counts"]["matched"])
+          PY
+      - name: Typecheck, regressioni, build e permalink
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
+      - name: Aggiorna dati osservatorio verificato
+        run: |
+          node scripts/import_metrics_v1.mjs localita "$GITHUB_RUN_ID" \
+            build/import-settlements-v1/wikimedia-report.json
+      - name: Commit atomico solo dopo tutti i gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/atlas/settlements-v1.json public/data/atlas/import-history-localita-v1.json
+          if git diff --cached --quiet; then
+            echo "Nessuna variazione delle schede G2."
+            exit 0
+          fi
+          git commit -m "data(localita): publish verified ISTAT21/OSM G2"
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Report audit della pubblicazione
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-localita-g2-release-report
+          path: |
+            build/import-settlements-v1/report.json
+            build/import-settlements-v1/geometry-report.json
+            build/import-settlements-v1/wikimedia-report.json
+            build/import-settlements-v1/history-report.json
+          retention-days: 14
+          if-no-files-found: warn

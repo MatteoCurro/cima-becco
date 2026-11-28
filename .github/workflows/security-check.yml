@@ -1,0 +1,68 @@
+name: Security audit (dependencies and accidental credentials)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/security-check.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'src/lib/googleHealth.ts'
+      - 'src/lib/api.ts'
+      - 'src/lib/auth.ts'
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'src/lib/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cima-becco-security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Check tracked files for private-key material
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const paths=execFileSync('git',['ls-files','-z'],{encoding:'utf8'}).split('\0').filter(Boolean);
+          const textFiles=paths.filter(p=>!p.endsWith('.png')&&!p.endsWith('.jpg')&&!p.endsWith('.webp')&&!p.endsWith('.ico')&&!p.endsWith('.gz')&&!p.endsWith('.pdf')&&!p.endsWith('.lock'));
+          const sensitive=[
+            /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
+            /sb_secret_[A-Za-z0-9_-]{20,}/,
+            /sk_live_[A-Za-z0-9]{20,}/,
+          ];
+          const offending=[];
+          for(const path of textFiles){
+            let value;try{value=readFileSync(path,'utf8')}catch{continue}
+            if(value.includes('\uFFFD'))continue;
+            if(sensitive.some(re=>re.test(value)))offending.push(path);
+          }
+          if(offending.length){console.error('Private key material found in:',offending);process.exitCode=1;}
+          else console.log('No recognizable private-key material in tracked files.');
+          JS
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Audit production dependencies for high or critical vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
+      - name: Audit all dependencies including build tools
+        if: always()
+        run: npm audit --audit-level=high

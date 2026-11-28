@@ -65,6 +65,7 @@ class FakeXhr {
 
 beforeEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
   gis.queue.length = 0;
   gis.prompts.length = 0;
   gis.revoked.length = 0;
@@ -141,7 +142,8 @@ describe('googleHealth link/unlink', () => {
     expect(localStorage.getItem('hillgpx:ghealth')).toBeNull();
   });
 
-  it('falls back to the same-origin relay when Google is unreachable', async () => {
+  it('uses a verified same-origin relay only with explicit opt-in', async () => {
+    vi.stubEnv('VITE_GHEALTH_PROXY_ENABLED','true');
     const mod = await load();
     gis.queue.push({ access_token: 'tok', scope: 'a b', expires_in: 3600 });
     const calls: string[] = [];
@@ -163,19 +165,21 @@ describe('googleHealth link/unlink', () => {
     expect(calls.some((url) => url.startsWith('/api/ghealth?kind=workouts'))).toBe(true);
   });
 
-  it('treats a relay-less host (dev, GitHub Pages) as unreachable', async () => {
+  it('does not leak a bearer token to an unconfigured same-origin endpoint', async () => {
     const mod = await load();
     gis.queue.push({ access_token: 'tok', scope: 'a b', expires_in: 3600 });
+    const urls:string[]=[];
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
+        urls.push(url);
         if (url.includes('googleapis')) throw new TypeError('Failed to fetch');
-        // vite dev / static host answers index.html with no marker header.
-        return new Response('<html></html>', { status: 200, headers: { 'content-type': 'text/html' } });
+        throw new Error('Unconfigured same-origin request!');
       }),
     );
     vi.stubGlobal('XMLHttpRequest', FakeXhr);
     await expect(mod.listGoogleWorkouts()).rejects.toThrow('Could not reach Google Health');
+    expect(urls.every(url=>url.includes('googleapis'))).toBe(true);
   });
 });

@@ -548,7 +548,9 @@
   grid-auto-columns: calc((100% - var(--gap) * (var(--cols) - 1)) / var(--cols));
   gap: var(--gap);
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
   scroll-padding-inline: 0;
   scrollbar-width: none;
   padding-bottom: 4px;

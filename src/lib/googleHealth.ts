@@ -11,8 +11,8 @@ import type { RouteActivity } from '../types';
  * client, consent happens in a popup, and the browser calls
  * health.googleapis.com with the short-lived access token it gets back.
  *
- * Nothing reaches a server — no client secret, no stored refresh token, no
- * edge function. A granted scope silently re-issues tokens until the user
+ * By default only Google receives the bearer token; there is no client
+ * secret or stored refresh token. A same-origin relay requires explicit opt-in. A granted scope silently re-issues tokens until the user
  * revokes access in their Google account; `hillgpx:ghealth` remembers that
  * a grant exists so the import dialog can offer the workout list straight
  * away.
@@ -273,13 +273,14 @@ async function healthGet(url: string, proxyPath: string, accept?: string): Promi
     try {
       return await xhrGet(url, headers);
     } catch {
-      // Last resort on Google-blocked networks: the Cloudflare Pages relay at
-      // /api/ghealth forwards the request server-side. On hosts without
-      // functions (vite dev, the GitHub Pages backup) the marker header is
-      // missing — that is just "unreachable", not an answer.
-      const relayed = await fetch(proxyPath, { headers }).catch(() => null);
-      if (relayed?.headers.get('x-ghealth-proxy')) {
-        return { ok: relayed.ok, status: relayed.status, body: await relayed.text() };
+      // Never send an OAuth bearer token to an unconfigured same-origin
+      // endpoint. GitHub Pages has no relay; this is opt-in for deployments
+      // that actually operate and protect their own /api/ghealth service.
+      if (import.meta.env.VITE_GHEALTH_PROXY_ENABLED === 'true') {
+        const relayed = await fetch(proxyPath, { headers }).catch(() => null);
+        if (relayed?.headers.get('x-ghealth-proxy')) {
+          return { ok: relayed.ok, status: relayed.status, body: await relayed.text() };
+        }
       }
       throw new ApiError(`Could not reach Google Health — ${fetchReason(directError)}.`, 502);
     }

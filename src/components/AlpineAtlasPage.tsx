@@ -67,7 +67,7 @@ const sectionLabels: Record<Section,string> = { rifugi:'RIFUGI',bivacchi:'BIVACC
 function PlaceBadge({ place }: { place: AlpinePlace }) {
   return <span className={`cb-atlas-kind cb-atlas-kind--${place.kind}`}>
     <AlpinePlaceIcon kind={place.kind} size={19}/>
-    {place.kind === 'rifugio' ? 'RIFUGIO' : place.kind === 'bivacco' ? (place.shelterTypeLabel || 'BIVACCO').toLocaleUpperCase('it-IT') : place.subtype==='italian_municipality'?'COMUNE':'PAESE'}{place.elevationM ? ` · ${place.elevationM.toLocaleString('it-IT')} m` : ''}
+    {place.kind === 'rifugio' ? 'RIFUGIO' : place.kind === 'bivacco' ? (place.shelterTypeLabel || 'BIVACCO').toLocaleUpperCase('it-IT') : place.subtype==='italian_municipality'?'COMUNE':place.subtype==='centro_abitato'?'CENTRO ABITATO':place.subtype==='nucleo_abitato'?'NUCLEO ABITATO':'PAESE'}{place.elevationM ? ` · ${place.elevationM.toLocaleString('it-IT')} m` : ''}
   </span>;
 }
 
@@ -112,13 +112,21 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
   const arrivals=tagged.filter(route=>!departures.includes(route)&&(route.stops??[]).some(stop=>stop.slug===place.slug&&stop.relation==='arrivo'));
   const passes=tagged.filter(route=>!departures.includes(route)&&!arrivals.includes(route));
   const around=nearby.filter(route=>!tagged.includes(route));
-  const wiki=place.wikipedia?.match(/^([a-z]{2,3}):(.+)$/);
-  const wikiUrl=wiki?`https://${wiki[1]}.wikipedia.org/wiki/${encodeURIComponent(wiki[2].replace(/ /g,'_'))}`:null;
   const kindLabel=place.kind==='rifugio'?'rifugio alpino':place.kind==='bivacco'?(place.shelterTypeLabel?.toLowerCase()||'bivacco'):place.subtype==='italian_municipality'?'comune italiano':'località montana';
+  const isCensusSettlement=place.kind==='borgo' &&
+    (place.subtype==='centro_abitato'||place.subtype==='nucleo_abitato');
+  const verifiedParent=place.relations?.find(r=>r.type==='part_of'&&r.verified&&r.target?.kind==='municipality');
+  const hasContactInfo=Boolean(place.operator||place.openingHours||place.phone||place.email||place.website);
+  const population2021=isCensusSettlement&&typeof place.facts?.popolazione?.value==='number'
+    ?place.facts.popolazione.value:null;
+  const families2021=isCensusSettlement&&typeof place.facts?.famiglie?.value==='number'
+    ?place.facts.famiglie.value:null;
   const placeLine=place.subtype==='italian_municipality'
     ? `${place.name} è un comune della ${place.administrativeHierarchy?.region||"regione di riferimento"}.`
+    : isCensusSettlement
+    ? `${place.name} è ${place.subtype==='centro_abitato'?'un centro abitato':'un nucleo abitato'} censito da ISTAT nel 2021${verifiedParent?' nel Comune di '+verifiedParent.target.name:''}.`
     : place.kind==='borgo'
-    ? `${place.name} è una località di montagna censita nell'Atlante Cima Becco.`
+    ? `${place.name} è una località censita nell'Atlante Cima Becco.`
     : `${place.name} è un ${kindLabel} censito nell'Atlante Cima Becco.`;
   const municipality=place.subtype==='italian_municipality';
   const detailRows: { label:string; value:string }[]=[
@@ -132,6 +140,10 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
       ...(typeof place.facts?.mandatoInizio?.value==='string'?[{label:'In carica dal (DAIT)',value:place.facts.mandatoInizio.value}]:[]),
     ]:[]),
 
+    ...(isCensusSettlement&&verifiedParent?[{label:'Comune di appartenenza (dato 2021)',value:verifiedParent.target.name}]:[]),
+    ...(population2021!==null?[{label:'Residenti censiti (2021)',value:population2021.toLocaleString('it-IT')}]:[]),
+    ...(families2021!==null?[{label:'Famiglie censite (2021)',value:families2021.toLocaleString('it-IT')}]:[]),
+    ...(isCensusSettlement&&typeof place.facts?.abitazioni?.value==='number'?[{label:'Abitazioni (2021)',value:place.facts.abitazioni.value.toLocaleString('it-IT')}]:[]),
     ...(place.seasonal?[{label:'Stagionalità',value:place.seasonal}]:[]),
     ...(place.access?[{label:'Accesso dichiarato in OSM',value:place.access}]:[]),
 
@@ -164,7 +176,8 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
         <h1>{place.name}</h1>
         {municipality&&Boolean(place.aliases?.length)&&<p className="cb-location-muted-note">Noto anche come {(place.aliases||[]).map(a=>a.value).join(' · ')}</p>}
         <p className="cb-location-lead">{place.shortSummary || placeLine}</p>
-        {municipality&&place.description&&<p className="cb-location-story">{place.description}</p>}
+        {place.kind==='borgo'&&place.description&&<p className="cb-location-story">{place.description}</p>}
+        {isCensusSettlement&&verifiedParent&&<p className="cb-location-muted-note">Località del <a href={`${import.meta.env.BASE_URL}comuni/${encodeURIComponent(verifiedParent.target.slug||'')}/`}>Comune di {verifiedParent.target.name}</a> · classificazione ISTAT 2021</p>}
 
         <AtlasDossierBlocks record={place} placement="alerts"/>
         <DetailMetrics label="Informazioni principali" items={[
@@ -179,6 +192,8 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
               place.facts.altitudineTerritorioMaxM.value.toLocaleString('it-IT')+' m':'n.d.' },
           ...(municipality&&typeof place.facts?.superficieKm2?.value==='number'?[{label:'Superficie',value:place.facts.superficieKm2.value.toLocaleString('it-IT',{maximumFractionDigits:1})+' km²'}]:[]),
           ...(municipality&&typeof place.facts?.altitudineTerritorioMaxM?.value==='number'?[{label:'Quota massima (territorio DEM)',value:place.facts.altitudineTerritorioMaxM.value.toLocaleString('it-IT')+' m'}]:[]),
+          ...(population2021!==null?[{label:'Residenti (2021)',value:population2021.toLocaleString('it-IT')}]:[]),
+          ...(families2021!==null?[{label:'Famiglie (2021)',value:families2021.toLocaleString('it-IT')}]:[]),
           ...(place.capacity != null ? [{ label: 'Posti letto', value: place.capacity }] : []),
           { label: 'Sentieri vicini', value: loading ? '…' : nearby.length },
         ]}/>
@@ -197,9 +212,9 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
     </header>
     <DetailJumpNav items={[
       {id:"cb-place-essential",label:"Dati",icon:"compass"},
-      {id:"cb-place-contacts",label:"Contatti",icon:"house"},
-      ...(municipality&&Boolean(place.connectedPeople?.length)?[{id:"cb-place-people",label:"Personaggi",icon:"mountain" as const}]:[]),
-      ...(!municipality&&(place.description||wikiUrl)?[{id:"cb-place-story",label:"Territorio",icon:"mountain" as const}]:[]),
+      ...(hasContactInfo?[{id:"cb-place-contacts",label:"Contatti",icon:"house" as const}]:[]),
+      ...(Boolean(place.connectedPeople?.length)?[{id:"cb-place-people",label:"Personaggi",icon:"mountain" as const}]:[]),
+      ...(!municipality&&place.history?[{id:"cb-place-story",label:"Storia",icon:"mountain" as const}]:[]),
       {id:"cb-place-weather",label:"Meteo",icon:"compass"},
       {id:"cb-place-itineraries",label:"Sentieri",icon:"route"},
       ...(water.length?[{id:'cb-place-water',label:'Acqua',icon:'water' as const}]:[]),
@@ -207,10 +222,10 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
       {id:"cb-place-map",label:"Mappa",icon:"map"},
     ]}/>
         <section id="cb-place-essential" className="cb-detail-group cb-detail-group--first cb-location-section cb-location-dossier" aria-labelledby="cb-location-info-heading">
-          <DetailSectionHeading kicker="01 / DATI ESSENZIALI" title={municipality?"IL COMUNE IN CIFRE.":"PRIMA DI PARTIRE."} id="cb-location-info-heading" description={municipality?"Dati ufficiali e indicatori territoriali. Le quote DEM 2021 descrivono l'intero territorio, non l'altitudine del municipio.":"Informazioni disponibili nelle fonti cartografiche, da verificare con la struttura quando necessario."}/>
+          <DetailSectionHeading kicker="01 / DATI ESSENZIALI" title={isCensusSettlement?"I NUMERI DEL LUOGO.":municipality?"IL COMUNE IN CIFRE.":"PRIMA DI PARTIRE."} id="cb-location-info-heading" description={isCensusSettlement?"Residenti, famiglie e abitazioni della singola località, rilevati al 31 dicembre 2021; non valori del Comune.":municipality?"Dati ufficiali e indicatori territoriali. Le quote DEM 2021 descrivono l'intero territorio, non l'altitudine del municipio.":"Informazioni disponibili nelle fonti cartografiche, da verificare con la struttura quando necessario."}/>
           <DetailFacts rows={detailRows}/>
         </section>
-        <section id="cb-place-contacts" className="cb-detail-group cb-detail-group--practical cb-location-section cb-location-contact-card" aria-labelledby="cb-location-contact-title">
+        {hasContactInfo&&<section id="cb-place-contacts" className="cb-detail-group cb-detail-group--practical cb-location-section cb-location-contact-card" aria-labelledby="cb-location-contact-title">
           <DetailSectionHeading kicker="02 / INFO PRATICHE" id="cb-location-contact-title" title="CONTATTI E ACCESSO."/>
           {place.operator&&<p><strong>Gestore o ente: </strong>{place.operator}</p>}
           {place.openingHours&&<p><strong>Orari dichiarati: </strong>{place.openingHours}</p>}
@@ -224,14 +239,12 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
             {/^\s*(yes|no)\s*$/i.test(place.fee)?<strong>{place.fee.toLowerCase()==='no'?'Accesso indicato gratuito':'Tariffa presente, importo da verificare'}</strong>:
               <><strong>{place.fee}</strong>{/\d/.test(place.fee)&&<span className="cb-location-dobloni" title="Importo dichiarato; non è un rating"><FaIcon name="coins" size={14}/> <small>Importo dichiarato · verifica con il gestore</small></span>}</>}
           </div>}
-          {!place.phone&&!place.email&&!place.website&&<p className="cb-location-muted-note">Recapiti non disponibili nelle fonti: non significa che la struttura sia chiusa.</p>}
-        </section>
-        {!municipality&&(place.description||wikiUrl)&&<section id="cb-place-story" className="cb-detail-group cb-location-section">
-          <DetailSectionHeading kicker="03 / STORIA E TERRITORIO" title="CONOSCERE IL LUOGO."/>
-          {place.description&&<p className="cb-location-story">{place.description}</p>}
-          {wikiUrl&&<a className="cb-location-wiki cb-icon-link" href={wikiUrl} target="_blank" rel="noopener noreferrer"><FaIcon name="arrow-up-right-from-square" size={12}/> Approfondimento enciclopedico</a>}
         </section>}
-        {municipality&&Boolean(place.connectedPeople?.length)&&<section id="cb-place-people" className="cb-detail-group cb-location-section">
+        {!municipality&&place.history&&<section id="cb-place-story" className="cb-detail-group cb-location-section">
+          <DetailSectionHeading kicker="03 / STORIA E TERRITORIO" title="STORIA DEL LUOGO."/>
+          <p className="cb-location-story">{place.history}</p>
+        </section>}
+        {Boolean(place.connectedPeople?.length)&&<section id="cb-place-people" className="cb-detail-group cb-location-section">
           <DetailSectionHeading kicker="PERSONE / STORIA DEL TERRITORIO" title="VITE LEGATE ALLA MONTAGNA."
             description="Nascita, residenza storica e luogo di attività sono relazioni distinte, verificate mediante gli identificativi di Wikidata. Nessuna appartenenza è dedotta dalla sola provincia."/>
           <div className="cb-person-grid">
