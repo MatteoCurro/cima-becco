@@ -105,16 +105,33 @@ def digits(value, count):
     return s.split(".")[0].zfill(count)
 
 def unique_slug(entities):
+    """Stable staged collision suffixes; never depend on arbitrary batch order.
+
+    A duplicated base slug can also collide with an existing literal name
+    ending in -1 or -2, so ordinal suffixes are not safe. All such records
+    remain G0/noindex and flagged before any URL is minted in production.
+    """
     by_slug = defaultdict(list)
     for entity in entities:
         by_slug[entity["slug"]].append(entity)
-    for slug, group in by_slug.items():
+    reserved = {slug for slug, group in by_slug.items() if len(group) == 1}
+    groups = 0
+    for slug, group in sorted(by_slug.items()):
         if len(group) < 2:
             continue
-        for i, entity in enumerate(sorted(group, key=lambda row: row["id"]), 1):
-            entity["slug"] = slug + "-" + str(i)
+        groups += 1
+        for entity in sorted(group, key=lambda row: row["id"]):
+            stable = entity["id"].replace("-", "")
+            for length in (8, 12, 16, 32):
+                candidate = slug + "-" + stable[:length]
+                if candidate not in reserved:
+                    entity["slug"] = candidate
+                    reserved.add(candidate)
+                    break
+            else:
+                raise ValueError("Collisione slug con ID distinto: " + slug)
             entity["quality"]["slugRequiresReview"] = True
-    return len([group for group in by_slug.values() if len(group) > 1])
+    return groups
 
 def locality(row, *, source_url, checked_at, municipality_by_code):
     code = code6(value(row, "PRO_COM"))
