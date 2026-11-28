@@ -20,9 +20,13 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
+    // CI validates the generated, published assets (including the daily home
+    // snapshot). Local development retains the Vite dev server.
+    command: process.env.CI
+      ? 'npm run preview -- --host 127.0.0.1 --port 5180'
+      : 'npm run dev',
     url: 'http://localhost:5180',
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
     timeout: 30_000,
   },
 });
