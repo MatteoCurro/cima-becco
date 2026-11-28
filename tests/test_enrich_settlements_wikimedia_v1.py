@@ -25,7 +25,7 @@ def official():
 def legacy():
     return {
         "id":"osmid","kind":"settlement","subtype":"abitato_osm_non_classificato",
-        "name":"Alba","slug":"osm-n-202",
+        "name":"Alba","slug":"alba","slugAliases":["osm-n-202"],
         "sourceIds":{"osm":"node/202","wikidata":"Q123"},
         "geo":{"point":{"lat":46.4681,"lng":11.7801}},
         "facts":{},"relations":[],"media":[],
