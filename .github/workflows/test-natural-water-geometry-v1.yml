@@ -57,16 +57,33 @@ jobs:
           test -s build/natural-water-source/natural-osm-replay/features.json
           test -s build/natural-water-source/import-natural-features-v1/features-geonames.json
           test -s build/natural-water-source/import-natural-features-v1/natural-identity.json
-      - name: Target exact water IDs and audited QIDs in bounded Overpass out geom
+      - name: Reuse the complete real Overpass 59-element snapshot
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p build/natural-water-replay
+          gh run download 46124442053 --repo ${{ github.repository }} \
+            -n cima-becco-natural-water-polygons-g1 \
+            -D build/natural-water-replay
+          test -s build/natural-water-replay/raw/water-geometry-response.json
+          echo 'Replaying original source, no additional provider query'
+      - name: Validate exact QID/geometry on real snapshot (fallback to bounded Overpass)
+        shell: bash
+        run: |
+          set -euo pipefail
+          raw_args=()
+          if test -s build/natural-water-replay/raw/water-geometry-response.json; then
+            raw_args=(--raw-file build/natural-water-replay/raw/water-geometry-response.json)
+          fi
           python scripts/enrich_natural_water_geometry_v1.py \
             --osm-stage build/natural-water-source/natural-osm-replay/features.json \
             --geonames-stage build/natural-water-source/import-natural-features-v1/features-geonames.json \
             --crosswalk build/natural-water-source/import-natural-features-v1/natural-identity.json \
             --max-osm-ids 65 --max-qids 20 \
-            --out build/import-natural-water-geometry-v1
+            --out build/import-natural-water-geometry-v1 "${raw_args[@]}"
       - name: Real topology, identity and no-SEO audit
         shell: bash
         run: |
