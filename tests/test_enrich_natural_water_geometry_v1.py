@@ -9,7 +9,7 @@ from import_natural_features_v1 import parse_osm
 from import_natural_geonames_v1 import entity_from_line
 from enrich_natural_water_geometry_v1 import (
     run,extract_polygon,point_inside_polygon,query_for_water_ids,
-    inside_ring,GN_CHANNEL,OSM_CHANNEL,CROSSWALK_CHANNEL,
+    inside_ring,crossing,GN_CHANNEL,OSM_CHANNEL,CROSSWALK_CHANNEL,
 )
 
 AT="2026-11-28T09:00:00Z"
@@ -72,7 +72,7 @@ class TestOSMWaterGeometry(unittest.TestCase):
         self.assertIn("relation(id:20)",q)
         self.assertIn('["water"~"^(lake|reservoir)$"]',q)
         self.assertIn('["wikidata"~"^(Q123)$"]',q)
-        self.assertIn("out body geom",q)
+        self.assertIn("out meta geom",q)
         self.assertNotIn("spring",q)
         with self.assertRaises(ValueError):
             query_for_water_ids(["node/10"],["Q123"])
@@ -80,6 +80,19 @@ class TestOSMWaterGeometry(unittest.TestCase):
             query_for_water_ids([],["Q123|Q999"])
         with self.assertRaises(ValueError):
             query_for_water_ids([],[])
+
+    def test_real_fedaia_landro_nearby_segments_do_not_intersect(self):
+        # Coordinates from the actual 28/11/2026 OSM Overpass snapshot.
+        # The old float-epsilon predicate falsely identified a collision.
+        pairs=[
+          ([11.8806289,46.456436],[11.8810017,46.456493],
+           [11.88094,46.4564532],[11.8803183,46.4540821]),
+          ([12.2300462,46.6323752],[12.2302327,46.6322953],
+           [12.230296,46.6323566],[12.2301267,46.6324518]),
+        ]
+        for segments in pairs:
+            self.assertFalse(crossing(*segments))
+        self.assertTrue(crossing([0,0],[1,1],[0,1],[1,0]))
 
     def test_closed_way_yields_real_polygon_and_derived_area(self):
         geom,area=extract_polygon(outline())
@@ -108,6 +121,7 @@ class TestOSMWaterGeometry(unittest.TestCase):
         poly,area=extract_polygon(relation(island=True))
         self.assertEqual(len(poly["coordinates"][0]),2)
         self.assertFalse(point_inside_polygon([12.305,46.505],poly))
+        self.assertFalse(point_inside_polygon([12.303,46.505],poly))
         self.assertTrue(point_inside_polygon([12.301,46.501],poly))
         big,full=extract_polygon(relation(island=False))
         self.assertLess(area,full)
@@ -137,6 +151,7 @@ class TestOSMWaterGeometry(unittest.TestCase):
         self.assertEqual(linked["sourceIds"]["osm"],"way/10")
         self.assertEqual(linked["sourceIds"]["wikidata"],"Q123")
         self.assertTrue(linked["quality"]["geometryTopologyVerified"])
+        self.assertTrue(linked["quality"]["wikidataIdentityVerified"])
         self.assertEqual(linked["quality"]["gate"],"G1")
         self.assertFalse(linked["quality"]["seoIndexable"])
         self.assertEqual(linked["facts"]["osmMappedWaterSurfaceKm2"]["method"],"derived")
