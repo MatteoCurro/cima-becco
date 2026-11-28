@@ -1,0 +1,109 @@
+name: SAT-OSM trail crosswalk candidates G0 (real overlapping sources)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/candidate_sat_osm_trail_links_v1.py
+      - tests/test_candidate_sat_osm_trail_links_v1.py
+      - docs/MODELLO_METADATI_E_LAYOUT.md
+      - docs/PIANO_IMPORTATORI.md
+      - .github/workflows/candidate-sat-osm-trails-g0-v1.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/candidate_sat_osm_trail_links_v1.py
+      - tests/test_candidate_sat_osm_trail_links_v1.py
+      - .github/workflows/candidate-sat-osm-trails-g0-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: cima-sat-osm-candidates-g0-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run SAT-OSM crosswalk contract and source-importer regressions
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_candidate_sat_osm_trail_links_v1.py' -v
+          python -m unittest discover -s tests -p 'test_normalize_sat_trails_v1.py' -v
+          python -m unittest discover -s tests -p 'test_import_trail_network_v1.py' -v
+          python -m compileall -q scripts/candidate_sat_osm_trail_links_v1.py
+          test -z "$(git status --porcelain -- public/ src/)"
+
+  two-real-sources:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Acquire original official SAT source once
+        run: |
+          python scripts/pilot_sat_trail_source_v1.py --out build/sat-trails-g0-source-audit
+          python scripts/normalize_sat_trails_v1.py --out build/sat-trails-g0-source-audit
+      - name: Acquire physical OSM graph in same territory as SAT
+        run: |
+          python scripts/import_trail_network_v1.py \
+            --bbox 46.38 11.68 46.45 11.79 \
+            --max-ways 2200 \
+            --out build/trail-network-g0-pilot
+      - name: Join only reference-plus-geometry EVIDENCE in review queue
+        run: |
+          python scripts/candidate_sat_osm_trail_links_v1.py \
+            --sat build/sat-trails-g0-source-audit/sat-trails-normalized-g0.json \
+            --osm build/trail-network-g0-pilot/physical-graph-g0.json \
+            --out build/trail-crosswalk-g0-pilot
+      - name: Verify source hashes, G0 security and positive overlap
+        run: |
+          python - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+          import json
+          sat_dir=Path('build/sat-trails-g0-source-audit')
+          osm_dir=Path('build/trail-network-g0-pilot')
+          sat=json.loads((sat_dir/'sat-trails-normalized-g0.json').read_text())
+          osm=json.loads((osm_dir/'physical-graph-g0.json').read_text())
+          candidates=json.loads(Path('build/trail-crosswalk-g0-pilot/sat-osm-crosswalk-candidates-g0.json').read_text())
+          assert sha256((sat_dir/'source-sat-official.kml.zip').read_bytes()).hexdigest()==sat['sourceArchiveSha256']
+          osm_source=(osm_dir/'source-overpass-g0.json').read_text().rstrip('\n')
+          assert sha256(osm_source.encode('utf-8')).hexdigest()==osm['sourceSnapshotSha256']
+          assert candidates['sourceArchiveSha256']==sat['sourceArchiveSha256']
+          assert candidates['osmSourceSnapshotSha256']==osm['sourceSnapshotSha256']
+          assert osm['counts']['waysAccepted']>=5
+          assert candidates['counts']['satWithSampleGeometry']>=1
+          assert candidates['quality']['crosswalkVerified'] is False
+          assert candidates['quality']['canonicalLinksCreated'] is False
+          assert candidates['quality']['publicationAllowed'] is False
+          assert candidates['quality']['routingAllowed'] is False
+          assert candidates['isPublished'] is False and candidates['seoIndexable'] is False
+          assert candidates['routeCatalogueModified'] is False
+          assert all(not c['quality']['crosswalkVerified'] for c in candidates['candidates'])
+          print('SAT-OSM real G0 crosswalk audit',candidates['counts'])
+          PY
+          test -z "$(git status --porcelain -- public/ src/)"
+      - name: Retain original sources and review queue; never publish
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sat-osm-overlap-crosswalk-g0
+          path: |
+            build/sat-trails-g0-source-audit/
+            build/trail-network-g0-pilot/
+            build/trail-crosswalk-g0-pilot/
+          retention-days: 14
+          if-no-files-found: warn
