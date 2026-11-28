@@ -36,7 +36,16 @@ def sdc_depicts_exact(item,qid):
 
 def parse_history_date(value):
     """Reject vague words/ranges and EXIF upload dates. Return precision kept."""
-    if isinstance(value,dict):value=value.get("time","")
+    if isinstance(value,dict):
+        precision=value.get("precision")
+        parsed=parse_history_date(value.get("time",""))
+        if not parsed:return None
+        # Wikidata time precision 9=year, 10=month, 11=day.
+        if precision is not None:
+            if not isinstance(precision,int) or precision<9:return None
+            if precision==9:return parsed[:4]
+            if precision==10:return parsed[:7]
+        return parsed
     if not isinstance(value,str):return None
     raw=text_only(value).strip()
     match=re.match(r"^\+?(\d{4})(?:-(\d\d)(?:-(\d\d))?)?(?:T.*)?$",raw)
@@ -156,17 +165,31 @@ def commons_pages_by_title(files,*,getter=None):
     return pages
 
 def safe_historical_scene(media, date):
-    """One dated scene only, never composite 'before / after' misdated as one year."""
+    """One photographed scene, verified date: no composites or book illustrations."""
     desc=str(media.get("descriptionText") or "")
     original=unquote(str(media.get("sourceUrl") or "").rsplit("/",1)[-1])
     if NON_PHOTO.search(original) or NON_PHOTO.search(desc):return False
+    combined=(desc+" "+original).casefold()
     if re.search(r"prima\s+e\s+dopo|before\s+and\s+after|collage|montaggio|photomontage|confronto",
-                 desc,re.I):return False
+                 combined,re.I):return False
+    # A lexicon drawing may be old and well sourced but is not a photograph.
+    if re.search(r"konversations[- ]lexikon|encyclop[aæ]edia|enciclopedia|"
+                 r"woodcut|lithograph|lithographie|incisione|engraving|"
+                 r"watercolou?r|acquerello|drawing|disegno|"
+                 r"dipinto|painting|illustration|illustrazione|"
+                 r"pagina del libro|book scan|scan of a book",
+                 combined,re.I):return False
     documented_years={int(x) for x in re.findall(r"(?<!\d)(?:18\d{2}|19\d{2})(?!\d)",desc)}
     if len(documented_years)>1:return False
-    if documented_years and int(date[:4]) not in documented_years:
-        # The dated file fact contradicts the textual source annotation.
-        return False
+    if documented_years and int(date[:4]) not in documented_years:return False
+    # Explicit full-date conflicts are not resolvable by silently choosing one.
+    months={"gennaio":1,"febbraio":2,"marzo":3,"aprile":4,"maggio":5,
+            "giugno":6,"luglio":7,"agosto":8,"settembre":9,"ottobre":10,
+            "novembre":11,"dicembre":12}
+    m=re.search(r"\b(\d{1,2})\s+("+"|".join(months)+r")\s+(18\d{2}|19\d{2})\b",desc,re.I)
+    if m and len(date)>=10:
+        day,month,year=int(m[1]),months[m[2].lower()],int(m[3])
+        if date!=f"{year:04d}-{month:02d}-{day:02d}":return False
     return True
 
 def enrich_historical(release,*,getter=None,max_municipalities=20,
