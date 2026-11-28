@@ -86,7 +86,8 @@ class HistoryContract(unittest.TestCase):
     self.assertEqual(article_history_candidates(doc,getter=other),[])
   def test_outage_does_not_erase_prior_photos(self):
     doc=release()
-    doc["entities"][0]["media"]=[{"kind":"historical_photo","sourceUrl":"https://commons.wikimedia.org/wiki/File:old"}]
+    doc["entities"][0]["media"]=[{"kind":"historical_photo","sourceUrl":"https://commons.wikimedia.org/wiki/File:old",
+      "capturedAt":"1940","descriptionText":"Canazei, panorama storico 1940"}]
     def fail(url,params):raise TimeoutError("temporaneo")
     updated,report=enrich_historical(doc,getter=fail)
     self.assertEqual(len(updated["entities"][0]["media"]),1)
