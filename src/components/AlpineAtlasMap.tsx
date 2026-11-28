@@ -39,9 +39,11 @@ function naturalPointsGeoJSON(points:readonly NaturalMapPoint[]) {
 export interface NaturalWaterPolygon {
   slug:string;
   name:string;
-  subtype:'lake'|'reservoir';
-  lat:number;
-  lng:number;
+  subtype:'lake'|'reservoir'|'unspecified';
+  quality?:'G0'|'G2';
+  sourceKey?:string;
+  lat?:number;
+  lng?:number;
   geometry:{type:'MultiPolygon';coordinates:number[][][][]};
 }
 const NO_NATURAL_POLYGONS:NaturalWaterPolygon[]=[];
@@ -50,7 +52,7 @@ function naturalWaterGeoJSON(features:readonly NaturalWaterPolygon[]){
     type:'FeatureCollection' as const,
     features:features.map(p=>({
       type:'Feature' as const,
-      properties:{slug:p.slug,name:p.name,subtype:p.subtype},
+      properties:{slug:p.slug,name:p.name,subtype:p.subtype,quality:p.quality||'G2',sourceKey:p.sourceKey||null},
       geometry:p.geometry,
     })),
   };
@@ -60,6 +62,7 @@ interface Props {
   places: AlpinePlace[];
   naturalPolygons?:NaturalWaterPolygon[];
   onNaturalPolygonSelect?:(place:NaturalWaterPolygon)=>void;
+  selectedPolygonSlug?:string|null;
   naturalPoints?:NaturalMapPoint[];
   onNaturalSelect?:(place:NaturalMapPoint)=>void;
   kind: AlpinePlace['kind'];
@@ -90,7 +93,7 @@ function routeGeometry(routes: Route[]) {
 
 /** Mappa riusabile per listati rifugi, paesi e singole pagine locali. */
 const NO_ROUTES: Route[] = [];
-export function AlpineAtlasMap({places,kind,naturalPoints=[],onNaturalSelect,naturalPolygons=NO_NATURAL_POLYGONS,onNaturalPolygonSelect,selected=null,selectedPoint=null,routes=NO_ROUTES,height=380,water=[],selectedWaterSlug=null,onWaterSelect,onSelect,caption,hoverPoint=null,onRouteHover}:Props) {
+export function AlpineAtlasMap({places,kind,naturalPoints=[],onNaturalSelect,naturalPolygons=NO_NATURAL_POLYGONS,onNaturalPolygonSelect,selectedPolygonSlug=null,selected=null,selectedPoint=null,routes=NO_ROUTES,height=380,water=[],selectedWaterSlug=null,onWaterSelect,onSelect,caption,hoverPoint=null,onRouteHover}:Props) {
   const container=useRef<HTMLDivElement>(null);
   const mapRef=useRef<MapLibreMap | null>(null);
   const onSelectRef=useRef(onSelect);
@@ -137,24 +140,31 @@ export function AlpineAtlasMap({places,kind,naturalPoints=[],onNaturalSelect,nat
       if(mapRef.current!==map)return;
       installMountainBasemap(map);
       addAlpinePlaceLayers(map,places,{kind,onSelect:(place)=>onSelectRef.current?.(place),getPlace:(slug)=>placesRef.current.find(p=>p.slug===slug)});
-      // One additional source on the same map instance. Only published G2
-      // lake polygons are supplied; water points retain their own layer.
+      // Same MapLibre source: G2 canonical lake boundaries and strictly
+      // map-only G0 agency evidence, visually separated. Not a crosswalk.
       map.addSource('cb-atlas-natural-lakes',{type:'geojson',
         data:naturalWaterGeoJSON(waterPolygonsRef.current)});
       map.addLayer({id:'cb-atlas-natural-lakes-fill',type:'fill',
         source:'cb-atlas-natural-lakes',
-        paint:{'fill-color':['match',['get','subtype'],'reservoir','#679bb1','#57abb7'],
-          'fill-opacity':0.5}});
+        paint:{'fill-color':['case',['==',['get','quality'],'G0'],'#aac7d1',
+            ['match',['get','subtype'],'reservoir','#679bb1','#57abb7']],
+          'fill-opacity':['case',['==',['get','quality'],'G0'],0.2,0.5]}});
       map.addLayer({id:'cb-atlas-natural-lakes-outline',type:'line',
         source:'cb-atlas-natural-lakes',
-        paint:{'line-color':'#154c5a','line-width':2.5,'line-opacity':0.9}});
+        paint:{'line-color':['case',['==',['get','quality'],'G0'],'#689bab','#154c5a'],
+          'line-width':['case',['==',['get','quality'],'G0'],1.2,2.5],
+          'line-opacity':['case',['==',['get','quality'],'G0'],0.65,0.9]}});
+      map.addLayer({id:'cb-atlas-natural-lakes-focused',type:'line',
+        source:'cb-atlas-natural-lakes',
+        filter:['==',['get','slug'],''],
+        paint:{'line-color':'#ef2473','line-width':3.5,'line-opacity':0.95}});
       map.on('click','cb-atlas-natural-lakes-fill',(event)=>{
         const slug=event.features?.[0]?.properties?.slug;
         if(typeof slug!=='string')return;
         const lake=waterPolygonsRef.current.find(item=>item.slug===slug);
         if(!lake)return;
         if(polygonSelectRef.current)polygonSelectRef.current(lake);
-        else window.location.assign(import.meta.env.BASE_URL+'laghi/'+encodeURIComponent(slug)+'/');
+        else if(lake.quality!=='G0')window.location.assign(import.meta.env.BASE_URL+'laghi/'+encodeURIComponent(slug)+'/');
       });
       map.on('mouseenter','cb-atlas-natural-lakes-fill',()=>{map.getCanvas().style.cursor='pointer';});
       map.on('mouseleave','cb-atlas-natural-lakes-fill',()=>{map.getCanvas().style.cursor='';});
@@ -305,6 +315,22 @@ export function AlpineAtlasMap({places,kind,naturalPoints=[],onNaturalSelect,nat
     (map.getSource('cb-atlas-natural-lakes') as GeoJSONSource | undefined)
       ?.setData(naturalWaterGeoJSON(naturalPolygons));
   },[naturalPolygons,ready]);
+  useEffect(()=>{
+    const map=mapRef.current;
+    if(!map||!initialized.current)return;
+    const match=naturalPolygons.find(p=>p.slug===selectedPolygonSlug);
+    map.setFilter('cb-atlas-natural-lakes-focused',
+      ['==',['get','slug'],match?.slug||'']);
+    if(!match)return;
+    // Framing derives from the true outline, not from an invented WFS
+    // centroid or a presumed trail/shore access point.
+    const coords=match.geometry.coordinates.flatMap(group=>group.flatMap(ring=>ring));
+    if(!coords.length)return;
+    const xs=coords.map(p=>p[0]),ys=coords.map(p=>p[1]);
+    map.fitBounds([[Math.min(...xs),Math.min(...ys)],
+                   [Math.max(...xs),Math.max(...ys)]],
+      {padding:54,maxZoom:14,duration:320});
+  },[naturalPolygons,selectedPolygonSlug,ready]);
 
   useEffect(()=>{
     const map=mapRef.current;if(!map||!initialized.current)return;
