@@ -18,7 +18,14 @@ export interface SummitRouteConnection {
 }
 
 function targetMatches(peak: Venue, target: { id?: string;slug?: string }): boolean {
-  return Boolean((peak.id && target.id === peak.id) || (target.slug && target.slug === peak.slug));
+  // A conflicting stable ID cannot be overridden by a matching legacy slug.
+  if (peak.id && target.id) return peak.id === target.id;
+  return Boolean(target.slug && target.slug === peak.slug);
+}
+
+function sourcedVerifiedRelation(relation: { verified?: boolean; sourceUrl?: string }): boolean {
+  // A bare verified=true flag without a traceable source is not documented access.
+  return relation.verified === true && /^https?:\/\//i.test(relation.sourceUrl ?? '');
 }
 
 export function summitRoutes(peak: Venue, routes: Route[], limit = 22): SummitRouteConnection[] {
@@ -37,7 +44,7 @@ export function summitRoutes(peak: Venue, routes: Route[], limit = 22): SummitRo
       haversineM(peak.lng,peak.lat,last[0],last[1]),
     );
     const documented=(route.relations??[]).some(rel=>
-      rel.verified===true && rel.type==='ascends_to' && targetMatches(peak,rel.target));
+      sourcedVerifiedRelation(rel) && rel.type==='ascends_to' && targetMatches(peak,rel.target));
     const relation:SummitRouteRelation|null=documented?'documented':
       atEnd<=100?'endpoint_near':
       nearest<=160?'passes_near':
@@ -51,10 +58,15 @@ export function summitRoutes(peak: Venue, routes: Route[], limit = 22): SummitRo
   };
   found.sort((a,b)=>priority[a.relation]-priority[b.relation]||a.distanceM-b.distanceM||
     a.route.slug.localeCompare(b.route.slug));
-  // Do not allow a large set of low-confidence nearby tracks to hide ferratas.
+  // Reserve a few places for ferrata-area candidates, even when nearby walks
+  // would otherwise fill the quota. Never displace documented ascents.
   const core=found.filter(item=>item.relation!=='ferrata_area');
   const area=found.filter(item=>item.relation==='ferrata_area');
-  return [...core.slice(0,limit),...area.slice(0,Math.min(6,Math.max(0,limit-core.length)))];
+  const verifiedCount=core.filter(item=>item.relation==='documented').length;
+  const reserved=limit>=5 && area.length ? Math.min(3,Math.floor(limit/5),area.length) : 0;
+  const coreSlots=Math.min(limit,Math.max(verifiedCount,limit-reserved));
+  const selectedCore=core.slice(0,coreSlots);
+  return [...selectedCore,...area.slice(0,Math.min(6,Math.max(0,limit-selectedCore.length)))];
 }
 
 export type SummitSupportRelation = 'documented' | 'mapped_route' | 'nearby';
@@ -78,7 +90,7 @@ export function summitSupportPlaces(peak:Venue,places:AlpinePlace[],routes:Summi
     }
   }
   const out:SummitSupportPlace[]=near.map(({place,km})=>{
-    const documented=(peak.relations??[]).some(rel=>rel.verified===true &&
+    const documented=(peak.relations??[]).some(rel=>sourcedVerifiedRelation(rel) &&
       rel.type==='accessible_from' &&
       ((place.id&&rel.target.id===place.id)||rel.target.slug===place.slug));
     const viaRoute=inRoutes.get(place.slug);
