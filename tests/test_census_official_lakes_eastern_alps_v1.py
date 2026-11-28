@@ -174,7 +174,8 @@ class CensusTests(unittest.TestCase):
         fetch,_=fake_for("bolzano_lakes")
         def broken(url,**kwargs):
             raw=fetch(url,**kwargs)
-            if parse_qs(urlsplit(url).query).get("request")==["GetFeature"]:
+            query=parse_qs(urlsplit(url).query)
+            if query.get("request")==["GetFeature"] and query.get("resultType")!=["hits"]:
                 payload=json.loads(raw)
                 for row in payload["features"]:
                     if row["id"]=="Lakes.100":
