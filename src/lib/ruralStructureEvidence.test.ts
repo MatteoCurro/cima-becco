@@ -45,8 +45,9 @@ describe('Rural structure classification evidence',()=>{
       sourceIds:{cai:'777'},capacity:12
     };
     const rows=applyRuralStructureEvidence([managed],evidence);
-    expect(rows[0].kind).toBe('rifugio');
-    expect(rows[0].subtype).toBeUndefined();
+    const authentic=rows.find(p=>p.slug==='cai-777');
+    expect(authentic?.kind).toBe('rifugio');
+    expect(authentic?.subtype).toBeUndefined();
   });
   it('does not duplicate on repeated application or accept invalid/missing source',()=>{
     const once=applyRuralStructureEvidence(fixture,evidence);
