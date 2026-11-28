@@ -305,6 +305,34 @@ La trasformazione UI/SEO usa **lo stesso adapter** `src/lib/ruralStructureEviden
 
 **Stato progetto:** questo chiude **il primo blocco di rilascio dati**, non pretende una valorizzazione completa dei campi non presenti alla fonte. I 127 nomi di campo CAI osservati sono censiti e 80 attributi canonici sono pronti; successive acquisizioni possono arricchire le schede senza ricreare il modello.
 
+## Priorità confermata 28/11/2026 — il nucleo escursionistico prima delle schede naturali
+
+**Decisione editoriale dell'utente:** rinviare **valli, cascate e punti panoramici** alla coda degli importatori, dopo la rete sentieristica e il comparto arrampicata. L'ordine operativo qui sotto **sostituisce l'ordine cronologico della tabella storica «Sequenza e dipendenze»**, che descrive le prime fasi già avviate. Non significa eliminare gli elementi naturali: per essi esiste già `scripts/import_natural_features_v1.py` in G0/G1, ma non è rapido arrivare a schede G2 di qualità (area di valle, corretta altezza di salto, panorama identificato, immagini e QID, relazioni) e non conviene fare un mini-rilascio incompleto ora.
+
+| Nuova priorità | Importatore / rilascio | Relazioni e dipendenze |
+| --- | --- | --- |
+| **1 · IN CORSO** | **Rete sentieristica fisica** | OSM way e node ID autentici, relation `route=hiking/foot` separate, segmenti continui, semantica CAI/SAT, ferrate candidate isolate |
+| **2** | Itinerari giornalieri | Sequenze di segmenti realmente connessi, partenze, arrivi, tracce/quote e durate con fonte e metodo |
+| **3** | Grandi trekking, Alte Vie e tappe | Ordini, varianti, reti ufficiali vs proposte algoritmiche, collegamento rifugi e località |
+| **4** | Vie ferrate (dossier propri) | Le geometrie potenzialmente attrezzate sono riconosciute già nella rete; conferma tecnica/scala originale e avvicinamento prima del G2 |
+| **5** | Distretti, falesie, settori | Aree, pareti e insiemi di settori, accessi e restrizioni con fonte |
+| **6** | Vie monotiro | Identità settore/via, grado, sviluppo, attrezzatura e ancoraggi documentati |
+| **7** | Multipitch, tiri e soste | Tiri e soste documentati, dislivelli e grado obbligatorio, mai sezioni inventate |
+| **8** | Boulder | Area/blocco/problema, scale dedicate e fonti |
+| **9** | Palestre indoor | Strutture sportive fisiche distinte da federazioni/associazioni |
+| **10** | Aree protette, accessi, trasporti | Restrizioni datate, infrastrutture, parcheggi, impianti e trasporti |
+| **11** | Persone, storia, archivi | Arricchimento trasversale esistente: primi apritori/manutentori, eventi, fotografia storica |
+| **12** | Meteo, neve, webcam e avvisi | Feed dinamici con timestamp e validità, non confondere meteo con caratteristiche stabili |
+| **13 · DIFFERITO** | **Valli** | Area e asse di valle verificati, corsi d'acqua, rilievi e comuni, *near* ≠ *passes_through* |
+| **14 · DIFFERITO** | **Cascate** | Punti QID e salto reale distinto da quota assoluta, accessibilità mai dedotta |
+| **15 · DIFFERITO** | **Punti panoramici** | Punto, orientamento e cime visibili verificati, fotografie coerenti |
+
+**Situazione reale dell'importatore sentieri preesistente:** `scripts/import_osm_routes.py` + `scripts/harvest_routes.py` sono già operativi e schedulati (03:17 e 15:47 UTC); `public/data/routes-manifest.json` censisce **12.647 relazioni itinerario in 10/107 celle** al controllo del 28/11/2026. Non sono 12.647 **segmenti di rete** e non dimostrano altrettanti percorsi completi percorribili. La query corrente acquisisce principalmente `route=hiking` e `route=via_ferrata`, non tutta la rete fisica `highway=path/footway/track/steps` né le relazioni `route=foot`. `stitch` tollera estremità entro 12 m senza identità OSM del nodo: utile ai tracciati legacy, **vietato come prova di connessione nel grafo fisico**. `gainM=0` con `elevationAvailable=false` significa quota sconosciuta, non zero metri di salita. L'importer legacy e il suo cron **non vanno sostituiti con un parser ancora non validato**; lo staging del nuovo grafo deve vivere in `build/` e non riscrivere `public/data/routes-tiles/`, manifest o URL SEO esistenti.
+
+**Primo step già predisposto (pilota G0 indipendente):** `scripts/import_trail_network_v1.py` interroga una cella molto piccola, acquisisce **way fisiche con la lista degli ID nodo**, separa `route=hiking/foot/via_ferrata` dalla rete di segmenti, divide le way solo ai **nodi OSM condivisi esattamente**, senza raccordi geografici sintetici, mantiene la singola fonte/licenza/data e non marca nulla come ufficiale o percorribile. Un `via_ferrata_scale` o tag `highway=via_ferrata` classifica un tratto tecnico documentato dalla way; l'appartenenza a una relation ferrata senza tag esplicito sulla way genera un **candidato da verificare**, non una ferrata certa. Le intersezioni con i rifugi, le cime, le vie ferrate e i punti d'acqua devono diventare archi `passes_near` / `passes_through` soltanto dopo QA della geometria e dei punti reali; gli accessi richiedono evidenza ulteriore.
+
+**Gate prima del prossimo intervento sulla produzione:** unit test offline di identità/connessione/classificazione/accesso, vera richiesta pilota delimitata con risposta originale e hash, audit tratte mancanti/discontinue, piano di riconciliazione CAI INFOMONT/SAT, controllo prestazioni per celle, solo poi publishing di una proiezione G1 robusta e migrazione controllata del legacy. La fase G0 **non** abilita routing operativo, pagina indicizzabile o cambio dei permalink. Dopo il gate si procede al completamento della rete prima di passare a itinerari e Alte Vie.
+
 ## Regole operative
 
 1. **Un importatore per volta**. Per ciascuno: schema/adapter fonte, test offline con fixture, pilot su campione reale, report anomalie/copertura, revisione e solo dopo schedulazione.
@@ -316,7 +344,7 @@ La trasformazione UI/SEO usa **lo stesso adapter** `src/lib/ruralStructureEviden
 7. Separare l'archivio stabile da meteo, prezzi, aperture, chiusure, allerte e altri dati con TTL. Niente cron a frequenza alta su Overpass; incrementali a celle o PBF.
 8. Riutilizzare gli attuali importer OSM e il frontend legacy: mai far scrivere due job sugli stessi file di destinazione.
 
-## Sequenza e dipendenze
+## Sequenza e dipendenze (storico delle fasi iniziali; priorità successive nella tabella aggiornata sopra)
 
 | Ordine | Importatore | Fonti e legami necessari |
 | --- | --- | --- |
