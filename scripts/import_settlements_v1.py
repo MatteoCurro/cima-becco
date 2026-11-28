@@ -249,7 +249,8 @@ def osm_settlement(place, *, checked_at, municipality_by_qid):
         "kind": "settlement",
         "subtype": "abitato_osm_non_classificato",
         "name": name, "displayName": name,
-        "aliases": [], "slug": slugify(name) or "abitato", "slugAliases": [],
+        "aliases": [], "slug": slugify(name) or "abitato",
+        "slugAliases": ["osm-"+match.group(1)[0]+"-"+match.group(2)],
         "shortSummary": None, "description": None, "history": None,
         "sourceIds": {"osm": source_id, **({"wikidata": qid}
                            if isinstance(qid, str) and QID_RE.fullmatch(qid) else {})},
