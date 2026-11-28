@@ -1,0 +1,230 @@
+name: Release verified natural mountain passes G2
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release-natural-passes-v1.yml
+      - scripts/publish_natural_passes_v1.py
+      - scripts/resolve_natural_wikidata_v1.py
+      - scripts/enrich_natural_wikimedia_v1.py
+      - src/lib/naturalPassRelease.ts
+      - src/components/NaturalFeaturePage.tsx
+      - src/components/AlpineAtlasMap.tsx
+      - src/lib/exploreNavigation.ts
+      - src/App.tsx
+      - src/lib/analytics.ts
+      - src/lib/naturalPassRelease.test.ts
+      - scripts/build_seo.mjs
+      - scripts/build_source_credits.mjs
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/release-natural-passes-v1.yml
+      - scripts/publish_natural_passes_v1.py
+      - tests/test_publish_natural_passes_v1.py
+      - src/lib/naturalPassRelease.ts
+      - src/components/NaturalFeaturePage.tsx
+      - src/components/AlpineAtlasMap.tsx
+      - src/lib/exploreNavigation.ts
+      - src/App.tsx
+      - src/lib/analytics.ts
+      - src/lib/naturalPassRelease.test.ts
+      - scripts/build_seo.mjs
+      - scripts/build_source_credits.mjs
+  schedule:
+    - cron: '15 6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: cima-natural-passes-g2-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Source identity, source license and G2 publisher regression tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_import_natural_features_v1.py' -v
+          python -m unittest discover -s tests -p 'test_import_natural_geonames_v1.py' -v
+          python -m unittest discover -s tests -p 'test_natural_wikimedia_v1.py' -v
+          python -m unittest discover -s tests -p 'test_publish_natural_passes_v1.py' -v
+      - name: Compile, test and build the existing site with unchanged production data
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
+      - name: End-to-end smoke of a synthetic source-verified G2 pass
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          sys.path.insert(0,"tests")
+          sys.path.insert(0,"scripts")
+          from test_natural_wikimedia_v1 import source,gn,mapped,wd_get,commons,wiki,AT
+          from enrich_natural_wikimedia_v1 import enrich
+          from publish_natural_passes_v1 import merge,empty,write
+          stage,info=enrich(source(gn()),mapped(),wd_getter=wd_get(),
+                            commons_getter=commons,wiki_getter=wiki,at=AT)
+          assert info["candidateG2"]==1
+          result,counts=merge(empty(),stage)
+          assert counts["added"]==1
+          write(Path("public/data/atlas/natural-features-v1.json"),result)
+          PY
+          npm run build
+          test -s dist/passi/index.html
+          test -s dist/passi/passo-delle-prove/index.html
+          grep -Fq '/passi/passo-delle-prove/' dist/sitemap.xml
+          grep -Fq 'NATURAL' dist/data/atlas/natural-features-v1.json 2>/dev/null || true
+          node - <<'JS'
+          const fs=require('node:fs');
+          const d=JSON.parse(fs.readFileSync('dist/data/atlas/credits-v1.json','utf8'));
+          if(!d.photoCredits.some(x=>x.kind==='natural_pass'&&x.slug==='passo-delle-prove'))
+            throw Error('Missing verified pass P18 in central photo credits');
+          if(!d.textCredits.some(x=>x.kind==='natural_pass'&&x.slug==='passo-delle-prove'))
+            throw Error('Missing verified pass Wikipedia text in central credits');
+          const html=fs.readFileSync('dist/passi/passo-delle-prove/index.html','utf8');
+          if(!html.includes('application/ld+json')||html.includes('noindex,follow'))
+            throw Error('Source verified G2 pass missing schema.org or wrongly noindexed');
+          console.log('Natural pass G2 SEO + credits + sitemap verified');
+          JS
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Official GeoNames country snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/natural-source
+          curl --fail --location --silent --show-error --retry 3 --retry-delay 5 \
+            --connect-timeout 25 --max-time 180 \
+            -A 'CimaBecco-OpenDataPilot/1.0 (https://www.cimabecco.it)' \
+            https://download.geonames.org/export/dump/IT.zip \
+            -o build/natural-source/IT.zip
+          unzip -t build/natural-source/IT.zip >/dev/null
+          python scripts/import_natural_geonames_v1.py \
+            --source build/natural-source/IT.zip \
+            --max-records 250 --min-records 20 --with-near \
+            --out build/import-natural-features-v1
+      - name: Reuse previous exact OSM audit snapshot, if still retained
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p build/natural-osm-replay
+          gh run download 46120830491 \
+            --repo ${{ github.repository }} \
+            -n cima-becco-natural-features-osm-staging \
+            -D build/natural-osm-replay
+      - name: Wikidata exact ID P1566/P625 and source-verified OSM bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          osm_args=()
+          if test -s build/natural-osm-replay/features.json; then
+            osm_args=(--osm-stage build/natural-osm-replay/features.json)
+          fi
+          python scripts/resolve_natural_wikidata_v1.py \
+            --geonames-stage build/import-natural-features-v1/features-geonames.json \
+            --out build/import-natural-features-v1/natural-identity.json \
+            --max-items 220 --batch-size 20 --pause 1.3 "${osm_args[@]}"
+      - name: Wikimedia Commons, itwiki and reported-altitude QA
+        run: |
+          python scripts/enrich_natural_wikimedia_v1.py \
+            --geonames-stage build/import-natural-features-v1/features-geonames.json \
+            --crosswalk build/import-natural-features-v1/natural-identity.json \
+            --out build/import-natural-features-v1/natural-enriched.json \
+            --report build/import-natural-features-v1/natural-enriched-report.json \
+            --max-items 240
+      - name: Fail closed on absent G2 or inconsistent source quality
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          stage=json.loads(Path('build/import-natural-features-v1/natural-enriched.json').read_text())
+          report=json.loads(Path('build/import-natural-features-v1/natural-enriched-report.json').read_text())
+          assert stage["isPublished"] is False
+          assert stage["releaseChannel"]=="NATURAL_FEATURES_G2_CANDIDATES_STAGING_V1"
+          assert stage["entities"]
+          assert report["candidateG2"]>0, 'No documented complete G2 passes in source batch'
+          assert report["seoIndexable"]==0
+          print("G2 natural passes passing source gate",report["candidateG2"])
+          PY
+      - name: Rebuild latest main with semantic union and retry concurrent writers
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          source_file="$(mktemp)"
+          cp build/import-natural-features-v1/natural-enriched.json "$source_file"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+            python scripts/publish_natural_passes_v1.py \
+              --current public/data/atlas/natural-features-v1.json \
+              --incoming "$source_file" \
+              --out public/data/atlas/natural-features-v1.json
+            npm run build
+            node scripts/check_permalinks.mjs
+            node scripts/test_central_credits.mjs
+            git add public/data/atlas/natural-features-v1.json
+            if git diff --cached --quiet; then
+              echo 'Natural pass release had no new verified changes.'
+              exit 0
+            fi
+            git commit -m 'data(passi): publish source-verified mountain pass dossiers G2'
+            if git push origin HEAD:main; then
+              echo 'PASS_RELEASE_COMMITTED=true' >> "$GITHUB_ENV"
+              echo 'Mountain pass G2 catalog committed on main'
+              exit 0
+            fi
+            echo "Main changed concurrently: safe semantic retry $attempt/3"
+          done
+          echo 'Natural pass publication blocked after concurrent edits; never force push' >&2
+          exit 1
+      - name: Trigger GitHub Pages deploy (bot pushes do not trigger push workflows)
+        if: env.PASS_RELEASE_COMMITTED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref main
+      - name: Retain raw, crosswalk, media, narrative and QA audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-natural-passes-g2-release-audit
+          path: build/import-natural-features-v1/
+          retention-days: 14
+          if-no-files-found: warn

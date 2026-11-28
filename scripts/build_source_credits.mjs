@@ -25,7 +25,7 @@ export const SOURCE_PROVIDERS = Object.freeze([
    url:'https://github.com/StarlightsJourney/HillGPX',licence:'MIT e altre licenze nelle dipendenze'},
 ]);
 
-export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedAt='',municipalities=[],people=[],summits=[]) {
+export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedAt='',municipalities=[],people=[],summits=[],naturalPasses=[]) {
   const records=[];
   const dedup=new Set();
   const add=(kind,slug,name,src,author,licence,mediaUrl)=>{
@@ -36,7 +36,7 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
     // SAME detail page: uniqueness must include each individual media URL.
     const key=[kind,slug,src,mediaUrl||''].join('\x1f');
     if(dedup.has(key))return; dedup.add(key);
-    const path=kind==='person'?'fonti-e-crediti':kind==='route'?'route':kind==='peak'?'place':kind==='summit'?'cime':kind==='municipality'?'comuni':
+    const path=kind==='person'?'fonti-e-crediti':kind==='route'?'route':kind==='peak'?'place':kind==='summit'?'cime':kind==='natural_pass'?'passi':kind==='municipality'?'comuni':
       kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'borghi';
     records.push({
       kind,slug,name:String(name||slug).slice(0,180),
@@ -117,6 +117,27 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
           sourceUrl:source.sourceUrl,author:'Contributori di Wikipedia',
           licence:source.licence,sourceId:source.sourceId,
           sourceUpdatedAt:source.sourceUpdatedAt||null});
+    }
+  }
+  // Nature passes use the same media/text provenance register as the other
+  // atlas entities. No repeated author/license overlay on each pass dossier.
+  for(const e of naturalPasses) {
+    if(e?.kind!=='natural_feature' ||
+       !['mountain_pass','saddle'].includes(e.subtype) ||
+       e?.quality?.gate!=='G2' || e.quality.seoIndexable!==true || !e.slug)continue;
+    for(const m of e.media||[]){
+      if(m.kind==='photo' && m.subjectVerified && m.reuseAllowed &&
+         m.author && m.licence && m.sourceUrl && m.url)
+        add('natural_pass',e.slug,e.name,m.sourceUrl,m.author,m.licence,m.url);
+    }
+    for(const textSource of e.textSources||[]){
+      if(textSource.text && textSource.sourceId &&
+         textSource.sourceUrl?.startsWith('https://') && textSource.licence)
+        textCredits.push({kind:'natural_pass',slug:e.slug,name:e.name,
+          entityUrl:'/passi/'+encodeURIComponent(e.slug)+'/',
+          sourceUrl:textSource.sourceUrl,author:'Contributori di Wikipedia',
+          licence:textSource.licence,sourceId:textSource.sourceId,
+          sourceUpdatedAt:textSource.sourceUpdatedAt||null});
     }
   }
   for(const r of routes) {
