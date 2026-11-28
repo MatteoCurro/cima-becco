@@ -161,7 +161,7 @@ const baseRoutes=read(join(DATA,'routes.json'))?.routes || [];
 // without loading a single new GPX shard in the browser.
 const candidateRoutes=[...new Map([...featured,...baseRoutes].map(r=>[r.slug,r])).values()];
 const territories=[];
-for (const r of featured) {
+for (const r of candidateRoutes) {
   if (r.source !== 'curated' || r.held || r.rejected ||
     !Array.isArray(r.coordinates) || r.coordinates.length<2 ||
     !(r.distanceM>=1200 && r.distanceM<=32000) ||
