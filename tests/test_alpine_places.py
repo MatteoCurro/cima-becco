@@ -42,6 +42,15 @@ class AlpinePlacesTest(unittest.TestCase):
             self.assertEqual(item['subtype'],'alpine_casera_shelter')
             self.assertEqual(item['classificationEvidence']['previousKind'],'rifugio')
 
+    def test_osm_rename_does_not_revert_verified_casera_typology(self):
+        item=atlas.parse_item({
+            'type':'way','id':175876228,
+            'center':{'lat':46.299875,'lon':11.891694},
+            'tags':{'tourism':'alpine_hut','name':'Casera Campigat'},
+        })
+        self.assertEqual(item['kind'],'bivacco')
+        self.assertEqual(item['subtype'],'alpine_casera_shelter')
+
     def test_malga_food_only_is_staged_and_not_invented_as_bivouac(self):
         row={'type':'way','id':87654,'center':{'lat':46.38,'lon':11.85},
              'tags':{'name':'Malga Prato di Prova','amenity':'restaurant'}}
