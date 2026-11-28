@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" role="img" aria-labelledby="cbTitle cbDesc">
+<title id="cbTitle">Cima Becco</title><desc id="cbDesc">Due V sovrapposte: una cima e le corna di uno stambecco.</desc>
+<defs><clipPath id="cbCut"><rect x="0" y="140" width="1000" height="720"/></clipPath></defs>
+<g clip-path="url(#cbCut)" fill="none" stroke="#143d2f" stroke-width="96" stroke-linecap="butt" stroke-linejoin="miter">
+<path d="M202 910 L500 295 L798 910"/>
+<path d="M145 90 L145 178 C145 284 244 330 308 402 C384 484 421 561 500 705"/>
+<path d="M500 705 C579 561 616 484 692 402 C756 330 855 284 855 178 L855 90"/>
+<path d="M443 684 L500 815 L557 684 Z" fill="#143d2f" stroke="none"/>
+</g></svg>

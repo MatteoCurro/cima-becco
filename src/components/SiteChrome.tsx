@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import './siteChrome.css';
+import './brandMark.css';
 import './fontAwesome.css';
 import { FaIcon } from './FaIcon';
 import { openImportHere, requestAddPlace } from '../lib/contribute';
@@ -11,10 +12,10 @@ import { Mark } from './icons';
 import { exploreGroups } from '../lib/exploreNavigation';
 import { SiteSearch } from './SearchBar';
 
-/** Identità Cima Becco: cresta e becco stilizzati, tipografia dal carattere editoriale. */
+/** Marchio condiviso: segno brutalista e tipografia già in uso nel sito. */
 export function Wordmark({ size = 36, href = '/#' }: { size?: number; href?: string }) {
   return (
-    <a className="wordmark" href={href} aria-label="Cima Becco — home">
+    <a className="wordmark" href={href} aria-label="Cima Becco — home" title="Non è un cervo. Grazie.">
       <Mark size={size} />
       <span className="wordmark-text"><b>CIMA</b><em>BECCO</em></span>
     </a>
@@ -57,6 +58,13 @@ export function SiteHeader({ center = <SiteSearch />, sticky = false }: { center
  */
 export function SiteFooter({ openSourcePill = false }: { openSourcePill?: boolean }) {
   const [coverageOpen, setCoverageOpen] = useState(false);
+  const [beccoClicks, setBeccoClicks] = useState(0);
+  const beccoLines = [
+    'Non è un cervo. E non accetta reclami.',
+    'Stambecco sbloccato. Polpacci venduti separatamente.',
+    'Se cercavi la discesa, lui non è il tipo giusto.',
+    'Do veto more? Chiedilo al becco.',
+  ];
   return (
     <footer className={`site-footer${openSourcePill ? ' site-footer--featured' : ''}`}>
       <div className="site-footer-inner">
@@ -91,6 +99,15 @@ export function SiteFooter({ openSourcePill = false }: { openSourcePill?: boolea
         <div className="site-footer-base">
           <span>© Cima Becco · Ogni cima, un nuovo percorso.</span>
           <span>Un progetto sperimentale. <a href="/fonti-e-crediti/">Fonti, attribuzioni e licenze</a></span>
+          <div className="cb-footer-egg" data-awake={beccoClicks > 0}>
+            <button type="button" className="cb-footer-egg-trigger" onClick={() => setBeccoClicks(n => n + 1)}
+              aria-label="Stuzzica lo stambecco. Sblocca una battuta." title="Sì, il logo si può stuzzicare.">
+              <Mark size={32} />
+            </button>
+            <span className="cb-footer-egg-copy" aria-live="polite">
+              {beccoClicks > 0 ? beccoLines[(beccoClicks - 1) % beccoLines.length] : 'Non stuzzicare lo stambecco.'}
+            </span>
+          </div>
         </div>
       </div>
       {coverageOpen && <FooterCoverage onClose={() => setCoverageOpen(false)} />}
