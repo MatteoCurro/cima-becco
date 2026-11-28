@@ -5,7 +5,7 @@ import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from enrich_municipalities_v1 import (
     query_national_istat_qids,commons_files,wikipedia_intro,choose_candidates,enrich,
-    municipality_heraldry_filename
+    municipality_heraldry_filename,find_heraldry_commons
 )
 
 QID="Q12345"
@@ -83,6 +83,23 @@ class MunicipalMediaTests(unittest.TestCase):
             del d["query"]["pages"]["200"]["imageinfo"][0]["thumburl"]
             return d
         self.assertEqual(commons_files(["Stemma di Canazei.svg"],getter=no_raster,allow_svg=True),{})
+    def test_commons_direct_crest_requires_description_not_only_filename(self):
+        def factory(description):
+            def answer(url,params):
+                if params.get("list")=="search":
+                    return {"query":{"search":[{"title":"File:Canazei-Stemma.svg","pageid":14}]}}
+                return {"query":{"pages":{"14":{
+                  "title":"File:Canazei-Stemma.svg","imageinfo":[{
+                   "thumburl":"https://upload.wikimedia.org/commons/thumb/coat.svg.png",
+                   "descriptionurl":"https://commons.wikimedia.org/wiki/File:Canazei-Stemma.svg",
+                   "extmetadata":{"LicenseShortName":{"value":"CC BY 4.0"},
+                     "LicenseUrl":{"value":"https://creativecommons.org/licenses/by/4.0/"},
+                     "Artist":{"value":"Araldista"},"ImageDescription":{"value":description}}}]}}}}
+            return answer
+        yes=find_heraldry_commons("Canazei",getter=factory("Stemma di Canazei, comune in Trentino."))
+        self.assertEqual(len(yes),1)
+        self.assertEqual(yes[0][1]["licence"],"CC BY 4.0")
+        self.assertEqual(find_heraldry_commons("Canazei",getter=factory("Stemma del Trentino.")),[])
     def test_heraldry_filename_must_explicitly_name_the_same_town(self):
         self.assertTrue(municipality_heraldry_filename("File:Canazei-Stemma.svg","Canazei"))
         self.assertTrue(municipality_heraldry_filename("File:Stemma di San Vito di Cadore.svg","San Vito di Cadore"))
