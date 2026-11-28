@@ -155,6 +155,18 @@ def commons_pages_by_title(files,*,getter=None):
                "extmetadata":p["imageinfo"][0].get("extmetadata") or {}})
     return pages
 
+def safe_historical_scene(media, date):
+    """One dated scene only, never composite 'before / after' misdated as one year."""
+    desc=str(media.get("descriptionText") or "")
+    if re.search(r"prima\s+e\s+dopo|before\s+and\s+after|collage|montaggio|photomontage|confronto",
+                 desc,re.I):return False
+    documented_years={int(x) for x in re.findall(r"(?<!\d)(?:18\d{2}|19\d{2})(?!\d)",desc)}
+    if len(documented_years)>1:return False
+    if documented_years and int(date[:4]) not in documented_years:
+        # The dated file fact contradicts the textual source annotation.
+        return False
+    return True
+
 def enrich_historical(release,*,getter=None,max_municipalities=20,
                       max_photos_per_municipality=3,checked_at=None,cycle=0):
     require(release.get("releaseChannel")=="ISTAT_DAIT_MUNICIPALITIES",
@@ -223,6 +235,7 @@ def enrich_historical(release,*,getter=None,max_municipalities=20,
                 for filename,date,origin,subject_method,media_page_id in qualified:
                     media=images.get(filename.replace(" ","_"))
                     if not media or (media["sourceUrl"],"historical_photo") in prior:continue
+                    if not safe_historical_scene(media,date):continue
                     key=hashlib.sha1((qid+filename).encode()).hexdigest()[:16]
                     commune.setdefault("media",[]).append({
                         **media,"id":"commons-history:"+key,"kind":"historical_photo",
@@ -232,7 +245,9 @@ def enrich_historical(release,*,getter=None,max_municipalities=20,
                         "subjectMethod":subject_method,
                         "municipalityQid":qid,
                         "sourceId":"commons:mediainfo:M"+str(media_page_id),
-                        "caption":"Fotografia storica di "+commune["name"]+" ("+date[:4]+")",
+                        "caption":(str(media.get("descriptionText") or "")[:180] or
+                          "Fotografia storica del territorio di "+commune["name"])+
+                          " ("+date[:4]+")",
                         "retrievedAt":checked_at
                     })
                     prior.add((media["sourceUrl"],"historical_photo"))
