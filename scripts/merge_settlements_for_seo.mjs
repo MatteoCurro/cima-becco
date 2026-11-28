@@ -21,6 +21,7 @@ export function mergeSettlementsForSeo(base,release) {
         :'https://www.openstreetmap.org/#map=13/'+point.lat+'/'+point.lng,
       facts:entity.facts||{},relations:entity.relations||[],media:entity.media||[],
       description:entity.description,shortSummary:entity.shortSummary,
+      textSources:entity.textSources||[],
       administrativeHierarchy:entity.administrativeHierarchy,
       connectedPeople:entity.connectedPeople||[],
       elevationM:typeof entity.facts?.elevationM?.value==='number'
