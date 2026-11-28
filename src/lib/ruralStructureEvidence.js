@@ -8,7 +8,27 @@ export function applyRuralStructureEvidence(places, source) {
   if (!source || source.schemaVersion !== '1.0' ||
       source.releaseChannel !== 'VERIFIED_RURAL_STRUCTURE_TYPES' ||
       !Array.isArray(source.entries)) return places;
-  const result = new Map(places.map(p => [p.slug, p]));
+  // OSM alpine_hut is a broad cartographic tag: a rural name without
+  // independently verified CAI refuge identity or documented beds is G0.
+  // Move to the shared "bivacchi/ricoveri/points of support" catalogue but
+  // label as UNKNOWN TYPE: this does not assert shelter or overnight use.
+  const ruralPrefix=/^(?:malga|casera|casere)\s/iu;
+  const provisional=places.map(p=>{
+    const hasCaiRefuge=Boolean(p.sourceIds?.cai);
+    const documentedBeds=typeof p.facts?.bedsTotal?.value==='number'&&
+      p.facts.bedsTotal.value>0 || typeof p.capacity==='number'&&p.capacity>0;
+    if(p.kind!=='rifugio'||!ruralPrefix.test(p.name)||hasCaiRefuge||
+       documentedBeds||p.quality?.gate==='G2')return p;
+    return {...p,kind:'bivacco',subtype:'rural_type_unverified',
+      shelterTypeLabel:/^casera\s/iu.test(p.name)?'Casera · uso da verificare':
+        'Malga · uso da verificare',
+      quality:{gate:'G0',seoIndexable:false,reviewRequired:true},
+      classificationEvidence:{
+        sourceUrl:p.osmUrl,note:'OSM alpine_hut non dimostra attività di rifugio né pernottamento; verifica della tipologia necessaria',
+        recordedAt:source.checkedAt,previousKind:'rifugio',
+      }};
+  });
+  const result = new Map(provisional.map(p => [p.slug, p]));
   const byOsm = new Map(places.filter(p => /^https:\/\/www\.openstreetmap\.org\/(?:node|way|relation)\/[1-9]\d*$/.test(p.osmUrl || ''))
     .map(p => [p.osmUrl.replace('https://www.openstreetmap.org/', ''), p.slug]));
   const officialIds = new Set(places.map(p => p.sourceIds?.official).filter(Boolean));
