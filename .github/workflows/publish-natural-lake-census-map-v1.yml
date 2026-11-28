@@ -8,6 +8,9 @@ on:
       - src/lib/naturalLakeCensus.ts
       - src/lib/naturalLakeCensus.test.ts
       - src/components/NaturalLakePage.tsx
+      - src/App.tsx
+      - scripts/build_seo.mjs
+      - docs/MODELLO_METADATI_E_LAYOUT.md
       - src/components/AlpineAtlasMap.tsx
       - src/alpineAtlas.css
       - .github/workflows/publish-natural-lake-census-map-v1.yml
@@ -58,6 +61,11 @@ jobs:
           assert d['geometryPendingReview']==sum(p['geometryReviewOnly'] for p in registry['providers'].values())
           assert d['shownPolygons'] >= 100
           assert d['canonicalAtlasEntitiesAdded']==0
+          assert d['sourcePreviewPagesNoindexAllowed'] is True
+          assert d['sourcePreviewsReady'] >= 250
+          assert sum(1 for r in d['records'] if r['previewOnly'])==d['sourcePreviewsReady']
+          assert all(r['previewNoindex'] is True and r['qualityGate']=='G0'
+                     for r in d['records'])
           assert d['crossSourceIdentityLinksAdded']==0
           assert d['individualPagesAllowed'] is False and d['seoIndexable'] is False
           assert not any('slug' in r or 'relations' in r or 'sourceIds' in r for r in d['records'])
@@ -78,17 +86,31 @@ jobs:
           const fs=require('node:fs');
           const data=JSON.parse(fs.readFileSync('dist/data/atlas/natural-lake-census-map-v1.json','utf8'));
           if(!data.sourceOnlyCatalogue||data.individualPagesAllowed||data.seoIndexable||
-             data.canonicalAtlasEntitiesAdded!==0||data.shownPolygons<100)
+             data.canonicalAtlasEntitiesAdded!==0||data.shownPolygons<100||
+             data.sourcePreviewPagesNoindexAllowed!==true||
+             data.sourcePreviewsReady<250)
             throw Error('Invalid G0-only published map projection');
+          const previews=data.records.filter(x=>x.previewOnly&&x.previewSlug);
+          if(previews.length!==data.sourcePreviewsReady||
+             previews.some(x=>x.previewNoindex!==true))
+            throw Error('G0 source preview counts/quality mismatch');
+          for(const r of [previews[0],previews[previews.length-1]]){
+            const path='dist/laghi/censiti/'+r.previewSlug+'/index.html';
+            if(!fs.existsSync(path))throw Error('Source preview HTML missing: '+path);
+            const html=fs.readFileSync(path,'utf8');
+            if(!html.includes('name="robots" content="noindex,follow"')||
+               !html.includes('WebPage')||html.includes('LakeBodyOfWater'))
+              throw Error('G0 preview page leaked canonical SEO fields');
+          }
           const sitemap=fs.readFileSync('dist/sitemap.xml','utf8');
-          if(sitemap.includes('natural-lake-census-map')||sitemap.includes('/laghi/bolzano_lakes')||
+          if(sitemap.includes('/laghi/censiti/')||sitemap.includes('natural-lake-census-map')||sitemap.includes('/laghi/bolzano_lakes')||
              sitemap.includes('/laghi/arpav_water_surfaces'))
             throw Error('Source-only records leaked into SEO sitemap');
           const g2=JSON.parse(fs.readFileSync('dist/data/atlas/natural-lakes-v1.json','utf8'));
           if(g2.releaseChannel!=='NATURAL_FEATURES_LAKES_G2'||!g2.isPublished||
              !g2.entities?.length)
             throw Error('Known source-verified G2 dossiers disappeared');
-          console.log('G0 map data, G2 dossier separation, sitemap and static build OK');
+          console.log('G0 map, '+previews.length+' noindex source previews, G2 dossier, sitemap and static build OK');
           JS
           test -z "$(git status --porcelain -- src/)"
   publish:
