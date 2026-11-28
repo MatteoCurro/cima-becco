@@ -30,7 +30,7 @@ export function applyRuralStructureEvidence(places, source) {
         aliases: [...(prior.aliases || []), ...(e.aliases || [])],
         classificationEvidence: {
           sourceUrl:e.classificationSource, note:e.classificationNote || '',
-          recordedAt:source.checkedAt, previousKind:before,
+          recordedAt:source.checkedAt, previousKind:e.previousKind || before,
         },
       });
       continue;
