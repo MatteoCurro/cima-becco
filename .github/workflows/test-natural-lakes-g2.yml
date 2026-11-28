@@ -1,0 +1,93 @@
+name: Pilot natural lakes G2 with verified geometry and Wikimedia
+on:
+  push:
+    branches: [feat/natural-lakes-g2-editorial-pilot-20261128]
+    paths:
+      - scripts/enrich_natural_wikimedia_v1.py
+      - scripts/enrich_natural_lakes_wikimedia_v1.py
+      - tests/test_enrich_natural_lakes_wikimedia_v1.py
+      - .github/workflows/test-natural-lakes-g2.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/enrich_natural_wikimedia_v1.py
+      - scripts/enrich_natural_lakes_wikimedia_v1.py
+      - tests/test_enrich_natural_lakes_wikimedia_v1.py
+      - .github/workflows/test-natural-lakes-g2.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: cima-natural-lakes-g2-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  lakes-editorial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Deterministic source identity, geometry and media gates
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_enrich_natural_water_geometry_v1.py' -v
+          python -m unittest discover -s tests -p 'test_natural_wikimedia_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_natural_lakes_wikimedia_v1.py' -v
+      - name: Reuse exact G1 real lake geometry and audited independent P1566 crosswalk
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/g1-water build/g1-identity
+          gh run download 46124793037 --repo ${{ github.repository }}             -n cima-becco-natural-water-polygons-g1             -D build/g1-water
+          gh run download 46121844323 --repo ${{ github.repository }}             -n cima-becco-natural-wikidata-g2-staging             -D build/g1-identity
+          test -s build/g1-water/water-geometry-staging.json
+          test -s build/g1-identity/import-natural-features-v1/natural-identity.json
+      - name: Independently refresh Wikidata claims, Commons P18 license and Wikipedia pageprops
+        run: |
+          python scripts/enrich_natural_lakes_wikimedia_v1.py             --geometry build/g1-water/water-geometry-staging.json             --crosswalk build/g1-identity/import-natural-features-v1/natural-identity.json             --out build/lakes-g2/lakes-g2-candidates.json             --report build/lakes-g2/lakes-g2-report.json
+      - name: Real audit - no SEO for source-only G1 lake dossiers
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('build/lakes-g2')
+          d=json.loads((root/'lakes-g2-candidates.json').read_text())
+          r=json.loads((root/'lakes-g2-report.json').read_text())
+          assert d['releaseChannel']=='NATURAL_WATER_G2_CANDIDATES_STAGING_V1'
+          assert d['isPublished'] is False and r['published']==0 and r['seoIndexable']==0
+          assert r['geometryVerified']==6
+          assert r['candidateG2']>=1, 'No fully confirmed lake G2 after current Wikimedia re-check'
+          assert len(d['entities'])==6
+          assert len({e['slug'] for e in d['entities']})==len(d['entities'])
+          for e in d['entities']:
+              assert e['kind']=='natural_feature' and e['subtype'] in ('lake','reservoir')
+              assert e['geo']['area']['type']=='MultiPolygon'
+              assert e['facts']['osmMappedWaterSurfaceKm2']['method']=='derived'
+              assert e['facts']['osmMappedWaterSurfaceKm2']['licence']=='ODbL 1.0'
+              assert e['quality']['seoIndexable'] is False
+              assert e['sourceIds']['wikidataVerifiedBy']=='P1566+P625'
+              if e['quality']['gate']=='G2':
+                  assert e['media'] and e['textSources']
+                  assert all(m['author'] and m['licence'] and m['subjectVerified'] and
+                             m['reuseAllowed'] for m in e['media'])
+                  assert all(t['licence']=='CC BY-SA 4.0' and
+                             t['sourceId'].startswith('wikipedia:it:')
+                             for t in e['textSources'])
+                  assert not e['quality']['reviewRequired']
+          print('Real G2 lake dossier names:',[
+              e['name'] for e in d['entities'] if e['quality']['gate']=='G2'])
+          print('Source QA:',r)
+          PY
+          test -z "$(git status --porcelain -- public/ src/)"
+      - name: Keep verified lake photos, narratives and polygon source audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-natural-lakes-g2-candidates
+          path: build/lakes-g2
+          retention-days: 20
+          if-no-files-found: warn
