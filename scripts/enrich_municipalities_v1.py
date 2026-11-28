@@ -174,18 +174,29 @@ def commons_files(filenames,*, getter=None, allow_svg=False):
     return result
 
 def municipality_heraldry_filename(filename, municipality):
-    """Only exact municipality + heraldic term, never generic 'Italy' files."""
+    """Require the *town's own* coat of arms, not a heraldic object in town.
+
+    'Stemma principato vescovile Bressanone' is NOT the Comune's crest;
+    neither is 'San Fermo, Belluno - stemma su una casa'.
+    """
     if not isinstance(filename,str) or not isinstance(municipality,str):return False
+    import unicodedata
     def normalize(s):
-        import unicodedata
         s=unicodedata.normalize("NFKD",s)
-        s="".join(c for c in s if not unicodedata.combining(c))
+        s="".join(x for x in s if not unicodedata.combining(x))
         return re.sub(r"[^a-z0-9]+"," ",s.casefold()).strip()
     name=normalize(municipality)
     basename=normalize(filename.removeprefix("File:").rsplit(".",1)[0])
-    if len(name)<3 or not ((" "+name+" ") in (" "+basename+" ")):return False
-    return bool(re.search(r"\b(stemma|wappen|coat of arms|blason|blasonnement|heraldic|armoiries)\b",basename)) and not bool(
-        re.search(r"\b(blank|template|provisional|facsimile|sample|bozza|modello|fake)\b",basename))
+    if len(name)<3:return False
+    disallowed=r"\\b(principato|vescovile|principality|bishopric|su una casa|on a house|\\bchiesa\\b|\\bchurch\\b|\\bfamiglia\\b|\\bfamily\\b|\\bsan fermo\\b|\\bfrazione\\b|\\bparrocchia\\b|\\btemplate\\b|\\bblank\\b|\\bbozza\\b|\\bprovisional\\b|\\bfake\\b|\\bcampione\\b)\\b"
+    if re.search(disallowed,basename):return False
+    expected=[
+       name+" stemma","stemma di "+name,
+       "stemma del comune di "+name,"stemma comune di "+name,
+       "stemma "+name, name+" coat of arms","coat of arms of "+name,
+       "coat of arms "+name,name+" wappen","wappen "+name,
+       "wappen von "+name,"blason "+name,"armoiries de "+name]
+    return any(basename==prefix or basename.startswith(prefix+" ") for prefix in expected)
 
 def find_heraldry_commons(municipality, *,getter=None):
     """Fallback direct Commons search, with strong subject evidence.
@@ -523,6 +534,24 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, progress
             for source in ("wikidata","wikidataVerifiedBy"):
                 if source in old_e.get("sourceIds",{}):
                     e["sourceIds"][source]=old_e["sourceIds"][source]
+    # Migrate old P94/P154 metadata and discard false heraldry inferred
+    # from a geographic name inside an unrelated heraldic photograph.
+    from urllib.parse import unquote
+    for e in entities.values():
+        accepted=[]
+        for media in e.get("media",[]):
+            if media.get("kind")=="logo":
+                if media.get("id","").find(":P94:")>=0:
+                    media.setdefault("symbolType","coat_of_arms")
+                    media.setdefault("caption","Stemma del Comune di "+e["name"])
+                if media.get("id","").find(":P154:")>=0:
+                    media.setdefault("symbolType","institutional_logo")
+                if media.get("subjectMethod")=="verified_P635_and_exact_heraldic_commons_description":
+                    filename=unquote(media.get("sourceUrl","").rsplit("/",1)[-1]).replace("_"," ")
+                    if not municipality_heraldry_filename("File:"+filename,e["name"]):
+                        continue
+            accepted.append(media)
+        e["media"]=accepted
     enriched = list(entities.values())
     for e in enriched:
         if e.get("quality",{}).get("gate")=="G0":
