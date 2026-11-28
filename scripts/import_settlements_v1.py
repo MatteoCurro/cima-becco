@@ -66,7 +66,11 @@ def official_rows(data):
         ("tipo_loc", "tipo loc"),
         ("nome",),
     ]
-    rows, _columns, _preamble = headered_rows(csv_matrix(data), required)
+    try:
+        rows, _columns, _preamble = headered_rows(csv_matrix(data), required)
+    except ValueError as error:
+        preview = data.decode("utf-8-sig", errors="replace").splitlines()[:3]
+        raise ValueError("Intestazioni LOC 2021 non riconosciute; anteprima: " + repr([x[:240] for x in preview])) from error
     return rows
 
 def value(row, *keys):
