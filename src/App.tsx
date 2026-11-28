@@ -64,7 +64,7 @@ import { track } from './lib/analytics';
 import { openMapWith, takeMapIntent } from './lib/mapIntent';
 import { countryArea, detectCountry } from './lib/country';
 import { formatRadius } from './lib/units';
-import { isWorldPeakSlug, peaksInView, worldPeakBySlug } from './lib/worldPeaks';
+import { isWorldPeakSlug, peaksInView, worldPeakBySlug, worldPeakByCanonicalSlug } from './lib/worldPeaks';
 
 /** One shared empty list, so "no dataset yet" is a stable reference to memo on. */
 const NO_VENUES: Venue[] = [];
@@ -86,7 +86,7 @@ type View = 'landing' | 'planner' | 'atlas' | 'explore' | 'insights' | 'public_p
 
 const INFO_PAGES: ReadonlySet<string> = new Set<InfoPageId>(['privacy', 'terms', 'community', 'data', 'contact']);
 
-type CleanEntity = {kind:'rifugi'|'bivacchi'|'paesi'|'route'|'trekking';slug:string};
+type CleanEntity = {kind:'rifugi'|'bivacchi'|'paesi'|'route'|'trekking'|'cime';slug:string};
 function cleanEntity():CleanEntity|null{
   const path=window.location.pathname,base=import.meta.env.BASE_URL;
   if(!path.startsWith(base))return null;
@@ -95,7 +95,7 @@ function cleanEntity():CleanEntity|null{
   const [section,slug]=parts;
   if(!/^[a-zA-Z0-9_-]{2,120}$/.test(slug))return null;
   const kind=section==='borghi'||section==='comuni'?'paesi':section;
-  return kind==='rifugi'||kind==='bivacchi'||kind==='paesi'||kind==='route'||kind==='trekking'
+  return kind==='rifugi'||kind==='bivacchi'||kind==='paesi'||kind==='route'||kind==='trekking'||kind==='cime'
     ?{kind,slug}:null;
 }
 function viewFromHash(): View {
@@ -106,7 +106,8 @@ function viewFromHash(): View {
     : window.location.pathname.replace(/\/+$/, '');
   if (pathWithoutBase === '/fonti-e-crediti' && (!hash || hash === '#data')) return 'data';
   if(pathWithoutBase==='/comuni' && !hash) return 'atlas';
-  const path=cleanEntity();if(path && !hash)return path.kind==='route'?'map':path.kind==='trekking'||window.location.pathname.includes('/comuni/')?'atlas':'explore';
+  if(pathWithoutBase==='/cime' && !hash) return 'map';
+  const path=cleanEntity();if(path && !hash)return path.kind==='route'||path.kind==='cime'?'map':path.kind==='trekking'||window.location.pathname.includes('/comuni/')?'atlas':'explore';
   if (hash === '#pianifica') return 'planner';
   if (hash === '#atlante' || hash.startsWith('#atlante/')) return 'atlas';
   if (/^#(rifugi|bivacchi|paesi)(\/|$)/.test(hash)) return 'explore';
@@ -381,6 +382,22 @@ function MapApp() {
       cancelled = true;
     };
   }, [viewport]);
+
+  // SEO-speaking /cime/<slug>/ addresses resolve to the same GeoNames venue
+  // used by map pins, favorites and previously shared #venue/gn... links.
+  useEffect(() => {
+    const path=cleanEntity();
+    if(path?.kind!=='cime' || window.location.hash) return;
+    let cancelled=false;
+    void worldPeakByCanonicalSlug(path.slug).then(peak=>{
+      if(cancelled || !peak)return;
+      setDetailSlug(peak.slug);
+      setLinkedPeak(peak);
+      setPeakLooked(peak.slug);
+      setFocus({lng:peak.lng,lat:peak.lat,nonce:Date.now()});
+    });
+    return ()=>{cancelled=true;};
+  }, []);
 
   useEffect(() => {
     if (!detailSlug || !isWorldPeakSlug(detailSlug)) return;
