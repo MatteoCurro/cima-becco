@@ -3048,3 +3048,9 @@ button {
   .venue-mobile-bar button { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 20px; border: none; border-radius: 8px; background: var(--accent); color: #fff; font-size: 15px; font-weight: 600; }
 }
 
+
+/* When MapLibre never emits idle, stop the perpetual spinner after a short
+   watchdog. This notice is informational and never blocks map interactions. */
+.map-busy--slow{max-width:min(280px,calc(100% - 28px));text-align:center;
+  border-radius:7px;color:#486a55;font:700 11px/1.45 'Space Grotesk',sans-serif;
+  pointer-events:none}
