@@ -45,7 +45,8 @@ jobs:
           ! grep -q "DEST.write_text" scripts/import_trail_network_v1.py
           echo 'Physical graph pilot strictly isolated from existing 12k+ route catalog'
   real-source-pilot:
-    if: github.event_name == 'workflow_dispatch'
+    # Source-real audit runs once on first main push; no new production cron.
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     needs: contract
     runs-on: ubuntu-latest
     timeout-minutes: 14
