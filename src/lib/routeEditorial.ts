@@ -109,9 +109,15 @@ export function trailMood(route: Route, metrics?: {gainM?:number;elevationAvaila
   if (category.kind==='ferrata') {
     const num=viaFerrataValue(route.viaFerrataScale);
     if(num===null)return {
-      level:'unknown',label:category.evidence==='inferred'?'Possibile ferrata · grado non verificato':'Scala ferrata non disponibile',
-      quip:'GRADO IN LATITANZA',basis:'Difficoltà tecnica da verificare',
-      explanation:knownCategory+'Nessuna difficoltà tecnica originale della ferrata disponibile. '+effortNote,
+      level:'unknown',
+      label:route.viaFerrataScale
+        ? 'Scala ferrata '+route.viaFerrataScale+' · grado non interpretato'
+        : category.evidence==='inferred'?'Possibile ferrata · grado non verificato':'Scala ferrata non disponibile',
+      quip:'GRADO IN LATITANZA',
+      basis:route.viaFerrataScale?'Scala originale presente; conversione non effettuata':'Difficoltà tecnica da verificare',
+      explanation:knownCategory+(route.viaFerrataScale
+        ? 'La fonte riporta la scala '+route.viaFerrataScale+'; non sono disponibili elementi sufficienti per convertirla in un grado editoriale.'
+        : 'Nessuna difficoltà tecnica originale della ferrata disponibile.')+' '+effortNote,
     };
     const strength=num<=2?'regular':num===3?'demanding':'technical';
     const quip=num<=2?'BRACCIA IN GITA':num===3?'AVAMBRACCI IN LEASING':num>=5?'IL VUOTO TI FA CIAO':'LA ROCCIA TI SGAMA';
