@@ -47,7 +47,7 @@ if (!existsSync(DIST)) {
   process.exit(1);
 }
 // Start from the app alone, so a second run does not count its own pages.
-for (const dir of ['place', 'country', 'route', 'cime']) rmSync(join(DIST, dir), { recursive: true, force: true });
+for (const dir of ['place', 'country', 'route', 'cime', 'passi']) rmSync(join(DIST, dir), { recursive: true, force: true });
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const venues = readJson(join(DATA, 'venues.json')).venues;
@@ -111,6 +111,24 @@ const publishedSummitLegacySlugs=new Set(summits.flatMap(e=>
   (e.slugAliases||[]).filter(s=>/^gn[1-9][0-9]*-m?[0-9]+xm?[0-9]+$/.test(s))));
 const legacyPeakCredits=Object.fromEntries(Object.entries(peakPhotos).filter(
   ([slug])=>!publishedSummitLegacySlugs.has(slug)));
+// Natural-feature source identity never overrides the existing summit/OSM catalog.
+// Only complete G2 passes go to public HTML. The build fails closed otherwise.
+const naturalReleasePath=join(DATA,'atlas','natural-features-v1.json');
+const naturalRelease=existsSync(naturalReleasePath)?readJson(naturalReleasePath):null;
+const naturalPasses=naturalRelease?.releaseChannel==='NATURAL_FEATURES_PASSES_G2' &&
+  naturalRelease?.isPublished===true && Array.isArray(naturalRelease.entities)
+    ? naturalRelease.entities.filter(e=>e.kind==='natural_feature' &&
+        ['mountain_pass','saddle'].includes(e.subtype) &&
+        e.quality?.gate==='G2' && e.quality.seoIndexable===true &&
+        !e.quality.reviewRequired && !e.quality.slugRequiresReview &&
+        !e.quality.elevationConflictReview && !e.quality.wikiAltitudeDisagreementReview &&
+        e.geo?.point && typeof e.facts?.elevationM?.value==='number' &&
+        e.sourceIds?.geonames && e.sourceIds?.wikidataVerifiedBy==='P1566+P625' &&
+        e.textSources?.some(t=>t.text?.length>=120 && t.licence==='CC BY-SA 4.0') &&
+        e.media?.some(m=>m.kind==='photo' && m.subjectVerified && m.reuseAllowed &&
+          m.licence && m.author && m.sourceUrl?.startsWith('https://commons.wikimedia.org/')))
+    : [];
+
 
 const alpinePlacesBase = mergeSheltersForSeo(mergeRefugesForSeo(
   existsSync(join(DATA, 'alpine-places.json')) ? readJson(join(DATA, 'alpine-places.json')).places ?? [] : [],
@@ -137,7 +155,7 @@ const peopleReleasePath=join(DATA,'atlas','people-v1.json');
 const peopleRelease=existsSync(peopleReleasePath)?readJson(peopleReleasePath):null;
 const people=peopleRelease?.releaseChannel==='ALPINE_PEOPLE_LINKS' &&
     Array.isArray(peopleRelease?.entities)?peopleRelease.entities:[];
-const centralCredits = makeCentralCredits(alpinePlaces, routes, legacyPeakCredits, TODAY,municipalities,people,summits);
+const centralCredits = makeCentralCredits(alpinePlaces, routes, legacyPeakCredits, TODAY,municipalities,people,summits,naturalPasses);
 mkdirSync(join(DIST,'data','atlas'),{recursive:true});
 writeFileSync(join(DIST,'data','atlas','credits-v1.json'),JSON.stringify(centralCredits));
 // Lightweight, public catalogue observability; regenerate on every deploy from
@@ -416,7 +434,7 @@ for (const venue of venues) {
 const countFiles = (dir) => readdirSync(dir, { withFileTypes: true }).reduce((n, entry) => n + (entry.isDirectory() ? countFiles(join(dir, entry.name)) : 1), 0);
 const refugeAliases = alpinePlaces.filter(p=>(p.kind==='rifugio'||p.kind==='bivacco') && canonicalAtlasSlug(p)!==p.slug).length;
 const reserved = countFiles(DIST) + Object.keys(index.byCountry).length + routes.length +
-  alpinePlaces.length + refugeAliases + trekProjects.length + summits.length * 2 + 13;
+  alpinePlaces.length + refugeAliases + trekProjects.length + summits.length * 2 + naturalPasses.length + 15;
 const room = Math.max(0, MAX_FILES - reserved);
 const score = (spec) => (spec.routesHere.length ? 4 : 0) + (spec.photo ? 2 : 0) + (spec.text ? 1 : 0);
 placeSpecs.sort((a, b) => score(b) - score(a) || (b.heightM ?? 0) - (a.heightM ?? 0));
@@ -496,6 +514,73 @@ if(summits.length) {
       '<p class="cima-seo-lead">Solo dossier verificati con fonte identificata, fotografia e testo attribuito.</p>'+
       '<ul class="list">'+summits.map(e=>'<li><a href="'+SITE+'/cime/'+
          encodeURIComponent(e.slug)+'/">'+escape(e.name)+'</a></li>').join('')+'</ul>'});
+}
+
+// Verified natural pass dossiers: a unique canonical /passi/<slug>/ path.
+// No pass access, route crossing, potable water or road opening is inferred.
+for (const e of naturalPasses) {
+  const geo=e.geo.point;
+  const primary=e.facts?.elevationM;
+  const altitude=primary?.value;
+  const photo=e.media.find(m=>m.kind==='photo' && m.subjectVerified && m.reuseAllowed &&
+    m.sourceId==='wikidata:'+e.sourceIds.wikidata+':P18');
+  const narrative=e.textSources.find(t=>t.text?.length>=120 &&
+    t.sourceId?.startsWith('wikipedia:it:'))?.text||'';
+  if(!photo || !narrative || !Number.isFinite(altitude))continue;
+  const href=SITE+'/passi/'+encodeURIComponent(e.slug)+'/';
+  const typeName=e.subtype==='saddle'?'Sella o forcella':'Passo alpino';
+  const summary=e.name+', '+metres(altitude)+'. '+narrative.slice(0,210);
+  const wikiAlt=e.facts?.wikidataElevationReportedM?.value;
+  const alternatives=(e.factsAlternatives||[]).filter(x=>x.key==='elevationM'&&
+    typeof x.fact?.value==='number'&&x.fact.value!==altitude);
+  const facts=[
+    [primary.method==='estimated'?'Quota GeoNames · stima DEM':'Quota GeoNames · registrata',metres(altitude)],
+    ...(Number.isFinite(wikiAlt)&&wikiAlt!==altitude?[['Quota dichiarata Wikidata',metres(wikiAlt)]]:[]),
+    ['Coordinate',geo.lat.toFixed(4)+', '+geo.lng.toFixed(4)]
+  ];
+  const other=alternatives.map(x=>'<p class="cima-seo-warning">'+
+    'Quota riportata nella voce enciclopedica: '+escape(metres(x.fact.value))+
+    '. Le fonti mantengono metodi distinti.</p>').join('');
+  page({
+    path:'passi/'+e.slug+'/',
+    title:e.name+' ('+metres(altitude)+') · '+typeName+' | Cima Becco',
+    description:summary.slice(0,295),
+    image:photo.url,
+    jsonLd:{'@context':'https://schema.org','@graph':[
+      {'@type':'Place','@id':href+'#passo',name:e.name,url:href,
+       description:narrative,
+       geo:{'@type':'GeoCoordinates',latitude:geo.lat,longitude:geo.lng,elevation:altitude},
+       image:photo.url,
+       identifier:[{'@type':'PropertyValue',propertyID:'GeoNames',value:e.sourceIds.geonames},
+                   {'@type':'PropertyValue',propertyID:'Wikidata',value:e.sourceIds.wikidata}],
+       ...(e.localNames?.length?{alternateName:e.localNames.map(a=>a.value)}:{})},
+      breadcrumbLd([['Passi',SITE+'/passi/'],[e.name,null]])
+    ]},
+    body:crumbs([['Passi',SITE+'/passi/'],[e.name]])+
+      '<div class="cima-seo-eyebrow">CIMA BECCO · '+escape(typeName.toUpperCase())+'</div>'+
+      '<h1>'+escape(e.name)+'</h1>'+
+      '<figure class="cima-seo-photo"><img loading="lazy" src="'+escape(photo.url)+
+      '" alt="'+escape('Immagine documentata associata a '+e.name)+'"></figure>'+
+      '<ul class="facts cima-seo-facts">'+facts.map(([key,value])=>
+      '<li><strong>'+escape(value)+'</strong>'+escape(key)+'</li>').join('')+'</ul>'+
+      other+
+      '<section class="cima-seo-body"><h2>Territorio e caratteristiche</h2><p>'+
+      escape(narrative)+'</p></section>'+
+      '<p class="cima-seo-warning">I sentieri cartografati e i rifugi vicini non certificano un accesso diretto, l’apertura stradale né condizioni di sicurezza.</p>'+
+      '<p><a class="cta" href="'+href+'">ESPLORA IL PASSO NELL’ATLANTE</a></p>'
+  });
+}
+if(naturalPasses.length) {
+  page({
+    path:'passi/',
+    title:'Passi e forcelle delle Alpi · Atlante Cima Becco',
+    description:'Valichi alpini con quota, toponimi, fotografie licenziate e informazioni GeoNames e Wikidata documentate.',
+    jsonLd:{'@context':'https://schema.org','@type':'CollectionPage',name:'Passi e forcelle delle Alpi',url:SITE+'/passi/'},
+    body:crumbs([['Passi']])+'<h1>PASSI. NON SCORCIATOIE.</h1>'+
+      '<p class="cima-seo-lead">Solo dossier territoriali verificati. Coordinate e tracce vicine non garantiscono percorribilità.</p>'+
+      '<ul class="list">'+naturalPasses.map(e=>'<li><a href="'+SITE+'/passi/'+
+        encodeURIComponent(e.slug)+'/">'+escape(e.name)+'</a></li>').join('')+'</ul>'
+  });
 }
 
 if (placeSpecs.length > room) console.warn(`SEO: ${(placeSpecs.length - room).toLocaleString('en')} place pages left out to stay under ${MAX_FILES.toLocaleString('en')} files.`);
@@ -1073,7 +1158,7 @@ for (const trek of trekProjects) {
 page({
   path:'fonti-e-crediti',
   title:'Fonti, crediti fotografici e dati dell’Atlante | Cima Becco',
-  description:'Provenienza di dati, testi e fotografie di comuni, rifugi, bivacchi, sentieri e cime. Ricerca autore, foto e licenze.',
+  description:'Provenienza di dati, testi e fotografie di comuni, rifugi, bivacchi, sentieri, cime e passi. Ricerca autore, foto e licenze.',
   jsonLd:{'@context':'https://schema.org','@type':'AboutPage',
     name:'Fonti e crediti · Cima Becco',url:SITE+'/fonti-e-crediti/'},
   body:`${crumbs([['Fonti e crediti']])}
