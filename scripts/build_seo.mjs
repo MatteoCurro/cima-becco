@@ -804,10 +804,11 @@ for(const e of municipalities) {
     jsonLd:{'@context':'https://schema.org','@graph':[
       {'@type':'AdministrativeArea',name:e.name,url,description:lead,
        identifier:{'@type':'PropertyValue',propertyID:'ISTAT',value:id},
-       geo:{'@type':'GeoCoordinates',latitude:p.lat,longitude:p.lng},
+       geo:{'@type':'GeoCoordinates',latitude:p.lat,longitude:p.lng,
+         ...(typeof e.facts?.quotaCentroM?.value==='number'?{
+           elevation:e.facts.quotaCentroM.value+' m'
+         }: {})},
        image:photo.url,
-       ...(typeof (e.facts?.quotaCentroM?.value??e.facts?.elevationReportedM?.value)==='number'?
-         {elevation:{'@type':'QuantitativeValue',value:e.facts?.quotaCentroM?.value??e.facts?.elevationReportedM?.value,unitCode:'MTR'}}:{}),
        ...(e.facts?.sitoUfficiale?.value?{sameAs:e.facts.sitoUfficiale.value}:{})},
       breadcrumbLd([['Comuni',SITE+'/comuni/'],[e.name,null]])
     ]},
