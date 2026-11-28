@@ -115,6 +115,7 @@ def enrich(stage, crosswalk, *, max_items=80, wd_getter=None,
     review = Counter()
     examples = []
     enriched = []
+    held_for_review = []
     for batch in batches(bases):
         qids = [qmap[e["sourceIds"]["geonames"]] for e in batch]
         try:
@@ -198,14 +199,23 @@ def enrich(stage, crosswalk, *, max_items=80, wd_getter=None,
             entity["description"] = article["text"]
             entity["shortSummary"] = article["text"][:185]
             entity["editorialStatus"] = "enriched"
+            # An altitude disagreement is a G1 review dossier, NOT G2.
+            # Preserve its source-attributed facts in the staging artifact,
+            # but never block the release of other independently valid cime.
+            conflict = bool(entity["quality"].get("elevationConflictReview"))
             entity["quality"].update({
-                "gate": "G2", "candidateIndexable": True,
-                "seoIndexable": False, "reviewRequired": bool(entity["quality"].get("elevationConflictReview")),
+                "gate": "G1" if conflict else "G2",
+                "candidateIndexable": not conflict,
+                "seoIndexable": False, "reviewRequired": conflict,
                 "photoSourceVerified": True, "textLicenseVerified": True,
                 "identityMethod": "GeoNames_P1566_Wikidata_P625",
                 "needsReleaseGate": True
             })
-            enriched.append(entity)
+            if conflict:
+                held_for_review.append(entity)
+                review["altitude_conflict_held_G1"] += 1
+            else:
+                enriched.append(entity)
     if len(enriched) != len({e["id"] for e in enriched}):
         raise ValueError("Duplicate canonical summit IDs")
     if len(enriched) != len({e["slug"] for e in enriched}):
@@ -215,17 +225,19 @@ def enrich(stage, crosswalk, *, max_items=80, wd_getter=None,
         "releaseChannel": OUT_CHANNEL,
         "isPublished": False,
         "generatedAt": retrieved_at,
-        "entities": sorted(enriched, key=lambda e:e["id"])
+        "entities": sorted(enriched, key=lambda e:e["id"]),
+        "heldEntities": sorted(held_for_review, key=lambda e:e["id"])
     }
     report = {
         "eligible": len(bases), "enrichedG2": len(enriched),
+        "heldForReviewG1": len(held_for_review),
         "quality": {"indexableNow": 0, "publishedNow": 0},
         "heldReasons": dict(sorted(review.items())),
         "reviewExamples": examples[:15],
         "withPhoto": sum(bool(e["media"]) for e in enriched),
         "withText": sum(bool(e["textSources"]) for e in enriched),
         "withElevationDisagreement": sum(
-            bool(e["quality"].get("elevationConflictReview")) for e in enriched)
+            bool(e["quality"].get("elevationConflictReview")) for e in held_for_review)
     }
     return result, report
 
