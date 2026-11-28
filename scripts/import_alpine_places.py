@@ -136,7 +136,9 @@ def parse_item(row):
             "bivacco" if (tags.get("tourism") == "wilderness_hut" or
                           (tags.get("amenity") == "shelter" and tags.get("shelter_type") == "basic_hut")) else
             "borgo" if tags.get("place") in ("town", "village", "hamlet") else None)
-    if verified and verified["name"].casefold() == name.casefold():
+    # OSM source key is the identity: a legitimate name/alias edit must not
+    # reinstate the old classification after the next data refresh.
+    if verified:
         kind = verified["kind"]
     if not kind:
         return None
@@ -154,7 +156,7 @@ def parse_item(row):
             "classificationEvidence":{"sourceUrl":verified["classificationSource"],
               "note":verified.get("classificationNote",""),
               "previousKind":"rifugio" if tags.get("tourism") == "alpine_hut" else kind}}
-           if verified and verified["name"].casefold()==name.casefold() else {}),
+           if verified else {}),
         **({"elevationM": round(ele)} if ele is not None and 0 < ele < 4800 else {}),
         **({"elevationSource": "osm"} if ele is not None and 0 < ele < 4800 else {}),
         **({"wikidata": tags["wikidata"]} if re.fullmatch(r"Q\d+", tags.get("wikidata","")) else {}),
