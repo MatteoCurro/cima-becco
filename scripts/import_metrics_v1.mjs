@@ -9,7 +9,7 @@ import {fileURLToPath} from 'node:url';
 
 const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');
 const DATA=join(ROOT,'public','data');
-const HISTORY=join(DATA,'atlas','import-history-v1.json');
+const HISTORY=type=>join(DATA,'atlas','import-history-'+type+'-v1.json');
 const read=(path)=>existsSync(path)?JSON.parse(readFileSync(path,'utf8')):null;
 const file=(name)=>read(join(DATA,name));
 const countFacts=(e)=>Object.values(e?.facts||{}).filter(f=>f && f.value!==null&&f.value!==undefined).length;
@@ -102,16 +102,18 @@ export function summarizeImportCatalog(){
     }
   };
 }
-export function importHistory(){
-  const doc=read(HISTORY);
-  return doc?.schemaVersion==='1.0'&&Array.isArray(doc.events)?doc:
-    {schemaVersion:'1.0',description:'Verified successful import snapshots, no invented history',events:[]};
+export function importHistory(pipeline){
+  const pipelines=pipeline?[pipeline]:['comuni','rifugi-ricoveri'];
+  const sources=pipelines.map(p=>read(HISTORY(p)));
+  const events=sources.flatMap(doc=>doc?.schemaVersion==='1.0'&&Array.isArray(doc.events)?doc.events:[]);
+  events.sort((a,b)=>String(a.recordedAt||'').localeCompare(String(b.recordedAt||'')));
+  return {schemaVersion:'1.0',description:'Verified successful import snapshots, no invented history',events};
 }
 export function appendSuccessfulImport(pipeline,runId,{report=null,sourceSha=null}={}){
   if(!['comuni','rifugi-ricoveri'].includes(pipeline))throw Error('Pipeline sconosciuta');
   if(!runId||!/^[0-9]+$/.test(String(runId)))throw Error('GitHub Actions run ID obbligatorio');
   const snapshot=summarizeImportCatalog();
-  const history=importHistory();
+  const history=importHistory(pipeline);
   if(history.events.some(e=>e.pipeline===pipeline&&e.runId===String(runId)))return history;
   const sourceIds=pipeline==='comuni'?['comuni']:['rifugi','ricoveri'];
   const sources=snapshot.sources.filter(s=>sourceIds.includes(s.id));
@@ -133,8 +135,9 @@ export function appendSuccessfulImport(pipeline,runId,{report=null,sourceSha=nul
     event.sources[id].count-previous.sources[id].count:null]));
   history.events.push(event);
   history.events=history.events.slice(-240);
-  mkdirSync(dirname(HISTORY),{recursive:true});
-  writeFileSync(HISTORY,JSON.stringify(history,null,2)+'\n');
+  const filename=HISTORY(pipeline);
+  mkdirSync(dirname(filename),{recursive:true});
+  writeFileSync(filename,JSON.stringify(history,null,2)+'\n');
   return history;
 }
 
