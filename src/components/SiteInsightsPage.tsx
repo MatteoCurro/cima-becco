@@ -228,6 +228,8 @@ export function SiteInsightsPage(){
               <span>Nuovi G2: {latestComuni.report?.newG2!=null?nf(Number(latestComuni.report.newG2)):'n.d.'}</span>
               <span>Nuovi media: {latestComuni.report?.newMedia!=null?nf(Number(latestComuni.report.newMedia)):'n.d.'}</span>
               <span>DAIT da revisione: {latestComuni.report?.daitRowsOfficialCrosswalkRejected!=null?nf(Number(latestComuni.report.daitRowsOfficialCrosswalkRejected)):'n.d.'}</span>
+              <span>Relazioni con personaggi: {latestComuni.report?.municipalityPeopleLinks!=null?nf(Number(latestComuni.report.municipalityPeopleLinks)):'n.d.'}</span>
+              <span>Quote territoriali associate: {latestComuni.report?.sourceAltimetryMatched!=null?nf(Number(latestComuni.report.sourceAltimetryMatched)):'n.d.'}</span>
               <a href={'https://github.com/MatteoCurro/cima-becco/actions/runs/'+latestComuni.runId} target="_blank" rel="noopener noreferrer">Apri esecuzione GitHub Actions ↗</a>
             </div>:<p>Il primo registro degli importatori sarà alimentato dal prossimo rilascio verificato.</p>}
           </section>
