@@ -85,6 +85,33 @@ def wd_fact(value,qid,prop,at,unit=None):
     }
 
 
+def reported_lead_altitude(article, qid, at):
+    """Conservatively extract a *quoted source alternative*, not a correction.
+
+    Only an unambiguous explicit 'm s.l.m.' amount near the introduction is
+    considered. This is NOT a certified datum: discrepancies enter review.
+    """
+    if not article or not article.get("text"):
+        return None
+    preamble=article["text"][:380]
+    matches=re.findall(
+        r"(?<!\d)(\d{1,2}\.\d{3}|\d{3,4})\s*m\s*s\.?\s*l\.?\s*m\.?",
+        preamble,re.I)
+    values={int(m.replace(".","")) for m in matches}
+    if len(values)!=1:return None
+    value=next(iter(values))
+    if not 100<=value<=5000:return None
+    return {
+        "value":value,"unit":"m",
+        "sourceId":article["sourceId"],
+        "sourceUrl":article["sourceUrl"],
+        "licence":article["licence"],
+        "retrievedAt":at,"sourceUpdatedAt":article.get("sourceUpdatedAt"),
+        "method":"reported","confidence":0.68,
+        "notes":"Quota indicata nella voce enciclopedica, non dato ufficiale; soggetta a verifica"
+    }
+
+
 def enrich(geonames, crosswalk, *, limit=240,
            wd_getter=None,commons_getter=None,wiki_getter=None,at=None):
     if geonames.get("releaseChannel")!=GN_STAGE or geonames.get("isPublished") is not False:
@@ -175,7 +202,8 @@ def enrich(geonames, crosswalk, *, limit=240,
                 media={**photo,"id":"wikimedia:"+qid+":P18:"+sha1(filename.encode()).hexdigest()[:12],
                        "kind":"photo","sourceId":"wikidata:"+qid+":P18",
                        "subjectMethod":"verified_GeoNames_P1566_Wikidata_P625_P18",
-                       "caption":"Fotografia documentata di "+doc["name"],
+                       "caption":(photo.get("descriptionText") or
+                           "Immagine associata a "+doc["name"])[:240],
                        "retrievedAt":at}
                 doc["media"]=[media]
             else:
@@ -193,6 +221,19 @@ def enrich(geonames, crosswalk, *, limit=240,
                 doc["textSources"]=[source]
                 doc["description"]=article["text"]
                 doc["shortSummary"]=article["text"][:190]
+                # Do not discard the wiki altitude: preserve it as a sourced
+                # alternative and review disagreements instead of overwriting
+                # the original GeoNames elevation.
+                reported_alt=reported_lead_altitude(article,qid,at)
+                main=doc["facts"].get("elevationM") or {}
+                if reported_alt and isinstance(main.get("value"),(int,float)):
+                    doc["factsAlternatives"].append({
+                        "key":"elevationM","fact":reported_alt,
+                        "reason":"Quota enciclopedica alternativa; metodo/fonte differente"
+                    })
+                    if abs(main["value"]-reported_alt["value"])>45:
+                        doc["quality"]["wikiAltitudeDisagreementReview"]=True
+                        held["article_altitude_difference_over_45m"]+=1
             else:
                 held["no_verified_itwiki_narrative"]+=1
             # The coordinate of a water polygon/valley is not its physical
@@ -203,6 +244,7 @@ def enrich(geonames, crosswalk, *, limit=240,
                 held["lake_valley_polygon_not_verified"]+=1
             eligible=(bool(doc.get("media")) and bool(doc.get("textSources"))
                       and not doc["quality"].get("elevationConflictReview")
+                      and not doc["quality"].get("wikiAltitudeDisagreementReview")
                       and not geo_review and doc["subtype"] in G2_ALLOWED
                       and bool(doc.get("facts"))
                       and not doc["quality"].get("slugRequiresReview"))
@@ -214,7 +256,8 @@ def enrich(geonames, crosswalk, *, limit=240,
                 "photoSourceVerified":bool(doc.get("media")),
                 "textLicenseVerified":bool(doc.get("textSources")),
                 "identityMethod":"GeoNames_P1566_P625_checked",
-                "reviewRequired":bool(doc["quality"].get("elevationConflictReview") or geo_review),
+                "reviewRequired":bool(doc["quality"].get("elevationConflictReview")
+                    or doc["quality"].get("wikiAltitudeDisagreementReview") or geo_review),
             })
             doc["editorialStatus"]="enriched" if doc.get("textSources") else "linked"
             output.append(doc)
