@@ -36,6 +36,11 @@ def doc_check(doc, channel):
     for e in records:
         if e.get("kind")!="natural_feature":
             raise ValueError("Source mixes natural features and unrelated entities")
+        ids=e.get("sourceIds") or {}
+        if channel==GN_STAGE and (not ids.get("geonames") or ids.get("osm")):
+            raise ValueError("GeoNames source must have only its own provider identity")
+        if channel==OSM_STAGE and (not ids.get("osm") or ids.get("geonames")):
+            raise ValueError("OSM source must have only its own provider identity")
         key=e.get("id")
         if not key or key in keys:
             raise ValueError("Duplicate source entity ID")
