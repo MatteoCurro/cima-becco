@@ -134,7 +134,7 @@ export function MunicipalityProfile({place,routeGroups,loadingRoutes,nearbyPlace
     <DetailJumpNav items={[
       {id:'cb-municipality-territory',label:'Territorio',icon:'mountain'},
       ...(hasAdministration?[{id:'cb-municipality-admin',label:'Comune',icon:'house' as const}]:[]),
-      ...(people.length?[{id:'cb-municipality-people',label:'Persone',icon:'users' as const}]:[]),
+      ...(people.length?[{id:'cb-municipality-people',label:'Persone',icon:'person-hiking' as const}]:[]),
       {id:'cb-place-itineraries',label:'Sentieri',icon:'route'},
       ...(water.length?[{id:'cb-place-water',label:'Acqua',icon:'water' as const}]:[]),
       {id:'cb-place-weather',label:'Meteo',icon:'compass'},
