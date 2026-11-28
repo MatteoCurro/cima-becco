@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "canonicalSpec": "docs/MODELLO_METADATI_E_LAYOUT.md sections 1 and 5",
   "kind": "natural_feature",
-  "status": "G1_water_geometry_58_real_OSM_boundaries_6_verified_GN_links_pending_G2",
+  "status": "passes_5_G2_lakes_2_G2_released_water_polygon_58_G1_source_snapshot",
   "subtypes": [
     {
       "type": "mountain_pass",
@@ -152,13 +152,13 @@
   ],
   "pendingG2": [
     "Verified P1566/P625 with OSM QID bridge and Commons P18 is completed for candidates; require same checks for next source batches",
-    "verify polygon geometry for lakes/valleys",
     "source-backed informative text",
     "canonical/legacy URL policy",
     "SEO+frontend adapters",
     "quality checks against published atlas",
     "verified access/routes for mountain passes",
-    "Use five source-backed pass candidates only after native DetailLayout and SEO/credits smoke test"
+    "For additional lakes, independently verify missing Commons P18 photo/authorship and official WFS geometry; publish only when complete",
+    "Official Bolzano WFS and ARPAV geometry adapters remain distinct G0/G1 sources; review provenance, scale, license and exact ID before joining"
   ],
   "negativeGuarantees": [
     "No raw nearest water assumed potable",
@@ -222,6 +222,27 @@
       "published": 0,
       "seo": 0,
       "offlineTests": 45
+    },
+    "lakeG2": {
+      "sourceGeometryRun": "46124793037",
+      "sourceEnrichmentRun": "46125096151",
+      "publisherPR": 38,
+      "sourceReleaseRun": "46126102568",
+      "commit": "016c941",
+      "publishedG2": 2,
+      "publicChannel": "NATURAL_FEATURES_LAKES_G2",
+      "publicCatalog": "public/data/atlas/natural-lakes-v1.json",
+      "canonicalPaths": [
+        "/laghi/lago-sorapis/",
+        "/laghi/lago-di-landro/"
+      ],
+      "geometrySourceSha256": "eec7766c826349e55364f7d29cbed71927ea1de824b0a9d163ddd4d6552a9559",
+      "geonamesQidsChecked": 6,
+      "heldG1NoValidP18": 4,
+      "geometryCache": "data/snapshots/natural-lake-geometry-g1.json",
+      "identityCache": "data/snapshots/natural-lake-identity-v1.json",
+      "refreshCadence": "06:35 UTC daily for Wikidata/Commons/itwiki using existing immutable geometry snapshot, not daily Overpass",
+      "quality": "Topological polygon QA, GN source point in water excluding islands, no type conflicts or inferred accessibility."
     }
   },
   "stagingArtifacts": [
@@ -229,9 +250,10 @@
     "build/import-natural-features-v1/features-geonames.json from official GeoNames",
     "run-reports and source snapshots in GitHub Actions artifacts",
     "build/import-natural-water-geometry-v1/water-geometry-staging.json (G1/noindex)",
-    "build/import-natural-water-geometry-v1/raw/water-geometry-response.json (OSM raw query+sha)"
+    "build/import-natural-water-geometry-v1/raw/water-geometry-response.json (OSM raw query+sha)",
+    "data/snapshots/natural-lake-geometry-g1.json + natural-lake-identity-v1.json (repo-only immutable source caches, NOT public)"
   ],
-  "nextStep": "G2 independently revalidate at least Sorapis/Landro P18, itwiki, typed altitude and exact outlines; then safe canonical lake detail+SEO release; retain all other lake/reservoir G1 and pilot regional WFS separately",
+  "nextStep": "Next block on lake enrichment: bounded independent WFS Bolzano/ARPAV official geometry pilot and support for 4 G1 lake photos/archives; then verify lake perimeter and license conflicts. No unverified G1 SEO.",
   "geometryContract": {
     "geometry": "geo.area as GeoJSON MultiPolygon (lon,lat WGS84)",
     "source": "OSM way/relation out geom; for new requests out meta geom",
