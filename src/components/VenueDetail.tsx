@@ -495,7 +495,9 @@ function PlanCard({ venue }: { venue: Venue }) {
       ) : (
         <p className="muted">Previsioni non disponibili al momento.</p>
       )}
-      <a className="venue-primary-action" href={directionsUrl(venue)} target="_blank" rel="noreferrer"><MapIcon size={16} />Apri la posizione</a>
+      <a className="venue-primary-action" href={venue.type==='hill'?'https://www.google.com/maps/search/?api=1&query='+venue.lat+','+venue.lng:directionsUrl(venue)}
+        target="_blank" rel="noreferrer"><MapIcon size={16} />{venue.type==='hill'?'Consulta le coordinate della cima':'Apri le indicazioni'}</a>
+      {venue.type==='hill'&&<p className="plan-credit">La posizione non rappresenta un punto di partenza né un itinerario di salita verificato.</p>}
       <p className="plan-credit">Dati meteo: <a href="https://open-meteo.com" target="_blank" rel="noreferrer">Open-Meteo</a></p>
     </div>
   );
@@ -1062,7 +1064,7 @@ function VenueDetailInner({
 
       <div className="venue-mobile-bar">
         <button type="button" className="venue-mobile-secondary" onClick={() => onShowOnMap()}>Mostra sulla mappa</button>
-        <a className="venue-mobile-primary" href={directionsUrl(venue)} target="_blank" rel="noreferrer"><MapIcon size={16} />Posizione</a>
+        <a className="venue-mobile-primary" href={isSummit?'https://www.google.com/maps/search/?api=1&query='+venue.lat+','+venue.lng:directionsUrl(venue)} target="_blank" rel="noreferrer"><MapIcon size={16} />{isSummit?'Coordinate':'Indicazioni'}</a>
       </div>
 
       {/* Outside the page layer: it slides in with a transform, which would
