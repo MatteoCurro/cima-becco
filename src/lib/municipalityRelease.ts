@@ -22,7 +22,8 @@ export function municipalityAsAlpinePlace(e:Municipality):AlpinePlace|null {
      e.quality.gate!=='G2'||!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lng)||
      !e.slug||!e.name||!e.sourceIds?.istat) return null;
   const photo=e.media?.find(m=>m.kind==='photo' && m.reuseAllowed&&m.subjectVerified&&m.sourceUrl&&m.licence);
-  const logo=e.media?.find(m=>m.kind==='logo' && m.reuseAllowed&&m.subjectVerified&&m.sourceUrl&&m.licence);
+  const logo=e.media?.find(m=>m.kind==='logo' && m.symbolType==='coat_of_arms' && m.reuseAllowed&&m.subjectVerified&&m.sourceUrl&&m.licence) ||
+    e.media?.find(m=>m.kind==='logo' && m.reuseAllowed&&m.subjectVerified&&m.sourceUrl&&m.licence);
   return {
     id:e.id,subtype:e.subtype,name:e.name,slug:e.slug,kind:'borgo',
     lat:point.lat,lng:point.lng,
@@ -39,7 +40,7 @@ export function municipalityAsAlpinePlace(e:Municipality):AlpinePlace|null {
     elevationSource:undefined,
     website:typeof e.facts?.sitoUfficiale?.value==='string'?e.facts.sitoUfficiale.value:undefined,
     photo:photo?{url:photo.url,sourceUrl:photo.sourceUrl,author:photo.author||'',license:photo.licence}:undefined,
-    logo:logo?{url:logo.url,sourceUrl:logo.sourceUrl,author:logo.author||'',license:logo.licence}:undefined,
+    logo:logo?{url:logo.url,sourceUrl:logo.sourceUrl,author:logo.author||'',license:logo.licence,symbolType:logo.symbolType}:undefined,
   };
 }
 /** Adapter UI: preserves canonical kind municipality in source JSON.
