@@ -63,6 +63,25 @@ class MunicipalMediaTests(unittest.TestCase):
             payload["query"]["pages"]["1"]["imageinfo"][0]["extmetadata"].pop("Artist")
             return payload
         self.assertEqual(commons_files(["Canazei.jpg"],getter=bad_getter),{})
+    def test_heraldry_svg_uses_commons_raster_thumbnail_and_cannot_be_photo(self):
+        def svg_getter(url,params):
+            return {"query":{"pages":{"200":{
+              "title":"File:Stemma di Canazei.svg","imageinfo":[{
+                "url":"https://upload.wikimedia.org/coat.svg",
+                "thumburl":"https://upload.wikimedia.org/thumb/coat.svg.png",
+                "descriptionurl":"https://commons.wikimedia.org/wiki/File:Stemma_di_Canazei.svg",
+                "extmetadata":{"LicenseShortName":{"value":"CC BY-SA 4.0"},
+                  "LicenseUrl":{"value":"https://creativecommons.org/licenses/by-sa/4.0/"},
+                  "Artist":{"value":"Autore stemma"}}}]}}}}
+        self.assertEqual(commons_files(["Stemma di Canazei.svg"],getter=svg_getter),{})
+        approved=commons_files(["Stemma di Canazei.svg"],getter=svg_getter,allow_svg=True)
+        self.assertEqual(approved["Stemma_di_Canazei.svg"]["url"],
+                         "https://upload.wikimedia.org/thumb/coat.svg.png")
+        def no_raster(url,params):
+            d=svg_getter(url,params)
+            del d["query"]["pages"]["200"]["imageinfo"][0]["thumburl"]
+            return d
+        self.assertEqual(commons_files(["Stemma di Canazei.svg"],getter=no_raster,allow_svg=True),{})
     def test_wikipedia_must_confirm_same_qid(self):
         self.assertTrue(wikipedia_intro("Canazei",QID,getter=fake_getter)["text"])
         self.assertIsNone(wikipedia_intro("Canazei","Q999",getter=fake_getter))
