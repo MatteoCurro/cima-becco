@@ -200,9 +200,10 @@ def wikipedia_intro(title,qid,*,getter=None):
                 "originalLanguage":"it","kind":"source_excerpt_not_original_editorial"}
     return None
 
-def choose_candidates(entities, crosswalk, limit=48, previous=None):
+def choose_candidates(entities, crosswalk, limit=48, previous=None, progress=None):
     done = {e["sourceIds"]["istat"] for e in (previous or {}).get("entities",[])
             if e.get("quality",{}).get("gate")=="G2"}
+    attempts=(progress or {}).get("attempts",{})
     pool=[]
     for e in entities:
         code=e["sourceIds"]["istat"]
@@ -213,22 +214,28 @@ def choose_candidates(entities, crosswalk, limit=48, previous=None):
         name=e["name"]
         try:priority=PRIORITY_NAMES.index(name)
         except ValueError:priority=1000
-        pool.append((priority,0 if p in ("BL","TN","BZ") else 1,p,name,code))
+        count=int((attempts.get(code) or {}).get("attempts",0))
+        # Unprocessed candidates first: bad candidates must not monopolise
+        # every daily batch. Existing G2s are refreshed independently.
+        pool.append((count,priority,0 if p in ("BL","TN","BZ") else 1,p,name,code))
     pool.sort()
     # Periodically refresh previously published dossiers as well as new ones:
     # they must not lose facts when ISTAT/DAIT is reimported from scratch.
-    existing=sorted([code for code in done if code in crosswalk],key=lambda code:
-      next((i for i,e in enumerate(entities) if e["sourceIds"]["istat"]==code),999999))
-    return existing[:30]+[x[-1] for x in pool[:limit]]
+    existing=sorted([code for code in done if code in crosswalk])
+    # Rotate refreshed G2 so a growing catalogue does not force re-fetching
+    # the same first 30 towns forever. No more than eight refreshes per run.
+    start=(int((progress or {}).get("successfulRuns",0))*8)%max(1,len(existing))
+    refreshed=(existing+existing)[start:start+min(8,len(existing))]
+    return refreshed+[x[-1] for x in pool[:limit]]
 
-def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieved_at=None):
+def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, progress=None, retrieved_at=None):
     """Deterministic after source fixtures; a failed source never fabricates data."""
     require(archive.get("releaseChannel")=="ISTAT_DAIT_MUNICIPALITIES_STAGING",
             "Input non è l'archivio ISTAT canonico")
     retrieved_at = retrieved_at or archive.get("retrievedAt")
     entities={e["sourceIds"]["istat"]:e for e in archive.get("entities",[])}
     old={e["sourceIds"]["istat"]:e for e in (previous or {}).get("entities",[])}
-    chosen=choose_candidates(list(entities.values()),qid_map,max_new,previous)
+    chosen=choose_candidates(list(entities.values()),qid_map,max_new,previous,progress)
     media_count=text_count=g2_count=0
     failures=[]
     for offset in range(0,len(chosen),25):
@@ -376,7 +383,9 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
             "areaCoverage":sum(e.get("facts",{}).get("superficieKm2",{}).get("value") is not None for e in public),
             "municipalitiesWithSymbols":sum(any(m.get("kind")=="logo" for m in e.get("media",[])) for e in public),
             "municipalitiesWithHistoricPhotos":sum(any(m.get("kind")=="historical_photo" for m in e.get("media",[])) for e in public),
-            "selectedCandidates":len(chosen),"failures":failures,
+            "selectedCandidates":len(chosen),"selectedCodes":chosen,
+            "firstAttempts":sum((progress or {}).get("attempts",{}).get(code) is None for code in chosen),
+            "failures":failures,
             "qualityG1":sum(e.get("quality",{}).get("gate")=="G1" for e in enriched),
             "qualityG0":sum(e.get("quality",{}).get("gate")=="G0" for e in enriched)}
     return {"schemaVersion":"1.0","releaseChannel":"ISTAT_DAIT_MUNICIPALITIES",
@@ -390,6 +399,7 @@ def main():
     p.add_argument("--out",type=Path,default=ROOT/"public/data/atlas/municipalities-v1.json")
     p.add_argument("--report",type=Path,default=ROOT/"build/import-municipalities-v1/enrichment-report.json")
     p.add_argument("--max-new",type=int,default=48)
+    p.add_argument("--progress",type=Path)
     args=p.parse_args()
     archive=load(args.archive)
     wd_map,collisions={},[]
@@ -408,7 +418,8 @@ def main():
     except Exception as exc:
         print("Wikidata national P635 lookup unavailable; using verified P635 pilot only:",str(exc)[:160])
     old=load(args.previous) if args.previous and args.previous.is_file() else None
-    result,report=enrich(archive,wd_map,max_new=args.max_new,previous=old)
+    progress=load(args.progress) if args.progress and args.progress.is_file() else None
+    result,report=enrich(archive,wd_map,max_new=args.max_new,previous=old,progress=progress)
     report["wikidataP635Available"]=len(wd_map)
     report["wikidataP635Collisions"]=collisions[:100]
     require(report["publishedG2"]>0,"Nessuna scheda G2 verificata; vietata pubblicazione")
