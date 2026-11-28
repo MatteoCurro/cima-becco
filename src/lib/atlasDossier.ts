@@ -33,7 +33,7 @@ export type AtlasRelationKind =
   | 'worked_in' | 'workplace_of';
 export interface AtlasRelation {
   type: AtlasRelationKind;
-  target: { id: string; kind: string; name: string; href?: string };
+  target: { id: string; kind: string; name: string; slug?: string; href?: string };
   straightLineKm?: number;
   method?: string;
   sourceUrl?: string;
@@ -177,6 +177,7 @@ export interface AtlasEntityMetadata {
   localNames?:AtlasNameVariant[];
   slugAliases?:string[];
   shortSummary?:string;
+  textSources?:{text:string;sourceId:string;sourceUrl:string;licence:string;retrievedAt?:string;sourceUpdatedAt?:string|null;method?:string;kind?:string}[];
   geo?:AtlasGeo;
   administrativeHierarchy?:AtlasAdministrativeHierarchy;
   sourceIds?:Record<string,string>;

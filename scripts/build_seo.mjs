@@ -21,6 +21,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
 import { mergeSheltersForSeo } from './merge_shelters_for_seo.mjs';
+import { mergeSettlementsForSeo } from './merge_settlements_for_seo.mjs';
 import { makeCentralCredits } from './build_source_credits.mjs';
 import { atlasCanonicalPath,atlasLegacyPath,canonicalAtlasSlug } from '../src/lib/placePermalinks.js';
 import { resolveRefugeTerritory, relatedAtlasPlaces } from '../src/lib/atlasConnections.js';
@@ -95,11 +96,14 @@ writeFileSync(join(DIST,'data','featured-routes.json'),JSON.stringify({generated
 const descriptions = existsSync(join(DATA, 'descriptions.json')) ? readJson(join(DATA, 'descriptions.json')).descriptions ?? {} : {};
 const index = readJson(join(DATA, 'peaks', 'index.json'));
 const peakPhotos = existsSync(join(DATA, 'peaks', 'photos.json')) ? readJson(join(DATA, 'peaks', 'photos.json')).photos ?? {} : {};
-const alpinePlaces = mergeSheltersForSeo(mergeRefugesForSeo(
+const alpinePlacesBase = mergeSheltersForSeo(mergeRefugesForSeo(
   existsSync(join(DATA, 'alpine-places.json')) ? readJson(join(DATA, 'alpine-places.json')).places ?? [] : [],
   existsSync(join(DATA, 'atlas', 'refuges-v1.json')) ? readJson(join(DATA, 'atlas', 'refuges-v1.json')) : null
 ), existsSync(join(DATA, 'atlas', 'shelters-v1.json')) ?
   readJson(join(DATA, 'atlas', 'shelters-v1.json')) : null);
+const settlementReleasePath=join(DATA,'atlas','settlements-v1.json');
+const settlementRelease=existsSync(settlementReleasePath)?readJson(settlementReleasePath):null;
+const alpinePlaces=mergeSettlementsForSeo(alpinePlacesBase,settlementRelease);
 // Comuni G2, dataset semantico distinto dagli OSM borghi.
 const municipalityReleasePath=join(DATA,'atlas','municipalities-v1.json');
 const municipalityRelease=existsSync(municipalityReleasePath)?readJson(municipalityReleasePath):null;
@@ -586,7 +590,12 @@ function writePlaceAlias(place){
 // Evita pagine seriali prive di contenuto: i borghi senza sentieri o fonte propria
 // restano consultabili nell'app ma non vengono generati come pagine indicizzabili.
 for (const place of alpinePlaces) {
-  if (!/^(?:osm-[nwr]-\d+|cai-\d+)$/.test(place.slug)) continue;
+  const isVerifiedSettlement=place.kind==='borgo'&&
+    (place.subtype==='centro_abitato'||place.subtype==='nucleo_abitato'||
+     place.subtype==='abitato_osm_non_classificato') &&
+    place.sourceIds?.wikidata && place.media?.some(m=>m.kind==='photo'&&m.subjectVerified&&m.reuseAllowed) &&
+    typeof place.description==='string' && place.description.length>=120;
+  if (!isVerifiedSettlement && !/^(?:osm-[nwr]-\d+|cai-\d+)$/.test(place.slug)) continue;
   const related=(byStop.get(place.slug)||[]).slice(0,24);
   const canonicalPath=atlasCanonicalPath(place);
   const isHut=place.kind==='rifugio'||place.kind==='bivacco';
@@ -673,7 +682,13 @@ for (const place of alpinePlaces) {
         <div class="cima-seo-photo-grid">${additionalPhotos.slice(0,12).map(m=>`<figure><img src="${escape(m.url)}" alt="${escape((m.kind==='historical_photo'?'Fotografia storica di ':'Fotografia di ')+place.name+(m.caption?' – '+m.caption:''))}" loading="lazy">
           <figcaption>${escape(m.caption||place.name)}</figcaption></figure>`).join('')}</div>
       </section>`:''}
+      ${isVerifiedSettlement && typeof place.facts?.popolazione?.value==='number'?
+        '<p class="sub">Popolazione della località al 31 dicembre 2021, secondo il censimento ISTAT; non è la popolazione del Comune.</p>':''}
       <ul class="facts cima-seo-facts ${isHut?'cima-seo-refuge-facts':''}">
+        ${isVerifiedSettlement && typeof place.facts?.popolazione?.value==='number'?
+          `<li><strong>${escape(place.facts.popolazione.value.toLocaleString('it-IT'))}</strong>Residenti, censimento 2021</li>`:''}
+        ${isVerifiedSettlement && typeof place.facts?.famiglie?.value==='number'?
+          `<li><strong>${escape(place.facts.famiglie.value.toLocaleString('it-IT'))}</strong>Famiglie, censimento 2021</li>`:''}
         ${place.elevationM!=null?`<li><strong>${metres(place.elevationM)}</strong>${place.elevationSource==='dem'?'quota stimata':'quota'}</li>`:''}
         <li><strong>${escape(place.lat.toFixed(4)+', '+place.lng.toFixed(4))}</strong>coordinate</li>
         <li><strong>${related.length}</strong>sentieri collegati</li>
@@ -718,6 +733,23 @@ for (const place of alpinePlaces) {
       <p class="sub">Dati e immagini con provenienza conservata nel <a href="${SITE}/fonti-e-crediti/">registro centralizzato delle fonti e dei crediti</a>.</p>`,
   });
   if(isHut)writePlaceAlias(place);
+  if(isVerifiedSettlement) {
+    for(const alias of place.slugAliases||[]) {
+      if(!/^osm-[nwr]-[1-9][0-9]*$/.test(alias) || alias===place.slug)continue;
+      const oldPath='borghi/'+encodeURIComponent(alias)+'/';
+      const oldUrl=SITE+'/'+oldPath;
+      const oldIndex=pages.indexOf(oldUrl);
+      if(oldIndex>=0)pages.splice(oldIndex,1);
+      const file=join(DIST,oldPath,'index.html');
+      const target=SITE+canonicalPath;
+      mkdirSync(dirname(file),{recursive:true});
+      writeFileSync(file,'<!doctype html><html lang="it"><head><meta charset="utf-8">'+
+        '<link rel="canonical" href="'+escape(target)+'">'+
+        '<meta name="robots" content="noindex,follow">'+
+        '<meta http-equiv="refresh" content="0;url='+escape(target)+'"></head>'+
+        '<body><a href="'+escape(target)+'">'+escape(place.name)+'</a></body></html>');
+    }
+  }
 }
 
 // Categoria SEO vera: un ingresso indicizzabile agli itinerari locali,

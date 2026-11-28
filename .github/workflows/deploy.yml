@@ -11,7 +11,7 @@ on:
     branches: [main]
   workflow_dispatch:
   workflow_run:
-    workflows: ["Import OSM routes", "Import alpine huts and towns", "Enrich alpine place photos", "Enrich trail elevation", "Enrich route photos", "Import CAI and OSM refuges release"]
+    workflows: ["Import OSM routes", "Import alpine huts and towns", "Enrich alpine place photos", "Enrich trail elevation", "Enrich route photos", "Import CAI and OSM refuges release", "Release Comuni con Wikimedia (G2)", "Release localita ISTAT21/OSM G2"]
     types: [completed]
 
 permissions:

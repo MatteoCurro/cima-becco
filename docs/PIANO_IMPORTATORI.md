@@ -1,8 +1,34 @@
 # Cima Becco — piano di importazione e collegamenti
 
-**Data:** 27/11/2026. **Stato:** blocchi 1 e 2 pubblicati e verificati; blocco 3 Comuni in pilota di staging separato (non pubblicato).  
+**Data aggiornamento:** 28/11/2026. **Stato verificato:** rifugi e ricoveri pubblicati; Comuni incrementali G2 pubblicati (111 al run 46108239132) e 258 profili persone G1 noindex; blocco 4 località ISTAT/OSM in pilota isolato PR #21, non pubblicato.  
 **Specifica superiore e vincolante:** [MODELLO_METADATI_E_LAYOUT.md](MODELLO_METADATI_E_LAYOUT.md). Il presente piano organizza i lavori e NON cambia la tassonomia o le regole canoniche.  
 **UI:** [ARCHITECTURE.md](ARCHITECTURE.md); un solo sistema di ricerca, mappa, dettaglio e filtri.
+
+## Stato di preparazione alla produzione del blocco 4 (28/11/2026)
+
+**Prima prova G2 su fonti reali:** 8 dossier eleggibili su 80 candidati Wikidata/OSM, con QID italiano, coordinate compatibili, P18 Commons, autore/licenza e estratto Wikipedia con QID corrispondente. Queste 8 schede erano ancora in **staging**, non pubblicate. 69.003 righe punti ufficiali ISTAT 2021 disponibili per georeferenziazione (EPSG:32632) e demografia di località con POP21/FAM21/ABI21/EDI21. La prova temporanea della build con 8 G2 ha superato 292 test unitari e la generazione di oltre 12.700 pagine SEO; il controllo permalink ha individuato l'assenza dei redirect legacy dei vecchi slug OSM. Correzione introdotta e test dedicati aggiunti: un errore in una prova NON equivale a una release superata.
+
+**Sequenza di promozione:** il workflow di staging conserva raw G0/G1 in artifact, affianca fotografie storiche solo con soggetto e data originali e verifica il catalogo G2 mediante compilazione/frontend/SEO. Il workflow di release separato (`release-settlements-v1.yml`) verifica identità, qualità, sito, sitemap e URL, aggiorna poi `settlements-v1.json` e `import-history-localita-v1.json` con commit atomico. Pubblica solo se presente almeno un G2 valido; cron giornaliero alle 06:10 UTC, cache sorgenti territoriali 2021 e rotazione 80 QID ad esecuzione. Resta distinta la manutenzione del blocco Comuni per stemmi P94/P154 e fotografie storiche.
+
+**Relazioni:** i punti ISTAT georeferenziati sono collegati con `near` ai rifugi e ricoveri già acquisiti (distanza in linea d'aria, mai accesso), `part_of` solo dal Comune ISTAT con riferimento 2021 e verifica delle eventuali riconciliazioni WD P131. Le persone sono legate con nascita P19 nell'abitato esatto, mai per appartenenza al Comune.
+
+---
+
+## Blocco 4 — località censuarie e borghi: pilota ISTAT 2021 + OSM (28/11/2026)
+
+**PR di staging:** [#21](https://github.com/MatteoCurro/cima-becco/pull/21) · [adapter](../scripts/import_settlements_v1.py) · [registro campi](../scripts/settlement_field_registry_v1.json) · [test](../tests/test_import_settlements_v1.py) · [workflow](../.github/workflows/test-import-settlements-v1.yml).
+
+**Perimetro:** Basi territoriali ISTAT 2021 (LOC_Rxx_21.csv negli ZIP regionali) e snapshot alpine-places.json con 1.857 elementi OSM etichettati «borgo». Pilota reale R04 Trentino-Alto Adige e R05 Veneto. Non riscaricare Overpass per normalizzare.
+
+**Identità:** LOC21_ID = PRO_COM + COD_LOC. TIPO_LOC distingue centro abitato, nucleo abitato, località produttiva, case sparse. Soltanto i primi due sono candidati a schede. Centro censuario non significa frazione amministrativa; no sindaco, popolazione, superficie ereditati dal Comune.
+
+**Grafo:** part_of verificato dal PRO_COM con vintage 2021 (solo per Comuni già catalogati); near Haversine, mai accessibilità. Non fondere elementi OSM e ISTAT per nome/distanza. Le persone vanno collegate al luogo esatto e non solo al Comune.
+
+**Media e storia:** immagini con soggetto esatto, licenza e autore; per storiche data di scatto documentata. Lo stemma comunale non diventa automaticamente lo stemma della località. Il ciclo Comuni continua l'arricchimento stemmi, foto storiche e popolazione ISTAT datata.
+
+**Gate:** output solo in build/import-settlements-v1 e artifact CI. G0/noindex fino a geometrie e reconciliation verificata e contenuto G2. Zero scritture in public/data, permalink e cron in questa PR. Test offline e pilota reale prima di promozione.
+
+---
 
 ## Estensione Comuni — qualità territoriale, personaggi e osservatorio (28/11/2026)
 

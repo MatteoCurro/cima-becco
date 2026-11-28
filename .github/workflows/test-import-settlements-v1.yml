@@ -1,0 +1,187 @@
+name: Pilota localita ISTAT21 e borghi OSM (blocco 4, solo staging)
+on:
+  push:
+    branches: [feat/settlements-istat-osm-pilot-v1]
+    paths:
+      - scripts/import_settlements_v1.py
+      - tests/test_import_settlements_v1.py
+      - .github/workflows/test-import-settlements-v1.yml
+  pull_request:
+    paths:
+      - scripts/import_settlements_v1.py
+      - tests/test_import_settlements_v1.py
+      - .github/workflows/test-import-settlements-v1.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cima-becco-settlements-staging-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Contratti offline (identita, gerarchia, dedup e SEO)
+        run: python -m unittest discover -s tests -p 'test_import_settlements_v1.py' -v
+      - name: Basi territoriali ISTAT 2021 ufficiali (TN/BZ e Veneto)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/import-settlements-v1/input
+          for region in 04 05; do
+            curl --fail --location --silent --show-error --retry 3 --retry-delay 5 \
+              --connect-timeout 20 --max-time 240 \
+              -A 'CimaBecco-OpenDataPilot/1.0 (https://www.cimabecco.it)' \
+              "https://www.istat.it/storage/cartografia/basi_territoriali/2021/R$region"_21.zip \
+              -o "build/import-settlements-v1/input/R$region"_21.zip
+            test -s "build/import-settlements-v1/input/R$region"_21.zip
+            unzip -t "build/import-settlements-v1/input/R$region"_21.zip >/dev/null
+          done
+      - name: Ispeziona geometrie ufficiali localita puntuali 2021 (audit)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 3 --retry-delay 5 \
+            --connect-timeout 20 --max-time 240 \
+            -A 'CimaBecco-OpenDataPilot/1.0 (https://www.cimabecco.it)' \
+            https://www.istat.it/storage/cartografia/basi_territoriali/2021/LocalitaPuntuali_21.zip \
+            -o build/import-settlements-v1/input/LocalitaPuntuali_21.zip
+          python scripts/inspect_istat_geometry_v1.py build/import-settlements-v1/input/LocalitaPuntuali_21.zip
+      - name: Test georeferenziazione ISTAT 2021 e coordinate WGS84
+        run: |
+          python -m unittest discover -s tests -p 'test_enrich_settlement_istat_geometry_v1.py' -v
+          python -m pip install 'pyproj==3.7.2'
+      - name: Importa localita censuarie e OSM SENZA pubblicazione
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/import_settlements_v1.py \
+            --istat-source build/import-settlements-v1/input/R04_21.zip \
+            --istat-source build/import-settlements-v1/input/R05_21.zip \
+            --osm public/data/alpine-places.json \
+            --municipalities public/data/atlas/municipalities-v1.json \
+            --refuges public/data/atlas/refuges-v1.json \
+            --shelters public/data/atlas/shelters-v1.json \
+            --out build/import-settlements-v1
+      - name: Arricchisci località con punto e dati popolazione censuaria (match identità)
+        run: |
+          set -euo pipefail
+          python scripts/enrich_settlement_istat_geometry_v1.py \
+            --settlements build/import-settlements-v1/settlements.json \
+            --points build/import-settlements-v1/input/LocalitaPuntuali_21.zip \
+            --refuges public/data/atlas/refuges-v1.json \
+            --shelters public/data/atlas/shelters-v1.json \
+            --out build/import-settlements-v1/settlements.json \
+            --report build/import-settlements-v1/geometry-report.json
+      - name: Verifica offline identità Wikidata, QID Wikipedia e licenze Commons
+        run: python -m unittest discover -s tests -p 'test_enrich_settlements_wikimedia_v1.py' -v
+      - name: Arricchisci candidati G2 con media e testi verificati (solo staging)
+        run: |
+          set -euo pipefail
+          python scripts/enrich_settlements_wikimedia_v1.py \
+            --settlements build/import-settlements-v1/settlements.json \
+            --municipalities public/data/atlas/municipalities-v1.json \
+            --people public/data/atlas/people-v1.json \
+            --max-new 80 \
+            --out build/import-settlements-v1/settlements-g2.json \
+            --report build/import-settlements-v1/wikimedia-report.json
+      - name: Test immagini storiche località (soggetto, data e attribuzione)
+        run: python -m unittest discover -s tests -p 'test_enrich_settlement_history_v1.py' -v
+      - name: Pilota Commons foto storiche datate, no eredità comunale
+        run: |
+          set -euo pipefail
+          python scripts/enrich_settlement_history_v1.py \
+            --settlements build/import-settlements-v1/settlements-g2.json \
+            --out build/import-settlements-v1/settlements-g2.json \
+            --report build/import-settlements-v1/history-report.json \
+            --max 6
+      - name: Quality gate su fonti reali
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          out = Path("build/import-settlements-v1")
+          report = json.loads((out/"report.json").read_text())
+          doc = json.loads((out/"settlements.json").read_text())
+          ent = doc["entities"]
+          assert len(report["sources"]) == 2, report["sources"]
+          assert report["officialRecords"] > 100, report
+          assert report["osmRecords"] > 1000, report
+          assert report["totalEntities"] == len(ent)
+          assert not doc["isPublished"] and report["seoIndexable"] == 0
+          assert len(ent) == len({x["id"] for x in ent}) == len({x["slug"] for x in ent})
+          geo = json.loads((out/"geometry-report.json").read_text())
+          wiki = json.loads((out/"wikimedia-report.json").read_text())
+          historical = json.loads((out/"history-report.json").read_text())
+          assert isinstance(historical.get("saved"),int)
+          g2 = json.loads((out/"settlements-g2.json").read_text())
+          assert g2["releaseChannel"] == "ISTAT21_OSM_SETTLEMENTS"
+          assert all(e["quality"]["gate"] == "G2" and e["quality"]["seoIndexable"]
+                     and e["description"] and e["textSources"] and e["media"] and e["geo"]["point"]
+                     for e in g2["entities"])
+          assert geo["counts"]["matched"] > 8000, geo
+          assert geo["counts"]["facts_popolazione"] > 8000, geo
+          assert all(not x["quality"]["seoIndexable"] and x["quality"]["gate"] in ("G0","G1")
+                     for x in ent)
+          assert all(x["quality"]["gate"] == "G1" and "populationReferenceDate" in x["facts"]
+                     for x in ent if x["sourceIds"].get("istatLocality") and x["geo"].get("point"))
+          assert all(x["kind"] == "settlement" and x["subtype"] != "frazione" for x in ent)
+          assert all(rel["type"] in ("near", "part_of") for x in ent for rel in x["relations"])
+          assert all(rel["verified"] is True and x["sourceIds"].get("istatLocality")
+                     for x in ent for rel in x["relations"] if rel["type"] == "part_of")
+          assert all(rel.get("accessVerified") is False for x in ent
+                     for rel in x["relations"] if rel["type"] == "near")
+          assert all("sindacoNome" not in x["facts"] and "population" not in x["facts"] for x in ent)
+          assert all(not x["media"] for x in ent), "Media senza diritti verificati"
+          print("Pilota:", report["totalEntities"], "schede G0;",
+                report["documentedMunicipalityRelations"], "relazioni ISTAT;",
+                report["nearUnverified"], "vicinanze NON attestanti accessibilita")
+          print("Coda di revisione:", report["rejected"])
+          PY
+      - name: Verifica frontend/SEO con catalogo G2 in working tree effimero
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp build/import-settlements-v1/settlements-g2.json public/data/atlas/settlements-v1.json
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          doc=json.loads(Path('public/data/atlas/settlements-v1.json').read_text())
+          s=Path('dist/sitemap.xml').read_text()
+          for entity in doc['entities']:
+              dest=Path('dist/borghi')/entity['slug']/'index.html'
+              assert dest.is_file(), ('G2 without SEO permalink',entity['slug'])
+              assert '/borghi/'+entity['slug']+'/' in s,entity['slug']
+              html=dest.read_text()
+              assert entity['name'] in html,entity['slug']
+              assert 'schema.org' in html,entity['slug']
+          print('G2 in build simulata:',len(doc['entities']))
+          PY
+      - name: Pubblica solo artefatti di staging, NON public/data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-block4-settlements-pilot
+          path: |
+            build/import-settlements-v1/settlements.json
+            build/import-settlements-v1/report.json
+            build/import-settlements-v1/geometry-report.json
+            build/import-settlements-v1/wikimedia-report.json
+            build/import-settlements-v1/history-report.json
+            build/import-settlements-v1/settlements-g2.json
+          retention-days: 14
+          if-no-files-found: warn

@@ -64,7 +64,7 @@ for(const section of ['rifugi','bivacchi','paesi'] as const){
     await first.click();
     await expect(page.locator('.cb-location-profile h1')).toBeVisible();
     await expect(page.locator('.cb-detail-metrics')).toBeVisible();
-    if(section==='paesi')await expect(page.locator('.cb-detail-facts')).toBeVisible();
+    if(section==='paesi')await expect(page.locator('.cb-detail-facts').first()).toBeVisible();
     else {
       await expect(page.locator('.cb-refuge-hero')).toBeVisible();
       await expect(page.locator('#cb-refuge-stay')).toBeAttached();
