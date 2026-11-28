@@ -72,6 +72,36 @@ jobs:
           npm run build
           node scripts/check_permalinks.mjs
           node scripts/test_central_credits.mjs
+      - name: Simulate a verified G2 publish in an isolated CI checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0,'tests')
+          sys.path.insert(0,'scripts')
+          from test_publish_summits_v1 import example,staged
+          from publish_summits_v1 import empty_release,merge,write
+          document,_=merge(empty_release(),staged([example()]))
+          write(Path('public/data/atlas/summits-v1.json'),document)
+          PY
+          npm run build
+          test -s dist/cime/cima-delle-prove/index.html
+          test -s dist/place/gn100-45x10/index.html
+          grep -Fq 'noindex,follow' dist/place/gn100-45x10/index.html
+          grep -Fq '/cime/cima-delle-prove/' dist/place/gn100-45x10/index.html
+          node - <<'JS'
+          const fs=require('node:fs');
+          const doc=JSON.parse(fs.readFileSync('dist/data/atlas/credits-v1.json','utf8'));
+          if(!doc.photoCredits.some(x=>x.kind==='summit'&&x.slug==='cima-delle-prove'))
+            throw Error('G2 photo absent from centralized credits');
+          if(!doc.textCredits.some(x=>x.kind==='summit'&&x.slug==='cima-delle-prove'))
+            throw Error('G2 text absent from centralized credits');
+          console.log('Summit G2 SEO redirects and central credits pass');
+          JS
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
   publish:
     needs: contract
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
