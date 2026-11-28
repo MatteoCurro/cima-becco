@@ -186,6 +186,7 @@ def census(provider, *, fetcher=fetch_limited, max_requests=MAX_REQUESTS,
             if fid in raw_meta and raw_meta[fid] != minimal:
                 raise ValueError("Official WFS FID changed attributes during census")
             raw_meta[fid] = minimal
+            seen_raw_fids.add(fid)
         if received >= MAX_FEATURES:
             # Do NOT assume a capped request exhausts a cell. Split into
             # four non-overlapping cells and deduplicate by the original FID.
@@ -198,7 +199,6 @@ def census(provider, *, fetcher=fetch_limited, max_requests=MAX_REQUESTS,
                                    "reason":"feature cap at maximum split depth"})
         for entity in parsed["entities"]:
             fid = entity["sourceFeatureId"]
-            seen_raw_fids.add(fid)
             if not bbox_overlap(entity["geo"]["area"], tile):
                 rejected["geometry_bbox_does_not_intersect_requested_tile"] += 1
                 continue
