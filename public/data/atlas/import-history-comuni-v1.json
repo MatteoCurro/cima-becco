@@ -193,6 +193,77 @@
         "comuni": 0,
         "persone": 0
       }
+    },
+    {
+      "runId": "46105886976",
+      "pipeline": "comuni",
+      "status": "success",
+      "recordedAt": "2026-11-28T04:07:15.226Z",
+      "sourceSha": "d6f4d23cbf880819d1db5051656165b2618ee594",
+      "sources": {
+        "comuni": {
+          "count": 23,
+          "facts": 767,
+          "media": 24,
+          "relations": 91,
+          "coverage": {
+            "Quota documentata": 23,
+            "Altimetria del territorio": 23,
+            "Superficie": 23,
+            "Popolazione ISTAT datata": 0,
+            "Sindaco (DAIT)": 22,
+            "Sito istituzionale": 11,
+            "Foto attribuita": 23,
+            "Testo documentato": 23,
+            "Relazioni territoriali": 13,
+            "Stemma": 1,
+            "Personaggi documentati": 13,
+            "Figure di montagna": 8
+          },
+          "denominator": 23
+        },
+        "persone": {
+          "count": 120,
+          "facts": 390,
+          "media": 29,
+          "relations": 252,
+          "coverage": {
+            "Con relazione documentata": 120,
+            "Fotografia verificata": 24,
+            "Biografia con QID verificato": 75,
+            "Data di nascita documentata": 120,
+            "Opere, eventi o associazioni": 40
+          },
+          "denominator": 120
+        }
+      },
+      "report": {
+        "newG2": 0,
+        "newMedia": 26,
+        "newWikiText": 14,
+        "publishedG2": 23,
+        "selectedCandidates": 71,
+        "municipalities": 7894,
+        "mayorsMatched": 7779,
+        "daitRowsOfficialCrosswalkRejected": 3,
+        "sourceAltimetryMatched": 23,
+        "metricsAdded": 0,
+        "municipalityPeopleLinks": 79,
+        "peopleCatalogued": 120,
+        "mountainLinks": 53,
+        "otherNotableLinks": 26,
+        "portraitsAdded": 0,
+        "imagesHeldForReview": 5,
+        "profilesWithPortrait": 24,
+        "biographiesAdded": 0,
+        "profilesWithBiography": 75,
+        "associationsObserved": 131,
+        "failuresCount": 0
+      },
+      "delta": {
+        "comuni": 0,
+        "persone": 0
+      }
     }
   ]
 }
