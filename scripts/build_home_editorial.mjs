@@ -213,7 +213,9 @@ const discovery=Object.fromEntries(Object.entries(places).map(([key,group])=>{
 }));
 const feed={schemaVersion:'1.0',generatedAt:new Date().toISOString(),
   policy:'published-source-only',territories:selected,discovery};
-if (!selected.length)console.warn('Home: nessun focus territoriale completo; fallback alle categorie G2.');
+// The homepage promise depends on a real territory. Fail the deployment
+// rather than silently replacing the editorial centerpiece with empty content.
+if (!selected.length) throw Error('Home editoriale: nessun territorio verificabile completo; rilascio bloccato.');
 const output=join(DIST,'data','home-editorial-v1.json');
 mkdirSync(dirname(output),{recursive:true});
 writeFileSync(output,JSON.stringify(feed));
