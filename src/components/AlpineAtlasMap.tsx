@@ -28,7 +28,7 @@ function naturalPointsGeoJSON(points:readonly NaturalMapPoint[]) {
     type:'FeatureCollection' as const,
     features:points.map(p=>({
       type:'Feature' as const,
-      properties:{slug:p.slug,name:p.name,subtype:p.subtype,quality:p.quality||'G2',sourceKey:p.sourceKey||null},
+      properties:{slug:p.slug,name:p.name,subtype:p.subtype},
       geometry:{type:'Point' as const,coordinates:[p.lng,p.lat]},
     })),
   };
@@ -52,7 +52,7 @@ function naturalWaterGeoJSON(features:readonly NaturalWaterPolygon[]){
     type:'FeatureCollection' as const,
     features:features.map(p=>({
       type:'Feature' as const,
-      properties:{slug:p.slug,name:p.name,subtype:p.subtype},
+      properties:{slug:p.slug,name:p.name,subtype:p.subtype,quality:p.quality||'G2',sourceKey:p.sourceKey||null},
       geometry:p.geometry,
     })),
   };
