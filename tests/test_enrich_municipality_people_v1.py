@@ -50,7 +50,7 @@ def source(url,params):
         "Q104":profile("Q104","Q819677",prop="P551",date_of_death=True),
         "Q105":profile("Q105","Q819677",prop="P551",date_of_death=False),
         "Q106":profile("Q106","Q819677",prop="P937"),
-        "Q107":profile("Q107","Q819677",town="Q112233"),
+        "Q107":profile("Q107","Q819677",town="Q258031"),
     }}
 
 class PeopleContract(unittest.TestCase):
