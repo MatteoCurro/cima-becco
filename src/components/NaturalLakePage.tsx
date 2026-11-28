@@ -177,7 +177,7 @@ function LakeDetail({feature}:{feature:NaturalLake}){
 
 const sourcePolygon=(r:LakeSourceCensusRecord):NaturalWaterPolygon=>({
   slug:r.sourceKey,name:lakeSourceLabel(r),subtype:'unspecified',
-  sourceKey:r.sourceKey,quality:'G0',lat:0,lng:0,
+  sourceKey:r.sourceKey,quality:'G0',
   // No invented centroid: location and selection come from the real outline.
   geometry:r.geom,
 });
