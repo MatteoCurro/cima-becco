@@ -1,0 +1,295 @@
+{
+  "version": "1.0",
+  "canonicalSpec": "docs/MODELLO_METADATI_E_LAYOUT.md",
+  "entityKind": "settlement",
+  "phase": "block_4_staging_pilot",
+  "date": "2026-11-28",
+  "sources": [
+    {
+      "name": "ISTAT BT2021",
+      "url": "https://www.istat.it/notizia/basi-territoriali-e-variabili-censuarie/",
+      "state": "pilot",
+      "unit": "LOC_Rxx_21",
+      "codes": [
+        "PRO_COM",
+        "LOC21_ID",
+        "TIPO_LOC",
+        "COD_LOC",
+        "NOME",
+        "CENTRO_CL"
+      ],
+      "vintage": "2021-12-31"
+    },
+    {
+      "name": "OSM snapshot",
+      "url": "https://www.openstreetmap.org/",
+      "state": "existing_snapshot",
+      "unit": "node_way_relation",
+      "licence": "ODbL"
+    },
+    {
+      "name": "Wikidata",
+      "state": "later_verification_for_P131/P625",
+      "note": "no inferred administrative relation"
+    },
+    {
+      "name": "Wikimedia Commons",
+      "state": "later_verified_media",
+      "note": "no image selected by similarity"
+    },
+    {
+      "name": "Comune official",
+      "state": "later_verified_frazione_status",
+      "note": "statistical locality is not legal frazione"
+    }
+  ],
+  "rules": {
+    "noMergeByName": true,
+    "noParentByProximity": true,
+    "noInheritedMayorOrPopulation": true,
+    "noPublicWrite": true,
+    "seoIndexable": false,
+    "stageFlow": "source_snapshot -> normalize -> resolve verified links -> gate G0 -> review",
+    "istatMunicipalityCodeVintage": "2021; do not infer 2026 equivalence for changed municipalities",
+    "credits": "preserve author/license for each future media object, aggregate via /fonti-e-crediti/",
+    "osmCurrentLimitation": "existing OSM snapshot stores 'borgo' but lacks original place=town|village|hamlet subtype; reacquire exact tag before subtype classification",
+    "historicPhotos": "Commons media requires subject QID or official title evidence AND documented capture date, not upload timestamp"
+  },
+  "fields": [
+    {
+      "key": "id",
+      "priority": "P0",
+      "status": "implemented",
+      "validation": "UUIDv5 namespace+source ID, not slug"
+    },
+    {
+      "key": "kind",
+      "priority": "P0",
+      "status": "implemented",
+      "validation": "settlement; not municipality"
+    },
+    {
+      "key": "subtype",
+      "priority": "P0",
+      "status": "partial",
+      "validation": "ISTAT tipo_loc 1/2; OSM legacy subtype pending raw tags"
+    },
+    {
+      "key": "name",
+      "priority": "P0",
+      "status": "implemented",
+      "validation": "original documented locality name"
+    },
+    {
+      "key": "displayName",
+      "priority": "P0",
+      "status": "implemented",
+      "validation": "same as documented original"
+    },
+    {
+      "key": "aliases[]",
+      "priority": "P1",
+      "status": "planned",
+      "validation": "languages and sources required"
+    },
+    {
+      "key": "localNames[]",
+      "priority": "P1",
+      "status": "planned",
+      "validation": "italian,german,ladin where verified"
+    },
+    {
+      "key": "slug/slugAliases[]",
+      "priority": "P0",
+      "status": "staging_only",
+      "validation": "no live URL change; collision review"
+    },
+    {
+      "key": "shortSummary",
+      "priority": "P1",
+      "status": "planned",
+      "validation": "documented not boilerplate"
+    },
+    {
+      "key": "description/history",
+      "priority": "P1",
+      "status": "planned",
+      "validation": "verified text with QID+licence"
+    },
+    {
+      "key": "sourceIds.istatLocality",
+      "priority": "P0",
+      "status": "implemented",
+      "validation": "2021 LOC21_ID full code"
+    },
+    {
+      "key": "sourceIds.istatMunicipality",
+      "priority": "P0",
+      "status": "implemented",
+      "validation": "PRO_COM only from ISTAT"
+    },
+    {
+      "key": "sourceIds.osm",
+      "priority": "P0",
+      "status": "implemented",
+      "validation": "element id from OSM URL"
+    },
+    {
+      "key": "sourceIds.wikidata",
+      "priority": "P1",
+      "status": "partial",
+      "validation": "only preexisting OSM QID; claims not verified"
+    },
+    {
+      "key": "administrativeHierarchy",
+      "priority": "P0",
+      "status": "partial",
+      "validation": "ISTAT parent crosswalk from code, no name inference"
+    },
+    {
+      "key": "parentMunicipalityId",
+      "priority": "P1",
+      "status": "partial",
+      "validation": "only if parent present in published municipality catalog"
+    },
+    {
+      "key": "geo.point",
+      "priority": "P0",
+      "status": "partial",
+      "validation": "OSM point; ISTAT CSV point missing"
+    },
+    {
+      "key": "geo.area",
+      "priority": "P1",
+      "status": "planned",
+      "validation": "official ISTAT GIS geometry with vintage and CRS"
+    },
+    {
+      "key": "elevationM",
+      "priority": "P1",
+      "status": "partial",
+      "validation": "OSM/DEM with method; never inherit municipal min/max"
+    },
+    {
+      "key": "populationLocal",
+      "priority": "P2",
+      "status": "waiting_source",
+      "validation": "only submunicipal data with 2021 reference and matching locality ID"
+    },
+    {
+      "key": "populationReferenceDate",
+      "priority": "P2",
+      "status": "waiting_source",
+      "validation": "explicit vintage"
+    },
+    {
+      "key": "frazioneAdministrativeStatus",
+      "priority": "P0",
+      "status": "waiting_official_confirmation",
+      "validation": "must not infer from ISTAT locality or OSM hamlet"
+    },
+    {
+      "key": "isMunicipalCapital",
+      "priority": "P1",
+      "status": "implemented",
+      "validation": "CENTRO_CL only; does not prove autonomous frazione"
+    },
+    {
+      "key": "facts{}",
+      "priority": "P0",
+      "status": "partial",
+      "validation": "sourceId,URL,unit,licence,checkedAt per fact"
+    },
+    {
+      "key": "relations.part_of",
+      "priority": "P1",
+      "status": "partial",
+      "validation": "only official LOC PRO_COM; 2021 vintage explicit"
+    },
+    {
+      "key": "relations.near",
+      "priority": "P1",
+      "status": "partial",
+      "validation": "haversine straight line, not access"
+    },
+    {
+      "key": "relations.starts_at/accessible_from",
+      "priority": "P1",
+      "status": "waiting_verified_trail_graph",
+      "validation": "no invented access"
+    },
+    {
+      "key": "relations.born_in/people",
+      "priority": "P2",
+      "status": "waiting_wikidata_P19",
+      "validation": "specific locality QID not just municipality"
+    },
+    {
+      "key": "media.current",
+      "priority": "P1",
+      "status": "waiting_subject_and_license",
+      "validation": "Commons verified subject, author, licence"
+    },
+    {
+      "key": "media.coat_of_arms",
+      "priority": "P2",
+      "status": "not_applicable_by_default",
+      "validation": "municipal coat-of-arms belongs to Comune not locality"
+    },
+    {
+      "key": "media.historical_photo",
+      "priority": "P2",
+      "status": "waiting_capture_date_and_subject",
+      "validation": "documented date + reused rights"
+    },
+    {
+      "key": "weatherRef/climateRef",
+      "priority": "P2",
+      "status": "planned",
+      "validation": "separate cache with model altitude and timestamp"
+    },
+    {
+      "key": "services/access/transport",
+      "priority": "P1",
+      "status": "planned",
+      "validation": "OSM/GTFS/offical verified"
+    },
+    {
+      "key": "restrictions[]",
+      "priority": "P0",
+      "status": "planned",
+      "validation": "authority, validity and subject"
+    },
+    {
+      "key": "quality",
+      "priority": "P0",
+      "status": "implemented",
+      "validation": "all stage G0,noindex until geo and entity resolution"
+    },
+    {
+      "key": "checkedAt",
+      "priority": "P1",
+      "status": "implemented",
+      "validation": "run snapshot clock"
+    },
+    {
+      "key": "publishedAt",
+      "priority": "P1",
+      "status": "not_applicable_staging",
+      "validation": "future release gate G2 only"
+    }
+  ],
+  "tests": [
+    "official LOC_Rxx_21 CSV ZIP extraction",
+    "identifier cross-check LOC21_ID = PRO_COM+COD_LOC",
+    "no false municipality shadow",
+    "no parent relation by proximity",
+    "source-specific metadata",
+    "stable IDs and unique staged slugs",
+    "exclude productive sites",
+    "non-indexability",
+    "no inherited municipal facts",
+    "no unlicensed media",
+    "real ISTAT04+05 and OSM pilot"
+  ]
+}
