@@ -5,7 +5,7 @@ import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from enrich_municipalities_v1 import (
     query_national_istat_qids,commons_files,wikipedia_intro,choose_candidates,enrich,
-    municipality_heraldry_filename,find_heraldry_commons
+    municipality_heraldry_filename,find_heraldry_commons,verified_article_town_photos
 )
 
 QID="Q12345"
@@ -100,6 +100,37 @@ class MunicipalMediaTests(unittest.TestCase):
         self.assertEqual(len(yes),1)
         self.assertEqual(yes[0][1]["licence"],"CC BY 4.0")
         self.assertEqual(find_heraldry_commons("Canazei",getter=factory("Stemma del Trentino.")),[])
+    def test_wikipedia_photo_source_only_with_confirmed_qid_and_exact_town(self):
+        intro={"linkedImages":[
+          "File:Canazei inverno 1930.jpg","File:Trento panorama.jpg",
+          "File:Canazei-Stemma.svg","File:Map of Canazei.png"]}
+        self.assertEqual(verified_article_town_photos(intro,"Canazei"),
+          ["Canazei inverno 1930.jpg"])
+        def verified(url,params):
+            if "wikidata.org/w/api.php" in url:
+                d=fake_getter(url,params)
+                d["entities"][QID]["claims"].pop("P18",None)
+                return d
+            if "wikipedia" in url:
+                d=fake_getter(url,params)
+                d["query"]["pages"]["20"]["images"]=[
+                   {"title":"File:Canazei inverno 1930.jpg"}]
+                return d
+            if "commons.wikimedia" in url and "Canazei inverno" in params.get("titles",""):
+                return {"query":{"pages":{"4":{"title":"File:Canazei inverno 1930.jpg",
+                 "imageinfo":[{
+                   "thumburl":"https://upload.wikimedia.org/thumb/canazei1930.jpg",
+                   "descriptionurl":"https://commons.wikimedia.org/wiki/File:Canazei_inverno_1930.jpg",
+                   "extmetadata":{"LicenseShortName":{"value":"CC BY-SA 4.0"},
+                     "LicenseUrl":{"value":"https://creativecommons.org/licenses/by-sa/4.0/"},
+                     "Artist":{"value":"Fotografo"}}}]}}}}
+            return fake_getter(url,params)
+        doc,report=enrich(archive(),{CODE:QID},getter=verified,max_new=10)
+        self.assertEqual(report["publishedG2"],1)
+        photos=[x for x in doc["entities"][0]["media"] if x["kind"]=="photo"]
+        self.assertEqual(len(photos),1)
+        self.assertEqual(photos[0]["subjectMethod"],"exact_named_photo_in_itwiki_article_verified_QID")
+        self.assertEqual(photos[0]["author"],"Fotografo")
     def test_heraldry_filename_must_explicitly_name_the_same_town(self):
         self.assertTrue(municipality_heraldry_filename("File:Canazei-Stemma.svg","Canazei"))
         self.assertTrue(municipality_heraldry_filename("File:Stemma di San Vito di Cadore.svg","San Vito di Cadore"))
