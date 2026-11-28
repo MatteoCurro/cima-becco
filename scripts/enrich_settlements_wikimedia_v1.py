@@ -177,7 +177,8 @@ def enrich(archive,municipalities,people=None,*,limit=48,offset=0,
                 same_istat+=1
                 entity["sourceIds"]=dict(entity["sourceIds"])
                 entity["sourceIds"]["osm"]=legacy["sourceIds"]["osm"]
-                entity["slugAliases"]=list(dict.fromkeys((entity.get("slugAliases") or [])+[legacy["slug"]]))
+                entity["slugAliases"]=list(dict.fromkeys((entity.get("slugAliases") or [])+
+                    (legacy.get("slugAliases") or [])+[legacy["slug"]]))
             else:
                 entity["sourceIds"]=dict(entity["sourceIds"])
             entity["sourceIds"]["wikidata"]=qid
