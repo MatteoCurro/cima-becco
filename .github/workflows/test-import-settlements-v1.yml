@@ -1,0 +1,99 @@
+name: Pilota localita ISTAT21 e borghi OSM (blocco 4, solo staging)
+on:
+  push:
+    branches: [feat/settlements-istat-osm-pilot-v1]
+    paths:
+      - scripts/import_settlements_v1.py
+      - tests/test_import_settlements_v1.py
+      - .github/workflows/test-import-settlements-v1.yml
+  pull_request:
+    paths:
+      - scripts/import_settlements_v1.py
+      - tests/test_import_settlements_v1.py
+      - .github/workflows/test-import-settlements-v1.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cima-becco-settlements-staging-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Contratti offline (identita, gerarchia, dedup e SEO)
+        run: python -m unittest discover -s tests -p 'test_import_settlements_v1.py' -v
+      - name: Basi territoriali ISTAT 2021 ufficiali (TN/BZ e Veneto)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/import-settlements-v1/input
+          for region in 04 05; do
+            curl --fail --location --silent --show-error --retry 3 --retry-delay 5 \
+              --connect-timeout 20 --max-time 240 \
+              -A 'CimaBecco-OpenDataPilot/1.0 (https://www.cimabecco.it)' \
+              "https://www.istat.it/storage/cartografia/basi_territoriali/2021/R$region"_21.zip \
+              -o "build/import-settlements-v1/input/R$region"_21.zip
+            test -s "build/import-settlements-v1/input/R$region"_21.zip
+            unzip -t "build/import-settlements-v1/input/R$region"_21.zip >/dev/null
+          done
+      - name: Importa localita censuarie e OSM SENZA pubblicazione
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/import_settlements_v1.py \
+            --istat-source build/import-settlements-v1/input/R04_21.zip \
+            --istat-source build/import-settlements-v1/input/R05_21.zip \
+            --osm public/data/alpine-places.json \
+            --municipalities public/data/atlas/municipalities-v1.json \
+            --refuges public/data/atlas/refuges-v1.json \
+            --shelters public/data/atlas/shelters-v1.json \
+            --out build/import-settlements-v1
+      - name: Quality gate su fonti reali
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          out = Path("build/import-settlements-v1")
+          report = json.loads((out/"report.json").read_text())
+          doc = json.loads((out/"settlements.json").read_text())
+          ent = doc["entities"]
+          assert len(report["sources"]) == 2, report["sources"]
+          assert report["officialRecords"] > 100, report
+          assert report["osmRecords"] > 1000, report
+          assert report["totalEntities"] == len(ent)
+          assert not doc["isPublished"] and report["seoIndexable"] == 0
+          assert len(ent) == len({x["id"] for x in ent}) == len({x["slug"] for x in ent})
+          assert all(not x["quality"]["seoIndexable"] and x["quality"]["gate"] == "G0"
+                     for x in ent)
+          assert all(x["kind"] == "settlement" and x["subtype"] != "frazione" for x in ent)
+          assert all(rel["type"] in ("near", "part_of") for x in ent for rel in x["relations"])
+          assert all(rel["verified"] is True and x["sourceIds"].get("istatLocality")
+                     for x in ent for rel in x["relations"] if rel["type"] == "part_of")
+          assert all(rel.get("accessVerified") is False for x in ent
+                     for rel in x["relations"] if rel["type"] == "near")
+          assert all("sindacoNome" not in x["facts"] and "population" not in x["facts"] for x in ent)
+          assert all(not x["media"] for x in ent), "Media senza diritti verificati"
+          print("Pilota:", report["totalEntities"], "schede G0;",
+                report["documentedMunicipalityRelations"], "relazioni ISTAT;",
+                report["nearUnverified"], "vicinanze NON attestanti accessibilita")
+          print("Coda di revisione:", report["rejected"])
+          PY
+      - name: Pubblica solo artefatti di staging, NON public/data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-block4-settlements-pilot
+          path: |
+            build/import-settlements-v1/settlements.json
+            build/import-settlements-v1/report.json
+          retention-days: 14
+          if-no-files-found: warn
