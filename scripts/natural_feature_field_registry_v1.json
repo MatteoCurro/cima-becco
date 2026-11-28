@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "canonicalSpec": "docs/MODELLO_METADATI_E_LAYOUT.md sections 1 and 5",
   "kind": "natural_feature",
-  "status": "G0_G1_staging_only",
+  "status": "G0_G1_real_pilots_verified_no_production_release",
   "subtypes": [
     {
       "type": "mountain_pass",
@@ -80,10 +80,11 @@
   "sourceCandidates": [
     {
       "id": "osm",
-      "status": "pilot",
+      "status": "real_pilot_verified_intermitttent",
       "license": "ODbL 1.0",
       "content": "stable OSM ID, name, typed tags and representative coordinate",
-      "schedule": "small cells and provider-friendly refresh"
+      "schedule": "small cells and provider-friendly refresh",
+      "notes": "successful cell 2/6 after two endpoint failures; use throttled retry and cached snapshots"
     },
     {
       "id": "wikidata",
@@ -92,8 +93,10 @@
     },
     {
       "id": "geonames",
-      "status": "future",
-      "content": "PASS LK VAL FLLS feature codes, separate ID reconciliation"
+      "status": "real_pilot_verified",
+      "content": "PASS LK VAL FLLS feature codes, separate ID reconciliation",
+      "license": "CC BY 4.0",
+      "notes": "Official IT.zip snapshot with checksum, independent IDs; do not join OSM by name/distance"
     },
     {
       "id": "regional_geoportal",
@@ -145,5 +148,31 @@
     "No waterfall height used as altitude",
     "No near relation interpreted as reachable",
     "No unpublished G0/G1 SEO pages"
-  ]
+  ],
+  "pilotEvidence": {
+    "osm": {
+      "run": "46120830491",
+      "raw": 497,
+      "eligible": 276,
+      "staged": 250,
+      "reviewRequired": 7,
+      "status": "verified_with_fallback_endpoint",
+      "notes": "Overpass first provider timeout, second DNS failure, third succeeded"
+    },
+    "geonames": {
+      "run": "46121051196",
+      "source": "GeoNames official IT.zip",
+      "eligible": 206,
+      "staged": 206,
+      "reviewRequired": 2,
+      "status": "verified",
+      "sha256": "8dc9458f57eaad2467475b284c2972fd9fb00783e221315e379818de4f382047"
+    }
+  },
+  "stagingArtifacts": [
+    "build/import-natural-features-v1/features.json when Overpass available",
+    "build/import-natural-features-v1/features-geonames.json from official GeoNames",
+    "run-reports and source snapshots in GitHub Actions artifacts"
+  ],
+  "nextStep": "Cross-source entity resolution and source-specific multimedia enrichment before any G2/SEO release"
 }
