@@ -1,15 +1,15 @@
 import { useState, type ReactNode } from 'react';
 import { StarIcon } from './icons';
 
-const RATING_WORDS = ['', 'Not worth it', 'Meh', 'Solid', 'Great session', 'Must do'];
+const RATING_WORDS = ['', 'Da evitare', 'Mah', 'Niente male', 'Bella esperienza', 'Da non perdere'];
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
+  return new Date(iso).toLocaleDateString('it-IT', { year: 'numeric', month: 'short' });
 }
 
 function Stars({ value, size = 10 }: { value: number; size?: number }) {
   return (
-    <span className="stars" aria-label={`${value} out of 5 stars`}>
+    <span className="stars" aria-label={`${value} stelle su 5`}>
       {[1, 2, 3, 4, 5].map((i) => <StarIcon key={i} size={size} filled={i <= Math.round(value)} />)}
     </span>
   );
@@ -35,16 +35,16 @@ export function ReviewCard({ review, mark, onReport, children }: ReviewCardProps
         <span className="review-avatar" aria-hidden="true">{review.author.slice(0, 1).toUpperCase()}</span>
         <div>
           <strong>{review.author}</strong>
-          <span>{mark ?? 'hillGPX contributor'}</span>
+          <span>{mark ?? 'Contributore della community'}</span>
         </div>
       </header>
       <p className="review-meta">
         <Stars value={review.rating} /> · {formatDate(review.createdAt)}
-        {review.editedAt && <> · edited {formatDate(review.editedAt)}</>}
+        {review.editedAt && <> · modificata il {formatDate(review.editedAt)}</>}
       </p>
       {review.comment && <p className={`review-text${long && !expanded ? ' clamped' : ''}`}>{review.comment}</p>}
-      {long && <button type="button" className="review-more" onClick={() => setExpanded((v) => !v)}>{expanded ? 'Show less' : 'Show more'}</button>}
-      {onReport && <button type="button" className="review-report" onClick={onReport}>Report</button>}
+      {long && <button type="button" className="review-more" onClick={() => setExpanded((v) => !v)}>{expanded ? 'Mostra meno' : 'Mostra tutto'}</button>}
+      {onReport && <button type="button" className="review-report" onClick={onReport}>Segnala</button>}
       {children}
     </article>
   );
@@ -55,14 +55,14 @@ export function StarPicker({ value, onChange }: { value: number; onChange: (valu
   const [hover, setHover] = useState(0);
   const shown = hover || value;
   return (
-    <div className="rate-stars" role="radiogroup" aria-label="Your rating" onMouseLeave={() => setHover(0)}>
+    <div className="rate-stars" role="radiogroup" aria-label="La tua valutazione" onMouseLeave={() => setHover(0)}>
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
           type="button"
           role="radio"
           aria-checked={value === star}
-          aria-label={`${star} star${star === 1 ? '' : 's'}`}
+          aria-label={`${star} ${star===1?'stella':'stelle'}`}
           className={`rate-star${star <= shown ? ' on' : ''}`}
           onMouseEnter={() => setHover(star)}
           onClick={() => onChange(star)}

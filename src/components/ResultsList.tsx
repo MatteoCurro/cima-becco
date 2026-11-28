@@ -15,15 +15,15 @@ import { regionOf } from '../lib/regions';
 export function RatingLabel({ rating }: { rating?: { average: number; count: number } }) {
   if (!rating || rating.count === 0) {
     return (
-      <span className="rating rating-new" aria-label="New, no reviews yet">
+      <span className="rating rating-new" aria-label="Nessuna recensione ancora">
         <StarIcon size={12} filled />
-        New
+        Nuovo
       </span>
     );
   }
   const score = rating.average.toFixed(2).replace(/0$/, '');
   return (
-    <span className="rating" aria-label={`Rated ${score} out of 5, ${rating.count} review${rating.count === 1 ? '' : 's'}`}>
+    <span className="rating" aria-label={`Valutazione ${score} su 5, ${rating.count} recensioni`}>
       <StarIcon size={12} filled />
       {score}
       <span className="rating-count">({rating.count})</span>

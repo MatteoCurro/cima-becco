@@ -316,7 +316,7 @@ export function formatDistance(m: number, units: Units = 'metric'): string {
 }
 
 export const VENUE_TYPE_LABEL: Record<VenueType, string> = {
-  hill: 'Hill',
+  hill: 'Cima',
   stairs: 'Stairs',
   hdb_block: 'HDB block',
   park: 'Park',
@@ -335,7 +335,7 @@ export const VENUE_TYPE_LABEL: Record<VenueType, string> = {
  */
 /** "Mountain" for high summits, the type label otherwise: Monte Rosa is not a hill. */
 export function venueKindLabel(venue: Venue): string {
-  return venue.type === 'hill' && (venue.summitM ?? 0) >= 600 ? 'Mountain' : VENUE_TYPE_LABEL[venue.type];
+  return venue.type === 'hill' && (venue.summitM ?? 0) >= 600 ? 'Montagna' : VENUE_TYPE_LABEL[venue.type];
 }
 
 export function presentVenueTypes(venues: Venue[]): VenueType[] {
