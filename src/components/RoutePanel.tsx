@@ -37,6 +37,7 @@ import { RoutePhotoModal } from './RoutePhotoModal';
 import { FlagIcon, ReportModal } from './ReportModal';
 import { RatingLabel } from './ResultsList';
 import { RouteReviews } from './RouteReviews';
+import { RouteSATSourceFacts } from './RouteSATSourceFacts';
 
 /**
  * The route's name: it wraps onto up to two lines and never moves. If it is still too long it
@@ -680,6 +681,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
               {(routeKind.kind === 'ferrata'||routeKind.kind==='attrezzato') && <p className="route-meta muted">{routeKind.label}: la sola traccia GPX non certifica condizioni, difficoltà tecnica, protezioni o accessibilità. Consulta una relazione e una fonte aggiornata.</p>}
             </section>
           )}
+          <RouteSATSourceFacts routeSlug={route.slug} source={route.source} enabled={expanded} />
           <DetailMetrics label="Quote e pendenze del percorso" items={[
             { label: 'Quota massima', value: hasElevation ? units.height(maxM) : unavailable },
             { label: 'Quota minima', value: hasElevation ? units.height(minM) : unavailable },

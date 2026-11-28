@@ -1,0 +1,135 @@
+name: Release SAT verified source references on existing OSM routes (G1)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/publish_sat_route_source_refs_v1.py
+      - tests/test_publish_sat_route_source_refs_v1.py
+      - src/lib/satTrailReferences.ts
+      - src/lib/satTrailReferences.test.ts
+      - src/components/RouteSATSourceFacts.tsx
+      - src/components/RoutePanel.tsx
+      - .github/workflows/release-sat-route-source-refs-g1-v1.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/publish_sat_route_source_refs_v1.py
+      - tests/test_publish_sat_route_source_refs_v1.py
+      - src/lib/satTrailReferences.ts
+      - src/components/RouteSATSourceFacts.tsx
+      - src/components/RoutePanel.tsx
+      - .github/workflows/release-sat-route-source-refs-g1-v1.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: cima-sat-verified-route-source-g1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Python strict original-ID/source-geometry gates
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_publish_sat_route_source_refs_v1.py' -v
+          python -m unittest discover -s tests -p 'test_candidate_sat_osm_trail_links_v1.py' -v
+      - name: Frontend trust-boundary and typecheck
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npx vitest run src/lib/satTrailReferences.test.ts
+          test -z "$(git status --porcelain -- public/)"
+
+  release:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reuse source-real pilot original SHA-checked artifact, no new Overpass request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/sat-osm-pilot
+          gh run download 46154774150 --repo ${{ github.repository }} \
+            -n sat-osm-overlap-crosswalk-g0 -D build/sat-osm-pilot
+          test -s build/sat-osm-pilot/sat-trails-g0-source-audit/source-sat-official.kml.zip
+          test -s build/sat-osm-pilot/trail-network-g0-pilot/source-overpass-g0.json
+          test -s build/sat-osm-pilot/trail-crosswalk-g0-pilot/sat-osm-crosswalk-candidates-g0.json
+      - name: Source IDs, actual catalogue slugs, QA and metadata-only release
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            python scripts/publish_sat_route_source_refs_v1.py \
+              --sat build/sat-osm-pilot/sat-trails-g0-source-audit/sat-trails-normalized-g0.json \
+              --sat-zip build/sat-osm-pilot/sat-trails-g0-source-audit/source-sat-official.kml.zip \
+              --osm build/sat-osm-pilot/trail-network-g0-pilot/physical-graph-g0.json \
+              --osm-source build/sat-osm-pilot/trail-network-g0-pilot/source-overpass-g0.json \
+              --crosswalk build/sat-osm-pilot/trail-crosswalk-g0-pilot/sat-osm-crosswalk-candidates-g0.json \
+              --manifest public/data/routes-manifest.json \
+              --out public/data/atlas/trail-sat-verified-references-v1.json \
+              --publish
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('public/data/atlas/trail-sat-verified-references-v1.json').read_text())
+          manifest=json.loads(Path('public/data/routes-manifest.json').read_text())
+          c=d['counts']
+          assert d['isPublished'] is True and d['seoIndexable'] is False
+          assert d['routeCatalogueModified'] is False and d['newCanonicalPagesCreated'] is False
+          assert c['verifiedLiveSourceReferences']>=20
+          assert c['verifiedLiveSourceReferences']==len(d['records'])
+          assert all(slug in manifest['lookup'] and
+                     item['quality']['satSourceReferenceVerified'] is True and
+                     item['quality']['routeContinuityVerified'] is False and
+                     item['quality']['traversableVerified'] is False and
+                     item['quality']['ferrataSubtypeVerified'] is False
+                     for slug,item in d['records'].items())
+          print('SAT G1 verified references for existing URLs:', c)
+          PY
+            git add public/data/atlas/trail-sat-verified-references-v1.json
+            if git diff --cached --quiet; then
+              echo 'No changed SAT G1 references'
+              exit 0
+            fi
+            git commit -m 'data(sentieri): verified SAT source references on existing OSM routes'
+            if git push origin HEAD:main; then
+              echo 'SAT_ROUTE_G1_COMMITTED=true' >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "Concurrent main update; retrying against latest manifest ($attempt)"
+            sleep "$((attempt*2))"
+          done
+          echo 'SAT source links held because main changed during verification' >&2
+          exit 1
+      # A successful push to main automatically triggers the existing Deploy workflow.
