@@ -161,6 +161,15 @@ export async function worldPeakBySlug(slug: string): Promise<Venue | null> {
   return venues.find((venue) => venue.slug === slug) ?? null;
 }
 
+/** Resolve a speaking SEO summit URL back into its existing GeoNames map entity. */
+export async function worldPeakByCanonicalSlug(slug: string): Promise<Venue | null> {
+  const profiles=await verifiedSummits();
+  const profile=[...profiles.values()].find(item=>item.slug===slug);
+  if(!profile)return null;
+  const legacy=profile.slugAliases.find(isWorldPeakSlug);
+  return legacy ? worldPeakBySlug(legacy) : null;
+}
+
 let notablePromise: Promise<Venue[]> | null = null;
 
 /**
