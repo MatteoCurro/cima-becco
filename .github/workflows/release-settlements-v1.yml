@@ -92,6 +92,8 @@ jobs:
           python scripts/enrich_settlement_istat_geometry_v1.py \
             --settlements build/import-settlements-v1/settlements.json \
             --points build/import-settlements-v1/input/LocalitaPuntuali_21.zip \
+            --refuges public/data/atlas/refuges-v1.json \
+            --shelters public/data/atlas/shelters-v1.json \
             --out build/import-settlements-v1/settlements.json \
             --report build/import-settlements-v1/geometry-report.json
       - name: Dossier G2 Wikimedia incrementali
