@@ -174,13 +174,13 @@ function swapToFallback(photo: GalleryPhoto) {
 function PhotoCreditText({ photo }: { photo: GalleryPhoto }) {
   return (
     <>
-      Photo by {photo.creditUrl ? <a href={photo.creditUrl} target="_blank" rel="noreferrer">{photo.credit}</a> : photo.credit}
+      Foto di {photo.creditUrl ? <a href={photo.creditUrl} target="_blank" rel="noreferrer">{photo.credit}</a> : photo.credit}
       {photo.licence ? ` · ${photo.licence}` : ''}
     </>
   );
 }
 
-const creditTitle = (photo: GalleryPhoto) => `Photo by ${photo.credit}${photo.licence ? ` · ${photo.licence}` : ''}`;
+const creditTitle = (photo: GalleryPhoto) => `Foto di ${photo.credit}${photo.licence ? ` · ${photo.licence}` : ''}`;
 
 /** No photo at all: the same drawn placeholder the cards use, with the invitation on top. */
 function NoPhotos({ venue, onAdd, actions }: { venue: Venue; onAdd: () => void; actions?: ReactNode }) {
@@ -190,9 +190,9 @@ function NoPhotos({ venue, onAdd, actions }: { venue: Venue; onAdd: () => void; 
       {actions && <div className="carousel-actions">{actions}</div>}
       <div className="venue-gallery-empty-copy">
         <CameraGlyph />
-        <strong>No photos yet</strong>
-        <p>Been here? A photo of the trailhead or the view helps the next person.</p>
-        <button type="button" className="btn btn-dark" onClick={onAdd}>Add a photo</button>
+        <strong>Nessuna fotografia disponibile</strong>
+        <p>Conosci questo luogo? Una fotografia pertinente può arricchirne la scheda.</p>
+        <button type="button" className="btn btn-dark" onClick={onAdd}>Aggiungi una foto</button>
       </div>
     </div>
   );
@@ -221,7 +221,7 @@ function PhotoGrid({ photos, venueName, onAdd, centralCreditsOnly = false }: { p
               key={photo.key}
               className="venue-photo-cell"
               title={centralCreditsOnly ? venueName : creditTitle(photo)}
-              aria-label={`Open photo ${i + 1} of ${count} of ${venueName}`}
+              aria-label={`Apri foto ${i + 1} of ${count} of ${venueName}`}
               onClick={() => setViewer(i)}
             >
               <FadeImage src={photo.src} alt="" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" onError={swapToFallback(photo)} />
@@ -230,7 +230,7 @@ function PhotoGrid({ photos, venueName, onAdd, centralCreditsOnly = false }: { p
           ))}
         </div>
         <div className="venue-photo-grid-actions">
-          <button type="button" className="venue-photo-pill" onClick={onAdd}><PlusIcon />Add photos</button>
+          <button type="button" className="venue-photo-pill" onClick={onAdd}><PlusIcon />Aggiungi foto</button>
         </div>
       </div>
       {!centralCreditsOnly && <p className="venue-photo-credit"><PhotoCreditText photo={photos[0]} /></p>}
@@ -244,7 +244,7 @@ const AUTOPLAY_MS = 5000;
 /**
  * One photo at a time, with arrows on either side, a counter, and gentle
  * auto-advance that pauses while you are hovering or have interacted — the
- * Airbnb listing carousel on phones. Tapping the photo opens it full screen.
+ * Airbnb listing carousel on phones. Tapping the photo opens it a schermo intero.
  */
 function PhotoCarousel({ photos, onAdd, actions, centralCreditsOnly = false }: { photos: GalleryPhoto[]; onAdd: () => void; actions: ReactNode; centralCreditsOnly?: boolean }) {
   const [index, setIndex] = useState(0);
@@ -272,10 +272,10 @@ function PhotoCarousel({ photos, onAdd, actions, centralCreditsOnly = false }: {
         <Slides photos={photos} index={index} onIndex={setIndex} onOpen={() => setFullscreen(true)} />
         {count > 1 && (
           <>
-            <button type="button" className="carousel-arrow prev" aria-label="Previous photo" onClick={() => { setPaused(true); go(-1); }}>
+            <button type="button" className="carousel-arrow prev" aria-label="Foto precedente" onClick={() => { setPaused(true); go(-1); }}>
               <ChevronLeftIcon size={16} />
             </button>
-            <button type="button" className="carousel-arrow next" aria-label="Next photo" onClick={() => { setPaused(true); go(1); }}>
+            <button type="button" className="carousel-arrow next" aria-label="Foto successiva" onClick={() => { setPaused(true); go(1); }}>
               <ChevronRightIcon size={16} />
             </button>
             <span className="carousel-count">{index + 1} / {count}</span>
@@ -285,7 +285,7 @@ function PhotoCarousel({ photos, onAdd, actions, centralCreditsOnly = false }: {
           </>
         )}
         <div className="carousel-actions">{actions}</div>
-        <button type="button" className="carousel-add" onClick={onAdd} aria-label="Add photos" data-tip="Add photos"><PlusIcon /></button>
+        <button type="button" className="carousel-add" onClick={onAdd} aria-label="Aggiungi foto" data-tip="Aggiungi foto"><PlusIcon /></button>
         {!centralCreditsOnly && <p className="carousel-credit"><PhotoCreditText photo={photos[index]} /></p>}
       </div>
       {fullscreen && <Lightbox photos={photos} index={index} onIndex={setIndex} onClose={closeFullscreen} centralCreditsOnly={centralCreditsOnly} />}
@@ -321,7 +321,7 @@ function Slides({ photos, index, onIndex, onOpen }: { photos: GalleryPhoto[]; in
       }}
     >
       {photos.map((photo, i) => (
-        <button type="button" key={photo.key} className="carousel-slide" onClick={onOpen} aria-label={onOpen ? `Open photo ${i + 1} full screen` : undefined} tabIndex={onOpen ? 0 : -1}>
+        <button type="button" key={photo.key} className="carousel-slide" onClick={onOpen} aria-label={onOpen ? `Apri foto ${i + 1} a schermo intero` : undefined} tabIndex={onOpen ? 0 : -1}>
           <FadeImage
             src={photo.src}
             alt=""
@@ -354,9 +354,9 @@ function Lightbox({ photos, index, onIndex, onClose, centralCreditsOnly = false 
   useEffect(() => lockPageScroll(), []);
 
   return createPortal(
-    <div className="lightbox" role="dialog" aria-modal="true" aria-label="Photos">
+    <div className="lightbox" role="dialog" aria-modal="true" aria-label="Fotografie">
       <header className="lightbox-head">
-        <button type="button" onClick={onClose} aria-label="Close photos"><CloseIcon size={14} />Close</button>
+        <button type="button" onClick={onClose} aria-label="Chiudi fotografie"><CloseIcon size={14} />Chiudi</button>
         <span>{index + 1} / {count}</span>
         {photos[index].communityId && (
           <button
@@ -368,7 +368,7 @@ function Lightbox({ photos, index, onIndex, onClose, centralCreditsOnly = false 
               if (id) requestReport({ targetType: 'photo', targetSlug: id, targetName: 'this photo' });
             }}
           >
-            <FlagIcon />Report
+            <FlagIcon />Segnala
           </button>
         )}
       </header>
@@ -376,8 +376,8 @@ function Lightbox({ photos, index, onIndex, onClose, centralCreditsOnly = false 
         <Slides photos={photos} index={index} onIndex={onIndex} />
         {count > 1 && (
           <>
-            <button type="button" className="carousel-arrow prev" aria-label="Previous photo" onClick={() => onIndex((index - 1 + count) % count)}><ChevronLeftIcon size={18} /></button>
-            <button type="button" className="carousel-arrow next" aria-label="Next photo" onClick={() => onIndex((index + 1) % count)}><ChevronRightIcon size={18} /></button>
+            <button type="button" className="carousel-arrow prev" aria-label="Foto precedente" onClick={() => onIndex((index - 1 + count) % count)}><ChevronLeftIcon size={18} /></button>
+            <button type="button" className="carousel-arrow next" aria-label="Foto successiva" onClick={() => onIndex((index + 1) % count)}><ChevronRightIcon size={18} /></button>
           </>
         )}
       </div>
@@ -403,25 +403,25 @@ function ReviewForm({ venue, initialRating, first, onPosted }: { venue: Venue; i
       onPosted(await submitReview({ venueSlug: venue.slug, rating: mine, comment, author: user && !anonymous ? user.username : '' }));
       setDone(true);
     } catch (err) {
-      setError(`Could not post your review: ${errorText(err)}`);
+      setError(`Impossibile pubblicare la recensione: ${errorText(err)}`);
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (done) return <p className="review-thanks">Thanks — your review is live.</p>;
+  if (done) return <p className="review-thanks">Grazie, la tua recensione è pubblicata.</p>;
   return (
     <div className="review-form inline">
-      <h3>{first ? 'Be the first to review it' : 'Your review'}</h3>
+      <h3>{first ? 'Scrivi la prima recensione' : 'La tua recensione'}</h3>
       <StarPicker value={mine} onChange={setMine} />
-      <textarea className="review-comment" placeholder="How was it? Access, shade, water, best time to go (optional)" rows={2} value={comment} maxLength={1000} onChange={(event) => setComment(event.target.value)} />
+      <textarea className="review-comment" placeholder="Com’è andata? Accesso, ombra, acqua, stagione: racconta la tua esperienza (facoltativo)" rows={2} value={comment} maxLength={1000} onChange={(event) => setComment(event.target.value)} />
       {user ? (
         <CreditChips username={user.username} anonymous={anonymous} onChange={setAnonymous} />
       ) : (
-        <p className="photo-note">Posting anonymously — sign in to put your username on it.</p>
+        <p className="photo-note">Pubblicazione anonima. Accedi per mostrare il tuo nome utente.</p>
       )}
       <div className="review-form-row">
-        <button type="button" className="btn btn-dark" disabled={mine === 0 || submitting} onClick={() => void post()}>{submitting ? 'Posting…' : 'Post review'}</button>
+        <button type="button" className="btn btn-dark" disabled={mine === 0 || submitting} onClick={() => void post()}>{submitting ? 'Pubblicazione…' : 'Pubblica recensione'}</button>
       </div>
       {error && <p className="review-error">{error}</p>}
     </div>
@@ -437,7 +437,7 @@ function ReviewsSection({ venue, reviews, rating, initialRating, onPosted, secti
     <section className="venue-detail-section reviews-section" ref={sectionRef} id="reviews">
       <div className="reviews-head">
         <h2>
-          {rating ? <><StarIcon size={18} filled /> {rating.average.toFixed(2)} · {rating.count} review{rating.count === 1 ? '' : 's'}</> : 'Reviews'}
+          {rating ? <><StarIcon size={18} filled /> {rating.average.toFixed(2)} · {rating.count} recensioni</> : 'Recensioni'}
         </h2>
       </div>
       {reviews.length > 0 && (
@@ -446,11 +446,11 @@ function ReviewsSection({ venue, reviews, rating, initialRating, onPosted, secti
         </div>
       )}
       {reviews.length > REVIEWS_SHOWN && (
-        <button type="button" className="reviews-all" onClick={() => setShowAll(true)}>Show all {reviews.length} reviews</button>
+        <button type="button" className="reviews-all" onClick={() => setShowAll(true)}>Mostra tutte le {reviews.length} recensioni</button>
       )}
       <ReviewForm key={initialRating} venue={venue} initialRating={initialRating} first={reviews.length === 0} onPosted={onPosted} />
       {showAll && (
-        <Modal title={`${reviews.length} reviews`} onClose={() => setShowAll(false)} wide>
+        <Modal title={`${reviews.length} recensioni`} onClose={() => setShowAll(false)} wide>
           <div className="review-grid single">{reviews.map((review) => <ReviewCard key={review.id} review={review} onReport={() => requestReviewReport('review', review)} />)}</div>
         </Modal>
       )}
@@ -473,7 +473,7 @@ function PlanCard({ venue }: { venue: Venue }) {
 
   return (
     <div className="plan-card">
-      <p className="plan-kicker">Conditions now{venue.type === 'hill' ? ' at the summit' : ''}</p>
+      <p className="plan-kicker">Condizioni attuali{venue.type === 'hill' ? ' in quota' : ''}</p>
       {conditions === undefined ? (
         <div className="plan-weather loading" aria-busy="true" />
       ) : conditions ? (
@@ -482,20 +482,20 @@ function PlanCard({ venue }: { venue: Venue }) {
             <strong>{conditions.temperatureC}°</strong>
             <div>
               <span>{conditions.summary}</span>
-              <span className="muted">Feels {conditions.feelsLikeC}° · Wind {conditions.windKmh} km/h</span>
+              <span className="muted">Percepiti {conditions.feelsLikeC}° · Vento {conditions.windKmh} km/h</span>
             </div>
           </div>
           <dl className="plan-facts">
-            <div><dt>Rain today</dt><dd>{conditions.rainChance != null ? `${conditions.rainChance}%` : '—'}</dd></div>
-            <div><dt>Sunrise</dt><dd>{conditions.sunrise ?? '—'}</dd></div>
-            <div><dt>Sunset</dt><dd>{conditions.sunset ?? '—'}</dd></div>
+            <div><dt>Probabilità pioggia</dt><dd>{conditions.rainChance != null ? `${conditions.rainChance}%` : '—'}</dd></div>
+            <div><dt>Alba</dt><dd>{conditions.sunrise ?? '—'}</dd></div>
+            <div><dt>Tramonto</dt><dd>{conditions.sunset ?? '—'}</dd></div>
           </dl>
         </>
       ) : (
-        <p className="muted">Weather is unavailable right now.</p>
+        <p className="muted">Previsioni non disponibili al momento.</p>
       )}
-      <a className="venue-primary-action" href={directionsUrl(venue)} target="_blank" rel="noreferrer"><MapIcon size={16} />Get directions</a>
-      <p className="plan-credit">Weather by <a href="https://open-meteo.com" target="_blank" rel="noreferrer">Open-Meteo</a></p>
+      <a className="venue-primary-action" href={directionsUrl(venue)} target="_blank" rel="noreferrer"><MapIcon size={16} />Apri la posizione</a>
+      <p className="plan-credit">Dati meteo: <a href="https://open-meteo.com" target="_blank" rel="noreferrer">Open-Meteo</a></p>
     </div>
   );
 }
@@ -532,7 +532,7 @@ function AddPhotosModal({ venue, onClose, onUploaded }: { venue: Venue; onClose:
     const images = [...(list ?? [])].filter((file) => file.type.startsWith('image/') && !known.has(`${file.name}:${file.size}`));
     if (images.length === 0) return;
     const room = MAX_PHOTOS - items.length;
-    setError(images.length > room ? `Up to ${MAX_PHOTOS} photos at a time. Send these, then add more.` : null);
+    setError(images.length > room ? `Fino a ${MAX_PHOTOS} foto at a time. Send these, then add more.` : null);
     const fresh = images
       .slice(0, Math.max(0, room))
       .map((file): PendingPhoto => ({ id: `${file.name}:${file.size}:${file.lastModified}`, file, url: URL.createObjectURL(file), status: 'ready' }));
@@ -605,15 +605,15 @@ function AddPhotosModal({ venue, onClose, onUploaded }: { venue: Venue; onClose:
 
   return (
     <Modal
-      title="Add photos"
+      title="Aggiungi foto"
       onClose={onClose}
       footer={finished ? (
-        <button type="button" className="btn btn-dark" onClick={onClose}>Done</button>
+        <button type="button" className="btn btn-dark" onClick={onClose}>Fine</button>
       ) : (
         <>
-          <span className="photo-count">{items.length === 0 ? `Up to ${MAX_PHOTOS} photos` : `${items.length} of ${MAX_PHOTOS} selected`}</span>
+          <span className="photo-count">{items.length === 0 ? `Fino a ${MAX_PHOTOS} foto` : `${items.length} foto su ${MAX_PHOTOS} selezionate`}</span>
           <button type="button" className="btn btn-accent" disabled={toSend === 0 || busy} onClick={() => void upload()}>
-            {busy ? `Uploading ${uploadingIndex + 1} of ${items.length}…` : `Upload ${toSend || ''} photo${toSend === 1 ? '' : 's'}`}
+            {busy ? `Caricamento ${uploadingIndex + 1} di ${items.length}…` : `Carica ${toSend || ''} foto`}
           </button>
         </>
       )}
@@ -621,7 +621,7 @@ function AddPhotosModal({ venue, onClose, onUploaded }: { venue: Venue; onClose:
       {finished ? (
         <div className="photo-done">
           <span className="photo-done-icon"><CheckIcon size={22} /></span>
-          <h3>Thank you</h3>
+          <h3>Grazie</h3>
           <p>{sent} photo{sent === 1 ? ' is' : 's are'} now on {venue.name}'s page.</p>
         </div>
       ) : (
@@ -630,36 +630,36 @@ function AddPhotosModal({ venue, onClose, onUploaded }: { venue: Venue; onClose:
             picker('photo-upload', (
               <>
                 <CameraGlyph size={30} />
-                <strong>Drag photos here</strong>
-                <span>or <u>choose from your device</u>. The trailhead, the stairs and the view all help.</span>
+                <strong>Trascina qui le fotografie</strong>
+                <span>oppure <u>sceglile dal dispositivo</u>. Pubblica solo immagini pertinenti al luogo.</span>
               </>
             ))
           ) : (
-            <ul className="photo-picks" aria-label="Photos to upload">
+            <ul className="photo-picks" aria-label="Fotografie da caricare">
               {items.map((item) => (
                 <li key={item.id} className={`photo-pick ${item.status}`}>
                   <img src={item.url} alt="" />
-                  {item.status === 'uploading' && <span className="photo-pick-state" aria-label="Uploading"><span className="spinner" /></span>}
-                  {item.status === 'done' && <span className="photo-pick-state" aria-label="Uploaded"><CheckIcon size={16} /></span>}
-                  {item.status === 'failed' && <span className="photo-pick-state failed" aria-label="Failed">!</span>}
+                  {item.status === 'uploading' && <span className="photo-pick-state" aria-label="Caricamento"><span className="spinner" /></span>}
+                  {item.status === 'done' && <span className="photo-pick-state" aria-label="Caricata"><CheckIcon size={16} /></span>}
+                  {item.status === 'failed' && <span className="photo-pick-state failed" aria-label="Operazione non riuscita">!</span>}
                   {(item.status === 'ready' || item.status === 'failed') && !busy && (
-                    <button type="button" className="photo-pick-remove" aria-label="Remove photo" onClick={() => remove(item.id)}>
+                    <button type="button" className="photo-pick-remove" aria-label="Rimuovi foto" onClick={() => remove(item.id)}>
                       <CloseIcon size={10} />
                     </button>
                   )}
                 </li>
               ))}
               {items.length < MAX_PHOTOS && !busy && (
-                <li>{picker('photo-pick-add', <><PlusIcon /><span>Add more</span></>)}</li>
+                <li>{picker('photo-pick-add', <><PlusIcon /><span>Aggiungi altre</span></>)}</li>
               )}
             </ul>
           )}
           {user ? (
             <CreditChips username={user.username} anonymous={anonymous} onChange={setAnonymous} />
           ) : (
-            <p className="photo-note">Uploaded anonymously — sign in to credit your username.</p>
+            <p className="photo-note">Le immagini saranno attribuite in forma anonima. Accedi per mostrare il nome utente.</p>
           )}
-          <p className="photo-note">Photos appear straight away under the <a href="#terms">house rules</a>; anything reported by several people is hidden. Shared under CC BY-SA 4.0; location data is removed.</p>
+          <p className="photo-note">Le fotografie sono pubblicate nel rispetto delle <a href="#terms">regole del sito</a>; i contenuti segnalati possono essere nascosti. Condivisione CC BY-SA 4.0; i metadati di geolocalizzazione vengono rimossi.</p>
           {error && <p className="review-error">{error}</p>}
         </div>
       )}
@@ -832,10 +832,10 @@ function VenueDetailInner({
 
   const iconActions = (
     <div className="venue-icon-actions">
-      <button type="button" className={`icon-action${isFavorite ? ' on' : ''}`} aria-label={isFavorite ? 'Saved' : 'Save'} title={isFavorite ? 'Saved' : 'Save'} onClick={onToggleFavorite}>
+      <button type="button" className={`icon-action${isFavorite ? ' on' : ''}`} aria-label={isFavorite ? 'Salvato' : 'Salva'} title={isFavorite ? 'Salvato' : 'Salva'} onClick={onToggleFavorite}>
         <HeartIcon size={18} filled={isFavorite} />
       </button>
-      <button type="button" className="icon-action" aria-label={copied ? 'Link copied' : 'Copy link'} title={copied ? 'Link copied' : 'Copy link'} onClick={() => void share()}>
+      <button type="button" className="icon-action" aria-label={copied ? 'Link copiato' : 'Copia link'} title={copied ? 'Link copiato' : 'Copia link'} onClick={() => void share()}>
         {copied ? <CheckIcon size={16} /> : <LinkIcon />}
       </button>
     </div>
@@ -862,7 +862,7 @@ function VenueDetailInner({
             <p className="venue-detail-sub">
               {!isSummit&&<button type="button" className="venue-rating-link" onClick={() => reviewsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
                 {rating ? (
-                  <><StarIcon size={12} filled /> {rating.average.toFixed(2)} · <u>{rating.count} review{rating.count === 1 ? '' : 's'}</u></>
+                  <><StarIcon size={12} filled /> {rating.average.toFixed(2)} · <u>{rating.count} recensioni</u></>
                 ) : (
                   <RatingLabel />
                 )}
@@ -873,13 +873,13 @@ function VenueDetailInner({
           </div>
           {!narrow && (
             <div className="venue-detail-title-actions">
-              <button type="button" onClick={() => void share()} aria-label={copied ? 'Link copied' : 'Share'}>
+              <button type="button" onClick={() => void share()} aria-label={copied ? 'Link copiato' : 'Condividi'}>
                 {copied ? <CheckIcon size={16} /> : <LinkIcon />}
-                <span className="venue-action-label">{copied ? 'Link copied' : 'Share'}</span>
+                <span className="venue-action-label">{copied ? 'Link copiato' : 'Condividi'}</span>
               </button>
-              <button type="button" className={isFavorite ? 'on' : undefined} onClick={onToggleFavorite} aria-label={isFavorite ? 'Saved' : 'Save'} aria-pressed={isFavorite}>
+              <button type="button" className={isFavorite ? 'on' : undefined} onClick={onToggleFavorite} aria-label={isFavorite ? 'Salvato' : 'Salva'} aria-pressed={isFavorite}>
                 <HeartIcon size={16} filled={isFavorite} />
-                <span className="venue-action-label">{isFavorite ? 'Saved' : 'Save'}</span>
+                <span className="venue-action-label">{isFavorite ? 'Salvato' : 'Salva'}</span>
               </button>
             </div>
           )}
@@ -915,14 +915,14 @@ function VenueDetailInner({
               <div className="venue-intro-row">
                 <h2>{heightBlock}</h2>
                 {!isSummit&&<div className="quick-rate" role="radiogroup" aria-label="Valuta questo luogo">
-              <span>Rate it</span>
+              <span>Valuta</span>
               {[1, 2, 3, 4, 5].map((value) => (
                 <button
                   key={value}
                   type="button"
                   role="radio"
                   aria-checked={quickRating === value}
-                  aria-label={`${value} star${value === 1 ? '' : 's'}`}
+                  aria-label={`${value} ${value === 1 ? 'stella' : 'stelle'}`}
                   className={value <= quickRating ? 'on' : ''}
                   onClick={() => {
                     setQuickRating(value);
@@ -935,7 +935,7 @@ function VenueDetailInner({
             </div>}
               </div>
               {isSummit&&<p className="cb-summit-overview-line">{isVerifiedSummit?'Identità della cima verificata · dati topografici documentati':'Dati cartografici della cima · quota e accessi da approfondire'}</p>}
-              {(venue.storeys || address) && <p>{[venue.storeys ? `${venue.storeys} floors` : null, address || null].filter(Boolean).join(' · ')}</p>}
+              {(venue.storeys || address) && <p>{[venue.storeys ? `${venue.storeys} piani` : null, address || null].filter(Boolean).join(' · ')}</p>}
             </section>
 
             <section id="cb-venue-about" className="venue-detail-section cb-detail-group">
@@ -979,14 +979,14 @@ function VenueDetailInner({
                       <article className="venue-route-card" key={route.slug} tabIndex={0} aria-label={route.name}>
                         <RouteThumb route={route} />
                         <div className="venue-route-tools">
-                          <button type="button" className="venue-route-tool" aria-label="Show on map" data-tip="Show on map" onClick={() => onShowOnMap(route.slug)}>
+                          <button type="button" className="venue-route-tool" aria-label="Mostra sulla mappa" data-tip="Mostra sulla mappa" onClick={() => onShowOnMap(route.slug)}>
                             <MapIcon size={15} />
                           </button>
                           <button type="button" className="venue-route-tool" aria-label="Download GPX" data-tip="Download GPX" onClick={() => downloadRoute(route)}>
                             <DownloadIcon size={15} />
                           </button>
                           {route.source === 'local' && (
-                            <button type="button" className="venue-route-tool" aria-label="Remove from this device" data-tip="Remove" onClick={() => onRemoveLocalRoute(route.slug)}>
+                            <button type="button" className="venue-route-tool" aria-label="Rimuovi dal dispositivo" data-tip="Remove" onClick={() => onRemoveLocalRoute(route.slug)}>
                               <CloseIcon size={12} />
                             </button>
                           )}
@@ -995,13 +995,13 @@ function VenueDetailInner({
                           <h3>{route.name}</h3>
                           <p>
                             {ACTIVITY_LABEL[routeActivity(route)]} · {units.distance(route.distanceM)}
-                            {route.source === 'local' ? ' · on this device' : ''}
+                            {route.source === 'local' ? ' · su questo dispositivo' : ''}
                           </p>
                         </div>
                         {/* Hover (or focus, or a tap on touch screens) lifts the details over the map. */}
                         <div className="venue-route-details">
                           <dl>
-                            <div><dt>Distance</dt><dd>{units.distance(route.distanceM)}</dd></div>
+                            <div><dt>Distanza</dt><dd>{units.distance(route.distanceM)}</dd></div>
                             <div><dt>EG</dt><dd>{routeHasElevation(route) ? units.height(route.gainM) : '—'}</dd></div>
                             <div><dt>EL</dt><dd>{routeHasElevation(route) ? units.height(route.lossM) : '—'}</dd></div>
                           </dl>
@@ -1014,10 +1014,10 @@ function VenueDetailInner({
                 <div className="venue-empty">
                   <span className="venue-empty-icon" aria-hidden="true"><RouteGlyph /></span>
                   <div className="venue-empty-copy">
-                    <h3>No GPX here yet</h3>
-                    <p>Been up {venue.name}? Share the file from your watch or app and anyone can download it.</p>
+                    <h3>Nessuna traccia ancora associata</h3>
+                    <p>Hai un tracciato pertinente a {venue.name}? Puoi condividerlo con la community.</p>
                   </div>
-                  <a className="btn btn-dark venue-empty-btn" href="#import" onClick={openImportHere}><UploadIcon size={15} />Upload GPX</a>
+                  <a className="btn btn-dark venue-empty-btn" href="#import" onClick={openImportHere}><UploadIcon size={15} />Carica GPX</a>
                 </div>
               )}
             </section>}
@@ -1059,8 +1059,8 @@ function VenueDetailInner({
       <SiteFooter />
 
       <div className="venue-mobile-bar">
-        <button type="button" className="venue-mobile-secondary" onClick={() => onShowOnMap()}>Show on map</button>
-        <a className="venue-mobile-primary" href={directionsUrl(venue)} target="_blank" rel="noreferrer"><MapIcon size={16} />Directions</a>
+        <button type="button" className="venue-mobile-secondary" onClick={() => onShowOnMap()}>Mostra sulla mappa</button>
+        <a className="venue-mobile-primary" href={directionsUrl(venue)} target="_blank" rel="noreferrer"><MapIcon size={16} />Posizione</a>
       </div>
 
       {/* Outside the page layer: it slides in with a transform, which would
@@ -1081,7 +1081,7 @@ function VenueDetailInner({
 export function VenueDetailSkeleton() {
   useEffect(() => lockPageScroll(), []);
   return createPortal(
-    <div className="venue-detail venue-detail-loading" aria-busy="true" aria-label="Loading place">
+    <div className="venue-detail venue-detail-loading" aria-busy="true" aria-label="Caricamento del luogo">
       <SiteHeader center={<SearchBar venues={[]} {...SEARCH_OPENS_MAP} />} />
       <main className="venue-detail-content">
         <div className="sk-line sk-title" />
@@ -1107,11 +1107,11 @@ export function VenueNotFound() {
     <div className="venue-detail venue-detail-notfound">
       <SiteHeader center={<SiteSearch />} />
       <main className="venue-detail-content venue-notfound">
-        <h1>We couldn&apos;t find that place</h1>
-        <p>The link may be mistyped, or the place may have been removed. Search for it above, or go back to the map.</p>
+        <h1>Non troviamo questo luogo</h1>
+        <p>Il collegamento potrebbe essere errato oppure la scheda non è più disponibile. Prova a cercare il luogo o torna alla mappa.</p>
         <a className="venue-open-map" href="#map">
           <MapIcon size={16} />
-          Back to the map
+          Torna alla mappa
         </a>
       </main>
       <SiteFooter />
