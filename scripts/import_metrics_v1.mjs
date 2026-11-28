@@ -78,7 +78,7 @@ export function summarizeImportCatalog(){
       coverage:{
         'Con relazione documentata':coverage(peopleEntities,e=>(e.relations||[]).some(r=>r.verified)),
         'Fotografia verificata':coverage(peopleEntities,e=>(e.media||[]).some(m=>
-            m.kind==='photo'&&m.reuseAllowed&&m.subjectVerified&&m.author&&m.licence)),
+            m.kind==='photo'&&m.reuseAllowed&&m.subjectVerified&&m.portraitCandidate&&m.author&&m.licence)),
         'Biografia con QID verificato':coverage(peopleEntities,e=>(e.textSources||[]).some(t=>
             t.kind==='source_excerpt_not_original_editorial'&&t.sourceId&&t.licence)),
         'Data di nascita documentata':coverage(peopleEntities,e=>Boolean(e.facts?.birthDate?.value)),
@@ -96,7 +96,7 @@ export function summarizeImportCatalog(){
       publicEntities:mun.length+ref.length+she.length,
       municipalities:mun.length,refuges:ref.length,shelters:she.length,
       peopleInGraph:peopleEntities.length,
-      verifiedPeoplePortraits:peopleEntities.filter(e=>(e.media||[]).some(m=>m.kind==='photo'&&m.reuseAllowed&&m.subjectVerified)).length,
+      verifiedPeoplePortraits:peopleEntities.filter(e=>(e.media||[]).some(m=>m.kind==='photo'&&m.reuseAllowed&&m.subjectVerified&&m.portraitCandidate)).length,
       documentedPeopleBiographies:peopleEntities.filter(e=>(e.textSources||[]).length>0).length,
       peopleExternalConnections:peopleEntities.reduce((s,e)=>s+(e.externalEntityLinks||[]).length,0),
       municipalityPersonRelations:mun.reduce((s,e)=>s+(e.connectedPeople||[]).filter(p=>p.verified).length,0),
@@ -140,7 +140,7 @@ export function appendSuccessfulImport(pipeline,runId,{report=null,sourceSha=nul
          'newG2','newMedia','newWikiText','selectedCandidates','publishedG2',
          'metricsAdded','matched','failuresCount',
          'municipalityPeopleLinks','peopleCatalogued','mountainLinks','otherNotableLinks','sourceAltimetryMatched',
-         'portraitsAdded','profilesWithPortrait','biographiesAdded','profilesWithBiography','associationsObserved'].includes(k) &&
+         'portraitsAdded','profilesWithPortrait','imagesHeldForReview','biographiesAdded','profilesWithBiography','associationsObserved'].includes(k) &&
         (typeof v==='number'||typeof v==='string'))):{},
   };
   // Delta on equivalent source key only. Baseline is null, never "0 new".
