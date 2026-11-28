@@ -17,14 +17,14 @@ export interface Conditions {
 }
 
 const WEATHER: [number[], string][] = [
-  [[0], 'Clear'],
-  [[1, 2], 'Partly cloudy'],
-  [[3], 'Overcast'],
-  [[45, 48], 'Fog'],
-  [[51, 53, 55, 56, 57], 'Drizzle'],
-  [[61, 63, 65, 66, 67, 80, 81, 82], 'Rain'],
-  [[71, 73, 75, 77, 85, 86], 'Snow'],
-  [[95, 96, 99], 'Thunderstorms'],
+  [[0], 'Sereno'],
+  [[1, 2], 'Parzialmente nuvoloso'],
+  [[3], 'Coperto'],
+  [[45, 48], 'Nebbia'],
+  [[51, 53, 55, 56, 57], 'Pioviggine'],
+  [[61, 63, 65, 66, 67, 80, 81, 82], 'Pioggia'],
+  [[71, 73, 75, 77, 85, 86], 'Neve'],
+  [[95, 96, 99], 'Temporali'],
 ];
 
 interface OpenMeteo {
@@ -54,7 +54,7 @@ export function venueConditions(venue: Venue): Promise<Conditions | null> {
           rainChance: data?.daily?.precipitation_probability_max?.[0] ?? null,
           sunrise: data?.daily?.sunrise?.[0]?.slice(11, 16) ?? null,
           sunset: data?.daily?.sunset?.[0]?.slice(11, 16) ?? null,
-          summary: WEATHER.find(([codes]) => codes.includes(now.weather_code))?.[1] ?? 'Mixed',
+          summary: WEATHER.find(([codes]) => codes.includes(now.weather_code))?.[1] ?? 'Variabile',
         };
       })
       .catch(() => {
