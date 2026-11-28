@@ -1,0 +1,121 @@
+name: Pilot natural lakes and reservoirs OSM multipolygon boundaries G1
+on:
+  push:
+    branches: [feat/natural-water-polygons-g1-pilot-20261128]
+    paths:
+      - scripts/enrich_natural_water_geometry_v1.py
+      - tests/test_enrich_natural_water_geometry_v1.py
+      - .github/workflows/test-natural-water-geometry-v1.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/enrich_natural_water_geometry_v1.py
+      - tests/test_enrich_natural_water_geometry_v1.py
+      - .github/workflows/test-natural-water-geometry-v1.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: cima-natural-water-geometry-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  water-source-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Existing separate-source and crosswalk regressions
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_import_natural_features_v1.py' -v
+          python -m unittest discover -s tests -p 'test_import_natural_geonames_v1.py' -v
+          python -m unittest discover -s tests -p 'test_natural_wikimedia_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_natural_water_geometry_v1.py' -v
+  real-osm-geometry:
+    needs: water-source-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Replay real audited Dolomites source snapshot from the earlier import
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/natural-water-source
+          gh run download 46121844323 --repo ${{ github.repository }} \
+            -n cima-becco-natural-wikidata-g2-staging \
+            -D build/natural-water-source
+          test -s build/natural-water-source/natural-osm-replay/features.json
+          test -s build/natural-water-source/import-natural-features-v1/features-geonames.json
+          test -s build/natural-water-source/import-natural-features-v1/natural-identity.json
+      - name: Target exact water IDs and audited QIDs in bounded Overpass out geom
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/enrich_natural_water_geometry_v1.py \
+            --osm-stage build/natural-water-source/natural-osm-replay/features.json \
+            --geonames-stage build/natural-water-source/import-natural-features-v1/features-geonames.json \
+            --crosswalk build/natural-water-source/import-natural-features-v1/natural-identity.json \
+            --max-osm-ids 65 --max-qids 20 \
+            --out build/import-natural-water-geometry-v1
+      - name: Real topology, identity and no-SEO audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,sys
+          from pathlib import Path
+          sys.path.insert(0,'scripts')
+          from enrich_natural_water_geometry_v1 import (
+              extract_polygon,point_inside_polygon,
+          )
+          path=Path('build/import-natural-water-geometry-v1')
+          result=json.loads((path/'water-geometry-staging.json').read_text())
+          report=json.loads((path/'water-geometry-report.json').read_text())
+          assert result['releaseChannel']=='OSM_NATURAL_WATER_GEOMETRIES_STAGING_V1'
+          assert result['isPublished'] is False and report['published']==0
+          assert report['seoIndexable']==0 and report['noSpringOrPotabilityImports']
+          assert report['polygonVerified']>=3
+          assert report['uniquePerimeters']==report['polygonVerified']
+          osms=result['osmEntities']
+          gns=result['geonamesLinkedEntities']
+          assert len(osms)==len({e['sourceIds']['osm'] for e in osms})
+          assert len(gns)==len({e['sourceIds']['geonames'] for e in gns})
+          for e in [*osms,*gns]:
+              assert e['kind']=='natural_feature'
+              assert e['subtype'] in ('lake','reservoir')
+              assert e['quality']['gate']=='G1'
+              assert e['quality']['seoIndexable'] is False
+              assert e['geo']['area']['type']=='MultiPolygon'
+              assert e['facts']['osmMappedWaterSurfaceKm2']['method']=='derived'
+              assert e['facts']['osmMappedWaterSurfaceKm2']['licence']=='ODbL 1.0'
+              assert e['facts']['osmMappedWaterSurfaceKm2']['value']>0
+              assert not any(r['type']=='accessible_from' for r in e.get('relations',[]))
+              assert not any('potable' in k.lower() for k in e.get('facts',{}))
+          for e in gns:
+              assert e['sourceIds']['wikidataVerifiedBy']=='P1566+P625'
+              p=e['geo']['point']
+              assert point_inside_polygon([p['lng'],p['lat']],e['geo']['area'])
+          print('Real validated OSM water surfaces:',report['polygonVerified'])
+          print('Real exact GN-Wikidata-OSM bridges with outline:',
+                report['geonamesIdentityAndAreaVerified'])
+          print('Real source review reasons:',report['rejectedOrReview'])
+          PY
+          test -z "$(git status --porcelain -- public/ src/)"
+      - name: Save exact original polygons and all audits for later source replay
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-natural-water-polygons-g1
+          path: build/import-natural-water-geometry-v1
+          retention-days: 20
+          if-no-files-found: warn
