@@ -171,6 +171,20 @@ def normalize_one(props, geometry, index, archive_hash, retrieved_at):
     max_alt = facts.get("elevationMaxReportedM", {}).get("value")
     if min_alt is not None and max_alt is not None and max_alt < min_alt:
         issues.append("elevation_range_inverted")
+    # Rounding by 1-2 metres is common in the source; count ANY discrepancy,
+    # but queue only values that exceed an explicit 5m QA threshold.
+    # This is neither a DEM correction nor evidence of trail safety.
+    max_endpoint_excess_m = None
+    if min_alt is not None and max_alt is not None and max_alt >= min_alt:
+        excesses = []
+        for key in ("elevationStartReportedM", "elevationEndReportedM"):
+            value = facts.get(key, {}).get("value")
+            if value is not None:
+                excesses.append(max(min_alt - value, value - max_alt, 0))
+        if excesses:
+            max_endpoint_excess_m = max(excesses)
+            if max_endpoint_excess_m > 5:
+                issues.append("reported_endpoint_outside_reported_range_over_5m")
     # Source number is a candidate locator, NOT a stable canonical ID.
     # Fingerprint is a snapshot identity hint, not a permalink or same_as.
     fingerprint = sha256(json.dumps(
@@ -218,6 +232,8 @@ def normalize_one(props, geometry, index, archive_hash, retrieved_at):
             "traversableVerified": False, "routeContinuityVerified": False,
             "sourceNumberUniqueInSnapshot": None,
             "requiresReview": bool(issues),
+            "reportedEndpointRangeExcessM": max_endpoint_excess_m,
+            "reportedEndpointRangeQaThresholdM": 5,
             "issues": issues,
         },
     }
@@ -269,6 +285,10 @@ def normalize_archive(data, *, retrieved_at):
         "exactDuplicateExcess": sum(x - 1 for x in fingerprint_counts.values() if x > 1),
         "validOriginalGeometries": sum(x["geo"] is not None for x in records),
         "recordsRequiringReview": sum(x["quality"]["requiresReview"] for x in records),
+        "recordsWithAnyReportedEndpointOutsideReportedRange": sum(
+            (x["quality"]["reportedEndpointRangeExcessM"] or 0) > 0 for x in records),
+        "recordsWithEndpointRangeExcessOver5M": sum(
+            (x["quality"]["reportedEndpointRangeExcessM"] or 0) > 5 for x in records),
         "recordsWithReportedDifficulties": sum(x["originalDifficulty"] is not None for x in records),
         "originalDifficultyDistribution": dict(sorted(Counter(
             r["originalDifficulty"]["value"] if r["originalDifficulty"] else "missing"
