@@ -220,6 +220,31 @@ def find_heraldry_commons(municipality, *,getter=None):
         matched.append((basename,asset))
     return matched[:2]
 
+def verified_article_town_photos(intro, municipality):
+    """Town photos referenced by the exact same QID article, filename names town.
+
+    Any filename-only web result is refused: this is a confirmed itwiki
+    article list and the image is also licensed on Commons before reuse.
+    """
+    if not isinstance(intro,dict):return []
+    found=[]
+    for title in intro.get("linkedImages") or []:
+        file=title.removeprefix("File:")
+        if not isinstance(file,str) or not PHOTO_EXT.search(file) or NON_PHOTO.search(file):
+            continue
+        # Reuse the exact-name matcher, without the heraldic term.
+        # Token boundaries avoid unrelated towns with partially matching names.
+        import unicodedata
+        def norm(value):
+            text=unicodedata.normalize("NFKD",str(value))
+            text="".join(ch for ch in text if not unicodedata.combining(ch))
+            return re.sub(r"[^a-z0-9]+"," ",text.casefold()).strip()
+        name=norm(municipality)
+        base=norm(file.rsplit(".",1)[0])
+        if len(name)>=3 and " "+name+" " in " "+base+" ":
+            found.append(file)
+    return list(dict.fromkeys(found))[:4]
+
 def verified_article_heraldry_images(intro, municipality):
     if not isinstance(intro,dict):return []
     images=intro.get("linkedImages") or []
@@ -375,6 +400,30 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, progress
                         if not any(t.get("sourceId")==intro["sourceId"]
                                    for t in old.get(code,{}).get("textSources",[])):
                             text_count+=1
+                        # A verified municipal Wikipedia page is a second
+                        # acquisition path for its photographs. We also
+                        # require the *full* town name in the image filename
+                        # and a reusable Commons file with credited author.
+                        if not any(m.get("kind")=="photo" for m in entity["media"]):
+                            candidates=verified_article_town_photos(intro,entity["name"])
+                            if candidates:
+                                try:
+                                    town_assets=commons_files(candidates,getter=getter)
+                                except Exception as exc:
+                                    town_assets={}
+                                    failures.append("itwiki_photo:"+code+":"+str(exc)[:70])
+                                for filename in candidates:
+                                    img=town_assets.get(filename.replace(" ","_"))
+                                    if not img:continue
+                                    entity["media"].append({**img,
+                                      "id":"wikimedia:"+qid+":itwiki-photo:"+
+                                        hashlib.sha1(filename.encode()).hexdigest()[:12],
+                                      "kind":"photo","retrievedAt":retrieved_at,
+                                      "sourceId":intro["sourceId"],
+                                      "caption":"Fotografia di "+entity["name"],
+                                      "subjectMethod":"exact_named_photo_in_itwiki_article_verified_QID"})
+                                    media_count+=1
+                                    break
                         # The municipality's confirmed itwiki infobox may
                         # list a crest even when P94 is absent in Wikidata.
                         if not any(m.get("kind")=="logo" for m in entity["media"]):
