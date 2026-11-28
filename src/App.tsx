@@ -1093,8 +1093,7 @@ function MapApp() {
     return ()=>{mounted=false;};
   },[isRouteDetail,selectedRoute]);
   const detailRouteMap=useMemo(()=>selectedRoute?[selectedRoute]:[],[selectedRoute]);
-  const detailWaterMap=useMemo(()=>detailWater.map(point=>({lat:point.lat,lng:point.lng,
-    name:point.name,kind:point.kind,potable:point.potable})),[detailWater]);
+
 
   const routePanel =
     !droppedGpx && selectedRoute ? (
@@ -1236,7 +1235,7 @@ function MapApp() {
               title={isRouteDetail?(selectedRoute?.name??"Caricamento tracciato"):mode==='routes'?"Esplora i percorsi":"Esplora le cime"}
             />
             <Suspense fallback={<div className="map-skeleton"><div className="map-skeleton-pulse" /></div>}>
-              {isRouteDetail && <AlpineAtlasMap places={NO_ALPINE_PLACES} kind="borgo" routes={detailRouteMap} water={detailWaterMap} caption="TRACCIA E PUNTI ACQUA" height="100%" hoverPoint={routeHoverPoint} onRouteHover={setRouteHoverIndex} />}
+              {isRouteDetail && <AlpineAtlasMap places={NO_ALPINE_PLACES} kind="borgo" routes={detailRouteMap} water={detailWater} caption="TRACCIA E PUNTI ACQUA" height="100%" hoverPoint={routeHoverPoint} onRouteHover={setRouteHoverIndex} />}
               {!isRouteDetail && mapNeeded && <MapView
                 allRoutes={mode === 'routes' ? planner.listedRoutes : allRoutes}
                 mode={mode}
