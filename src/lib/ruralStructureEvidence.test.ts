@@ -38,6 +38,16 @@ describe('Rural structure classification evidence',()=>{
     expect(malga.capacity).toBeUndefined();
     expect(malga.quality?.seoIndexable).toBe(false);
   });
+  it('leaves a genuine CAI-verified alpine refuge untouched even when called Malga',()=>{
+    const managed:AlpinePlace={
+      slug:'cai-777',kind:'rifugio',name:'Malga Rifugio Gestito',
+      lat:46.3,lng:11.8,osmUrl:'https://www.openstreetmap.org/#map=14/46.3/11.8',
+      sourceIds:{cai:'777'},capacity:12
+    };
+    const rows=applyRuralStructureEvidence([managed],evidence);
+    expect(rows[0].kind).toBe('rifugio');
+    expect(rows[0].subtype).toBeUndefined();
+  });
   it('does not duplicate on repeated application or accept invalid/missing source',()=>{
     const once=applyRuralStructureEvidence(fixture,evidence);
     const twice=applyRuralStructureEvidence(once,evidence);
@@ -47,6 +57,12 @@ describe('Rural structure classification evidence',()=>{
   it('never transforms a name-similar but distinct source identity',()=>{
     const other={...fixture[0],slug:'osm-w-1212',osmUrl:'https://www.openstreetmap.org/way/1212'};
     const rows=applyRuralStructureEvidence([other],evidence);
-    expect(rows.find(p=>p.slug==='osm-w-1212')?.kind).toBe('rifugio');
+    expect(rows.find(p=>p.slug==='osm-w-1212')?.subtype).toBe('rural_type_unverified');
+    expect(rows.find(p=>p.slug==='osm-w-1212')?.quality?.seoIndexable).toBe(false);
+    expect(rows.find(p=>p.slug==='osm-w-1212')?.classificationEvidence?.sourceUrl)
+      .toBe('https://www.openstreetmap.org/way/1212');
+    // Only the verified identity can receive the official Casera label.
+    expect(rows.find(p=>p.slug==='osm-w-1212')?.shelterTypeLabel)
+      .toBe('Malga · uso da verificare');
   });
 });
