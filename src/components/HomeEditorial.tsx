@@ -31,8 +31,9 @@ function relationship(place:HomeEditorialPlace) {
 function PlaceFeature({place,variant}:{place:HomeEditorialPlace;variant:string}) {
   return <a className={'cb-home-focus-card cb-home-focus-'+variant} href={link(place.href)}>
     <span className="cb-home-focus-media">
-      {place.cover && <img src={place.cover.url} alt={'Fotografia documentata di '+place.name}
-        loading={variant==='lead'?'eager':'lazy'} decoding="async"/>}
+      {place.cover ? <img src={place.cover.url} alt={'Fotografia documentata di '+place.name}
+        loading={variant==='lead'?'eager':'lazy'} decoding="async"/> :
+        <span className="cb-home-mountain-mark" aria-hidden="true">⌃⌃</span>}
     </span>
     <span className="cb-home-focus-shade"/>
     <span className="cb-home-focus-copy">
@@ -82,8 +83,9 @@ function TerritoryPerson({person}:{person:NonNullable<HomeEditorialFeed['territo
 function HomeCategoryCard({place}:{place:HomeEditorialPlace}) {
   return <a href={link(place.href)} className="cb-home-category-entry">
     <span className="cb-home-category-photo">
-      {place.cover && <img src={place.cover.url} loading="lazy" decoding="async"
-        alt={'Fotografia documentata di '+place.name}/>}
+      {place.cover ? <img src={place.cover.url} loading="lazy" decoding="async"
+        alt={'Fotografia documentata di '+place.name}/> :
+        <span className="cb-home-category-placeholder" aria-hidden="true">⌃</span>}
     </span>
     <span className="cb-home-category-text">
       <strong>{place.name}</strong>
