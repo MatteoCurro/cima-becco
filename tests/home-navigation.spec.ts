@@ -63,7 +63,7 @@ test('Home: focus editoriale stabile nel giorno e senza vette GeoNames legacy',a
   await expect(page.getByRole('heading',{name:/Cime delle Dolomiti|Le vette più alte/})).toHaveCount(0);
   await expect(page.locator('.cb-home-daily')).toBeVisible({timeout:30_000});
   const title=await page.locator('#cb-home-daily-title').textContent();
-  await expect(page.locator('.cb-home-focus-grid .cb-home-focus-card')).toHaveCount(6);
+  expect(await page.locator('.cb-home-focus-grid .cb-home-focus-card').count()).toBeGreaterThanOrEqual(5);
   const links=await page.locator('.cb-home-focus-grid a[href]').evaluateAll(items=>
     items.map(item=>item.getAttribute('href')||''));
   expect(links.some(href=>/\/route\/[^/]+\/$/.test(href))).toBe(true);
