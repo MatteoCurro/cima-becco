@@ -271,6 +271,40 @@
       "delta": {
         "localita": 0
       }
+    },
+    {
+      "runId": "46123503373",
+      "pipeline": "localita",
+      "status": "success",
+      "recordedAt": "2026-11-28T07:57:59.244Z",
+      "sourceSha": "08fb28df6e33cbfcb992b6028acef952426f0aa8",
+      "sources": {
+        "localita": {
+          "count": 19,
+          "facts": 87,
+          "media": 19,
+          "relations": 70,
+          "coverage": {
+            "Punti verificati": 19,
+            "Residenti censimento 2021": 6,
+            "Testo con QID verificato": 19,
+            "Fotografia verificata": 19,
+            "Fotografia storica datata": 0,
+            "Comune attribuito": 7,
+            "Persone collegate": 0
+          },
+          "denominator": 19
+        }
+      },
+      "report": {
+        "newG2": 5,
+        "offset": 480,
+        "publishedG2": 19,
+        "selectedCandidates": 80
+      },
+      "delta": {
+        "localita": 5
+      }
     }
   ]
 }
