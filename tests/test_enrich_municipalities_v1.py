@@ -136,6 +136,8 @@ class MunicipalMediaTests(unittest.TestCase):
         self.assertTrue(municipality_heraldry_filename("File:Stemma di San Vito di Cadore.svg","San Vito di Cadore"))
         self.assertFalse(municipality_heraldry_filename("File:Canazei panorama.jpg","Canazei"))
         self.assertFalse(municipality_heraldry_filename("File:Trento-Stemma.svg","Canazei"))
+        self.assertFalse(municipality_heraldry_filename("File:Stemma principato vescovile Bressanone.jpg","Bressanone"))
+        self.assertFalse(municipality_heraldry_filename("File:San Fermo, Belluno - Stemma su una casa.jpg","Belluno"))
         self.assertFalse(municipality_heraldry_filename("File:Canazei blank-stemma.svg","Canazei"))
     def test_wikipedia_infobox_crest_fallback_linked_to_verified_qid(self):
         def verified(url,params):
