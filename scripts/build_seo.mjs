@@ -763,7 +763,9 @@ for(const e of municipalities) {
   if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lng))continue;
   const media=(e.media||[]).filter(m=>m.reuseAllowed&&m.subjectVerified&&m.sourceUrl&&m.licence&&m.author);
   const photo=media.find(m=>m.kind==='photo');
-  const logo=media.find(m=>m.kind==='logo');
+  const logo=media.find(m=>m.kind==='logo'&&m.symbolType==='coat_of_arms')||media.find(m=>m.kind==='logo');
+  const historicalPhotos=media.filter(m=>m.kind==='historical_photo'&&m.capturedAt &&
+    m.author&&m.licence&&m.subjectVerified).slice(0,8);
   const wiki=(e.textSources||[]).find(t=>t.text&&t.licence==='CC BY-SA 4.0'&&t.sourceUrl);
   if(!photo||!wiki)continue;
   const id=e.sourceIds?.istat;
@@ -789,6 +791,11 @@ for(const e of municipalities) {
     [['Provincia',province],['Regione',region],['Coordinate',p.lat.toFixed(4)+', '+p.lng.toFixed(4)],
      ['Rifugi e bivacchi vicini',String(linked.length)]].map(([label,value])=>
       '<li><strong>'+escape(value)+'</strong>'+escape(label)+'</li>').join('')+'</ul>';
+  const heritageHtml=historicalPhotos.length?'<section class="cima-seo-related"><h2>'+escape(e.name)+' ieri e oggi</h2>'+
+     '<p>Fotografie archivistiche con datazione documentata e identità del Comune verificata.</p>'+
+     historicalPhotos.map(m=>'<figure><img src="'+escape(m.url)+'" alt="'+escape(m.caption||('Fotografia storica di '+e.name))+
+       '" loading="lazy"><figcaption>'+escape(m.caption||('Archivio '+e.name))+
+       (m.capturedAt?' · '+escape(m.capturedAt):'')+'</figcaption></figure>').join('')+'</section>':'';
   const people=(e.connectedPeople||[]).filter(p=>p.verified&&p.quality==='G1'&&p.personId&&p.name);
   const peopleHtml=people.length?'<section class="cima-seo-related"><h2>Personaggi nati o legati al territorio</h2>'+
      '<p>Il luogo di nascita, la residenza storica e l’attività documentata sono relazioni diverse; nessuna connessione è ricavata dalla sola provincia.</p>'+
@@ -819,7 +826,11 @@ for(const e of municipalities) {
          ...(typeof e.facts?.quotaCentroM?.value==='number'?{
            elevation:e.facts.quotaCentroM.value+' m'
          }: {})},
-       image:photo.url,
+       image:[photo.url,...historicalPhotos.map(m=>({
+         '@type':'ImageObject',contentUrl:m.url,dateCreated:m.capturedAt,
+         license:m.licenceUrl||m.sourceUrl,creditText:m.author,
+         description:m.caption||'Fotografia storica del comune di '+e.name
+       }))],
        ...(e.facts?.sitoUfficiale?.value?{sameAs:e.facts.sitoUfficiale.value}:{})},
       breadcrumbLd([['Comuni',SITE+'/comuni/'],[e.name,null]])
     ]},
@@ -832,8 +843,8 @@ for(const e of municipalities) {
       '<h2>Amministrazione e informazioni</h2><dl class="cima-seo-details">'+
       fields.map(([label,v])=>'<div><dt>'+escape(label)+'</dt><dd>'+escape(v)+'</dd></div>').join('')+
       '</dl></section>'+
-      (logo?'<figure><img src="'+escape(logo.url)+'" alt="'+escape('Stemma di '+e.name)+'" loading="lazy" width="110"></figure>':'')+
-      peopleHtml+linkedHtml+
+      (logo?'<figure><img src="'+escape(logo.url)+'" alt="'+escape((logo.symbolType==='coat_of_arms'?'Stemma di ':'Logo di ')+e.name)+'" loading="lazy" width="110"></figure>':'')+
+      heritageHtml+peopleHtml+linkedHtml+
       '<p class="sub">La distanza dai rifugi è in linea d’aria; non attesta sentieri o accessibilità.</p>',
   });
   // Explicit migration for an OSM municipality identity that was once a "borgo".
