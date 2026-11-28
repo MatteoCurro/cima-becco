@@ -120,19 +120,19 @@
     },
     {
       "id": "bolzano_lakes_wfs",
-      "status": "official_catalog_metadata_verified_no_features_imported",
+      "status": "g0_adapter_implemented_live_getfeature_unverified",
       "sourceUrl": "https://data.civis.bz.it/dataset/laghi",
       "license": "CC0",
       "scope": "Provincia autonoma Bolzano, physical lake boundaries",
-      "notes": "Verify live WFS GetCapabilities/GetFeature and source IDs before adapter; never correlate on name alone."
+      "notes": "WFS 2.0, exact layer discovery from capabilities; CC0 official catalogue. Source IDs provisional; bounded 20-feature G0 pilot only, no SEO or OSM identity joins; separate live CI probe pending."
     },
     {
       "id": "arpav_water_bodies_wfs",
-      "status": "official_rndt_metadata_verified_no_features_imported",
+      "status": "g0_adapter_implemented_live_getfeature_unverified",
       "sourceUrl": "https://geodati.gov.it/geoportale/visualizzazione-metadati/scheda-metadati?metadataid=arpa_ve:idrografia_specchio_acqua",
       "license": "CC BY 3.0",
       "scope": "Veneto, mapped surface water bodies at 1:10,000 scale",
-      "notes": "Geometries are a second independently attributed source, not replacements for OSM or confirmed lake accesses."
+      "notes": "WFS 1.0, capabilities layer discovery, 1:10000 RNDT, CC BY 3.0; includes natural/artificial and lagoon water surfaces. Unclassified G0, no lake/reservoir inference, live probe pending."
     }
   ],
   "verifiedNow": [
@@ -262,5 +262,19 @@
     "areaFact": "facts.osmMappedWaterSurfaceKm2 (km2, derived, ODbL 1.0, not official surface)",
     "review": "ambiguous or conflicting QIDs; lake/reservoir classification; GN representative point outside water; unsupported geometry; seasonal only if explicitly tagged",
     "seo": "G1/noindex; no full lake page or water access/potability invented"
+  },
+  "officialLakeWFSPilot": {
+    "script": "scripts/import_official_lake_wfs_v1.py",
+    "tests": "tests/test_import_official_lake_wfs_v1.py",
+    "workflow": ".github/workflows/test-official-lake-wfs-v1.yml",
+    "release": "none",
+    "stage": "G0",
+    "published": 0,
+    "sourceFeaturesVerified": 0,
+    "maxPilotFeaturesPerProvider": 20,
+    "canonicalType": "natural_feature",
+    "crosswalk": "no_auto_join",
+    "sourceFeatureIdStability": "unverified",
+    "startDate": "2026-11-28"
   }
 }
