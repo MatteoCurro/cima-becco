@@ -50,6 +50,15 @@ jobs:
           SITE_URL: https://www.cimabecco.it
         run: npm run build
 
+      - name: Check territorial home snapshot
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; const x=JSON.parse(fs.readFileSync('dist/data/home-editorial-v1.json','utf8')); if(!x.territories?.length) throw Error('Home editoriale priva di territori'); console.log('Territori:',x.territories.length,'categorie:',Object.fromEntries(Object.entries(x.discovery).map(([k,v])=>[k,v.length])));"
+      - name: Keep a compact editorial home preview for QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: home-editorial-preview
+          path: dist/data/home-editorial-v1.json
+          retention-days: 7
       - name: Check deep link SEO pages boot into React
         run: node scripts/check_permalinks.mjs
       - name: Install headless Chromium for responsive review
