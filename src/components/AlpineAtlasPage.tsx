@@ -6,7 +6,8 @@ import { homeHref } from '../lib/navigation';
 import { loadAlpinePlaces, alpinePlaceLink, atlasCategory, placeBounds, type AlpinePlace, type AlpinePlacesDataset } from '../lib/alpinePlaces';
 import { loadRouteBySlug, loadRoutesInBounds } from '../lib/routeTiles';
 import { routesNear } from '../lib/routes';
-import { trailMood, trailTitle } from '../lib/routeEditorial';
+import { AtlasRouteGroup as RouteGroup } from './AtlasRouteGroup';
+import { MunicipalityProfile } from './MunicipalityProfile';
 import { usePageTitle } from '../lib/pageTitle';
 import { AlpinePlaceIcon } from './AlpinePlaceIcon';
 import { AlpinePlaceVisual } from './AlpinePlaceVisual';
@@ -23,7 +24,8 @@ import { NearbyAtlasPlaces } from './NearbyAtlasPlaces';
 import { canonicalAtlasSlug } from '../lib/placePermalinks';
 import { nearbyAtlasPlaces } from '../lib/nearbyAtlas';
 import type { AtlasEntityMetadata } from '../lib/atlasDossier';
-import { loadAlpineWater, alpineWaterNear, potabilityLabel, type AlpineWaterPoint } from '../lib/alpineWater';
+import { loadAlpineWater, alpineWaterNear, type AlpineWaterPoint } from '../lib/alpineWater';
+import { WaterNearbyList } from './WaterNearbyList';
 import { track } from '../lib/analytics';
 import '../alpineAtlas.css';
 import '../locationProfile.css';
@@ -69,26 +71,11 @@ function PlaceBadge({ place }: { place: AlpinePlace }) {
   </span>;
 }
 
-function RouteGroup({title,items}:{title:string;items:Route[]}) {
-  if(!items.length)return null;
-  return <section className="cb-atlas-nearby">
-    <h2>{title} <span>{items.length}</span></h2>
-    <div className="cb-atlas-routes">{items.map(route=>{
-      const mood=trailMood(route);
-      return <a key={route.slug} href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(route.slug)}/`}>
-        <strong>{trailTitle(route)}</strong>
-        <span>{(route.distanceM/1000).toLocaleString('it-IT',{maximumFractionDigits:1})} km · {mood.quip}
-          <small> · {mood.label}</small>
-        </span>
-      </a>;
-    })}</div>
-  </section>;
-}
-
 export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: string }) {
   const [nearby,setNearby]=useState<Route[]>([]);
   const [loading,setLoading]=useState(true);
   const [water,setWater]=useState<AlpineWaterPoint[]>([]);
+  const [selectedWaterSlug,setSelectedWaterSlug]=useState<string|null>(null);
   const [localAtlas,setLocalAtlas]=useState<AlpinePlace[]>([]);
   const mapPlaces=useMemo(()=>[place],[place]);
   const nearbyPlaces=useMemo(()=>{
@@ -114,7 +101,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
     return ()=>{active=false;};
   },[place]);
   useEffect(()=>{
-    let active=true;setWater([]);
+    let active=true;setWater([]);setSelectedWaterSlug(null);
     void loadAlpineWater().then(data=>{if(active)setWater(alpineWaterNear(data.sources,place.lng,place.lat,1800,14));});
     return ()=>{active=false;};
   },[place]);
@@ -134,10 +121,6 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
     ? `${place.name} è una località di montagna censita nell'Atlante Cima Becco.`
     : `${place.name} è un ${kindLabel} censito nell'Atlante Cima Becco.`;
   const municipality=place.subtype==='italian_municipality';
-  const archivalImages=municipality?(place.media||[]).filter(m=>m.kind==='historical_photo' &&
-    m.subjectVerified&&m.reuseAllowed&&m.capturedAt&&m.licence&&m.author):[];
-  const todayImage=municipality?(place.media||[]).find(m=>m.kind==='photo' &&
-    m.subjectVerified&&m.reuseAllowed):undefined;
   const detailRows: { label:string; value:string }[]=[
     ...(municipality?[{label:'Regione',value:place.administrativeHierarchy?.region||'Non indicata'},
       {label:'Provincia',value:place.administrativeHierarchy?.province||'Non indicata'},
@@ -164,11 +147,17 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
     sidebar={<section id="cb-place-map" tabIndex={-1} className="cb-location-side-map">
       <MapContextLabel kicker="CARTOGRAFIA DEL LUOGO" title={place.name}/>
       <AlpineAtlasMap places={mapPlaces} kind={place.kind} selected={place} routes={nearby}
-        water={water.map(w=>({lng:w.lng,lat:w.lat,name:w.name,kind:w.kind,potable:w.potable}))}
+        water={water} selectedWaterSlug={selectedWaterSlug} onWaterSelect={setSelectedWaterSlug}
         height="100%" caption={place.name}/>
     </section>}
   >
-    {(place.kind==='rifugio'||place.kind==='bivacco') ? <RefugeProfile place={place} routes={nearby} loadingRoutes={loading} nearbyPlaces={nearbyPlaces} allPlaces={localAtlas} water={water}/> : <>
+    {(place.kind==='rifugio'||place.kind==='bivacco') ? <RefugeProfile place={place} routes={nearby} loadingRoutes={loading} nearbyPlaces={nearbyPlaces} allPlaces={localAtlas} water={water} onWaterSelect={slug=>{
+        setSelectedWaterSlug(slug);scrollToDetailSection('cb-place-map');
+      }}/> : municipality ? <MunicipalityProfile
+        place={place} routeGroups={{departures,arrivals,passes,around}}
+        loadingRoutes={loading} nearbyPlaces={nearbyPlaces} water={water}
+        selectedWaterSlug={selectedWaterSlug}
+        onWaterSelect={slug=>{setSelectedWaterSlug(slug);scrollToDetailSection('cb-place-map');}}/> : <>
     <header className="cb-location-hero">
       <div className="cb-location-hero-copy">
         <PlaceBadge place={place}/>
@@ -202,18 +191,18 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
       </div>
       <figure className="cb-location-hero-media">
         <AlpinePlaceVisual key={place.slug} place={place}/>
-        <div className="cb-location-avatar">{place.logo?<img src={place.logo.url} alt={(place.logo.symbolType==='coat_of_arms'?'Stemma di ':'Logo istituzionale di ')+place.name}/>:<AlpinePlaceIcon kind={place.kind} size={39}/>}</div>
+        <div className="cb-location-avatar">{place.logo?<img src={place.logo.url} alt={'Logo ufficiale di '+place.name}/>:<AlpinePlaceIcon kind={place.kind} size={39}/>}</div>
         <figcaption>{place.photo?'Fotografia del luogo':'Rappresentazione topografica: fotografia del luogo non disponibile'}</figcaption>
       </figure>
     </header>
     <DetailJumpNav items={[
       {id:"cb-place-essential",label:"Dati",icon:"compass"},
       {id:"cb-place-contacts",label:"Contatti",icon:"house"},
-      ...(municipality&&archivalImages.length?[{id:"cb-place-history-photos",label:"Ieri e oggi",icon:"mountain" as const}]:[]),
       ...(municipality&&Boolean(place.connectedPeople?.length)?[{id:"cb-place-people",label:"Personaggi",icon:"mountain" as const}]:[]),
       ...(!municipality&&(place.description||wikiUrl)?[{id:"cb-place-story",label:"Territorio",icon:"mountain" as const}]:[]),
       {id:"cb-place-weather",label:"Meteo",icon:"compass"},
       {id:"cb-place-itineraries",label:"Sentieri",icon:"route"},
+      ...(water.length?[{id:'cb-place-water',label:'Acqua',icon:'water' as const}]:[]),
       ...(nearbyPlaces.length?[{id:"cb-place-nearby",label:"Dintorni",icon:"location-dot" as const}]:[]),
       {id:"cb-place-map",label:"Mappa",icon:"map"},
     ]}/>
@@ -284,28 +273,16 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
           </>}
         </section>
 
-        {water.length>0&&<section className="cb-detail-group cb-location-section cb-location-water">
+        {water.length>0&&<section id="cb-place-water" className="cb-detail-group cb-location-section cb-location-water">
           <DetailSectionHeading kicker="04 / RISORSE IN ZONA" title="ACQUA NEI DINTORNI." description="Fonti mappate entro circa 1,8 km in linea d'aria. La potabilità, l'accessibilità e la disponibilità vanno verificate sul posto."/>
-          <div className="cb-location-water-grid">{water.slice(0,8).map(w=><div key={w.slug}>
-            <AlpinePlaceIcon kind="acqua" size={22}/><div><strong>{w.name}</strong><small>{w.kind} · {potabilityLabel(w.potable)}{w.seasonal?' · stagionale':''}</small></div>
-          </div>)}</div>
+          <WaterNearbyList points={water} selectedSlug={selectedWaterSlug}
+            onSelect={slug=>{setSelectedWaterSlug(slug);scrollToDetailSection('cb-place-map');}}/>
         </section>}
 
-        {municipality&&archivalImages.length>0&&<section id="cb-place-history-photos" className="cb-detail-group cb-location-section cb-location-photo-history">
-          <DetailSectionHeading kicker="ARCHIVIO / MEMORIA DEL LUOGO" title="IERI E OGGI."
-            description="Fotografie con data storica documentata e soggetto identificato su Wikimedia Commons; non attribuiamo date alle immagini prive di riscontri."/>
-          <div className="cb-location-history-gallery">
-            {todayImage&&<figure><img src={todayImage.url} alt={'Fotografia di riferimento di '+place.name} loading="lazy"/><figcaption>Veduta di riferimento · data dello scatto non disponibile</figcaption></figure>}
-            {archivalImages.map(image=><figure key={image.id}>
-              <img src={image.url} alt={'Fotografia storica di '+place.name+' del '+image.capturedAt} loading="lazy"/>
-              <figcaption>{image.caption||'Fotografia storica di '+place.name}{image.capturedAt?' · '+image.capturedAt:''}</figcaption>
-            </figure>)}
-          </div>
-        </section>}
         <AtlasDossierBlocks record={place} placement="core"/>
         <NearbyAtlasPlaces items={nearbyPlaces}/>
         <AtlasDossierBlocks record={place} placement="connections"/>
-        <AtlasDossierBlocks record={municipality?{...place,media:[]} :place} placement="media"/>
+        <AtlasDossierBlocks record={place} placement="media"/>
         <footer className="cb-location-credits">
           Informazioni indicative e aggiornabili: verificare le condizioni reali sul territorio.
         </footer>

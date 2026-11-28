@@ -1,0 +1,29 @@
+/* Marchio Cima Becco: nessuna animazione continua, nessuna dipendenza JS. */
+.cb-mark{display:block;flex:none;overflow:visible;color:inherit}
+.cb-mark__peak,.cb-mark__horn{
+  transform-box:view-box;transform-origin:50% 70.5%;
+  transition:transform .48s cubic-bezier(.2,.9,.22,1.25);
+}
+.cb-mark__rays{opacity:0;transform:translateY(25px);transform-box:view-box;
+  transition:opacity .22s ease,transform .42s cubic-bezier(.2,.9,.22,1.15)}
+.cb-mark__eyes{opacity:0;transition:opacity .2s ease}
+.wordmark .mark{border-radius:0;box-shadow:none;transform:none}
+.wordmark:hover .mark{box-shadow:none;transform:none}
+.wordmark:is(:hover,:focus-visible) .cb-mark__horn--left{transform:rotate(-3.5deg)}
+.wordmark:is(:hover,:focus-visible) .cb-mark__horn--right{transform:rotate(3.5deg)}
+.cb-footer-egg{display:flex;align-items:center;gap:8px;min-width:0;max-width:270px;
+  color:var(--cb-ink,#143d2f)}
+.cb-footer-egg-trigger{display:inline-flex;align-items:center;justify-content:center;
+  width:44px;height:44px;flex:none;padding:6px;border:1px solid #c6d7c7;
+  background:#e4ffbe;color:#143d2f;border-radius:8px;cursor:pointer}
+.cb-footer-egg-trigger:hover{border-color:#ff2677}
+.cb-footer-egg-trigger:focus-visible{outline:3px solid #ff2677;outline-offset:2px}
+.cb-footer-egg-copy{font:750 11px/1.35 'Space Grotesk',sans-serif;color:#385343;max-width:190px}
+.cb-footer-egg[data-awake=true] .cb-mark__rays{opacity:1;transform:translateY(0)}
+.cb-footer-egg[data-awake=true] .cb-mark__eyes{opacity:1}
+.cb-footer-egg:is(:hover,:focus-within) .cb-mark__horn--left{transform:rotate(-3.5deg)}
+.cb-footer-egg:is(:hover,:focus-within) .cb-mark__horn--right{transform:rotate(3.5deg)}
+@media(max-width:743px){.cb-footer-egg{max-width:100%}.cb-footer-egg-copy{max-width:unset}}
+@media(prefers-reduced-motion:reduce){
+  .cb-mark__peak,.cb-mark__horn,.cb-mark__rays,.cb-mark__eyes{transition:none!important;transform:none!important}
+}

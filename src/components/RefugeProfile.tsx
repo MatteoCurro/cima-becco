@@ -3,7 +3,7 @@ import type { Route } from '../types';
 import type { AlpinePlace } from '../lib/alpinePlaces';
 import type { NearbyAtlasPlace } from '../lib/nearbyAtlas';
 import type { AlpineWaterPoint } from '../lib/alpineWater';
-import { potabilityLabel } from '../lib/alpineWater';
+import { WaterNearbyList } from './WaterNearbyList';
 import { AtlasDossierBlocks } from './AtlasDossierBlocks';
 import { AlpinePlaceIcon } from './AlpinePlaceIcon';
 import { AlpineWeatherPanel } from './AlpineWeatherPanel';
@@ -29,6 +29,7 @@ interface RefugeProfileProps {
   nearbyPlaces: readonly NearbyAtlasPlace[];
   allPlaces: readonly AlpinePlace[];
   water: AlpineWaterPoint[];
+  onWaterSelect:(slug:string)=>void;
 }
 
 const FACT_LABELS:Record<string,string>={
@@ -130,7 +131,7 @@ function RouteLine({route}:{route:Route}){
     <FaIcon name="arrow-right" size={13}/>
   </a>;
 }
-export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces,water}:RefugeProfileProps){
+export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces,water,onWaterSelect}:RefugeProfileProps){
   const isShelter=place.kind==='bivacco';
   const facts=place.facts??{};
   const knownServices=hutServiceFacts(place);
@@ -167,6 +168,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
   const items:DetailJumpItem[]=[
     {id:'cb-refuge-stay',label:isShelter?'Utilizzo':'Ospitalità',icon:'bed'},
     ...(knownServices.length?[{id:'cb-refuge-services',label:'Servizi',icon:'wifi' as const}]:[]),
+    ...(water.length?[{id:'cb-refuge-water',label:'Acqua',icon:'water' as const}]:[]),
     {id:'cb-refuge-access',label:'Sentieri',icon:'route'},
     ...(hasHistory||hasTerritory?[{id:'cb-refuge-story',label:isShelter?'Il luogo':'Il rifugio',icon:'book-open' as const}]:[]),
     {id:'cb-refuge-weather',label:'Meteo',icon:'compass'},
@@ -285,10 +287,7 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
       <AlpineWeatherPanel lat={place.lat} lng={place.lng} name={place.name}/>
     </RefugeBlock>
     {water.length>0&&<RefugeBlock id="cb-refuge-water" kicker="PUNTI CARTOGRAFATI" title="Acqua nei dintorni">
-      <div className="cb-refuge-water-list">{water.slice(0,8).map(item=><div key={item.slug}>
-        <FaIcon name="water" size={17}/><span><strong>{item.name}</strong><small>{item.kind} · {potabilityLabel(item.potable)}{item.seasonal?' · stagionale':''}</small></span>
-      </div>)}</div>
-      <p className="cb-refuge-disclaimer">Distanze e presenza sulla mappa non garantiscono accessibilità, disponibilità o potabilità.</p>
+      <WaterNearbyList points={water} onSelect={onWaterSelect}/>
     </RefugeBlock>}
     <NearbyAtlasPlaces items={nearbyPlaces}/>
     <AtlasDossierBlocks record={place} placement="connections"/>

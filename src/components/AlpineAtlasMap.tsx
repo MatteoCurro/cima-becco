@@ -11,6 +11,10 @@ import { nearestRoutePointIndex } from '../lib/routeHover';
 import { addAlpinePlaceLayers, alpinePlacesGeoJSON } from '../map/alpineOverlays';
 import type { AlpinePlace } from '../lib/alpinePlaces';
 import type { AlpineWaterPoint } from '../lib/alpineWater';
+import { potabilityLabel } from '../lib/alpineWater';
+import { waterDisplayName, waterKindLabel } from '../lib/waterPresentation';
+import { registerWaterMapIcons } from '../map/waterIcons';
+import { WaterPointIcon } from './WaterPointIcon';
 
 interface Props {
   places: AlpinePlace[];
@@ -21,7 +25,9 @@ interface Props {
   routes?: Route[];
   height?: number | string;
   onSelect?: (place: AlpinePlace) => void;
-  water?: Pick<AlpineWaterPoint,'lat'|'lng'|'name'|'kind'|'potable'>[];
+  water?: AlpineWaterPoint[];
+  selectedWaterSlug?:string|null;
+  onWaterSelect?:(slug:string)=>void;
   caption?: string;
   hoverPoint?: [number,number] | null;
   onRouteHover?: (index:number|null)=>void;
@@ -40,7 +46,7 @@ function routeGeometry(routes: Route[]) {
 
 /** Mappa riusabile per listati rifugi, paesi e singole pagine locali. */
 const NO_ROUTES: Route[] = [];
-export function AlpineAtlasMap({places,kind,selected=null,selectedPoint=null,routes=NO_ROUTES,height=380,water=[],onSelect,caption,hoverPoint=null,onRouteHover}:Props) {
+export function AlpineAtlasMap({places,kind,selected=null,selectedPoint=null,routes=NO_ROUTES,height=380,water=[],selectedWaterSlug=null,onWaterSelect,onSelect,caption,hoverPoint=null,onRouteHover}:Props) {
   const container=useRef<HTMLDivElement>(null);
   const mapRef=useRef<MapLibreMap | null>(null);
   const onSelectRef=useRef(onSelect);
@@ -52,6 +58,9 @@ export function AlpineAtlasMap({places,kind,selected=null,selectedPoint=null,rou
   const onRouteHoverRef=useRef(onRouteHover);
   onRouteHoverRef.current=onRouteHover;
   const markerRef=useRef<Marker | null>(null);
+  const popupRef=useRef<Popup | null>(null);
+  const waterRef=useRef(water);waterRef.current=water;
+  const onWaterSelectRef=useRef(onWaterSelect);onWaterSelectRef.current=onWaterSelect;
   const initialized=useRef(false);
   const [ready,setReady]=useState(false);
   const [showTrails,setShowTrails]=useState(Boolean(selected || routes.length));
@@ -85,10 +94,18 @@ export function AlpineAtlasMap({places,kind,selected=null,selectedPoint=null,rou
         paint:{'line-color':'#fff','line-width':6,'line-opacity':.92}});
       map.addLayer({id:'cb-atlas-nearby-route-line',type:'line',source:'cb-atlas-nearby-routes',
         paint:{'line-color':'#f71970','line-width':3.2,'line-opacity':.9}});
+      registerWaterMapIcons(map);
       map.addSource('cb-atlas-water',{type:'geojson',data:EMPTY_LINE});
-      map.addLayer({id:'cb-atlas-water-points',type:'circle',source:'cb-atlas-water',minzoom:8,
-        paint:{'circle-radius':5.5,'circle-color':['case',['==',['get','potable'],'yes'],'#168dd5','#7db6bc'],
-          'circle-stroke-color':'#fff','circle-stroke-width':2}});
+      map.addLayer({id:'cb-atlas-water-focus',type:'circle',source:'cb-atlas-water',minzoom:8,
+        filter:['==',['get','slug'],''],
+        paint:{'circle-radius':21,'circle-color':'#fff','circle-opacity':0.45,
+          'circle-stroke-color':'#b00053','circle-stroke-width':3}});
+      map.addLayer({id:'cb-atlas-water-points',type:'symbol',source:'cb-atlas-water',minzoom:8,
+        layout:{'icon-image':['concat','cb-water-',['get','kind']],
+          'icon-size':1,'icon-allow-overlap':true,'text-field':['to-string',['get','index']],
+          'text-font':['Noto Sans Bold'],'text-size':11,'text-offset':[0,1.55],
+          'text-allow-overlap':true,'text-optional':true},
+        paint:{'text-color':'#173f35','text-halo-color':'#fff','text-halo-width':2}});
       addRouteHoverLayer(map);
       map.on('mousemove',event=>{
         if(!onRouteHoverRef.current)return;
@@ -110,16 +127,11 @@ export function AlpineAtlasMap({places,kind,selected=null,selectedPoint=null,rou
         const point=event.features?.[0];
         if(!point||point.geometry.type!=='Point')return;
         const coordinates=point.geometry.coordinates as [number,number];
-        const node=document.createElement('div');
-        node.className='cb-water-map-popover';
-        const heading=document.createElement('strong');
-        heading.textContent=String(point.properties?.name||'Punto acqua mappato');
-        const detail=document.createElement('small');
-        const potable=String(point.properties?.potable||'unknown');
-        detail.textContent=potable==='yes'?'Potabilità indicata in OSM · verificare sul posto':
-          potable==='no'?'Segnalata NON potabile':'Potabilità non verificata';
-        node.append(heading,detail);
-        new Popup({closeButton:true,maxWidth:'260px'}).setLngLat(coordinates).setDOMContent(node).addTo(map);
+        const slug=String(point.properties?.slug||'');
+        const item=waterRef.current.find(p=>p.slug===slug);
+        if(!item)return;
+        onWaterSelectRef.current?.(slug);
+        openWaterPopup(map,item,Number(point.properties?.index)||undefined,coordinates);
       });
       map.on('mouseenter','cb-atlas-water-points',()=>{map.getCanvas().style.cursor='pointer';});
       map.on('mouseleave','cb-atlas-water-points',()=>{map.getCanvas().style.cursor='';});
@@ -127,19 +139,39 @@ export function AlpineAtlasMap({places,kind,selected=null,selectedPoint=null,rou
       setReady(true);
       sync();
     });
+    function openWaterPopup(target:MapLibreMap,point:AlpineWaterPoint,index?:number,coords?:[number,number]){
+      popupRef.current?.remove();
+      const node=document.createElement('div');
+      node.className='cb-water-map-popover';
+      const heading=document.createElement('strong');
+      heading.textContent=waterDisplayName(point,index);
+      const type=document.createElement('span');
+      type.textContent=waterKindLabel(point.kind);
+      const status=document.createElement('small');
+      status.textContent=potabilityLabel(point.potable)+(point.seasonal?' · stagionale':'');
+      node.append(heading,type,status);
+      if(point.osmUrl?.startsWith('https://www.openstreetmap.org/')){
+        const link=document.createElement('a');
+        link.href=point.osmUrl;link.target='_blank';link.rel='noopener noreferrer';
+        link.textContent='Verifica la scheda OpenStreetMap ↗';
+        node.append(link);
+      }
+      popupRef.current=new Popup({closeButton:true,maxWidth:'280px'})
+        .setLngLat(coords||[point.lng,point.lat]).setDOMContent(node).addTo(target);
+    }
     function sync(){
       if(!initialized.current||mapRef.current!==map)return;
       (map.getSource('cb-atlas-nearby-routes') as GeoJSONSource).setData(routeGeometry(routes));
       (map.getSource('cb-atlas-water') as GeoJSONSource).setData({
-        type:'FeatureCollection',features:water.map(p=>({
-          type:'Feature' as const,properties:{potable:p.potable,name:p.name,kind:p.kind},
+        type:'FeatureCollection',features:water.map((p,index)=>({
+          type:'Feature' as const,properties:{potable:p.potable,name:p.name,kind:p.kind,slug:p.slug,index:index+1,osmUrl:p.osmUrl},
           geometry:{type:'Point' as const,coordinates:[p.lng,p.lat]},
         })),
       });
     }
     const observer=new ResizeObserver(()=>map.resize());
     if(container.current)observer.observe(container.current);
-    return ()=>{cancelAnimationFrame(hoverFrame);observer.disconnect();initialized.current=false;markerRef.current?.remove();markerRef.current=null;map.remove();mapRef.current=null;};
+    return ()=>{cancelAnimationFrame(hoverFrame);observer.disconnect();initialized.current=false;markerRef.current?.remove();markerRef.current=null;popupRef.current?.remove();popupRef.current=null;map.remove();mapRef.current=null;};
     // Map init is deliberate: props are updated by separate effects, never re-create the map.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
@@ -163,8 +195,8 @@ export function AlpineAtlasMap({places,kind,selected=null,selectedPoint=null,rou
   useEffect(()=>{
     const map=mapRef.current;if(!map||!initialized.current)return;
     (map.getSource('cb-atlas-water') as GeoJSONSource | undefined)?.setData({
-      type:'FeatureCollection',features:water.map(p=>({
-        type:'Feature' as const,properties:{potable:p.potable,name:p.name,kind:p.kind},
+      type:'FeatureCollection',features:water.map((p,index)=>({
+        type:'Feature' as const,properties:{potable:p.potable,name:p.name,kind:p.kind,slug:p.slug,index:index+1,osmUrl:p.osmUrl},
         geometry:{type:'Point' as const,coordinates:[p.lng,p.lat]},
       })),
     });
@@ -194,13 +226,33 @@ export function AlpineAtlasMap({places,kind,selected=null,selectedPoint=null,rou
 
   useEffect(()=>{
     const map=mapRef.current;if(!map||!ready)return;
+    map.setFilter('cb-atlas-water-focus',['==',['get','slug'],selectedWaterSlug||'']);
+    const item=water.find(p=>p.slug===selectedWaterSlug);
+    if(!item)return;
+    const index=water.findIndex(p=>p.slug===selectedWaterSlug)+1;
+    map.easeTo({center:[item.lng,item.lat],zoom:Math.max(map.getZoom(),14),duration:400});
+    popupRef.current?.remove();
+    const node=document.createElement('div');
+    node.className='cb-water-map-popover';
+    const heading=document.createElement('strong');
+    heading.textContent=waterDisplayName(item,index);
+    const detail=document.createElement('small');
+    detail.textContent=waterKindLabel(item.kind)+' · '+potabilityLabel(item.potable)+(item.seasonal?' · stagionale':'');
+    node.append(heading,detail);
+    popupRef.current=new Popup({closeButton:true,maxWidth:'280px'})
+      .setLngLat([item.lng,item.lat]).setDOMContent(node).addTo(map);
+  },[selectedWaterSlug,ready,water]);
+
+  useEffect(()=>{
+    const map=mapRef.current;if(!map||!ready)return;
     for(const id of ['cb-atlas-nearby-route-outline','cb-atlas-nearby-route-line']){
       if(map.getLayer(id))map.setLayoutProperty(id,'visibility',showTrails?'visible':'none');
     }
   },[ready,showTrails]);
   useEffect(()=>{
     const map=mapRef.current;if(!map||!ready)return;
-    if(map.getLayer('cb-atlas-water-points'))map.setLayoutProperty('cb-atlas-water-points','visibility',showWater?'visible':'none');
+    for(const id of ['cb-atlas-water-points','cb-atlas-water-focus'])
+      if(map.getLayer(id))map.setLayoutProperty(id,'visibility',showWater?'visible':'none');
   },[ready,showWater]);
 
   return <div className="cb-atlas-map-wrap" data-route-cursor={hoverPoint?hoverPoint.join(","):"none"} data-cursor-ready={ready&&onRouteHover?"true":"false"}>
@@ -208,6 +260,11 @@ export function AlpineAtlasMap({places,kind,selected=null,selectedPoint=null,rou
       {(selected || routes.length>0)&&<button type="button" aria-pressed={showTrails} onClick={()=>setShowTrails(value=>!value)}>Sentieri {showTrails?'✓':'+'}</button>}
       {water.length>0&&<button type="button" aria-pressed={showWater} onClick={()=>setShowWater(value=>!value)}>Punti acqua {showWater?'✓':'+'}</button>}
     </div>
+    {water.length>0&&showWater&&<div className="cb-water-map-legend" aria-label="Legenda tipologie di acqua">
+      {(['fontanella','sorgente','rubinetto'] as const).map(waterKind=><span key={waterKind}>
+        <WaterPointIcon kind={waterKind} size={16}/>{waterKindLabel(waterKind)}
+      </span>)}
+    </div>}
     <div ref={container} className="cb-atlas-map" style={{height}} role="application"
       aria-label={caption ? `Mappa topografica: ${caption}` : selected||selectedPoint ? `Mappa topografica di ${(selected??selectedPoint)!.name} con sentieri vicini` : `Mappa topografica dedicata a ${kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'paesi di montagna'}`}/>
   </div>;

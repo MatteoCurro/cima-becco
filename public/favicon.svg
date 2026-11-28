@@ -1,9 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-<rect width="120" height="120" rx="25" fill="#143d2f"/>
-<path d="M18 18 Q18 54 42 57 L51 31 L68 55 Q96 50 99 19" fill="none" stroke="#ff2677" stroke-width="13" stroke-linecap="square" stroke-linejoin="bevel"/>
-<path d="M30 66 L54 42 L78 62 L69 90 L39 90 Z" fill="#e4ffbe"/>
-<path d="M77 63 L108 73 L74 79 Z" fill="#ff2677"/>
-<path d="M42 61 L54 56" stroke="#143d2f" stroke-width="6" stroke-linecap="round"/>
-<circle cx="57" cy="65" r="3.7" fill="#143d2f"/>
-<path d="M45 80 Q56 89 66 77" fill="none" stroke="#143d2f" stroke-width="3" stroke-linecap="round"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="25" fill="#143d2f"/><defs><clipPath id="cbIconTrim"><rect x="0" y="140" width="1000" height="720"/></clipPath></defs><g clip-path="url(#cbIconTrim)" transform="translate(4 4) scale(0.112)" fill="none" stroke="#e4ffbe" stroke-width="96" stroke-linecap="butt" stroke-linejoin="miter"><path d="M202 910 L500 295 L798 910"/><path d="M145 140 L145 178 C145 284 244 330 308 402 C384 484 421 561 500 705"/><path d="M500 705 C579 561 616 484 692 402 C756 330 855 284 855 178 L855 140"/><path d="M443 684 L500 815 L557 684 Z" fill="#e4ffbe" stroke="none"/></g></svg>

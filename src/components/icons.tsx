@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 
 /**
  * Inline SVG icons. Kept in code rather than pulled from an icon package so the
@@ -6,17 +6,28 @@ import type { ReactNode } from 'react';
  * themes without extra CSS.
  */
 
-/** Faccia di stambecco tagliata come una cresta: corna fluo, becco di lato. */
+/** Cima Becco: due V sovrapposte, cresta innevata e corna di stambecco.
+ * Un solo SVG per l'interfaccia; la versione statica vive in public/brand.
+ * I tracciati restano separati per la microinterazione hover/focus/tap. */
 export function Mark({ size = 22 }: { size?: number }) {
+  const clipId = useId().replace(/:/g, '');
   return (
-    <svg className="mark" width={size} height={size} viewBox="0 0 120 120" aria-hidden="true" focusable="false">
-      <rect width="120" height="120" rx="25" fill="#143d2f" />
-      <path d="M18 18 Q18 54 42 57 L51 31 L68 55 Q96 50 99 19" fill="none" stroke="#ff2677" strokeWidth="13" strokeLinecap="square" strokeLinejoin="bevel" />
-      <path d="M30 66 L54 42 L78 62 L69 90 L39 90 Z" fill="#e4ffbe" />
-      <path d="M77 63 L108 73 L74 79 Z" fill="#ff2677" />
-      <path d="M42 61 L54 56" stroke="#143d2f" strokeWidth="6" strokeLinecap="round" />
-      <circle cx="57" cy="65" r="3.7" fill="#143d2f" />
-      <path d="M45 80 Q56 89 66 77" fill="none" stroke="#143d2f" strokeWidth="3" strokeLinecap="round" />
+    <svg className="mark cb-mark" width={size} height={size} viewBox="0 0 1000 1000"
+      aria-hidden="true" focusable="false" fill="none">
+      <defs><clipPath id={clipId}><rect x="0" y="140" width="1000" height="720" /></clipPath></defs>
+      <g className="cb-mark__rays" stroke="#ff2677" strokeWidth="20" strokeLinecap="butt">
+        <path d="M500 112 V199" /><path d="M397 135 L439 211" /><path d="M603 135 L561 211" />
+      </g>
+      <g clipPath={`url(#${clipId})`} stroke="currentColor"
+        strokeWidth="96" strokeLinecap="butt" strokeLinejoin="miter">
+        <path className="cb-mark__peak" d="M202 910 L500 295 L798 910" />
+        <path className="cb-mark__horn cb-mark__horn--left"
+          d="M145 90 L145 178 C145 284 244 330 308 402 C384 484 421 561 500 705" />
+        <path className="cb-mark__horn cb-mark__horn--right"
+          d="M500 705 C579 561 616 484 692 402 C756 330 855 284 855 178 L855 90" />
+        <path className="cb-mark__chin" d="M443 684 L500 815 L557 684 Z" fill="currentColor" stroke="none" />
+      </g>
+      <g className="cb-mark__eyes" fill="#ff2677"><circle cx="481" cy="602" r="12" /><circle cx="519" cy="602" r="12" /></g>
     </svg>
   );
 }

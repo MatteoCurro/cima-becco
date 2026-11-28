@@ -11,7 +11,7 @@ type Municipality = {
   connectedPeople?:AtlasPersonConnection[];
   textSources?:{sourceUrl:string;licence:string}[];
   administrativeHierarchy?:AlpinePlace['administrativeHierarchy'];
-  aliases?:AlpinePlace['aliases'];
+  aliases?:Array<{name?:string;value?:string;language?:string|null;historical?:boolean;sourceUrl?:string}>;
 };
 export interface MunicipalityRelease {
   schemaVersion:string;releaseChannel:string;isPublished:boolean;entities:Municipality[];
@@ -22,8 +22,19 @@ export function municipalityAsAlpinePlace(e:Municipality):AlpinePlace|null {
      e.quality.gate!=='G2'||!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lng)||
      !e.slug||!e.name||!e.sourceIds?.istat) return null;
   const photo=e.media?.find(m=>m.kind==='photo' && m.reuseAllowed&&m.subjectVerified&&m.sourceUrl&&m.licence);
-  const logo=e.media?.find(m=>m.kind==='logo' && m.symbolType==='coat_of_arms' && m.reuseAllowed&&m.subjectVerified&&m.sourceUrl&&m.licence) ||
-    e.media?.find(m=>m.kind==='logo' && m.reuseAllowed&&m.subjectVerified&&m.sourceUrl&&m.licence);
+  const logo=e.media?.find(m=>m.kind==='logo' && m.reuseAllowed&&m.subjectVerified&&m.sourceUrl&&m.licence);
+  // Il feed comunale usa 'name' negli alias; l'atlante canonico richiede 'value'.
+  const seen=new Set([e.name.toLocaleLowerCase('it-IT').trim()]);
+  const aliases=(e.aliases||[]).map(alias=>({
+    value:String(alias.value||alias.name||'').trim(),
+    ...(alias.language?{language:alias.language}:{}),
+    ...(alias.historical?{historical:true}:{}),
+    ...(alias.sourceUrl?{sourceUrl:alias.sourceUrl}:{}),
+  })).filter(alias=>{
+    const name=alias.value.toLocaleLowerCase('it-IT');
+    if(!name||seen.has(name))return false;
+    seen.add(name);return true;
+  });
   return {
     id:e.id,subtype:e.subtype,name:e.name,slug:e.slug,kind:'borgo',
     lat:point.lat,lng:point.lng,
@@ -33,14 +44,14 @@ export function municipalityAsAlpinePlace(e:Municipality):AlpinePlace|null {
     sourceIds:e.sourceIds,geo:e.geo as AlpinePlace['geo'],
     facts:e.facts as AlpinePlace['facts'],media:e.media,relations:e.relations,
     description:e.description,shortSummary:e.shortSummary,
-    aliases:e.aliases,administrativeHierarchy:e.administrativeHierarchy,
+    aliases,administrativeHierarchy:e.administrativeHierarchy,
     connectedPeople:e.connectedPeople,
     elevationM:typeof e.facts?.quotaCentroM?.value==='number'?e.facts.quotaCentroM.value:
       typeof e.facts?.elevationReportedM?.value==='number'?e.facts.elevationReportedM.value:undefined,
     elevationSource:undefined,
     website:typeof e.facts?.sitoUfficiale?.value==='string'?e.facts.sitoUfficiale.value:undefined,
     photo:photo?{url:photo.url,sourceUrl:photo.sourceUrl,author:photo.author||'',license:photo.licence}:undefined,
-    logo:logo?{url:logo.url,sourceUrl:logo.sourceUrl,author:logo.author||'',license:logo.licence,symbolType:logo.symbolType}:undefined,
+    logo:logo?{url:logo.url,sourceUrl:logo.sourceUrl,author:logo.author||'',license:logo.licence}:undefined,
   };
 }
 /** Adapter UI: preserves canonical kind municipality in source JSON.
