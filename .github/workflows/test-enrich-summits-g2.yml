@@ -1,0 +1,96 @@
+name: Pilot G2 summit dossier enrichment (verified Wikidata, Commons and itwiki)
+on:
+  push:
+    branches: [feat/summits-wikimedia-g2-staging-20261128]
+    paths:
+      - scripts/enrich_summits_wikimedia_v1.py
+      - tests/test_enrich_summits_wikimedia_v1.py
+      - .github/workflows/test-enrich-summits-g2.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/enrich_summits_wikimedia_v1.py
+      - tests/test_enrich_summits_wikimedia_v1.py
+      - .github/workflows/test-enrich-summits-g2.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cima-summits-g2-staging-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify-g2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Contract tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_import_summits_v1.py' -v
+          python -m unittest discover -s tests -p 'test_resolve_summit_wikidata_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_summits_wikimedia_v1.py' -v
+      - name: Reuse real GeoNames alpine tile and verified atlas near relationships
+        run: |
+          python scripts/import_summits_v1.py \
+            --bbox 46.1 11.2 47.1 13.0 \
+            --max-entities 120 --min-entities 30 --with-near \
+            --out build/import-summits-v1
+      - name: Audited live Wikidata crosswalk P1566/P625
+        run: |
+          python scripts/resolve_summit_wikidata_v1.py \
+            --stage build/import-summits-v1/summits.json \
+            --out build/import-summits-v1/wikidata-map.json \
+            --max-items 100 --batch-size 20 --pause 1.4
+      - name: Resolve G2 candidate biographies and photos (only staging)
+        run: |
+          python scripts/enrich_summits_wikimedia_v1.py \
+            --stage build/import-summits-v1/summits.json \
+            --wikidata-map build/import-summits-v1/wikidata-map.json \
+            --out build/import-summits-v1/summits-g2.json \
+            --report build/import-summits-v1/g2-report.json \
+            --max-items 100
+      - name: Gate identity, licenses, text, elevation and safe noindex
+        run: |
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          path=Path("build/import-summits-v1")
+          doc=json.loads((path/"summits-g2.json").read_text())
+          report=json.loads((path/"g2-report.json").read_text())
+          assert doc["releaseChannel"]=="GEONAMES_SUMMITS_G2_STAGING_V1"
+          assert doc["isPublished"] is False
+          entities=doc["entities"]
+          assert report["enrichedG2"]==len(entities)
+          assert len(entities)==len({x["id"] for x in entities})==len({x["slug"] for x in entities})
+          for e in entities:
+              assert e["kind"]=="summit" and e["quality"]["gate"]=="G2"
+              assert e["quality"]["seoIndexable"] is False
+              assert not e["quality"].get("slugRequiresReview")
+              assert e["sourceIds"].get("wikidataVerifiedBy")=="P1566+P625"
+              assert re.fullmatch(r"Q[1-9][0-9]*",e["sourceIds"]["wikidata"])
+              assert e["geo"]["point"] and e["facts"]["wikidataIdentityVerified"]["value"] is True
+              assert len(e.get("description") or "")>=120 and e.get("textSources")
+              assert any(m["kind"]=="photo" and m.get("author") and m.get("licence")
+                         and m.get("sourceUrl","").startswith("https://")
+                         and m.get("subjectVerified") and m.get("reuseAllowed")
+                         for m in e["media"])
+              assert all(r["type"]=="near" and not r.get("accessVerified")
+                         for r in e.get("relations",[]))
+          print("G2 staging verified",len(entities))
+          assert len(entities)>=1, "No real G2 summit: do not consider source coverage complete"
+          PY
+      - name: Ensure import is staging-only
+        run: |
+          test -z "$(git status --porcelain -- public/ src/)"
+      - name: Preserve source and coverage QA artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-summits-wikimedia-g2-staging
+          path: build/import-summits-v1/
+          retention-days: 14
+          if-no-files-found: warn
