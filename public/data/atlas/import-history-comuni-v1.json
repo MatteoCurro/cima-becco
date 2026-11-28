@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0",
+  "description": "Verified successful import snapshots, no invented history",
+  "events": [
+    {
+      "runId": "46103324256",
+      "pipeline": "comuni",
+      "status": "success",
+      "recordedAt": "2026-11-28T03:35:20.217Z",
+      "sourceSha": "012e1c49f485ceedfb50f877e650aa23f8b12406",
+      "sources": {
+        "comuni": {
+          "count": 22,
+          "facts": 734,
+          "media": 23,
+          "relations": 76,
+          "coverage": {
+            "Quota documentata": 22,
+            "Altimetria del territorio": 22,
+            "Superficie": 22,
+            "Popolazione ISTAT datata": 0,
+            "Sindaco (DAIT)": 21,
+            "Sito istituzionale": 11,
+            "Foto attribuita": 22,
+            "Testo documentato": 22,
+            "Relazioni territoriali": 12,
+            "Stemma": 1,
+            "Personaggi documentati": 12,
+            "Figure di montagna": 7
+          },
+          "denominator": 22
+        },
+        "persone": {
+          "count": 119,
+          "facts": 0,
+          "media": 0,
+          "relations": 120,
+          "coverage": {
+            "Con relazione documentata": 119
+          },
+          "denominator": 119
+        }
+      },
+      "report": {
+        "newG2": 3,
+        "newMedia": 29,
+        "newWikiText": 16,
+        "publishedG2": 22,
+        "selectedCandidates": 67,
+        "municipalities": 7894,
+        "mayorsMatched": 7779,
+        "daitRowsOfficialCrosswalkRejected": 3,
+        "sourceAltimetryMatched": 22,
+        "metricsAdded": 44,
+        "municipalityPeopleLinks": 70,
+        "peopleCatalogued": 119,
+        "mountainLinks": 44,
+        "otherNotableLinks": 26,
+        "failuresCount": 0
+      },
+      "delta": {
+        "comuni": null,
+        "persone": null
+      }
+    }
+  ]
+}
