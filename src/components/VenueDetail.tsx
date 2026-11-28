@@ -947,13 +947,13 @@ function VenueDetailInner({
               {/* Three lines; a clear "Read more" (or a double-click) opens the rest. */}
               <div
                 ref={aboutRef}
-                className={`venue-about-copy${aboutExpanded ? '' : ' clamp3'}`}
+                className={`venue-about-copy${aboutExpanded||isSummit ? '' : ' clamp3'}`}
                 onDoubleClick={() => setAboutExpanded((value) => !value)}
               >
                 <p>{about}</p>
                 {venue.notes && !venue.notes.startsWith('Summit elevation from') && <p>{venue.notes}</p>}
               </div>
-              {(aboutOverflows || aboutExpanded) && (
+              {!isSummit&&(aboutOverflows || aboutExpanded) && (
                 <button type="button" className="venue-read-more" aria-expanded={aboutExpanded} onClick={() => setAboutExpanded((value) => !value)}>
                   {aboutExpanded ? 'Mostra meno' : 'Leggi tutto'}
                   <ChevronRightIcon size={12} />
