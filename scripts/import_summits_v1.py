@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 from datetime import datetime, timezone
+from functools import lru_cache
 import hashlib
 import json
 import math
@@ -28,6 +29,7 @@ CODES = {
     "HLL": ("summit", "hill"),
     "MTS": ("mountain_group", "mountain_group"),
     "HLLS": ("mountain_group", "hill_group"),
+    "PKSU": ("mountain_group", "peaks"),
 }
 LICENSE = "CC BY 4.0"
 SOURCE = "https://www.geonames.org/"
@@ -201,12 +203,17 @@ def distance_km(a, b):
         math.cos(lat1) * math.cos(lat2) * math.sin(dlng / 2) ** 2)))
 
 
+@lru_cache(maxsize=8)
+def read_catalog(path):
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
 def nearby(entity, catalogs, max_each=3):
     pt = entity["geo"]["point"]
     for label, filename in catalogs:
         if not Path(filename).exists():
             continue
-        catalog = json.loads(Path(filename).read_text(encoding="utf-8"))
+        catalog = read_catalog(str(filename))
         scored = []
         for other in catalog.get("entities", []):
             geo = other.get("geo") or {}
@@ -216,6 +223,8 @@ def nearby(entity, catalogs, max_each=3):
             ):
                 continue
             if (other.get("quality") or {}).get("gate") not in ("G2", "G3"):
+                continue
+            if abs(pt["lat"] - op["lat"]) > 0.15 or abs(pt["lng"] - op["lng"]) > 0.3:
                 continue
             km = distance_km(pt, op)
             if km <= 15.0:
