@@ -48,6 +48,27 @@ class SettlementImportTests(unittest.TestCase):
             self.assertEqual(len(official_rows(items[0][1])), 5)
             self.assertIn("LOC_R04_21.csv", items[0][0])
 
+    def test_real_istat_utf16_tab_and_reported_altitude(self):
+        # Tracciato ufficiale osservato nel pilota reale R04_21.
+        header = "COD_REG\tCOD_UTS\tPRO_COM\tLOC21_ID\tTIPO_LOC\tNOME\tCENTRO_CL\tALTITUDINE (in metri slm)\n"
+        row = "4\t21\t21001\t2100110001\t1\tAldino\t1\t1225\n"
+        body = (header + row).encode("utf-16")
+        with tempfile.TemporaryDirectory() as folder:
+            path = self.make_archive(Path(folder), "")
+            with ZipFile(path, "w") as z:
+                z.writestr("DATA/LOC_R04_21.csv", body)
+            csv_source = official_csvs(path)[0]
+            parsed = official_rows(csv_source[1])
+        self.assertEqual(len(parsed), 1)
+        item, err = locality(parsed[0], source_url="https://www.istat.it/",
+            checked_at="2026-11-28T00:00:00Z", municipality_by_code={})
+        self.assertIsNone(err)
+        self.assertEqual(item["sourceIds"]["istatMunicipality"], "021001")
+        self.assertEqual(item["sourceIds"]["istatLocality"], "02100110001")
+        self.assertEqual(item["facts"]["elevationM"]["value"], 1225)
+        self.assertEqual(item["facts"]["elevationM"]["unit"], "m")
+        self.assertEqual(item["elevationMethod"], "istat_reported_locality_2021")
+
     def test_staging_preserves_istat_and_osm_as_distinct_entities(self):
         with tempfile.TemporaryDirectory() as folder:
             doc, report = build([self.make_archive(Path(folder))], OSM, MUNI,
