@@ -38,6 +38,47 @@ def alpine_cells():
 
 BANNED = re.compile(r"^(?:unnamed|senza nome|rifugio|hut|bivacco|unknown)$", re.I)
 
+RURAL_EVIDENCE = DATA / "atlas" / "alpine-structure-evidence-v1.json"
+RURAL_CANDIDATES = DATA / "atlas" / "rural-classification-candidates-v1.json"
+RURAL_NAME = re.compile(r"^(?:malga|casera|casere|baita|alpeggio)\\b", re.I)
+
+
+def official_rural_osm_types():
+    """Only exact OSM IDs supported by an explicit territorial source."""
+    try:
+        doc = json.loads(RURAL_EVIDENCE.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        return {}
+    if doc.get("releaseChannel") != "VERIFIED_RURAL_STRUCTURE_TYPES":
+        return {}
+    return {row["sourceIds"]["osm"]: row for row in doc.get("entries", [])
+            if isinstance(row.get("sourceIds"), dict)
+            and re.fullmatch(r"(?:node|way|relation)/[1-9][0-9]*",
+                             row["sourceIds"].get("osm", ""))
+            and str(row.get("classificationSource", "")).startswith("https://")}
+
+
+def rural_candidate(row):
+    """Retain candidates absent from the hut tags, never present as G2."""
+    tags = row.get("tags") or {}
+    name = clean_name(tags.get("name:it") or tags.get("name"))
+    if not RURAL_NAME.match(name):
+        return None
+    pt = row.get("center") or row
+    if not isinstance(pt.get("lat"), (int, float)) or not isinstance(pt.get("lon"), (int, float)):
+        return None
+    typ = row.get("type")
+    ident = row.get("id")
+    if typ not in ("node","way","relation") or not isinstance(ident,int):
+        return None
+    relevant=("tourism","amenity","shelter_type","building","landuse",
+              "shop","beds","overnight","operator","opening_hours")
+    return {"sourceIds":{"osm":f"{typ}/{ident}"},"name":name,
+            "geo":{"lat":round(pt["lat"],6),"lng":round(pt["lon"],6)},
+            "tags":{k:str(tags[k])[:140] for k in relevant if tags.get(k)},
+            "classification":"unverified_candidate","seoIndexable":False}
+
+
 
 def fetch_places(bbox=None):
     south, west, north, east = bbox if bbox is not None else BBOX
@@ -46,6 +87,11 @@ def fetch_places(bbox=None):
         "[out:json][timeout:65];("
         f'nwr["tourism"~"^(alpine_hut|wilderness_hut)$"]{rect};'
         f'nwr["amenity"="shelter"]["shelter_type"="basic_hut"]{rect};'
+        # Do not lose operating malghe which OSM calls restaurants/farmstays.
+        # These enter a separate G0 review queue, NOT public bivouacs by name.
+        f'nwr["name"~"^(Malga|Casera|Casere|Baita)\\\\b",i]["amenity"~"^(restaurant|cafe)$"]{rect};'
+        f'nwr["name"~"^(Malga|Casera|Casere|Baita)\\\\b",i]["tourism"~"^(farmstay|attraction)$"]{rect};'
+        f'nwr["name"~"^(Malga|Casera|Casere|Baita)\\\\b",i]["building"~"^(cabin|farm_auxiliary)$"]{rect};'
         f'nwr["place"~"^(town|village|hamlet)$"]{rect};'
         ");out center tags;"
     )
@@ -84,10 +130,14 @@ def parse_item(row):
     lat, lng = pt.get("lat"), pt.get("lon")
     if not isinstance(lat, (int,float)) or not isinstance(lng, (int,float)):
         return None
+    osm_key = f"{row.get('type', 'node')}/{row['id']}"
+    verified = official_rural_osm_types().get(osm_key)
     kind = ("rifugio" if tags.get("tourism") == "alpine_hut" else
             "bivacco" if (tags.get("tourism") == "wilderness_hut" or
                           (tags.get("amenity") == "shelter" and tags.get("shelter_type") == "basic_hut")) else
             "borgo" if tags.get("place") in ("town", "village", "hamlet") else None)
+    if verified and verified["name"].casefold() == name.casefold():
+        kind = verified["kind"]
     if not kind:
         return None
     ident = f"osm-{row.get('type','node')[0]}-{row['id']}"
@@ -99,6 +149,12 @@ def parse_item(row):
     return {
         "slug": ident, "name": name, "kind": kind, "lat": round(lat,6), "lng": round(lng,6),
         "osmUrl": f"https://www.openstreetmap.org/{row.get('type','node')}/{row['id']}",
+        **({"subtype":verified["subtype"],
+            "shelterTypeLabel":verified["shelterTypeLabel"],
+            "classificationEvidence":{"sourceUrl":verified["classificationSource"],
+              "note":verified.get("classificationNote",""),
+              "previousKind":"rifugio" if tags.get("tourism") == "alpine_hut" else kind}}
+           if verified and verified["name"].casefold()==name.casefold() else {}),
         **({"elevationM": round(ele)} if ele is not None and 0 < ele < 4800 else {}),
         **({"elevationSource": "osm"} if ele is not None and 0 < ele < 4800 else {}),
         **({"wikidata": tags["wikidata"]} if re.fullmatch(r"Q\d+", tags.get("wikidata","")) else {}),
@@ -232,7 +288,16 @@ def run(write,link_only):
             elements=None
         if elements is not None:
             updated=0
+            candidate_archive=read_json(RURAL_CANDIDATES,{"schemaVersion":"1.0",
+                "source":"OpenStreetMap contributors · ODbL-1.0",
+                "items":[]})
+            candidates={r["sourceIds"]["osm"]:r for r in candidate_archive.get("items",[])
+                if r.get("sourceIds",{}).get("osm")}
             for row in elements:
+                candidate=rural_candidate(row)
+                if candidate:
+                    candidate["lastSeenAt"]=datetime.now(timezone.utc).date().isoformat()
+                    candidates[candidate["sourceIds"]["osm"]]=candidate
                 item=parse_item(row)
                 if not item:continue
                 former=by_slug.get(item["slug"],{})
@@ -249,6 +314,11 @@ def run(write,link_only):
                     "lastCell":cell_id,"changedPlaces":updated,"cellsTotal":len(tiles)})
             print(f"Cella OSM {cell_id+1}/{len(tiles)}: {len(elements)} elementi, "
                   f"{updated} record modificati",file=sys.stderr)
+        if write and elements is not None:
+            write_json(RURAL_CANDIDATES,{"schemaVersion":"1.0",
+                "source":"OpenStreetMap contributors · ODbL-1.0",
+                "qualityGate":"G0_review_only","seoIndexable":False,
+                "items":[candidates[k] for k in sorted(candidates)]})
         places=list(by_slug.values())
         places.sort(key=lambda p:(p["kind"],p["name"].casefold(),p["slug"]))
         if write and elements is not None:
