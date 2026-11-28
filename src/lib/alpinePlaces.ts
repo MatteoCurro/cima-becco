@@ -24,9 +24,10 @@ export interface AlpinePlace extends AtlasEntityMetadata {
   /** Sottotipo dichiarato (Bivacco, Capanna sociale, Punto d'appoggio). */
   shelterTypeLabel?: string;
   classificationEvidence?: {sourceUrl:string;note:string;recordedAt?:string;coordinateSource?:string;previousKind?:string};
+  quality?: {gate:string;seoIndexable:boolean;reviewRequired?:boolean};
   elevationM?: number;
   /** OSM = quota indicata dal mappatore; DEM = terreno stimato. */
-  elevationSource?: 'osm' | 'dem' | 'cai';
+  elevationSource?: 'osm' | 'dem' | 'cai' | 'official';
   wikidata?: string;
   website?: string;
   operator?: string;
