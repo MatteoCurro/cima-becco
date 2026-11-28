@@ -141,9 +141,15 @@ def main():
     args=ap.parse_args()
     rel=load(args.municipalities)
     rel,report=attach_altimetry(rel,args.source.read_bytes(),retrieved_at=rel.get("retrievedAt"))
-    # Do not overwrite data after an empty or invalid import. The source is
-    # authoritative but refers to 2021 boundaries: partial coverage is normal.
-    require(report["metricsAdded"]>0,"Nessuna altimetria ISTAT riconciliata")
+    # Idempotent daily refresh: zero changes is SUCCESS when the rows match
+    # and an official 2021 ISTAT altimetric fact is already retained. Missing
+    # joins still fail closed instead of using guessed altitudes.
+    retained=sum(any(f.get("sourceId")=="istat:altimetry:2021:DEM"
+      and f.get("value") is not None
+      for f in entity.get("facts",{}).values()) for entity in rel.get("entities",[]))
+    report["alreadyPublishedOfficialAltimetry"]=retained
+    require(report["matched"]>0 and (report["metricsAdded"]>0 or retained>0),
+      "Nessuna altimetria ISTAT riconciliata o gia verificata")
     save(args.municipalities,rel)
     save(args.report,report)
     print(json.dumps(report,ensure_ascii=False))

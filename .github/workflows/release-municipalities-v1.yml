@@ -1,7 +1,7 @@
 name: Release Comuni con Wikimedia (G2)
 on:
   push:
-    branches: [main, feat/municipality-altimetry-import-insights-20261128]
+    branches: [main, feat/people-portraits-source-graph-20261128]
     paths:
       - .github/workflows/release-municipalities-v1.yml
       - scripts/enrich_municipalities_v1.py
@@ -10,6 +10,11 @@ on:
       - tests/test_enrich_municipality_altimetry_v1.py
       - scripts/enrich_municipality_people_v1.py
       - tests/test_enrich_municipality_people_v1.py
+      - tests/test_person_profile_media_v1.py
+      - scripts/build_source_credits.mjs
+      - scripts/test_central_credits.mjs
+      - src/locationProfile.css
+      - docs/MODELLO_METADATI_E_LAYOUT.md
       - scripts/import_metrics_v1.mjs
       - src/components/SiteInsightsPage.tsx
       - src/components/AlpineAtlasPage.tsx
@@ -42,6 +47,7 @@ jobs:
           python -m unittest discover -s tests -p 'test_enrich_municipalities_v1.py' -v
           python -m unittest discover -s tests -p 'test_enrich_municipality_altimetry_v1.py' -v
           python -m unittest discover -s tests -p 'test_enrich_municipality_people_v1.py' -v
+          python -m unittest discover -s tests -p 'test_person_profile_media_v1.py' -v
       - name: Scarica ISTAT e DAIT ufficiali
         shell: bash
         run: |
@@ -138,8 +144,28 @@ jobs:
           persondoc=json.loads(Path('public/data/atlas/people-v1.json').read_text())
           assert persondoc['releaseChannel']=='ALPINE_PEOPLE_LINKS'
           assert all(p['quality']['gate']=='G1' and not p['quality']['seoIndexable'] for p in persondoc['entities'])
+          for person in persondoc['entities']:
+              assert person.get('id')=='person:'+person['qid']
+              assert person.get('claim',{}).get('status')=='not_enabled'
+              assert person.get('claim',{}).get('verifiedUserId') is None
+              for photo in person.get('media',[]):
+                  assert photo['kind']=='photo' and photo.get('reuseAllowed') and photo.get('subjectVerified')
+                  assert photo.get('personQid')==person['qid']
+                  assert isinstance(photo.get('portraitCandidate'),bool)
+                  assert photo['sourceUrl'].startswith('https://commons.wikimedia.org/') and photo.get('author') and photo.get('licence')
+              for source in person.get('textSources',[]):
+                  assert source.get('sourceId','').startswith('wikipedia:it:')
+                  assert source.get('licence')=='CC BY-SA 4.0' and source.get('sourceUrl','').startswith('https://it.wikipedia.org/wiki/')
+              for assoc in person.get('externalEntityLinks',[]):
+                  assert assoc.get('resolution')=='external_identity_only_not_atlas_entity'
+                  assert assoc['sourceId'].startswith('wikidata:'+person['qid']+':P')
+          # Pilot gate: require some actual licensed portraits, not empty scaffolding.
+          assert any(p.get('media') for p in persondoc['entities']), 'Nessuna foto persona con attribuzione: stop rilascio'
           for commune in e:
               for person in commune.get('connectedPeople',[]):
+                  if person.get('portrait'):
+                      assert person['portrait']['personQid']==person['qid']
+                      assert person['portrait'].get('portraitCandidate') is True
                   assert person['verified'] and person['relationType'] in ('birthplace_of','historical_residence_of','workplace_of')
                   assert person['sourceId'].startswith('wikidata:'+person['qid']+':P')
                   assert person['category'] in ('montagna','cultura_e_ricerca')
@@ -198,6 +224,12 @@ jobs:
               'peopleCatalogued':people['peopleCatalogued'],
               'mountainLinks':people['mountainLinks'],
               'otherNotableLinks':people['otherNotableLinks'],
+              'portraitsAdded':people.get('portraitsAdded',0),
+              'imagesHeldForReview':people.get('imagesHeldForReview',0),
+              'profilesWithPortrait':people.get('profilesWithPortrait',0),
+              'biographiesAdded':people.get('biographiesAdded',0),
+              'profilesWithBiography':people.get('profilesWithBiography',0),
+              'associationsObserved':people.get('associationsObserved',0),
               'failuresCount':len(data.get('failures') or [])+len(people.get('errors') or [])
           })
           (base/'combined-report.json').write_text(json.dumps(data,ensure_ascii=False,indent=2))

@@ -40,6 +40,25 @@ if(existsSync(municipalityFile)){
     }
   }
 }
+const personFile=join(root,'data','atlas','people-v1.json');
+if(existsSync(personFile)){
+  const people=read('data/atlas/people-v1.json').entities||[];
+  for(const person of people){
+    for(const photo of person.media||[]){
+      if(photo.kind==='photo'&&photo.reuseAllowed&&photo.subjectVerified&&photo.url){
+        assert.ok(uniqueUrls.has(photo.url),person.qid+' photo without central attribution');
+        assert.ok(credits.photoCredits.some(x=>x.kind==='person'&&x.slug===person.qid&&
+          x.mediaUrl===photo.url&&x.author===photo.author&&x.licence===photo.licence),
+          person.qid+' photo credits have wrong subject/author');
+      }
+    }
+    for(const source of person.textSources||[]){
+      assert.ok((credits.textCredits||[]).some(t=>t.kind==='person'&&t.slug===person.qid&&
+        t.sourceId===source.sourceId&&t.sourceUrl===source.sourceUrl&&t.licence===source.licence),
+        person.qid+' biography without central text credit');
+    }
+  }
+}
 assert.ok(existsSync(join(root,'fonti-e-crediti','index.html')));
 const body=readFileSync(join(root,'fonti-e-crediti','index.html'),'utf8');
 assert.ok(body.includes('https://www.cimabecco.it/fonti-e-crediti/'));

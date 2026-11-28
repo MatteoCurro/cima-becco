@@ -15,11 +15,12 @@ import json
 from pathlib import Path
 import re
 import unicodedata
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote, unquote
 from urllib.request import Request,urlopen
 from urllib.error import HTTPError,URLError
 import time
-from enrich_municipalities_v1 import WIKIDATA_API, WIKIDATA_QUERY, UA
+from enrich_municipalities_v1 import (WIKIDATA_API, WIKIDATA_QUERY, WIKIPEDIA_API,
+    UA, commons_files, claim_string, NON_PHOTO)
 from import_municipalities_v1 import load,save,require
 
 QID = re.compile(r"Q[1-9][0-9]*$")
@@ -132,6 +133,192 @@ def classify(role_qid,role_label):
         return "cultura_e_ricerca"
     return None
 
+
+# A profile stores externally verified facts without creating an account.
+# The same stable 'person:QID' will link routes, ascents, opening events, and
+# community profiles in a later, identity-verified claim workflow.
+PUBLIC_ASSOCIATIONS={
+  "P800":"notable_work",
+  "P793":"significant_event",
+  "P1344":"participant_in",
+  "P463":"member_of",
+  "P166":"award_received",
+  "P101":"field_of_work",
+}
+# P18 links a file to a person but is not guaranteed to depict their face.
+# Keep linked artwork in the archive; do not present documentary posters,
+# monument details, signatures, or paintings of unrelated scenes as avatars.
+NON_PORTRAIT_CONTEXT=re.compile(
+  r"banner|filmretrospektive|allegori|monument|monumento|"
+  r"firma(?:[_. -]|$)|signature|hagar|ismael|"
+  r"споруда|храм|landscape|panorama|targa|plaque|"
+  r"gravestone|tombstone|facade|facciata|architett|poster|locandina",
+  re.I)
+def portrait_candidate(filename):
+    return not bool(NON_PORTRAIT_CONTEXT.search(unquote(filename).replace("_"," ")))
+
+def safe_wikipedia_url(title):
+    return "https://it.wikipedia.org/wiki/"+quote(title.replace(" ","_"),safe="")
+
+def wiki_biographies(entries, *,getter=None):
+    """Batch Wikipedia extracts, only if pageprops confirms exact person QID."""
+    accepted={}
+    indexed={title:qid for qid,title in entries if title and isinstance(title,str)}
+    titles=list(indexed)
+    for offset in range(0,len(titles),20):
+        group=titles[offset:offset+20]
+        data=api(WIKIPEDIA_API,{
+          "action":"query","format":"json","prop":"pageprops|extracts",
+          "ppprop":"wikibase_item","exintro":"1","explaintext":"1",
+          "exchars":"1050","redirects":"1","titles":"|".join(group)},getter)
+        for page in (data.get("query") or {}).get("pages",{}).values():
+            title=page.get("title")
+            qid=indexed.get(title)
+            if not qid or (page.get("pageprops") or {}).get("wikibase_item")!=qid:
+                continue
+            contents=re.sub(r"\s+"," ",str(page.get("extract") or "")).strip()
+            if len(contents)<110 or len(contents.split())<18:continue
+            pid=page.get("pageid")
+            if not isinstance(pid,int):continue
+            accepted[qid]={
+                "text":contents[:1050],"sourceId":"wikipedia:it:"+str(pid),
+                "sourceUrl":safe_wikipedia_url(title),
+                "licence":"CC BY-SA 4.0",
+                "method":"reported","retrievedAt":None,"sourceUpdatedAt":None,
+                "originalLanguage":"it","kind":"source_excerpt_not_original_editorial",
+                "author":"Contributori di Wikipedia"
+            }
+    return accepted
+
+def enrich_profiles(profiles, details, *,getter=None, checked_at=None):
+    """Preserve existing biographies/media on temporary Wikimedia failures.
+
+    All profile facts are public, sourced and non-sensitive. No inferred ascent
+    and no personal accounts/contacts are imported or linked.
+    """
+    checked_at=checked_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    failed=[]
+    missing=[qid for qid in profiles if qid not in details]
+    for offset in range(0,len(missing),35):
+        part=missing[offset:offset+35]
+        try:details.update(detail_entities(part,getter))
+        except Exception as exc:failed.append("wikidata:"+str(exc)[:120])
+    portrait_requests={}
+    for qid,profile in profiles.items():
+        profile.setdefault("profileKind","biographical_person")
+        profile.setdefault("claim",{"status":"not_enabled","requiresVerification":True,
+                                    "verifiedUserId":None})
+        profile.setdefault("sourceIds",{"wikidata":qid})
+        item=details.get(qid)
+        if not item or item.get("missing"):continue
+        if "Q5" not in wd_claim_targets(item,"P31"):continue
+        profile["profileKind"]="biographical_person"
+        profile["sourceIds"]={"wikidata":qid}
+        profile["claim"]={"status":"not_enabled","requiresVerification":True,
+                          "verifiedUserId":None}
+        profile["quality"]={"gate":"G1","seoIndexable":False}
+        wd_source="https://www.wikidata.org/wiki/"+qid
+        profile["checkedAt"]=checked_at
+        profile["descriptionSourceUrl"]=wd_source
+        profile["descriptionLicence"]="CC0"
+        # Preserve provenance and precision: P569/P570 may be year only.
+        for property_id,key in (("P569","birthDate"),("P570","deathDate")):
+            value=wd_time(item,property_id)
+            if value:
+                profile[key]=value
+                profile.setdefault("facts",{})[key]={
+                  "value":value,"sourceId":"wikidata:"+qid+":"+property_id,
+                  "sourceUrl":wd_source,"licence":"CC0","method":"reported",
+                  "retrievedAt":checked_at}
+        birthplace=sorted(wd_claim_targets(item,"P19"))
+        deathplace=sorted(wd_claim_targets(item,"P20"))
+        for key,values,prop in (("birthPlaceQids",birthplace,"P19"),
+                                ("deathPlaceQids",deathplace,"P20")):
+            if values:
+                profile[key]=values
+                profile.setdefault("facts",{})[key]={
+                    "value":values[0],"sourceId":"wikidata:"+qid+":"+prop,
+                    "sourceUrl":wd_source,"licence":"CC0","retrievedAt":checked_at,
+                    "method":"reported"}
+        aliases=[]
+        for claim in (item.get("claims") or {}).get("P742",[]):
+            value=((claim.get("mainsnak") or {}).get("datavalue") or {}).get("value")
+            if claim.get("rank")!="deprecated" and isinstance(value,str) and 1<len(value)<=100:
+                aliases.append(value)
+        if aliases:
+            profile["pseudonyms"]=sorted(set(aliases))[:12]
+        associations=[]
+        for prop,category in PUBLIC_ASSOCIATIONS.items():
+            for target in sorted(wd_claim_targets(item,prop))[:18]:
+                associations.append({
+                  "type":category,"propertyId":prop,"targetQid":target,
+                  "sourceId":"wikidata:"+qid+":"+prop,"sourceUrl":wd_source,
+                  "licence":"CC0","method":"reported","retrievedAt":checked_at,
+                  "resolution":"external_identity_only_not_atlas_entity"})
+        if associations:profile["externalEntityLinks"]=associations[:80]
+        image=claim_string(item,"P18")
+        if image and not NON_PHOTO.search(image):
+            portrait_requests[qid]=image
+        labels=item.get("labels") or {}
+        name=((labels.get("it") or labels.get("en") or {}).get("value") or "").strip()
+        if name:profile["name"]=name[:180]
+        description=((item.get("descriptions") or {}).get("it") or
+           (item.get("descriptions") or {}).get("en") or {}).get("value")
+        if isinstance(description,str) and description.strip():
+            profile["description"]=description.strip()[:240]
+        wiki=(item.get("sitelinks") or {}).get("itwiki",{}).get("title")
+        if wiki:profile["wikipediaUrl"]=safe_wikipedia_url(wiki)
+    images={}
+    for start in range(0,len(portrait_requests),35):
+        qids=list(portrait_requests)[start:start+35]
+        try:images.update(commons_files([portrait_requests[q] for q in qids],getter=getter))
+        except Exception as exc:failed.append("commons:"+str(exc)[:120])
+    new_photos=0
+    for qid,name in portrait_requests.items():
+        media=images.get(name.replace(" ","_"))
+        if not media:continue
+        profile=profiles[qid]
+        candidate=portrait_candidate(name)
+        entry={**media,"id":"wikimedia-person:"+qid+":P18",
+               "kind":"photo","retrievedAt":checked_at,
+               "subjectMethod":"explicit_wikidata_P18_human_QID",
+               "personQid":qid,"portraitCandidate":candidate,
+               "needsPortraitReview":not candidate}
+        existing=[m for m in profile.get("media",[])
+                  if m.get("kind")=="photo" and m.get("sourceUrl")==entry["sourceUrl"]]
+        profile["media"]=[entry]+[
+            m for m in profile.get("media",[]) if m.get("id")!=entry["id"]
+            and m.get("sourceUrl")!=entry["sourceUrl"]]
+        if not existing:new_photos+=1
+        if candidate:profile["avatarMediaId"]=entry["id"]
+        else:profile.pop("avatarMediaId",None)
+    biographies={}
+    pending=[]
+    for qid,profile in profiles.items():
+        item=details.get(qid) or {}
+        wiki=(item.get("sitelinks") or {}).get("itwiki",{}).get("title")
+        if wiki and not profile.get("textSources"):pending.append((qid,wiki))
+    for offset in range(0,len(pending),20):
+        try:biographies.update(wiki_biographies(pending[offset:offset+20],getter=getter))
+        except Exception as exc:failed.append("wikipedia:"+str(exc)[:120])
+    for qid,source in biographies.items():
+        source["retrievedAt"]=checked_at
+        profiles[qid]["textSources"]=[source]
+        profiles[qid]["biography"]=source["text"]
+    return {
+        "profilesProcessed":len(profiles),
+        "portraitCandidates":len(portrait_requests),
+        "portraitsAdded":new_photos,
+        "profilesWithPortrait":sum(any(m.get("kind")=="photo" and m.get("portraitCandidate") and
+            m.get("subjectVerified") for m in p.get("media",[])) for p in profiles.values()),
+        "imagesHeldForReview":sum(any(m.get("needsPortraitReview") for m in p.get("media",[]))
+            for p in profiles.values()),
+        "biographiesAdded":len(biographies),
+        "profilesWithBiography":sum(bool(p.get("textSources")) for p in profiles.values()),
+        "associationsObserved":sum(len(p.get("externalEntityLinks",[])) for p in profiles.values()),
+        "errors":failed
+    }
+
 def build(release,*,getter=None,previous_people=None,checked_at=None,batch=6,max_mountain=20,max_culture=4):
     require(release.get("releaseChannel")=="ISTAT_DAIT_MUNICIPALITIES","Archivio comuni atteso")
     municipalities=release.get("entities") or []
@@ -145,11 +332,13 @@ def build(release,*,getter=None,previous_people=None,checked_at=None,batch=6,max
     previous={p["qid"]:p for p in (previous_people or {}).get("entities",[])
               if QID.fullmatch(str(p.get("qid","")))}
     selected=defaultdict(list)
+    detail_cache={}
     for offset in range(0,len(town_to_municipality),batch):
         part=list(town_to_municipality)[offset:offset+batch]
         try:
             candidates=sparql_candidates(part,getter=getter)
             details=detail_entities(sorted({c["person"] for c in candidates}),getter=getter)
+            detail_cache.update(details)
         except Exception as exc:
             errors.append({"townQids":part,"error":str(exc)[:160]})
             continue
@@ -185,6 +374,9 @@ def build(release,*,getter=None,previous_people=None,checked_at=None,batch=6,max
                 "roles":[],"relations":[],"quality":{"gate":"G1","seoIndexable":False},
                 "editorialStatus":"linked",
             }
+            # A refreshed Wikidata identity never erases the earlier verified
+            # picture, Wikipedia extract, or source links on transient errors.
+            identity={**previous.get(c["person"],{}),**identity}
             p=profiles.setdefault(c["person"],identity)
             if not any(r["occupationQid"]==c["occupation"] for r in p["roles"]):
                 p["roles"].append({"occupationQid":c["occupation"],"label":c["roleLabel"],
@@ -256,6 +448,19 @@ def build(release,*,getter=None,previous_people=None,checked_at=None,batch=6,max
             m["connectedPeople"]=[p for p in m["connectedPeople"] if p.get("verified")]
     for p in previous.values():
         if p["qid"] not in profiles:profiles[p["qid"]]=p
+    enrichment=enrich_profiles(profiles,detail_cache,getter=getter,checked_at=now)
+    by_qid={p["qid"]:p for p in profiles.values()}
+    # Cards of communes refer to canonical person profiles; only their photo
+    # and a short bio are mirrored as a view-model, never a second identity.
+    for commune in municipalities:
+        for entry in commune.get("connectedPeople",[]):
+            profile=by_qid.get(entry.get("qid"))
+            if not profile:continue
+            portrait=next((m for m in profile.get("media",[]) if m.get("kind")=="photo"
+                        and m.get("subjectVerified") and m.get("reuseAllowed")),None)
+            if portrait and portrait.get("portraitCandidate"):entry["portrait"]=portrait
+            else:entry.pop("portrait",None)
+            if profile.get("biography"):entry["biography"]=profile["biography"][:500]
     results=sorted(profiles.values(),key=lambda p:p["qid"])
     return {
       "schemaVersion":"1.0","releaseChannel":"ALPINE_PEOPLE_LINKS","isPublished":True,
@@ -269,7 +474,13 @@ def build(release,*,getter=None,previous_people=None,checked_at=None,batch=6,max
       "newLinksInRun":linked,
       "mountainLinks":sum(sum(p.get("category")=="montagna" for p in m.get("connectedPeople",[])) for m in municipalities),
       "otherNotableLinks":sum(sum(p.get("category")=="cultura_e_ricerca" for p in m.get("connectedPeople",[])) for m in municipalities),
-      "errors":errors,
+      "errors":errors+enrichment["errors"],
+      "portraitsAdded":enrichment["portraitsAdded"],
+      "profilesWithPortrait":enrichment["profilesWithPortrait"],
+      "imagesHeldForReview":enrichment["imagesHeldForReview"],
+      "biographiesAdded":enrichment["biographiesAdded"],
+      "profilesWithBiography":enrichment["profilesWithBiography"],
+      "associationsObserved":enrichment["associationsObserved"],
       "quality":"G1; no personal permalink or inferred ascent"
     }
 

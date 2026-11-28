@@ -71,10 +71,19 @@ export function summarizeImportCatalog(){
       facts:0,media:osm.filter(e=>e.photo?.sourceUrl&&e.photo?.license).length,
       relations:0,checkedAt:places?.generatedAt||null,coverage:{},denominator:osm.length},
     {id:'persone',name:'Persone nel grafo (G1)',count:peopleEntities.length,
-      facts:0,media:0,relations:peopleEntities.reduce((s,e)=>s+(e.relations||[]).length,0),
+      facts:peopleEntities.reduce((s,e)=>s+countFacts(e),0),media:countMedia(peopleEntities),
+      relations:peopleEntities.reduce((s,e)=>s+(e.relations||[]).length+
+          (e.externalEntityLinks||[]).length,0),
       checkedAt:people?.generatedAt||null,
-      coverage:{'Con relazione documentata':coverage(peopleEntities,e=>(e.relations||[]).some(r=>r.verified))},
-      denominator:peopleEntities.length},
+      coverage:{
+        'Con relazione documentata':coverage(peopleEntities,e=>(e.relations||[]).some(r=>r.verified)),
+        'Fotografia verificata':coverage(peopleEntities,e=>(e.media||[]).some(m=>
+            m.kind==='photo'&&m.reuseAllowed&&m.subjectVerified&&m.portraitCandidate&&m.author&&m.licence)),
+        'Biografia con QID verificato':coverage(peopleEntities,e=>(e.textSources||[]).some(t=>
+            t.kind==='source_excerpt_not_original_editorial'&&t.sourceId&&t.licence)),
+        'Data di nascita documentata':coverage(peopleEntities,e=>Boolean(e.facts?.birthDate?.value)),
+        'Opere, eventi o associazioni':coverage(peopleEntities,e=>(e.externalEntityLinks||[]).length>0),
+      },denominator:peopleEntities.length},
     {id:'sentieri',name:'Sentieri GPX (manifest)',count:Number(routes?.routeCount)||0,
       facts:0,media:0,relations:0,checkedAt:routes?.generatedAt||null,
       coverage:{},denominator:Number(routes?.routeCount)||0},
@@ -87,9 +96,12 @@ export function summarizeImportCatalog(){
       publicEntities:mun.length+ref.length+she.length,
       municipalities:mun.length,refuges:ref.length,shelters:she.length,
       peopleInGraph:peopleEntities.length,
+      verifiedPeoplePortraits:peopleEntities.filter(e=>(e.media||[]).some(m=>m.kind==='photo'&&m.reuseAllowed&&m.subjectVerified&&m.portraitCandidate)).length,
+      documentedPeopleBiographies:peopleEntities.filter(e=>(e.textSources||[]).length>0).length,
+      peopleExternalConnections:peopleEntities.reduce((s,e)=>s+(e.externalEntityLinks||[]).length,0),
       municipalityPersonRelations:mun.reduce((s,e)=>s+(e.connectedPeople||[]).filter(p=>p.verified).length,0),
       osmPlaces:osm.length,routes:Number(routes?.routeCount)||0,
-      sourcedFacts:totalFacts,attributedMedia:countMedia([...mun,...all]),
+      sourcedFacts:totalFacts,attributedMedia:countMedia([...mun,...all,...peopleEntities]),
       documentedRelations:sources.reduce((sum,s)=>sum+s.relations,0)},
     quality:{
       municipalitiesG2:mun.filter(e=>e.quality?.gate==='G2').length,
@@ -127,7 +139,8 @@ export function appendSuccessfulImport(pipeline,runId,{report=null,sourceSha=nul
         ['municipalities','mayorsMatched','daitRowsOfficialCrosswalkRejected',
          'newG2','newMedia','newWikiText','selectedCandidates','publishedG2',
          'metricsAdded','matched','failuresCount',
-         'municipalityPeopleLinks','peopleCatalogued','mountainLinks','otherNotableLinks','sourceAltimetryMatched'].includes(k) &&
+         'municipalityPeopleLinks','peopleCatalogued','mountainLinks','otherNotableLinks','sourceAltimetryMatched',
+         'portraitsAdded','profilesWithPortrait','imagesHeldForReview','biographiesAdded','profilesWithBiography','associationsObserved'].includes(k) &&
         (typeof v==='number'||typeof v==='string'))):{},
   };
   // Delta on equivalent source key only. Baseline is null, never "0 new".
