@@ -120,19 +120,19 @@
     },
     {
       "id": "bolzano_lakes_wfs",
-      "status": "g0_adapter_implemented_live_getfeature_unverified",
+      "status": "bounded_live_getfeature_G0_passed_with_3_topology_holds",
       "sourceUrl": "https://data.civis.bz.it/dataset/laghi",
       "license": "CC0",
       "scope": "Provincia autonoma Bolzano, physical lake boundaries",
-      "notes": "WFS 2.0, exact layer discovery from capabilities; CC0 official catalogue. Source IDs provisional; bounded 20-feature G0 pilot only, no SEO or OSM identity joins; separate live CI probe pending."
+      "notes": "Live run #46127602617: 20 WFS features received; 17 valid non-public G0 geometries; 3 with non-consecutive repeated vertices held for review. BBOX axis order lon/lat verified for this server. WFS feature IDs not yet audited for long-term stability; no merges or SEO."
     },
     {
       "id": "arpav_water_bodies_wfs",
-      "status": "g0_adapter_implemented_live_getfeature_unverified",
+      "status": "bounded_live_getfeature_G0_passed",
       "sourceUrl": "https://geodati.gov.it/geoportale/visualizzazione-metadati/scheda-metadati?metadataid=arpa_ve:idrografia_specchio_acqua",
       "license": "CC BY 3.0",
       "scope": "Veneto, mapped surface water bodies at 1:10,000 scale",
-      "notes": "WFS 1.0, capabilities layer discovery, 1:10000 RNDT, CC BY 3.0; includes natural/artificial and lagoon water surfaces. Unclassified G0, no lake/reservoir inference, live probe pending."
+      "notes": "Live run #46127602617: 20 received/20 non-public G0 polygons valid. Includes lakes, artificial water and lagoon surfaces; no automatic lake classification; WFS feature IDs provisional; no OSM/GN joins."
     }
   ],
   "verifiedNow": [
@@ -270,11 +270,29 @@
     "release": "none",
     "stage": "G0",
     "published": 0,
-    "sourceFeaturesVerified": 0,
+    "sourceFeaturesVerified": 37,
     "maxPilotFeaturesPerProvider": 20,
     "canonicalType": "natural_feature",
     "crosswalk": "no_auto_join",
-    "sourceFeatureIdStability": "unverified",
-    "startDate": "2026-11-28"
+    "sourceFeatureIdStability": "not_yet_audited",
+    "startDate": "2026-11-28",
+    "featuresReceived": 40,
+    "qaRun": "46127602617",
+    "offlineTestsPassed": 34,
+    "perProvider": {
+      "bolzano_lakes": {
+        "received": 20,
+        "acceptedG0": 17,
+        "reviewHold": 3,
+        "bboxMode": "alternate_lonlat"
+      },
+      "arpav_water_surfaces": {
+        "received": 20,
+        "acceptedG0": 20,
+        "reviewHold": 0,
+        "bboxMode": "native_lonlat"
+      }
+    },
+    "status": "bounded_live_g0_verified_without_publication"
   }
 }
