@@ -28,6 +28,9 @@ export interface PeakIndex {
   rows?: Record<string, number[]>;
   cells: Record<string, number>;
   top: PeakRow[];
+  /** Spatially representative raw summits at country/region zoom, not only high-altitude national highlights. */
+  overview?: PeakRow[];
+  overviewStepDeg?: number;
 }
 
 const BASE = `${DATA_BASE}/peaks`;
@@ -122,6 +125,21 @@ const MAX_TILES = 4;
  * the whole page even when the visible summits had not changed.
  */
 let topCache: { size: number; photos: Map<string, PeakPhoto>; summits: Map<string, PublishedSummit>; venues: Venue[] } | null = null;
+/** One shared conversion cache for both low-zoom map and home highlights. */
+function overviewVenues(index: PeakIndex, photos: Map<string, PeakPhoto>, summits: Map<string, PublishedSummit>): Venue[] {
+  if (!topCache || topCache.size !== index.tile || topCache.photos !== photos || topCache.summits !== summits) {
+    const rows = index.overview?.length ? index.overview : index.top;
+    topCache = { size: index.tile, photos, summits, venues: rows.map(row => toVenue(row, index.tile, photos, summits)) };
+  }
+  return topCache.venues;
+}
+
+/** A compact geographic overview: raw GeoNames geometry, G2 additions only when verified. */
+export async function loadPeakOverview(): Promise<Venue[]> {
+  const [index, photos, summits] = await Promise.all([loadPeakIndex(), loadPeakPhotos(), verifiedSummits()]);
+  return index ? overviewVenues(index, photos, summits) : [];
+}
+
 let viewCache: { sig: string; photos: Map<string, PeakPhoto>; summits: Map<string, PublishedSummit>; venues: Venue[] } | null = null;
 
 /** Summits for a viewport: full tiles when zoomed in, the index's highlights when not. */
@@ -139,10 +157,10 @@ export async function peaksInView(view: Bounds): Promise<Venue[]> {
   }
   const [photos, summits] = await Promise.all([loadPeakPhotos(), verifiedSummits()]);
   if (keys.size > MAX_TILES) {
-    if (!topCache || topCache.size !== size || topCache.photos !== photos || topCache.summits !== summits) {
-      topCache = { size, photos, summits, venues: index.top.map((row) => toVenue(row, size, photos, summits)) };
-    }
-    return topCache.venues;
+    // The previous 26-country-highlights fallback made most of Italy look
+    // empty. Keep 5° tiles lazy, but display distributed summits from the
+    // lightweight index at wide zoom levels.
+    return overviewVenues(index, photos, summits);
   }
   const sig = [...keys].sort().join('|');
   if (viewCache?.sig === sig && viewCache.photos === photos && viewCache.summits === summits) return viewCache.venues;
