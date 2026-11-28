@@ -4,6 +4,8 @@ on:
     branches: [feat/summits-geonames-staging-v1-20261128]
     paths:
       - scripts/import_summits_v1.py
+      - scripts/resolve_summit_wikidata_v1.py
+      - tests/test_resolve_summit_wikidata_v1.py
       - tests/test_import_summits_v1.py
       - scripts/summit_field_registry_v1.json
       - .github/workflows/test-import-summits-v1.yml
@@ -11,6 +13,8 @@ on:
     branches: [main]
     paths:
       - scripts/import_summits_v1.py
+      - scripts/resolve_summit_wikidata_v1.py
+      - tests/test_resolve_summit_wikidata_v1.py
       - tests/test_import_summits_v1.py
       - scripts/summit_field_registry_v1.json
       - .github/workflows/test-import-summits-v1.yml
@@ -35,6 +39,20 @@ jobs:
         run: |
           set -euo pipefail
           python scripts/import_summits_v1.py --bbox 46.1 11.2 47.1 13.0 --max-entities 250 --min-entities 30 --with-near --out build/import-summits-v1
+      - name: Offline Wikidata ID and coordinate resolver tests
+        run: python -m unittest discover -s tests -p 'test_resolve_summit_wikidata_v1.py' -v
+      - name: Limited real Wikidata P1566/P625 crosswalk (report failures separately)
+        run: |
+          set -euo pipefail
+          python scripts/resolve_summit_wikidata_v1.py \
+            --stage build/import-summits-v1/summits.json \
+            --out build/import-summits-v1/wikidata-map.json \
+            --max-items 40 --batch-size 20 --pause 1.4
+          python scripts/import_summits_v1.py \
+            --bbox 46.1 11.2 47.1 13.0 \
+            --max-entities 250 --min-entities 30 --with-near \
+            --wikidata-map build/import-summits-v1/wikidata-map.json \
+            --out build/import-summits-v1
       - name: Verify staging quality and factual provenance
         run: |
           python - <<'PY'
