@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 import json
 import math
 from pathlib import Path
+from functools import lru_cache
 import re
 import sys
 from urllib.parse import urlencode
@@ -43,6 +44,7 @@ RURAL_CANDIDATES = DATA / "atlas" / "rural-classification-candidates-v1.json"
 RURAL_NAME = re.compile(r"^(?:malga|casera|casere|baita|alpeggio)\b", re.I)
 
 
+@lru_cache(maxsize=1)
 def official_rural_osm_types():
     """Only exact OSM IDs supported by an explicit territorial source."""
     try:
