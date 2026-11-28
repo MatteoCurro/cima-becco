@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from hashlib import blake2s
+import unicodedata
 from datetime import datetime, timezone
 import json
 import math
@@ -35,6 +37,8 @@ COUNTS = {
 }
 MAX_RECORDS = 10000
 MAX_NAME_LENGTH = 180
+NOT_A_NAME = frozenset({'n.d.', 'nd', 's.n.', '-', 'non disponibile', 'unknown', 'senza nome', '?'})
+
 
 
 def read_json(path):
@@ -72,6 +76,29 @@ def _names(entity, provider):
     return names[:4]
 
 
+def safe_label(value):
+    if not isinstance(value,str):
+        return None
+    name=" ".join(value.strip().split())
+    return name if len(name)>=3 and len(name)<=MAX_NAME_LENGTH and name.casefold() not in NOT_A_NAME else None
+
+
+def stable_source_preview_slug(source_key, name, municipality, provider):
+    """A source-preview URL, NEVER a canonical identity or source-FID URL.
+
+    Fingerprint only disambiguates homonyms. Stable across reorderings, with
+    no raw WFS feature ID exposed as a permalink. Pages remain noindex.
+    """
+    base=" ".join([name,municipality or (
+        'alto adige' if provider=='bolzano_lakes' else 'veneto')])
+    ascii_name=unicodedata.normalize('NFKD',base).encode('ascii','ignore').decode('ascii').lower()
+    slug=re.sub(r'[^a-z0-9]+','-',ascii_name).strip('-')[:88].strip('-')
+    if len(slug)<4:
+        raise ValueError('Invalid human-readable preview slug')
+    digest=blake2s(source_key.encode('utf-8'),digest_size=4).hexdigest()[:7]
+    return slug+'-'+digest
+
+
 def source_to_map_record(entity, provider):
     if (entity.get("quality",{}).get("gate")!="G0" or
             entity.get("quality",{}).get("seoIndexable") is not False or
@@ -102,14 +129,24 @@ def source_to_map_record(entity, provider):
     if raw_class is not None and (not isinstance(raw_class,str) or len(raw_class)>80):
         raise ValueError("Invalid provider class")
     facts=entity.get("facts",{})
+    source_key=provider+":"+fid
+    name=next((x["name"] for x in names if x["lang"]=="it"),None) or (
+        names[0]["name"] if names else None)
+    name=safe_label(name)
+    municipality=safe_label(props.get("MUNIC_IT")) or safe_label(props.get("MUNIC_DE")) if provider=="bolzano_lakes" else None
+    profile_slug=stable_source_preview_slug(source_key,name,municipality,provider) if name else None
     return {
-        "sourceKey":provider+":"+fid,
+        "sourceKey":source_key,
         "sourceFeatureId":fid,
         "provider":provider,
         # The name is source-reported, not a confirmed multilingual atlas alias.
-        "name":next((x["name"] for x in names if x["lang"]=="it"),None) or (
-            names[0]["name"] if names else None),
+        "name":name,
         "names":names,
+        "municipalityReported":municipality,
+        "sourceDescriptionName":safe_label(props.get("DESCR_IT")) if provider=="bolzano_lakes" else None,
+        "previewSlug":profile_slug,
+        "previewOnly":bool(profile_slug),
+        "previewNoindex":True,
         "rawClass":raw_class,
         "canonicalSubtypeVerified":False,
         "qualityGate":"G0",
@@ -118,6 +155,9 @@ def source_to_map_record(entity, provider):
         "derivedMappedKm2":measured,
         "agencyReportedAreaM2":_number(facts.get("officialAreaReportedM2"),"m2"),
         "agencyReportedElevationM":_number(facts.get("officialElevationReportedM"),"m"),
+        "agencyReportedVolumeM3":_number(facts.get("officialVolumeReportedM3"),"m3"),
+        "agencyReportedWidthM":_number(facts.get("officialWidthReportedM"),"m"),
+        "agencyReportedLengthM":_number(facts.get("officialLengthReportedM"),"m"),
         "sourceUrl":PROVIDERS[provider]["sourceUrl"],
         "licence":PROVIDERS[provider]["licence"],
     }
@@ -130,6 +170,7 @@ def build(staged, held, registry):
     features=[]
     summary={}
     allkeys=set()
+    preview_slugs=set()
     for provider in sorted(COUNTS):
         doc=staged[provider]
         review=held[provider]
@@ -155,6 +196,10 @@ def build(staged, held, registry):
             if record["sourceKey"] in allkeys:
                 raise ValueError("Duplicate provider source FID in census map")
             allkeys.add(record["sourceKey"])
+            if record["previewSlug"]:
+                if record["previewSlug"] in preview_slugs:
+                    raise ValueError("Provisional source-preview slug collision")
+                preview_slugs.add(record["previewSlug"])
             accepted.append(record)
         pending_keys=set()
         for entry in pending:
@@ -194,6 +239,8 @@ def build(staged, held, registry):
         "sourceRecordsAreNotDeduplicatedPhysicalLakes":True,
         "canonicalAtlasEntitiesAdded":0,
         "crossSourceIdentityLinksAdded":0,
+        "sourcePreviewPagesNoindexAllowed":True,
+        "sourcePreviewsReady":len(preview_slugs),
         "sourceCounts":summary,
         "shownPolygons":len(features),
         "geometryPendingReview":sum(x["geometryPendingReview"] for x in summary.values()),
