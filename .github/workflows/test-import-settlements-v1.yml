@@ -6,6 +6,8 @@ on:
       - scripts/import_settlements_v1.py
       - tests/test_import_settlements_v1.py
       - scripts/settlement_batch_cursor_v1.py
+      - scripts/merge_settlement_publication_v1.py
+      - tests/test_merge_settlement_publication_v1.py
       - tests/test_settlement_batch_cursor_v1.py
       - .github/workflows/test-import-settlements-v1.yml
   pull_request:
@@ -13,6 +15,8 @@ on:
       - scripts/import_settlements_v1.py
       - tests/test_import_settlements_v1.py
       - scripts/settlement_batch_cursor_v1.py
+      - scripts/merge_settlement_publication_v1.py
+      - tests/test_merge_settlement_publication_v1.py
       - tests/test_settlement_batch_cursor_v1.py
       - .github/workflows/test-import-settlements-v1.yml
   workflow_dispatch:
@@ -33,6 +37,8 @@ jobs:
           python-version: '3.12'
       - name: Contratto cursore incrementale basato su esecuzioni riuscite
         run: python -m unittest discover -s tests -p 'test_settlement_batch_cursor_v1.py' -v
+      - name: Test unione dati G2 e tutela delle modifiche concorrenti
+        run: python -m unittest discover -s tests -p 'test_merge_settlement_publication_v1.py' -v
       - name: Contratti offline (identita, gerarchia, dedup e SEO)
         run: python -m unittest discover -s tests -p 'test_import_settlements_v1.py' -v
       - name: Basi territoriali ISTAT 2021 ufficiali (TN/BZ e Veneto)
