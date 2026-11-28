@@ -171,12 +171,32 @@ def commons_files(filenames,*, getter=None, allow_svg=False):
         }
     return result
 
+def municipality_heraldry_filename(filename, municipality):
+    """Only exact municipality + heraldic term, never generic 'Italy' files."""
+    if not isinstance(filename,str) or not isinstance(municipality,str):return False
+    def normalize(s):
+        import unicodedata
+        s=unicodedata.normalize("NFKD",s)
+        s="".join(c for c in s if not unicodedata.combining(c))
+        return re.sub(r"[^a-z0-9]+"," ",s.casefold()).strip()
+    name=normalize(municipality)
+    basename=normalize(filename.removeprefix("File:").rsplit(".",1)[0])
+    if len(name)<3 or not ((" "+name+" ") in (" "+basename+" ")):return False
+    return bool(re.search(r"\b(stemma|wappen|coat of arms|blason|blasonnement|heraldic|armoiries)\b",basename)) and not bool(
+        re.search(r"\b(blank|template|provisional|facsimile|sample|bozza|modello|fake)\b",basename))
+
+def verified_article_heraldry_images(intro, municipality):
+    if not isinstance(intro,dict):return []
+    images=intro.get("linkedImages") or []
+    return list(dict.fromkeys(
+        s for s in images if municipality_heraldry_filename(s,municipality)))[:4]
+
 def wikipedia_intro(title,qid,*,getter=None):
     """Exact itwiki sitelink, with pageprops wikibase_item identity proof."""
     if not title:return None
     data = request_json(WIKIPEDIA_API,{
         "action":"query","format":"json","titles":title,
-        "prop":"extracts|pageprops","exintro":"1","explaintext":"1",
+        "prop":"extracts|pageprops|images","imlimit":"max","exintro":"1","explaintext":"1",
         "ppprop":"wikibase_item","redirects":"1","exchars":"1400"
     },getter=getter)
     pages=(data.get("query") or {}).get("pages",{})
@@ -197,7 +217,9 @@ def wikipedia_intro(title,qid,*,getter=None):
                 "sourceUrl":"https://it.wikipedia.org/wiki/"+quote(title.replace(" ","_")),
                 "licence":"CC BY-SA 4.0","method":"reported",
                 "sourceUpdatedAt":None,"retrievedAt":None,
-                "originalLanguage":"it","kind":"source_excerpt_not_original_editorial"}
+                "originalLanguage":"it","kind":"source_excerpt_not_original_editorial",
+                "linkedImages":[img.get("title","") for img in page.get("images",[])
+                                if isinstance(img,dict) and img.get("title","").startswith("File:")]}
     return None
 
 def choose_candidates(entities, crosswalk, limit=48, previous=None, progress=None):
@@ -312,11 +334,37 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, progress
                     intro=wikipedia_intro(wiki,qid,getter=getter)
                     if intro:
                         intro["retrievedAt"]=retrieved_at
-                        entity["textSources"]=[intro]
+                        intro.pop("linkedImages",None) if not verified_article_heraldry_images(intro,entity["name"]) else None
+                        entity["textSources"]=[{k:v for k,v in intro.items() if k!="linkedImages"}]
                         entity["description"]=intro["text"]
                         if not any(t.get("sourceId")==intro["sourceId"]
                                    for t in old.get(code,{}).get("textSources",[])):
                             text_count+=1
+                        # The municipality's confirmed itwiki infobox may
+                        # list a crest even when P94 is absent in Wikidata.
+                        if not any(m.get("kind")=="logo" for m in entity["media"]):
+                            candidates=verified_article_heraldry_images(intro,entity["name"])
+                            if candidates:
+                                try:
+                                    crest_assets=commons_files([p.removeprefix("File:")
+                                        for p in candidates],getter=getter,allow_svg=True)
+                                except Exception as exc:
+                                    crest_assets={}
+                                    failures.append("itwiki_crest:"+code+":"+str(exc)[:75])
+                                for filename in candidates[:2]:
+                                    file=filename.removeprefix("File:")
+                                    image=crest_assets.get(file.replace(" ","_"))
+                                    if not image:continue
+                                    entity["media"].append({**image,
+                                        "id":"wikimedia:"+qid+":article:crest:"+
+                                           hashlib.sha1(file.encode()).hexdigest()[:12],
+                                        "kind":"logo","symbolType":"coat_of_arms",
+                                        "caption":"Stemma di "+entity["name"],
+                                        "retrievedAt":retrieved_at,
+                                        "sourceId":"wikipedia:it:"+str(intro["sourceId"]),
+                                        "subjectMethod":"exact_named_heraldry_file_in_itwiki_article_verified_QID"})
+                                    media_count+=1
+                                    break
                 except Exception as exc:failures.append("wiki:"+code+":"+str(exc)[:70])
             if code in old and not any(m["kind"]=="photo" for m in entity["media"]):
                 entity["media"]=old[code].get("media",[])
