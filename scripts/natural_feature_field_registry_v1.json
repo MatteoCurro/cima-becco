@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "canonicalSpec": "docs/MODELLO_METADATI_E_LAYOUT.md sections 1 and 5",
   "kind": "natural_feature",
-  "status": "G0_G1_real_pilots_verified_no_production_release",
+  "status": "G0_G1_real_pilots_verified_and_five_G2_staging_candidates",
   "subtypes": [
     {
       "type": "mountain_pass",
@@ -132,14 +132,14 @@
     "near only with no access claims"
   ],
   "pendingG2": [
-    "verify Wikidata QID and names",
+    "Verified P1566/P625 with OSM QID bridge and Commons P18 is completed for candidates; require same checks for next source batches",
     "verify polygon geometry for lakes/valleys",
-    "verify media P18 or authorized official images",
     "source-backed informative text",
     "canonical/legacy URL policy",
     "SEO+frontend adapters",
     "quality checks against published atlas",
-    "verified access/routes for mountain passes"
+    "verified access/routes for mountain passes",
+    "Use five source-backed pass candidates only after native DetailLayout and SEO/credits smoke test"
   ],
   "negativeGuarantees": [
     "No raw nearest water assumed potable",
@@ -167,6 +167,20 @@
       "reviewRequired": 2,
       "status": "verified",
       "sha256": "8dc9458f57eaad2467475b284c2972fd9fb00783e221315e379818de4f382047"
+    },
+    "identity": {
+      "run": "46121844323",
+      "candidatesAttempted": 204,
+      "exactP1566P625Links": 124,
+      "confirmedOsmBridges": 8,
+      "secondPassQidVerified": 121,
+      "g2CandidatesAfterAltAudit": 5,
+      "photos": 16,
+      "texts": 44,
+      "published": 0,
+      "offlineTests": 32,
+      "sourceFailures": 0,
+      "decisions": "No cross-source joins based on name or proximity; Wikipedia altitude alternatives audited; no lake/valley G2 without area."
     }
   },
   "stagingArtifacts": [

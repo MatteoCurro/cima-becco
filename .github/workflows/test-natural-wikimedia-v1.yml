@@ -1,0 +1,139 @@
+name: Natural features identity and Wikimedia G2 staging QA
+on:
+  push:
+    branches: [feat/natural-wikidata-identity-pilot-20261128]
+    paths:
+      - scripts/resolve_natural_wikidata_v1.py
+      - scripts/enrich_natural_wikimedia_v1.py
+      - tests/test_natural_wikimedia_v1.py
+      - .github/workflows/test-natural-wikimedia-v1.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/resolve_natural_wikidata_v1.py
+      - scripts/enrich_natural_wikimedia_v1.py
+      - tests/test_natural_wikimedia_v1.py
+      - .github/workflows/test-natural-wikimedia-v1.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: cima-natural-identity-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  identity-g2-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline deterministic identity, source and editorial safeguards
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_import_natural_features_v1.py' -v
+          python -m unittest discover -s tests -p 'test_import_natural_geonames_v1.py' -v
+          python -m unittest discover -s tests -p 'test_natural_wikimedia_v1.py' -v
+      - name: GeoNames official Italian dump, source checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/source
+          curl --fail --location --silent --show-error --retry 3 --retry-delay 5 \
+            --connect-timeout 25 --max-time 180 \
+            -A 'CimaBecco-OpenDataPilot/1.0 (https://www.cimabecco.it)' \
+            https://download.geonames.org/export/dump/IT.zip \
+            -o build/source/IT.zip
+          unzip -t build/source/IT.zip >/dev/null
+          python scripts/import_natural_geonames_v1.py \
+            --source build/source/IT.zip \
+            --max-records 250 --min-records 20 --with-near \
+            --out build/import-natural-features-v1
+      - name: Reuse the previous real OSM audit snapshot when accessible
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/natural-osm-replay
+          # Audit artifact is bounded and expires; no live Overpass query or
+          # joining of unrelated objects when it is unavailable.
+          gh run download 46120830491 \
+            --repo ${{ github.repository }} \
+            -n cima-becco-natural-features-osm-staging \
+            -D build/natural-osm-replay
+          test -s build/natural-osm-replay/features.json
+          echo 'Prior real OSM pilot was recovered for exact QID comparison'
+      - name: Exact Wikidata property P1566 and P625 one-to-one reconciliation
+        shell: bash
+        run: |
+          set -euo pipefail
+          osm_args=()
+          if test -s build/natural-osm-replay/features.json; then
+            osm_args=(--osm-stage build/natural-osm-replay/features.json)
+          fi
+          python scripts/resolve_natural_wikidata_v1.py \
+            --geonames-stage build/import-natural-features-v1/features-geonames.json \
+            --out build/import-natural-features-v1/natural-identity.json \
+            --max-items 220 --batch-size 20 --pause 1.3 "${osm_args[@]}"
+      - name: Independently revalidate QID and enrich Commons/Wikipedia
+        run: |
+          python scripts/enrich_natural_wikimedia_v1.py \
+            --geonames-stage build/import-natural-features-v1/features-geonames.json \
+            --crosswalk build/import-natural-features-v1/natural-identity.json \
+            --out build/import-natural-features-v1/natural-enriched.json \
+            --report build/import-natural-features-v1/natural-enriched-report.json \
+            --max-items 240
+      - name: Gate every source, area, access, SEO and image claim
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('build/import-natural-features-v1')
+          identity=json.loads((root/'natural-identity.json').read_text())
+          data=json.loads((root/'natural-enriched.json').read_text())
+          info=json.loads((root/'natural-enriched-report.json').read_text())
+          assert identity['isPublished'] is False
+          assert identity['releaseChannel']=='NATURAL_FEATURES_IDENTITY_STAGING_V1'
+          assert data['releaseChannel']=='NATURAL_FEATURES_G2_CANDIDATES_STAGING_V1'
+          assert data['isPublished'] is False
+          assert info['isPublished'] is False and info['seoIndexable']==0
+          assert info['identityVerified']==len(data['entities'])
+          assert len(data['entities'])==len({e['id'] for e in data['entities']})
+          assert len(data['entities'])==len({e['slug'] for e in data['entities']})
+          for e in data['entities']:
+              assert e['sourceIds'].get('wikidataVerifiedBy')=='P1566+P625'
+              assert e['quality']['seoIndexable'] is False
+              assert not any(r['type'] == 'accessible_from' for r in e.get('relations',[]))
+              assert not any('potable' in k for k in e.get('facts',{}))
+              if e['subtype'] in ('lake','valley','reservoir') and e['geo'].get('area') is None:
+                  assert e['quality']['gate']!='G2'
+              if e['quality']['gate']=='G2':
+                  assert e['media'] and e['textSources']
+                  assert not e['quality']['reviewRequired']
+                  assert all(m['author'] and m['licence'] and m['subjectVerified'] and m['reuseAllowed']
+                             and m['sourceUrl'].startswith('https://commons.wikimedia.org/')
+                             for m in e['media'])
+                  assert all(t['licence']=='CC BY-SA 4.0' and t['sourceId'].startswith('wikipedia:it:')
+                             for t in e['textSources'])
+          print('Real natural feature identity links:',len(identity['links']))
+          print('Real verified G2 candidates (staging only):',info['candidateG2'])
+          print('Reasons for holding G1:',info['heldReasons'])
+          assert len(identity['links'])>=1, 'No exact identity candidates in real data'
+          PY
+      - name: Assert published catalogs and UI were untouched
+        run: |
+          test -z "$(git status --porcelain -- public/ src/)"
+      - name: Retain complete pilot audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-natural-wikidata-g2-staging
+          path: |
+            build/import-natural-features-v1/
+            build/natural-osm-replay/features.json
+          retention-days: 14
+          if-no-files-found: warn
