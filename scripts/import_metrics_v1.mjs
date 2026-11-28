@@ -164,7 +164,7 @@ export function appendSuccessfulImport(pipeline,runId,{report=null,sourceSha=nul
     report:report&&typeof report==='object'?Object.fromEntries(
       Object.entries(report).filter(([k,v])=>
         ['municipalities','mayorsMatched','daitRowsOfficialCrosswalkRejected',
-         'newG2','newMedia','newWikiText','selectedCandidates','publishedG2',
+         'newG2','newMedia','newWikiText','selectedCandidates','offset','publishedG2',
          'metricsAdded','matched','failuresCount',
          'municipalityPeopleLinks','peopleCatalogued','mountainLinks','otherNotableLinks','sourceAltimetryMatched','historicPhotosAdded','historicCommunesCovered','historicCandidatesChecked',
          'portraitsAdded','profilesWithPortrait','imagesHeldForReview','biographiesAdded','profilesWithBiography','associationsObserved'].includes(k) &&
