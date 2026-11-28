@@ -146,7 +146,8 @@ export function AtlasDossierBlocks({ record, placement, excludeImages=false }: {
   }
 
   if (placement === 'connections') {
-    const relations = (record.relations ?? []).filter(r=>r.target?.id && r.target.name && ATLAS_RELATION_LABELS[r.type]);
+    const relations = (record.relations ?? []).filter(r=>r.target?.id && r.target.name &&
+      r.target.kind!=='person' && ATLAS_RELATION_LABELS[r.type]);
     return relations.length ? <Section kicker="ATLANTE / CONNESSIONI" title="Nello stesso territorio">
       <ul className="cb-dossier-relations">{relations.map((relation,index)=><RelationItem relation={relation} key={relation.type + ':' + relation.target.id + ':' + index}/>)}</ul>
     </Section> : null;
