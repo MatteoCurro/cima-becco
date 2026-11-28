@@ -36,6 +36,7 @@ PROVIDERS = {
         "licence": "CC0 1.0",
         "sourceDatasetId": "p_bz:Hydrology:Lakes",
         "sourceScale": None,  # Do not infer a scale from the WFS endpoint
+        "preferredBboxMode": "alternate",  # Verified by live pilot: lon/lat works
     },
     "arpav_water_surfaces": {
         "endpoint": "https://gaia.arpa.veneto.it/geoserver/ows",
@@ -48,6 +49,7 @@ PROVIDERS = {
         "licence": "CC BY 3.0",
         "sourceDatasetId": "arpa_ve:idrografia_specchio_acqua",
         "sourceScale": "1:10000",
+        "preferredBboxMode": "native",
     },
 }
 
@@ -126,7 +128,12 @@ def _coords(points):
         lon, lat = float(pair[0]), float(pair[1])
         if not (6 <= lon <= 20 and 35 <= lat <= 48):
             raise ValueError("Non-WGS84 or out-of-scope official coordinate")
-        result.append([round(lon, 7), round(lat, 7)])
+        candidate = [round(lon, 7), round(lat, 7)]
+        # Some GIS exports duplicate adjacent coordinates, creating a zero-
+        # length edge. Removing *exact* adjacent duplicates is lossless for
+        # area/topology; non-adjacent repeats and crossings still fail closed.
+        if not result or result[-1] != candidate:
+            result.append(candidate)
     return valid_ring(result)
 
 
@@ -222,6 +229,7 @@ def parse_geojson(raw: bytes, provider: str, *, at=None, request_url=None):
                 "area": geometry, "areaSourceUrl": request_url or p["sourceUrl"],
                 "areaMethod": "official_WFS_polygon_as_reported",
                 "crs": "EPSG:4326", "precision": p["sourceScale"],
+                "coordinateNormalization": "drop_exact_consecutive_duplicates_only",
             },
             "facts": {
                 "providerMappedWaterSurfaceKm2": {
@@ -264,7 +272,9 @@ def run_live(provider: str):
     # Some GeoServers disagree on EPSG:4326 BBOX axis order in WFS 2.0.
     # Probe both *bounded* interpretations before a last, at-most-20-feature
     # non-geographic diagnostic. Never silently assert sample completeness.
-    for mode in ("native", "alternate", "none"):
+    preferred = p["preferredBboxMode"]
+    alternate = "alternate" if preferred == "native" else "native"
+    for mode in (preferred, alternate, "none"):
         _, get_url = wfs_urls(provider, typename, bbox_mode=mode)
         raw = fetch_limited(get_url)
         response = json.loads(raw)
