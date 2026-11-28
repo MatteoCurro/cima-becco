@@ -18,7 +18,8 @@ type ImportStats={
   schemaVersion:string;generatedAt:string;sources:SourceStats[];history:ImportEvent[];
   total:{publicEntities:number;municipalities:number;refuges:number;shelters:number;
     routes:number;osmPlaces:number;sourcedFacts:number;attributedMedia:number;documentedRelations:number;
-    peopleInGraph:number;municipalityPersonRelations:number};
+    peopleInGraph:number;municipalityPersonRelations:number;
+    verifiedPeoplePortraits?:number;documentedPeopleBiographies?:number;peopleExternalConnections?:number};
   quality:{municipalitiesG2:number;missingMunicipalElevation:number;missingMunicipalPopulation:number};
 };
 type Metric='count'|'facts'|'media'|'relations';
@@ -159,7 +160,9 @@ export function SiteInsightsPage(){
             ['RELAZIONI',stats.total.documentedRelations],
             ['COMUNI G2',stats.quality.municipalitiesG2],
             ['PERSONE NEL GRAFO (G1)',stats.total.peopleInGraph||0],
-            ['LEGAMI PERSONA-COMUNE',stats.total.municipalityPersonRelations||0]
+            ['LEGAMI PERSONA-COMUNE',stats.total.municipalityPersonRelations||0],
+            ['FOTO PERSONE VERIFICATE',stats.total.verifiedPeoplePortraits||0],
+            ['BIOGRAFIE ATTRIBUITE',stats.total.documentedPeopleBiographies||0]
           ].map(([label,value])=><div key={label}><strong>{nf(Number(value))}</strong><span>{label}</span></div>)}
         </div>
         <div className="cb-import-section-heading"><div>
@@ -218,7 +221,8 @@ export function SiteInsightsPage(){
             {latestComuni?.report?.municipalities!=null&&<p>Su {nf(Number(latestComuni.report.municipalities))} comuni presenti nell'ultimo snapshot ISTAT.</p>}
             <p>{nf(stats.quality.missingMunicipalElevation)} schede senza quota documentata;
               {' '}{nf(stats.quality.missingMunicipalPopulation)} senza popolazione ISTAT datata.</p>
-            <p>{nf(stats.total.peopleInGraph||0)} profili persona G1 e {nf(stats.total.municipalityPersonRelations||0)} relazioni documentate persona–comune. Non equivalgono a biografie G2 indicizzate.</p>
+            <p>{nf(stats.total.peopleInGraph||0)} persone G1 · {nf(stats.total.municipalityPersonRelations||0)} legami con i comuni · {nf(stats.total.verifiedPeoplePortraits||0)} fotografie attribuite · {nf(stats.total.documentedPeopleBiographies||0)} estratti biografici · {nf(stats.total.peopleExternalConnections||0)} associazioni Wikidata con opere, eventi e organizzazioni da riconciliare.</p>
+            <p className="cb-insights-note">Le associazioni esterne non sono ancora vie aperte, prime ascensioni o percorsi attribuiti: servirà un collegamento verificato con le entità Cima Becco.</p>
             <p className="cb-insights-note">I livelli G0/G1 non diventano automaticamente pagine indicizzate. I dati DEM 2021 misurano il territorio, non il centro comunale.</p>
           </section>
           <section className="cb-insights-rank">
@@ -229,6 +233,7 @@ export function SiteInsightsPage(){
               <span>Nuovi media: {latestComuni.report?.newMedia!=null?nf(Number(latestComuni.report.newMedia)):'n.d.'}</span>
               <span>DAIT da revisione: {latestComuni.report?.daitRowsOfficialCrosswalkRejected!=null?nf(Number(latestComuni.report.daitRowsOfficialCrosswalkRejected)):'n.d.'}</span>
               <span>Relazioni con personaggi: {latestComuni.report?.municipalityPeopleLinks!=null?nf(Number(latestComuni.report.municipalityPeopleLinks)):'n.d.'}</span>
+              <span>Ritratti: {latestComuni.report?.profilesWithPortrait!=null?nf(Number(latestComuni.report.profilesWithPortrait)):'n.d.'} · Biografie: {latestComuni.report?.profilesWithBiography!=null?nf(Number(latestComuni.report.profilesWithBiography)):'n.d.'}</span>
               <span>Quote territoriali associate: {latestComuni.report?.sourceAltimetryMatched!=null?nf(Number(latestComuni.report.sourceAltimetryMatched)):'n.d.'}</span>
               <a href={'https://github.com/MatteoCurro/cima-becco/actions/runs/'+latestComuni.runId} target="_blank" rel="noopener noreferrer">Apri esecuzione GitHub Actions ↗</a>
             </div>:<p>Il primo registro degli importatori sarà alimentato dal prossimo rilascio verificato.</p>}
