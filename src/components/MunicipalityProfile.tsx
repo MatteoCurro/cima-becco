@@ -87,10 +87,10 @@ export function MunicipalityProfile({place,routeGroups,loadingRoutes,nearbyPlace
     ...(region?[{label:'Regione',value:region}]:[]),
     ...(province?[{label:'Provincia',value:province}]:[]),
     ...(centre!==null?[{label:'Altitudine del centro',value:centre.toLocaleString('it-IT')+' m'}]:[]),
-    ...(reported!==null?[{label:'Altitudine (Wikidata)',value:reported.toLocaleString('it-IT')+' m'}]:[]),
-    ...(minimum!==null?[{label:'Quota minima del territorio',value:minimum.toLocaleString('it-IT')+' m'}]:[]),
+    ...(reported!==null&&reported!==centre?[{label:'Altitudine (Wikidata)',value:reported.toLocaleString('it-IT')+' m'}]:[]),
+    ...(minimum!==null&&maximum===null?[{label:'Quota minima del territorio',value:minimum.toLocaleString('it-IT')+' m'}]:[]),
     ...(average!==null?[{label:'Quota media del territorio',value:average.toLocaleString('it-IT')+' m'}]:[]),
-    ...(maximum!==null?[{label:'Quota massima del territorio',value:maximum.toLocaleString('it-IT')+' m'}]:[]),
+    ...(maximum!==null&&minimum===null?[{label:'Quota massima del territorio',value:maximum.toLocaleString('it-IT')+' m'}]:[]),
     ...(surface!==null?[{label:'Superficie',value:surface.toLocaleString('it-IT',{maximumFractionDigits:2})+' km²'}]:[]),
     ...(population!==null&&populationReference?[{label:'Popolazione ('+populationReference+')',
       value:population.toLocaleString('it-IT')}]:[]),
@@ -115,7 +115,7 @@ export function MunicipalityProfile({place,routeGroups,loadingRoutes,nearbyPlace
           ...(centre!==null?[{label:'Altitudine del centro',value:centre.toLocaleString('it-IT')+' m'}]:
             reported!==null?[{label:'Altitudine',value:reported.toLocaleString('it-IT')+' m'}]:[]),
           ...(surface!==null?[{label:'Superficie',value:surface.toLocaleString('it-IT',{maximumFractionDigits:1})+' km²'}]:[]),
-          ...(maximum!==null?[{label:'Quota massima del territorio',value:maximum.toLocaleString('it-IT')+' m'}]:[]),
+
           ...(population!==null&&populationReference?[{label:'Residenti ('+populationReference+')',value:population.toLocaleString('it-IT')}]:[]),
         ]}/>
         <div className="cb-location-actions">
