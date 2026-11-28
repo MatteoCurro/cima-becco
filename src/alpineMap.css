@@ -3,3 +3,12 @@
 .cb-atlas-selected-pin{display:grid;place-items:center;width:36px;height:36px;border:3px solid #fff;border-radius:50%;background:#d00058;color:#fff;font:900 20px/1 'Barlow Condensed',sans-serif;box-shadow:0 3px 12px #193b2d65}
 .cb-water-map-popover{display:grid;gap:5px;color:#234735;font:600 13px/1.4 'Space Grotesk',sans-serif}
 .cb-water-map-popover small{font:500 11px/1.4 'Space Grotesk',sans-serif;color:#637a68}
+
+/* Legenda compatta presente anche sulle mappe delle tracce, prive di elenco laterale. */
+.cb-water-map-legend{position:absolute;z-index:3;left:12px;bottom:13px;display:flex;gap:6px 12px;flex-wrap:wrap;max-width:calc(100% - 82px);padding:7px 10px;background:#fffef5ed;border:1px solid #dbe7da;border-radius:8px;box-shadow:0 3px 12px #163b2825;pointer-events:none}
+.cb-water-map-legend>span{display:inline-flex;align-items:center;gap:4px;font:750 10px/1.3 'Space Grotesk',sans-serif;color:#2b513f}
+.cb-water-map-legend .cb-water-kind-icon--fontanella{color:#176b9a}
+.cb-water-map-legend .cb-water-kind-icon--sorgente{color:#267568}
+.cb-water-map-legend .cb-water-kind-icon--rubinetto{color:#79549a}
+.cb-water-map-popover a{color:#af0056;text-decoration:underline;font-size:11px;font-weight:750}
+@media(max-width:560px){.cb-water-map-legend{left:8px;bottom:8px;gap:5px 8px;padding:6px 8px;max-width:calc(100% - 58px)}.cb-water-map-legend>span{font-size:9px}}

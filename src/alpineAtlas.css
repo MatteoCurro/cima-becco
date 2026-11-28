@@ -37,8 +37,8 @@
 .cb-atlas-actions a{font-weight:800;color:#1e6646}
 .cb-atlas-primary{padding:16px 21px;color:#fff!important;background:#ff2879;border-radius:7px;font:900 13px 'Space Grotesk',sans-serif;text-decoration:none}
 .cb-atlas-nearby{margin-top:38px}
-.cb-atlas-nearby h2{font:900 28px 'Bricolage Grotesque',sans-serif;letter-spacing:-.05em}
-.cb-atlas-nearby h2 span{color:#f52674}
+.cb-atlas-nearby :is(h2,h3){font:900 28px 'Bricolage Grotesque',sans-serif;letter-spacing:-.05em}
+.cb-atlas-nearby :is(h2,h3) span{color:#f52674}
 .cb-atlas-routes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .cb-atlas-routes>a,.cb-atlas-routes>div{display:flex;flex-direction:column;gap:6px;padding:17px;border:1px solid #d9e5d7;background:#f8faf5;border-radius:9px;color:#214c36;text-decoration:none}
 .cb-atlas-routes>a:hover{border-color:#fc1f72}

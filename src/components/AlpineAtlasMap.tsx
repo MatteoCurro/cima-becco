@@ -14,6 +14,7 @@ import type { AlpineWaterPoint } from '../lib/alpineWater';
 import { potabilityLabel } from '../lib/alpineWater';
 import { waterDisplayName, waterKindLabel } from '../lib/waterPresentation';
 import { registerWaterMapIcons } from '../map/waterIcons';
+import { WaterPointIcon } from './WaterPointIcon';
 
 interface Props {
   places: AlpinePlace[];
@@ -259,6 +260,11 @@ export function AlpineAtlasMap({places,kind,selected=null,selectedPoint=null,rou
       {(selected || routes.length>0)&&<button type="button" aria-pressed={showTrails} onClick={()=>setShowTrails(value=>!value)}>Sentieri {showTrails?'✓':'+'}</button>}
       {water.length>0&&<button type="button" aria-pressed={showWater} onClick={()=>setShowWater(value=>!value)}>Punti acqua {showWater?'✓':'+'}</button>}
     </div>
+    {water.length>0&&showWater&&<div className="cb-water-map-legend" aria-label="Legenda tipologie di acqua">
+      {(['fontanella','sorgente','rubinetto'] as const).map(waterKind=><span key={waterKind}>
+        <WaterPointIcon kind={waterKind} size={16}/>{waterKindLabel(waterKind)}
+      </span>)}
+    </div>}
     <div ref={container} className="cb-atlas-map" style={{height}} role="application"
       aria-label={caption ? `Mappa topografica: ${caption}` : selected||selectedPoint ? `Mappa topografica di ${(selected??selectedPoint)!.name} con sentieri vicini` : `Mappa topografica dedicata a ${kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'paesi di montagna'}`}/>
   </div>;
