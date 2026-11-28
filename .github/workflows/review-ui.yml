@@ -63,6 +63,8 @@ jobs:
         run: node scripts/check_permalinks.mjs
       - name: Install headless Chromium for responsive review
         run: npx playwright install --with-deps chromium webkit
+      - name: Validate published editorial home in Chromium and WebKit
+        run: CB_HOME_PREVIEW=1 npx playwright test tests/home-editorial-preview.spec.ts --project=chromium --project=webkit
       - name: Validate layout in real browser (desktop and mobile)
         run: npx playwright test tests/ui-layout.spec.ts tests/home-navigation.spec.ts --project=chromium --project=webkit
       - name: Keep screenshots and traces on failure

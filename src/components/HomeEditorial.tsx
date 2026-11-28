@@ -182,7 +182,7 @@ export function HomeEditorial({routes}:{routes:Route[]}) {
         <span className="cb-home-editorial-kicker">L’ATLANTE SI ARRICCHISCE</span>
         <h2>LA MONTAGNA NON FINISCE QUI.</h2>
         <p>Stiamo selezionando schede con identità, fotografie e informazioni verificabili. Nel frattempo, i percorsi restano consultabili.</p>
-        <a className="cb-home-editorial-all" href="#routes">Esplora i sentieri ↗</a>
+        <a className="cb-home-editorial-all" href="#routes">Vai al catalogo dei percorsi ↗</a>
       </div>}
   </div>;
 }

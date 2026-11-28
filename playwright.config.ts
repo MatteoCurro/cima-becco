@@ -20,9 +20,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    // CI validates the generated, published assets (including the daily home
-    // snapshot). Local development retains the Vite dev server.
-    command: process.env.CI
+    // Only the dedicated published-home smoke test needs the built Vite assets.
+    // Legacy responsive tests run against the dev server exactly as before.
+    command: process.env.CB_HOME_PREVIEW
       ? 'npm run preview -- --host 127.0.0.1 --port 5180'
       : 'npm run dev',
     url: 'http://localhost:5180',
