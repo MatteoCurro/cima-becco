@@ -139,6 +139,12 @@ Per le fotografie, la pagina attribuisce ogni media visibile alla sua **scheda c
 
 **Layout**: hero cima → quota/gruppo, descrizione, storia alpinistica, **Come raggiungerla** (solo collegamenti confermati), vie/ferrate, rifugi, meteo in quota, immagini e mappa.
 
+**Contratto operativo cime GeoNames G2 (28/11/2026).** L'archivio grezzo già esistente in `public/data/peaks` resta la sorgente di geometria e dell'identificativo GeoNames; la corrispondenza Wikidata usa esclusivamente la proprietà `P1566` uguale all'ID e coordinate `P625` congruenti (soglia della verifica puntuale documentata). La quota GeoNames `s` (riportata) e `d` (stimata) conserva il metodo; `P2044` Wikidata è un fatto separato `wikidataElevationReportedM`, con unità verificata, **mai** una sostituzione silenziosa. In caso di differenza sostanziale, l'entità resta in revisione. Gruppi montuosi senza perimetro verificato e toponimi omonimi non si pubblicano come G2. Gli archi `near` restano distanze rettilinee, non dimostrano una via di accesso.
+
+**Gate editoriale cime G2 e URL.** Prima dell'indicizzazione servono: ID GeoNames-QID uno a uno, fotografie `P18` della stessa entità con metadati di licenza/autore su Commons, testo enciclopedico della stessa voce con QID `pageprops` verificato, quota con metodo, testo non generico, nessun conflitto di ID o slug. Le informazioni di prima ascensione, vie e accessibilità richiedono una fonte qualificata propria. Il permalink editoriale è `/cime/<slug>/`, con vecchio `/place/gn<ID>-<tile>/` preservato come alias noindex/redirect; l'app conserva il `gn...` come identità tecnica dei pin e dei preferiti. Crediti esclusivamente nel registro centrale `/fonti-e-crediti/`.
+
+
+
 ## 5. Passi, forcelle, valichi, valli, laghi, cascate, sorgenti, panorami
 
 **Identità**: kind/subtype, nome e varianti, coordinate, quota/estensione, gruppo/valle/comune, accessibilità, ente e aree protette.  
