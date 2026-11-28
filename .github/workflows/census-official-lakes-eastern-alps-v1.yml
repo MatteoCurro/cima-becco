@@ -1,0 +1,207 @@
+name: Census official Alpine lakes (region-wide source IDs, G0 only)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/census_official_lakes_eastern_alps_v1.py
+      - tests/test_census_official_lakes_eastern_alps_v1.py
+      - scripts/import_official_lake_wfs_v1.py
+      - scripts/normalize_official_lake_wfs_facts_v1.py
+      - .github/workflows/census-official-lakes-eastern-alps-v1.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/census_official_lakes_eastern_alps_v1.py
+      - scripts/import_official_lake_wfs_v1.py
+      - scripts/normalize_official_lake_wfs_facts_v1.py
+      - .github/workflows/census-official-lakes-eastern-alps-v1.yml
+  schedule:
+    # Independent regional census: weekly, not hourly; persist source hashes.
+    - cron: '12 5 * * 0'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cima-lakes-census-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Conservative lake census, source isolation and quality gates
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_census_official_lakes_eastern_alps_v1.py' -v
+          python -m unittest discover -s tests -p 'test_import_official_lake_wfs_v1.py' -v
+          python -m unittest discover -s tests -p 'test_normalize_official_lake_wfs_facts_v1.py' -v
+          test -z "$(git status --porcelain -- public/ src/)"
+
+  census:
+    needs: offline-regressions
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: [bolzano_lakes, arpav_water_surfaces]
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Enumerate region WFS source FIDs with adaptive split and request budget
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/census_official_lakes_eastern_alps_v1.py \
+            --provider "${{ matrix.provider }}" \
+            --max-requests 112 --max-depth 4 \
+            --out "build/eastern-alps-census-${{ matrix.provider }}"
+          python - <<'PY'
+          import json,os,pathlib
+          p=pathlib.Path("build/eastern-alps-census-"+os.environ["PROVIDER"])
+          data=json.loads((p/"regional-lake-records-g0.json").read_text())
+          pending=json.loads((p/"geometry-pending-records-g0.json").read_text())
+          report=json.loads((p/"regional-lake-census-audit.json").read_text())
+          assert not data["isPublished"] and not pending["isPublished"]
+          assert all(e["quality"]["gate"]=="G0" and
+                     not e["quality"]["seoIndexable"] and e["subtype"] is None
+                     for e in data["entities"]+pending["entities"])
+          assert len(data["entities"])==report["acceptedIndependentSourceRecordsG0"]
+          assert len(pending["entities"])==report["sourceIdsWithGeometryReviewG0"]
+          assert not ({e["sourceFeatureId"] for e in data["entities"]} &
+                      {e["sourceFeatureId"] for e in pending["entities"]})
+          assert report["featuresRawDistinctSeen"]==len(data["entities"])+len(pending["entities"])
+          assert report["published"]==0 and report["seoIndexable"]==0
+          print("VALIDATED_CENSUS",report["provider"],
+                "geometry",len(data["entities"]),
+                "review",len(pending["entities"]),
+                "hits",report["requestedRegionNumberMatched"],
+                "complete",report["regionEnumerationComplete"])
+          PY
+          test -z "$(git status --porcelain -- public/ src/)"
+        env:
+          PROVIDER: ${{ matrix.provider }}
+      - name: Preserve independent G0 records and source coverage audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eastern-alps-census-${{ matrix.provider }}-G0
+          path: build/eastern-alps-census-${{ matrix.provider }}/
+          retention-days: 21
+          if-no-files-found: warn
+
+  persist-source-snapshots:
+    needs: [offline-regressions, census]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: eastern-alps-census-*-G0
+          path: build/official-lakes-census
+      - name: Validate and retain original agency IDs outside public data
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          build=Path('build/official-lakes-census')
+          dest=Path('data/snapshots')
+          dest.mkdir(parents=True,exist_ok=True)
+          combined={'releaseChannel':'OFFICIAL_LAKE_CENSUS_SOURCE_REGISTRY_G0_V1',
+                    'isPublished':False,'seoIndexable':False,
+                    'sourceRecordsAreNotDeduplicatedPhysicalLakes':True,
+                    'providers':{}}
+          for provider in ('bolzano_lakes','arpav_water_surfaces'):
+              folder=build/('eastern-alps-census-'+provider+'-G0')
+              good=json.loads((folder/'regional-lake-records-g0.json').read_text())
+              review=json.loads((folder/'geometry-pending-records-g0.json').read_text())
+              audit=json.loads((folder/'regional-lake-census-audit.json').read_text())
+              assert not good['isPublished'] and not review['isPublished']
+              assert good['sourceProvider']==provider
+              assert review['sourceProvider']==provider
+              assert audit['provider']==provider and audit['published']==0
+              valid=good['entities']
+              held=review['entities']
+              ids={e['sourceFeatureId'] for e in valid}
+              reviews={e['sourceFeatureId'] for e in held}
+              assert len(valid)==len(ids) and len(held)==len(reviews)
+              assert not (ids & reviews)
+              assert len(valid)+len(held)==audit['featuresRawDistinctSeen']
+              assert len(valid)>0 and len(held)+len(valid)>20
+              assert all(e['quality']['gate']=='G0' and
+                         e['quality']['seoIndexable'] is False and
+                         e['subtype'] is None and e['relations']==[]
+                         for e in valid+held)
+              # Preserve original FID+attributes and independent boundaries.
+              for kind,payload in (('geometry',good),('topology-review',review),
+                                    ('audit',audit)):
+                  name='official-lakes-'+provider+'-'+kind+'-g0.json'
+                  (dest/name).write_text(
+                    json.dumps(payload,ensure_ascii=False,
+                               separators=(',',':'))+'\n',encoding='utf-8')
+              combined['providers'][provider]={
+                  'reportedLayerCount':audit['sourceLayerNumberMatched'],
+                  'regionReportedCount':audit['requestedRegionNumberMatched'],
+                  'validPolygons':len(valid),
+                  'geometryReviewOnly':len(held),
+                  'observedSourceIds':len(ids)+len(reviews),
+                  'reportedHitsReliabilityIssues':audit['hitsReliabilityWarnings'],
+                  'regionEnumerationComplete':audit['regionEnumerationComplete'],
+                  'retrievedAt':good['retrievedAt'],
+              }
+          (dest/'official-lakes-source-registry-g0.json').write_text(
+              json.dumps(combined,ensure_ascii=False,indent=2)+'\n',
+              encoding='utf-8')
+          print('AGENCY_LAKE_SOURCE_SNAPSHOT',json.dumps(combined,
+                                                        ensure_ascii=False))
+          PY
+          test -z "$(git status --porcelain -- public/ src/)"
+      - name: Atomic versioned snapshot commit without force pushes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/snapshots/official-lakes-*-g0.json
+          if git diff --cached --quiet; then
+            echo 'No source snapshot change'
+            exit 0
+          fi
+          git commit -m 'data(laghi): source-exact official WFS census G0 snapshots'
+          for attempt in 1 2 3 4; do
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo 'Source snapshot conflicts; refusing overwrite'
+              exit 1
+            fi
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Concurrent update; retrying source snapshot push (attempt $attempt)"
+            sleep "$((attempt*2))"
+          done
+          echo 'Atomic source snapshot push not confirmed'
+          exit 1
