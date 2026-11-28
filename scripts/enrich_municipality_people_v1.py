@@ -15,7 +15,7 @@ import json
 from pathlib import Path
 import re
 import unicodedata
-from urllib.parse import urlencode, quote
+from urllib.parse import urlencode, quote, unquote
 from urllib.request import Request,urlopen
 from urllib.error import HTTPError,URLError
 import time
@@ -145,6 +145,18 @@ PUBLIC_ASSOCIATIONS={
   "P166":"award_received",
   "P101":"field_of_work",
 }
+# P18 links a file to a person but is not guaranteed to depict their face.
+# Keep linked artwork in the archive; do not present documentary posters,
+# monument details, signatures, or paintings of unrelated scenes as avatars.
+NON_PORTRAIT_CONTEXT=re.compile(
+  r"banner|filmretrospektive|allegori|monument|monumento|"
+  r"firma(?:[_. -]|$)|signature|hagar|ismael|"
+  r"споруда|храм|landscape|panorama|targa|plaque|"
+  r"gravestone|tombstone|facade|facciata|architett|poster|locandina",
+  re.I)
+def portrait_candidate(filename):
+    return not bool(NON_PORTRAIT_CONTEXT.search(unquote(filename).replace("_"," ")))
+
 def safe_wikipedia_url(title):
     return "https://it.wikipedia.org/wiki/"+quote(title.replace(" ","_"),safe="")
 
@@ -266,17 +278,20 @@ def enrich_profiles(profiles, details, *,getter=None, checked_at=None):
         media=images.get(name.replace(" ","_"))
         if not media:continue
         profile=profiles[qid]
+        candidate=portrait_candidate(name)
         entry={**media,"id":"wikimedia-person:"+qid+":P18",
                "kind":"photo","retrievedAt":checked_at,
                "subjectMethod":"explicit_wikidata_P18_human_QID",
-               "personQid":qid}
+               "personQid":qid,"portraitCandidate":candidate,
+               "needsPortraitReview":not candidate}
         existing=[m for m in profile.get("media",[])
                   if m.get("kind")=="photo" and m.get("sourceUrl")==entry["sourceUrl"]]
-        if not existing:
-            profile["media"]=[entry]+[
-                m for m in profile.get("media",[]) if m.get("id")!=entry["id"]]
-            new_photos+=1
-        profile["avatarMediaId"]=entry["id"]
+        profile["media"]=[entry]+[
+            m for m in profile.get("media",[]) if m.get("id")!=entry["id"]
+            and m.get("sourceUrl")!=entry["sourceUrl"]]
+        if not existing:new_photos+=1
+        if candidate:profile["avatarMediaId"]=entry["id"]
+        else:profile.pop("avatarMediaId",None)
     biographies={}
     pending=[]
     for qid,profile in profiles.items():
@@ -294,8 +309,10 @@ def enrich_profiles(profiles, details, *,getter=None, checked_at=None):
         "profilesProcessed":len(profiles),
         "portraitCandidates":len(portrait_requests),
         "portraitsAdded":new_photos,
-        "profilesWithPortrait":sum(any(m.get("kind")=="photo" and m.get("reuseAllowed") and
+        "profilesWithPortrait":sum(any(m.get("kind")=="photo" and m.get("portraitCandidate") and
             m.get("subjectVerified") for m in p.get("media",[])) for p in profiles.values()),
+        "imagesHeldForReview":sum(any(m.get("needsPortraitReview") for m in p.get("media",[]))
+            for p in profiles.values()),
         "biographiesAdded":len(biographies),
         "profilesWithBiography":sum(bool(p.get("textSources")) for p in profiles.values()),
         "associationsObserved":sum(len(p.get("externalEntityLinks",[])) for p in profiles.values()),
@@ -441,7 +458,8 @@ def build(release,*,getter=None,previous_people=None,checked_at=None,batch=6,max
             if not profile:continue
             portrait=next((m for m in profile.get("media",[]) if m.get("kind")=="photo"
                         and m.get("subjectVerified") and m.get("reuseAllowed")),None)
-            if portrait:entry["portrait"]=portrait
+            if portrait and portrait.get("portraitCandidate"):entry["portrait"]=portrait
+            else:entry.pop("portrait",None)
             if profile.get("biography"):entry["biography"]=profile["biography"][:500]
     results=sorted(profiles.values(),key=lambda p:p["qid"])
     return {
@@ -459,6 +477,7 @@ def build(release,*,getter=None,previous_people=None,checked_at=None,batch=6,max
       "errors":errors+enrichment["errors"],
       "portraitsAdded":enrichment["portraitsAdded"],
       "profilesWithPortrait":enrichment["profilesWithPortrait"],
+      "imagesHeldForReview":enrichment["imagesHeldForReview"],
       "biographiesAdded":enrichment["biographiesAdded"],
       "profilesWithBiography":enrichment["profilesWithBiography"],
       "associationsObserved":enrichment["associationsObserved"],
