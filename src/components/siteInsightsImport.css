@@ -1,0 +1,44 @@
+.cb-import-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 26px}
+.cb-import-tabs button{padding:12px 17px;border:1px solid #bed9b7;border-radius:7px;background:#fff;color:#244632;font:800 12px 'Space Grotesk',sans-serif;cursor:pointer}
+.cb-import-tabs button[aria-pressed=true]{background:#193e2e;border-color:#193e2e;color:#fff}
+.cb-import-totals{grid-template-columns:repeat(3,minmax(0,1fr));margin:18px 0 34px}
+.cb-import-section-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:35px 0 16px}
+.cb-import-section-heading span{font:900 10px 'Space Grotesk',sans-serif;letter-spacing:.12em;color:#b10051}
+.cb-import-section-heading h2{font:900 clamp(25px,4vw,38px)/1 'Bricolage Grotesque',sans-serif;color:#173e2b;margin:8px 0;letter-spacing:-.05em}
+.cb-import-section-heading p{font:500 13px/1.6 'Space Grotesk',sans-serif;max-width:720px;color:#526b57;margin:7px 0}
+.cb-import-section-heading small{color:#526b57;white-space:nowrap}
+.cb-import-chart-controls{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:0 0 17px}
+.cb-import-chart-controls label{font:800 11px 'Space Grotesk',sans-serif;color:#4b6252}
+.cb-import-chart-controls select{border:1px solid #d1dfca;background:#f3f8ef;color:#173c28;border-radius:5px;padding:8px;min-width:110px;max-width:100%;font:600 12px 'Space Grotesk',sans-serif}
+.cb-import-source-bars,.cb-import-coverage{display:grid;gap:13px}
+.cb-import-source-row{display:grid;grid-template-columns:minmax(96px,1fr) minmax(70px,2fr) auto;align-items:center;gap:12px;font:700 12px 'Space Grotesk',sans-serif;color:#2f4935}
+.cb-import-source-row strong{font-variant-numeric:tabular-nums}
+.cb-import-track{height:9px;background:#e7efe2;border-radius:8px;overflow:hidden}
+.cb-import-track span{display:block;height:100%;background:#ed1264;min-width:0;transition:width .2s ease}
+.cb-import-coverage-row{font:600 12px 'Space Grotesk',sans-serif;color:#304b3b}
+.cb-import-coverage-row>div:first-child{display:flex;gap:8px;justify-content:space-between;margin:0 0 6px}
+.cb-import-coverage-row strong{white-space:nowrap;font-size:11px;font-variant-numeric:tabular-nums}
+.cb-import-coverage-row:nth-child(even) .cb-import-track span{background:#2d765b}
+.cb-import-wide{margin:0 0 17px}
+.cb-import-plot{max-width:100%;overflow:hidden}
+.cb-import-plot svg{width:100%;height:auto;display:block;overflow:visible}
+.cb-import-empty-plot{padding:38px 22px;border:1px dashed #b8d1af;border-radius:8px;background:#f7fbf3;color:#254c35}
+.cb-import-empty-plot strong{font:900 19px 'Bricolage Grotesque',sans-serif}
+.cb-import-empty-plot p{font:500 13px/1.5 'Space Grotesk',sans-serif;color:#526852}
+.cb-import-big-number{font:900 48px/1 'Barlow Condensed',sans-serif;color:#c90056;margin:16px 0}
+.cb-import-big-number small{display:block;font:600 12px 'Space Grotesk',sans-serif;color:#4a614e;margin-top:7px}
+.cb-import-last-run{display:grid;gap:12px;font:600 13px 'Space Grotesk',sans-serif;color:#254732}
+.cb-import-last-run strong{font-size:20px}
+.cb-import-last-run a{color:#bd0054}
+.cb-import-log-wrap{width:100%;overflow-x:auto}
+.cb-import-log{width:100%;border-collapse:collapse;text-align:left;min-width:540px;font:600 12px 'Space Grotesk',sans-serif;color:#294735}
+.cb-import-log th{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#607c68;border-bottom:2px solid #d0e2d0;padding:12px 10px}
+.cb-import-log td{padding:13px 10px;border-bottom:1px solid #e3ebe0}
+.cb-import-log a{color:#c50056}
+.cb-import-source-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.cb-import-source-links a{display:flex;flex-direction:column;gap:7px;text-decoration:none;padding:17px;background:#e7f3e0;color:#1e482f;border:1px solid #cee2c2;border-radius:8px}
+.cb-import-source-links strong{font:800 14px 'Bricolage Grotesque',sans-serif}
+.cb-import-source-links span{font:700 13px 'Space Grotesk',sans-serif}
+.cb-import-source-links small{font:500 11px/1.5 'Space Grotesk',sans-serif;color:#526d57}
+@media(max-width:780px){.cb-import-totals{grid-template-columns:repeat(2,minmax(0,1fr))}.cb-import-section-heading{display:block}.cb-import-source-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.cb-import-totals{gap:7px}.cb-import-totals>div{padding:13px}.cb-import-source-links{grid-template-columns:1fr}.cb-import-source-row{grid-template-columns:1fr auto}.cb-import-source-row>.cb-import-track{grid-column:1/-1;grid-row:2}.cb-import-section-heading h2{font-size:27px}}
