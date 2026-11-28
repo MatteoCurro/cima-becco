@@ -78,11 +78,12 @@ const AlpineAtlasMap = lazy(() => import('./components/AlpineAtlasMap').then(m=>
 const NO_ALPINE_PLACES: import('./lib/alpinePlaces').AlpinePlace[] = [];
 const PlannerPage = lazy(() => import('./components/PlannerPage').then((m) => ({ default: m.PlannerPage })));
 const AlpineAtlasPage = lazy(() => import('./components/AlpineAtlasPage').then((m) => ({ default: m.AlpineAtlasPage })));
+const NaturalFeaturePage = lazy(() => import('./components/NaturalFeaturePage').then(m => ({ default: m.NaturalFeaturePage })));
 const AlpineExplorePage = lazy(() => import('./components/AlpineExplorePage').then((m) => ({ default: m.AlpineExplorePage })));
 const SiteInsightsPage = lazy(() => import('./components/SiteInsightsPage').then((m) => ({ default: m.SiteInsightsPage })));
 const PublicProfilePage = lazy(() => import('./components/PublicProfilePage').then((m) => ({ default: m.PublicProfilePage })));
 
-type View = 'landing' | 'planner' | 'atlas' | 'explore' | 'insights' | 'public_profile' | 'map' | 'training' | 'account' | 'settings' | InfoPageId;
+type View = 'landing' | 'planner' | 'atlas' | 'explore' | 'passes' | 'insights' | 'public_profile' | 'map' | 'training' | 'account' | 'settings' | InfoPageId;
 
 const INFO_PAGES: ReadonlySet<string> = new Set<InfoPageId>(['privacy', 'terms', 'community', 'data', 'contact']);
 
@@ -106,6 +107,8 @@ function viewFromHash(): View {
     : window.location.pathname.replace(/\/+$/, '');
   if (pathWithoutBase === '/fonti-e-crediti' && (!hash || hash === '#data')) return 'data';
   if(pathWithoutBase==='/comuni' && !hash) return 'atlas';
+  if(!hash && /^\/passi(?:\/[a-z0-9-]+)?$/.test(pathWithoutBase)) return 'passes';
+  if(/^#passi(?:\/[a-z0-9-]+)?$/.test(hash)) return 'passes';
   if(pathWithoutBase==='/cime' && !hash) return 'map';
   const path=cleanEntity();if(path && !hash)return path.kind==='route'||path.kind==='cime'?'map':path.kind==='trekking'||window.location.pathname.includes('/comuni/')?'atlas':'explore';
   if (hash === '#pianifica') return 'planner';
@@ -180,6 +183,8 @@ export default function App() {
         <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><AlpineAtlasPage /></Suspense>
       ) : view === 'explore' ? (
         <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><AlpineExplorePage /></Suspense>
+      ) : view === 'passes' ? (
+        <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><NaturalFeaturePage /></Suspense>
       ) : view === 'insights' ? (
         <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><SiteInsightsPage /></Suspense>
       ) : view === 'public_profile' ? (
