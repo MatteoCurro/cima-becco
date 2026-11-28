@@ -52,6 +52,9 @@ export interface AtlasMedia {
   subjectVerified: boolean;
   /** Uso autorizzato dalla licenza/permesso della singola risorsa. */
   reuseAllowed: boolean;
+  /** P18 is related to the person, but a poster/monument is not an avatar. */
+  portraitCandidate?:boolean;
+  needsPortraitReview?:boolean;
 }
 export interface AtlasPersonConnection {
   personId:string;
