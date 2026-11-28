@@ -1,0 +1,1351 @@
+{
+  "entities": [
+    {
+      "administrativeHierarchy": {
+        "country": "IT",
+        "geonamesAdmin1": "20"
+      },
+      "alerts": [],
+      "aliases": [
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3173341/",
+          "value": "Lago Misurina"
+        }
+      ],
+      "checkedAt": "2026-11-28T07:34:56.705232+00:00",
+      "description": null,
+      "displayName": "Lago di Misurina",
+      "editorialStatus": "linked",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3173341",
+          "sourceUpdatedAt": "2012-01-19",
+          "sourceUrl": "https://www.geonames.org/3173341/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1744
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3173341",
+          "sourceUpdatedAt": "2012-01-19",
+          "sourceUrl": "https://www.geonames.org/3173341/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "factsAlternatives": [],
+      "geo": {
+        "area": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.58278,
+          "lng": 12.25444
+        },
+        "precision": "provider_not_declared",
+        "sourceUrl": "https://www.geonames.org/3173341/"
+      },
+      "history": null,
+      "id": "23c7adb3-bff7-50a5-a275-6f06afd5b69d",
+      "kind": "natural_feature",
+      "localNames": [],
+      "media": [],
+      "name": "Lago di Misurina",
+      "quality": {
+        "areaNotVerified": true,
+        "gate": "G1",
+        "reviewRequired": false,
+        "seoIndexable": false,
+        "wikidataIdentityVerified": false
+      },
+      "relations": [
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/3173341/",
+          "straightLineKm": 11.98,
+          "target": {
+            "id": "49aa6b44-9571-5bfb-9c16-20fbc25c523e",
+            "kind": "settlement",
+            "name": "Val Fiscalina",
+            "slug": "val-fiscalina"
+          },
+          "type": "near",
+          "verified": false
+        },
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/3173341/",
+          "straightLineKm": 4.25,
+          "target": {
+            "id": "97634715-f7d6-51f1-a8b6-d8631d5d57fd",
+            "kind": "summit",
+            "name": "Monte Cristallo",
+            "slug": "monte-cristallo"
+          },
+          "type": "near",
+          "verified": false
+        }
+      ],
+      "restrictions": [],
+      "shortSummary": null,
+      "slug": "lago-di-misurina",
+      "slugAliases": [],
+      "sourceIds": {
+        "geonames": "3173341"
+      },
+      "subtype": "lake",
+      "textSources": [],
+      "updatedAt": "2026-11-28T07:34:56.705232+00:00"
+    },
+    {
+      "administrativeHierarchy": {
+        "country": "IT",
+        "geonamesAdmin1": "17"
+      },
+      "alerts": [],
+      "aliases": [
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3180523/",
+          "value": "Lago di Carezza"
+        }
+      ],
+      "checkedAt": "2026-11-28T07:34:56.705232+00:00",
+      "description": null,
+      "displayName": "Karersee",
+      "editorialStatus": "linked",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3180523",
+          "sourceUpdatedAt": "2012-05-27",
+          "sourceUrl": "https://www.geonames.org/3180523/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1531
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3180523",
+          "sourceUpdatedAt": "2012-05-27",
+          "sourceUrl": "https://www.geonames.org/3180523/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "factsAlternatives": [],
+      "geo": {
+        "area": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.40934,
+          "lng": 11.57515
+        },
+        "precision": "provider_not_declared",
+        "sourceUrl": "https://www.geonames.org/3180523/"
+      },
+      "history": null,
+      "id": "a4014ec7-b770-5f47-97d0-ec930f27e14f",
+      "kind": "natural_feature",
+      "localNames": [],
+      "media": [],
+      "name": "Karersee",
+      "quality": {
+        "areaNotVerified": true,
+        "gate": "G1",
+        "reviewRequired": false,
+        "seoIndexable": false,
+        "wikidataIdentityVerified": false
+      },
+      "relations": [
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/3180523/",
+          "straightLineKm": 14.94,
+          "target": {
+            "id": "8dee7280-1f62-52a9-8079-576305c811b6",
+            "kind": "settlement",
+            "name": "Compatsch",
+            "slug": "compatsch-castelrotto"
+          },
+          "type": "near",
+          "verified": false
+        }
+      ],
+      "restrictions": [],
+      "shortSummary": null,
+      "slug": "karersee",
+      "slugAliases": [],
+      "sourceIds": {
+        "geonames": "3180523"
+      },
+      "subtype": "lake",
+      "textSources": [],
+      "updatedAt": "2026-11-28T07:34:56.705232+00:00"
+    },
+    {
+      "administrativeHierarchy": {
+        "country": "IT",
+        "geonamesAdmin1": "17"
+      },
+      "alerts": [],
+      "aliases": [
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3181214/",
+          "value": "Kalterer See"
+        },
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3181214/",
+          "value": "Lago di Caldaro"
+        }
+      ],
+      "checkedAt": "2026-11-28T07:34:56.705232+00:00",
+      "description": null,
+      "displayName": "Lake Kaltern",
+      "editorialStatus": "linked",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3181214",
+          "sourceUpdatedAt": "2013-11-19",
+          "sourceUrl": "https://www.geonames.org/3181214/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 206
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3181214",
+          "sourceUpdatedAt": "2013-11-19",
+          "sourceUrl": "https://www.geonames.org/3181214/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "factsAlternatives": [],
+      "geo": {
+        "area": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.37934,
+          "lng": 11.26286
+        },
+        "precision": "provider_not_declared",
+        "sourceUrl": "https://www.geonames.org/3181214/"
+      },
+      "history": null,
+      "id": "ce5401e1-1077-54b9-84c8-5dd96f97640c",
+      "kind": "natural_feature",
+      "localNames": [],
+      "media": [],
+      "name": "Lake Kaltern",
+      "quality": {
+        "areaNotVerified": true,
+        "gate": "G1",
+        "reviewRequired": false,
+        "seoIndexable": false,
+        "wikidataIdentityVerified": false
+      },
+      "relations": [
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/3181214/",
+          "straightLineKm": 11.2,
+          "target": {
+            "id": "52b291d9-226b-5def-a14e-3908218c743f",
+            "kind": "settlement",
+            "name": "La Costa",
+            "slug": "la-costa-52b291d9"
+          },
+          "type": "near",
+          "verified": false
+        }
+      ],
+      "restrictions": [],
+      "shortSummary": null,
+      "slug": "lake-kaltern",
+      "slugAliases": [],
+      "sourceIds": {
+        "geonames": "3181214"
+      },
+      "subtype": "lake",
+      "textSources": [],
+      "updatedAt": "2026-11-28T07:34:56.705232+00:00"
+    },
+    {
+      "administrativeHierarchy": {
+        "country": "IT",
+        "geonamesAdmin1": "20"
+      },
+      "alerts": [],
+      "aliases": [],
+      "checkedAt": "2026-11-28T07:34:56.705232+00:00",
+      "description": null,
+      "displayName": "Lago di Pontesei",
+      "editorialStatus": "linked",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216476",
+          "sourceUpdatedAt": "2012-01-19",
+          "sourceUrl": "https://www.geonames.org/3216476/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 902
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216476",
+          "sourceUpdatedAt": "2012-01-19",
+          "sourceUrl": "https://www.geonames.org/3216476/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "factsAlternatives": [],
+      "geo": {
+        "area": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.33694,
+          "lng": 12.21861
+        },
+        "precision": "provider_not_declared",
+        "sourceUrl": "https://www.geonames.org/3216476/"
+      },
+      "history": null,
+      "id": "c5e283a1-0e39-53ae-8f3c-12c945e87b83",
+      "kind": "natural_feature",
+      "localNames": [],
+      "media": [],
+      "name": "Lago di Pontesei",
+      "quality": {
+        "areaNotVerified": true,
+        "gate": "G1",
+        "reviewRequired": false,
+        "seoIndexable": false,
+        "wikidataIdentityVerified": false
+      },
+      "relations": [
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/3216476/",
+          "straightLineKm": 13.57,
+          "target": {
+            "id": "4df19f92-393a-594e-98e5-65450ec30835",
+            "kind": "summit",
+            "name": "Monte Civetta",
+            "slug": "monte-civetta"
+          },
+          "type": "near",
+          "verified": false
+        }
+      ],
+      "restrictions": [],
+      "shortSummary": null,
+      "slug": "lago-di-pontesei",
+      "slugAliases": [],
+      "sourceIds": {
+        "geonames": "3216476"
+      },
+      "subtype": "lake",
+      "textSources": [],
+      "updatedAt": "2026-11-28T07:34:56.705232+00:00"
+    },
+    {
+      "administrativeHierarchy": {
+        "country": "IT",
+        "geonamesAdmin1": "20"
+      },
+      "alerts": [],
+      "aliases": [],
+      "checkedAt": "2026-11-28T07:34:56.705232+00:00",
+      "description": null,
+      "displayName": "Lago d'Alleghe",
+      "editorialStatus": "linked",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216480",
+          "sourceUpdatedAt": "2019-12-04",
+          "sourceUrl": "https://www.geonames.org/3216480/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 967
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216480",
+          "sourceUpdatedAt": "2019-12-04",
+          "sourceUrl": "https://www.geonames.org/3216480/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "factsAlternatives": [],
+      "geo": {
+        "area": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.40639,
+          "lng": 12.01556
+        },
+        "precision": "provider_not_declared",
+        "sourceUrl": "https://www.geonames.org/3216480/"
+      },
+      "history": null,
+      "id": "99afc059-535c-5bf1-85f8-eccdafcfcf04",
+      "kind": "natural_feature",
+      "localNames": [],
+      "media": [],
+      "name": "Lago d'Alleghe",
+      "quality": {
+        "areaNotVerified": true,
+        "gate": "G1",
+        "reviewRequired": false,
+        "seoIndexable": false,
+        "wikidataIdentityVerified": false
+      },
+      "relations": [
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/3216480/",
+          "straightLineKm": 4.11,
+          "target": {
+            "id": "4df19f92-393a-594e-98e5-65450ec30835",
+            "kind": "summit",
+            "name": "Monte Civetta",
+            "slug": "monte-civetta"
+          },
+          "type": "near",
+          "verified": false
+        },
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/3216480/",
+          "straightLineKm": 13.01,
+          "target": {
+            "id": "55241fff-ff84-5d19-b9b5-c9500c932924",
+            "kind": "summit",
+            "name": "Monte Marmolada",
+            "slug": "monte-marmolada"
+          },
+          "type": "near",
+          "verified": false
+        }
+      ],
+      "restrictions": [],
+      "shortSummary": null,
+      "slug": "lago-d-alleghe",
+      "slugAliases": [],
+      "sourceIds": {
+        "geonames": "3216480"
+      },
+      "subtype": "lake",
+      "textSources": [],
+      "updatedAt": "2026-11-28T07:34:56.705232+00:00"
+    },
+    {
+      "administrativeHierarchy": {
+        "country": "IT",
+        "geonamesAdmin1": "20"
+      },
+      "alerts": [],
+      "aliases": [
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3216491/",
+          "value": "Lake Sorapiss"
+        }
+      ],
+      "checkedAt": "2026-11-28T07:34:56.705232+00:00",
+      "description": null,
+      "displayName": "Lago Sorapis",
+      "editorialStatus": "linked",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216491",
+          "sourceUpdatedAt": "2025-08-25",
+          "sourceUrl": "https://www.geonames.org/3216491/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1925
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216491",
+          "sourceUpdatedAt": "2025-08-25",
+          "sourceUrl": "https://www.geonames.org/3216491/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "factsAlternatives": [],
+      "geo": {
+        "area": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.5204,
+          "lng": 12.2236
+        },
+        "precision": "provider_not_declared",
+        "sourceUrl": "https://www.geonames.org/3216491/"
+      },
+      "history": null,
+      "id": "1d7f6e06-9fcb-5e2f-b594-b644fd0a2b2c",
+      "kind": "natural_feature",
+      "localNames": [],
+      "media": [],
+      "name": "Lago Sorapis",
+      "quality": {
+        "areaNotVerified": true,
+        "gate": "G1",
+        "reviewRequired": false,
+        "seoIndexable": false,
+        "wikidataIdentityVerified": false
+      },
+      "relations": [
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/3216491/",
+          "straightLineKm": 6.44,
+          "target": {
+            "id": "97634715-f7d6-51f1-a8b6-d8631d5d57fd",
+            "kind": "summit",
+            "name": "Monte Cristallo",
+            "slug": "monte-cristallo"
+          },
+          "type": "near",
+          "verified": false
+        }
+      ],
+      "restrictions": [],
+      "shortSummary": null,
+      "slug": "lago-sorapis",
+      "slugAliases": [],
+      "sourceIds": {
+        "geonames": "3216491"
+      },
+      "subtype": "lake",
+      "textSources": [],
+      "updatedAt": "2026-11-28T07:34:56.705232+00:00"
+    },
+    {
+      "administrativeHierarchy": {
+        "country": "IT",
+        "geonamesAdmin1": "17"
+      },
+      "alerts": [],
+      "aliases": [
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3216501/",
+          "value": "Lac de Braies"
+        },
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3216501/",
+          "value": "Lago di Braies"
+        },
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3216501/",
+          "value": "Pragser Wildsee"
+        }
+      ],
+      "checkedAt": "2026-11-28T07:34:56.705232+00:00",
+      "description": null,
+      "displayName": "Lago di Bràies",
+      "editorialStatus": "linked",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216501",
+          "sourceUpdatedAt": "2021-03-02",
+          "sourceUrl": "https://www.geonames.org/3216501/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1489
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216501",
+          "sourceUpdatedAt": "2021-03-02",
+          "sourceUrl": "https://www.geonames.org/3216501/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "factsAlternatives": [],
+      "geo": {
+        "area": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.69472,
+          "lng": 12.08472
+        },
+        "precision": "provider_not_declared",
+        "sourceUrl": "https://www.geonames.org/3216501/"
+      },
+      "history": null,
+      "id": "f78c5da1-0bf6-5116-a653-0edc84149779",
+      "kind": "natural_feature",
+      "localNames": [],
+      "media": [],
+      "name": "Lago di Bràies",
+      "quality": {
+        "areaNotVerified": true,
+        "gate": "G1",
+        "reviewRequired": false,
+        "seoIndexable": false,
+        "wikidataIdentityVerified": false
+      },
+      "relations": [],
+      "restrictions": [],
+      "shortSummary": null,
+      "slug": "lago-di-braies",
+      "slugAliases": [],
+      "sourceIds": {
+        "geonames": "3216501"
+      },
+      "subtype": "lake",
+      "textSources": [],
+      "updatedAt": "2026-11-28T07:34:56.705232+00:00"
+    },
+    {
+      "administrativeHierarchy": {
+        "country": "IT",
+        "geonamesAdmin1": "06"
+      },
+      "alerts": [],
+      "aliases": [],
+      "checkedAt": "2026-11-28T07:34:56.705232+00:00",
+      "description": null,
+      "displayName": "Lago di Sauris",
+      "editorialStatus": "linked",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3217033",
+          "sourceUpdatedAt": "1996-03-21",
+          "sourceUrl": "https://www.geonames.org/3217033/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 955
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3217033",
+          "sourceUpdatedAt": "1996-03-21",
+          "sourceUrl": "https://www.geonames.org/3217033/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "factsAlternatives": [],
+      "geo": {
+        "area": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.44944,
+          "lng": 12.72333
+        },
+        "precision": "provider_not_declared",
+        "sourceUrl": "https://www.geonames.org/3217033/"
+      },
+      "history": null,
+      "id": "0fc464e5-e268-5b26-a73b-296b82cdcb01",
+      "kind": "natural_feature",
+      "localNames": [],
+      "media": [],
+      "name": "Lago di Sauris",
+      "quality": {
+        "areaNotVerified": true,
+        "gate": "G1",
+        "reviewRequired": false,
+        "seoIndexable": false,
+        "wikidataIdentityVerified": false
+      },
+      "relations": [
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/3217033/",
+          "straightLineKm": 13.49,
+          "target": {
+            "id": "35f88fd2-da18-545b-a39b-dd2bdd9c0b5c",
+            "kind": "settlement",
+            "name": "Trava",
+            "slug": "trava"
+          },
+          "type": "near",
+          "verified": false
+        }
+      ],
+      "restrictions": [],
+      "shortSummary": null,
+      "slug": "lago-di-sauris",
+      "slugAliases": [],
+      "sourceIds": {
+        "geonames": "3217033"
+      },
+      "subtype": "lake",
+      "textSources": [],
+      "updatedAt": "2026-11-28T07:34:56.705232+00:00"
+    },
+    {
+      "administrativeHierarchy": {
+        "country": "IT",
+        "geonamesAdmin1": "17"
+      },
+      "alerts": [],
+      "aliases": [],
+      "checkedAt": "2026-11-28T07:34:56.705232+00:00",
+      "description": null,
+      "displayName": "Lago di Landro",
+      "editorialStatus": "linked",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3221662",
+          "sourceUpdatedAt": "2012-01-19",
+          "sourceUrl": "https://www.geonames.org/3221662/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1403
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3221662",
+          "sourceUpdatedAt": "2012-01-19",
+          "sourceUrl": "https://www.geonames.org/3221662/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "factsAlternatives": [],
+      "geo": {
+        "area": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.63139,
+          "lng": 12.23056
+        },
+        "precision": "provider_not_declared",
+        "sourceUrl": "https://www.geonames.org/3221662/"
+      },
+      "history": null,
+      "id": "4bf384e8-574c-5bd3-b40e-bf4667ff0e39",
+      "kind": "natural_feature",
+      "localNames": [],
+      "media": [],
+      "name": "Lago di Landro",
+      "quality": {
+        "areaNotVerified": true,
+        "gate": "G1",
+        "reviewRequired": false,
+        "seoIndexable": false,
+        "wikidataIdentityVerified": false
+      },
+      "relations": [
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/3221662/",
+          "straightLineKm": 10.17,
+          "target": {
+            "id": "49aa6b44-9571-5bfb-9c16-20fbc25c523e",
+            "kind": "settlement",
+            "name": "Val Fiscalina",
+            "slug": "val-fiscalina"
+          },
+          "type": "near",
+          "verified": false
+        },
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/3221662/",
+          "straightLineKm": 6.6,
+          "target": {
+            "id": "97634715-f7d6-51f1-a8b6-d8631d5d57fd",
+            "kind": "summit",
+            "name": "Monte Cristallo",
+            "slug": "monte-cristallo"
+          },
+          "type": "near",
+          "verified": false
+        }
+      ],
+      "restrictions": [],
+      "shortSummary": null,
+      "slug": "lago-di-landro",
+      "slugAliases": [],
+      "sourceIds": {
+        "geonames": "3221662"
+      },
+      "subtype": "lake",
+      "textSources": [],
+      "updatedAt": "2026-11-28T07:34:56.705232+00:00"
+    },
+    {
+      "administrativeHierarchy": {
+        "country": "IT",
+        "geonamesAdmin1": "17"
+      },
+      "alerts": [],
+      "aliases": [],
+      "checkedAt": "2026-11-28T07:34:56.705232+00:00",
+      "description": null,
+      "displayName": "Toblacher See",
+      "editorialStatus": "linked",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:7627511",
+          "sourceUpdatedAt": "2010-12-29",
+          "sourceUrl": "https://www.geonames.org/7627511/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1257
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:7627511",
+          "sourceUpdatedAt": "2010-12-29",
+          "sourceUrl": "https://www.geonames.org/7627511/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "factsAlternatives": [],
+      "geo": {
+        "area": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.70306,
+          "lng": 12.21917
+        },
+        "precision": "provider_not_declared",
+        "sourceUrl": "https://www.geonames.org/7627511/"
+      },
+      "history": null,
+      "id": "31aea1b4-57fa-58f0-89aa-f59838bc43b5",
+      "kind": "natural_feature",
+      "localNames": [],
+      "media": [],
+      "name": "Toblacher See",
+      "quality": {
+        "areaNotVerified": true,
+        "gate": "G1",
+        "reviewRequired": false,
+        "seoIndexable": false,
+        "wikidataIdentityVerified": false
+      },
+      "relations": [
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/7627511/",
+          "straightLineKm": 11.05,
+          "target": {
+            "id": "49aa6b44-9571-5bfb-9c16-20fbc25c523e",
+            "kind": "settlement",
+            "name": "Val Fiscalina",
+            "slug": "val-fiscalina"
+          },
+          "type": "near",
+          "verified": false
+        },
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/7627511/",
+          "straightLineKm": 14.21,
+          "target": {
+            "id": "97634715-f7d6-51f1-a8b6-d8631d5d57fd",
+            "kind": "summit",
+            "name": "Monte Cristallo",
+            "slug": "monte-cristallo"
+          },
+          "type": "near",
+          "verified": false
+        }
+      ],
+      "restrictions": [],
+      "shortSummary": null,
+      "slug": "toblacher-see",
+      "slugAliases": [],
+      "sourceIds": {
+        "geonames": "7627511"
+      },
+      "subtype": "lake",
+      "textSources": [],
+      "updatedAt": "2026-11-28T07:34:56.705232+00:00"
+    },
+    {
+      "administrativeHierarchy": {
+        "country": "IT",
+        "geonamesAdmin1": "17"
+      },
+      "alerts": [],
+      "aliases": [],
+      "checkedAt": "2026-11-28T07:34:56.705232+00:00",
+      "description": null,
+      "displayName": "Neves Stausee",
+      "editorialStatus": "linked",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:7627807",
+          "sourceUpdatedAt": "2010-12-31",
+          "sourceUrl": "https://www.geonames.org/7627807/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1856
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:7627807",
+          "sourceUpdatedAt": "2010-12-31",
+          "sourceUrl": "https://www.geonames.org/7627807/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "factsAlternatives": [],
+      "geo": {
+        "area": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.94663,
+          "lng": 11.78172
+        },
+        "precision": "provider_not_declared",
+        "sourceUrl": "https://www.geonames.org/7627807/"
+      },
+      "history": null,
+      "id": "dd96f456-4fe6-5f2f-94d8-630ce899dee3",
+      "kind": "natural_feature",
+      "localNames": [],
+      "media": [],
+      "name": "Neves Stausee",
+      "quality": {
+        "areaNotVerified": true,
+        "gate": "G1",
+        "reviewRequired": false,
+        "seoIndexable": false,
+        "wikidataIdentityVerified": false
+      },
+      "relations": [
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/7627807/",
+          "straightLineKm": 3.6,
+          "target": {
+            "id": "99b1e46b-22b8-526f-bbdc-06b07eb59bd2",
+            "kind": "summit",
+            "name": "Punta Bianca",
+            "slug": "punta-bianca"
+          },
+          "type": "near",
+          "verified": false
+        },
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/7627807/",
+          "straightLineKm": 5.03,
+          "target": {
+            "id": "467081ec-aedc-5f15-a69c-1e708bd5d2c5",
+            "kind": "summit",
+            "name": "Großer Möseler",
+            "slug": "grosser-moseler"
+          },
+          "type": "near",
+          "verified": false
+        }
+      ],
+      "restrictions": [],
+      "shortSummary": null,
+      "slug": "neves-stausee",
+      "slugAliases": [],
+      "sourceIds": {
+        "geonames": "7627807"
+      },
+      "subtype": "lake",
+      "textSources": [],
+      "updatedAt": "2026-11-28T07:34:56.705232+00:00"
+    },
+    {
+      "administrativeHierarchy": {
+        "country": "IT",
+        "geonamesAdmin1": "17"
+      },
+      "alerts": [],
+      "aliases": [],
+      "checkedAt": "2026-11-28T07:34:56.705232+00:00",
+      "description": null,
+      "displayName": "Eisbruggsee",
+      "editorialStatus": "linked",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:7627810",
+          "sourceUpdatedAt": "2010-12-31",
+          "sourceUrl": "https://www.geonames.org/7627810/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 2351
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:7627810",
+          "sourceUpdatedAt": "2010-12-31",
+          "sourceUrl": "https://www.geonames.org/7627810/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "factsAlternatives": [],
+      "geo": {
+        "area": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.94095,
+          "lng": 11.72928
+        },
+        "precision": "provider_not_declared",
+        "sourceUrl": "https://www.geonames.org/7627810/"
+      },
+      "history": null,
+      "id": "b282d9b3-f4d2-50af-8c88-27fbb9523925",
+      "kind": "natural_feature",
+      "localNames": [],
+      "media": [],
+      "name": "Eisbruggsee",
+      "quality": {
+        "areaNotVerified": true,
+        "gate": "G1",
+        "reviewRequired": false,
+        "seoIndexable": false,
+        "wikidataIdentityVerified": false
+      },
+      "relations": [
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/7627810/",
+          "straightLineKm": 3.36,
+          "target": {
+            "id": "99b1e46b-22b8-526f-bbdc-06b07eb59bd2",
+            "kind": "summit",
+            "name": "Punta Bianca",
+            "slug": "punta-bianca"
+          },
+          "type": "near",
+          "verified": false
+        },
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/7627810/",
+          "straightLineKm": 4.2,
+          "target": {
+            "id": "b5446880-ef3b-50a2-8be0-37d6c0381bb7",
+            "kind": "summit",
+            "name": "Hochferner",
+            "slug": "hochferner"
+          },
+          "type": "near",
+          "verified": false
+        }
+      ],
+      "restrictions": [],
+      "shortSummary": null,
+      "slug": "eisbruggsee",
+      "slugAliases": [],
+      "sourceIds": {
+        "geonames": "7627810"
+      },
+      "subtype": "lake",
+      "textSources": [],
+      "updatedAt": "2026-11-28T07:34:56.705232+00:00"
+    },
+    {
+      "administrativeHierarchy": {
+        "country": "IT",
+        "geonamesAdmin1": "17"
+      },
+      "alerts": [],
+      "aliases": [
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/8354640/",
+          "value": "Fedaia Lake"
+        },
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/8354640/",
+          "value": "Fedaiasee"
+        }
+      ],
+      "checkedAt": "2026-11-28T07:34:56.705232+00:00",
+      "description": null,
+      "displayName": "Lago di Fedaia",
+      "editorialStatus": "linked",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:8354640",
+          "sourceUpdatedAt": "2020-11-05",
+          "sourceUrl": "https://www.geonames.org/8354640/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 2040
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:8354640",
+          "sourceUpdatedAt": "2020-11-05",
+          "sourceUrl": "https://www.geonames.org/8354640/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "factsAlternatives": [],
+      "geo": {
+        "area": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.45971,
+          "lng": 11.86983
+        },
+        "precision": "provider_not_declared",
+        "sourceUrl": "https://www.geonames.org/8354640/"
+      },
+      "history": null,
+      "id": "8980b56f-1799-5c1e-ac41-a2fe425048b2",
+      "kind": "natural_feature",
+      "localNames": [],
+      "media": [],
+      "name": "Lago di Fedaia",
+      "quality": {
+        "areaNotVerified": true,
+        "gate": "G1",
+        "reviewRequired": false,
+        "seoIndexable": false,
+        "wikidataIdentityVerified": false
+      },
+      "relations": [
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/8354640/",
+          "straightLineKm": 5.49,
+          "target": {
+            "id": "d4b2e175-ad59-5d06-9cf5-1de637396a76",
+            "kind": "settlement",
+            "name": "Penia",
+            "slug": "penia"
+          },
+          "type": "near",
+          "verified": false
+        },
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/8354640/",
+          "straightLineKm": 10.21,
+          "target": {
+            "id": "a6b3ddfd-a1cb-559c-85d7-db1fff5fb3c6",
+            "kind": "settlement",
+            "name": "Colfosco",
+            "slug": "colfosco-corvara-in-badia"
+          },
+          "type": "near",
+          "verified": false
+        },
+        {
+          "accessVerified": false,
+          "method": "haversine",
+          "notes": "Distanza in linea d'aria, NON percorso o accesso",
+          "sourceUrl": "https://www.geonames.org/8354640/",
+          "straightLineKm": 3.15,
+          "target": {
+            "id": "55241fff-ff84-5d19-b9b5-c9500c932924",
+            "kind": "summit",
+            "name": "Monte Marmolada",
+            "slug": "monte-marmolada"
+          },
+          "type": "near",
+          "verified": false
+        }
+      ],
+      "restrictions": [],
+      "shortSummary": null,
+      "slug": "lago-di-fedaia",
+      "slugAliases": [],
+      "sourceIds": {
+        "geonames": "8354640"
+      },
+      "subtype": "lake",
+      "textSources": [],
+      "updatedAt": "2026-11-28T07:34:56.705232+00:00"
+    }
+  ],
+  "generatedAt": "2026-11-28T07:34:56.705232+00:00",
+  "isPublished": false,
+  "releaseChannel": "GEONAMES_NATURAL_FEATURES_STAGING_V1",
+  "schemaVersion": "1.0"
+}

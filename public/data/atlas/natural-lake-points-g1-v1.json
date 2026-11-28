@@ -1,0 +1,4046 @@
+{
+  "counts": {
+    "pointOnly": 7,
+    "profiles": 11,
+    "withOsmGeometry": 4,
+    "withVerifiedItwiki": 10,
+    "withVerifiedP18": 3
+  },
+  "crossSourceWfsMerges": 0,
+  "entities": [
+    {
+      "aliases": [],
+      "checkedAt": "2026-11-28T13:26:05.685541+00:00",
+      "description": null,
+      "facts": {
+        "elevationM": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:7627810",
+          "sourceUpdatedAt": "2010-12-31",
+          "sourceUrl": "https://www.geonames.org/7627810/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 2351
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:7627810",
+          "sourceUpdatedAt": "2010-12-31",
+          "sourceUrl": "https://www.geonames.org/7627810/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "geo": {
+        "area": null,
+        "areaMethod": null,
+        "areaSourceUrl": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.94095,
+          "lng": 11.72928
+        },
+        "pointSourceUrl": "https://www.geonames.org/7627810/"
+      },
+      "id": "b282d9b3-f4d2-50af-8c88-27fbb9523925",
+      "identitySource": "exact_P1566_P625_one_to_one",
+      "localNames": [],
+      "media": [],
+      "name": "Eisbruggsee",
+      "quality": {
+        "gate": "G1",
+        "hasVerifiedShoreline": false,
+        "needsAreaGeometryReview": true,
+        "photoSourceVerified": false,
+        "seoIndexable": false,
+        "sourcePointVerified": true,
+        "textLicenseVerified": false,
+        "wikidataIdentityVerified": true
+      },
+      "slug": "eisbruggsee",
+      "sourceIds": {
+        "geonames": "7627810",
+        "wikidata": "Q35695415",
+        "wikidataVerifiedBy": "P1566+P625"
+      },
+      "subtype": "lake",
+      "textSources": []
+    },
+    {
+      "aliases": [
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3180523/",
+          "value": "Lago di Carezza"
+        }
+      ],
+      "checkedAt": "2026-11-28T13:26:05.685541+00:00",
+      "description": "Il lago di Carezza (Karersee in tedesco, Lech de Ciareja in ladino) è un piccolo lago alpino situato a 1534 mslm nell'alta Val d'Ega nel comune di Nova Levante, a circa 25 km da Bolzano in Alto Adige, incastonato tra fitti boschi di abeti, sotto le pendici del massiccio del Latemar, che si specchia nella sua acqua limpida.",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3180523",
+          "sourceUpdatedAt": "2012-05-27",
+          "sourceUrl": "https://www.geonames.org/3180523/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1531
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3180523",
+          "sourceUpdatedAt": "2012-05-27",
+          "sourceUrl": "https://www.geonames.org/3180523/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        },
+        "wikidataElevationReportedM": {
+          "confidence": 0.9,
+          "licence": "CC0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikidata:Q1416530:P2044",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1416530",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1519.0
+        }
+      },
+      "geo": {
+        "area": null,
+        "areaMethod": null,
+        "areaSourceUrl": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.40934,
+          "lng": 11.57515
+        },
+        "pointSourceUrl": "https://www.geonames.org/3180523/"
+      },
+      "id": "a4014ec7-b770-5f47-97d0-ec930f27e14f",
+      "identitySource": "exact_P1566_P625_one_to_one",
+      "localNames": [
+        {
+          "language": "fr",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1416530",
+          "value": "lac de Carezza"
+        },
+        {
+          "language": "it",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1416530",
+          "value": "lago di Carezza"
+        },
+        {
+          "language": "lld",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1416530",
+          "value": "Lech de Ciareja"
+        }
+      ],
+      "media": [
+        {
+          "author": "Afrank99",
+          "caption": "This media shows the protected natural monument with the ID 114_G05 in South Tyrol.",
+          "descriptionText": "This media shows the protected natural monument with the ID 114_G05 in South Tyrol.",
+          "id": "wikimedia:Q1416530:P18:6f2d5cca2ad9",
+          "kind": "photo",
+          "licence": "CC BY-SA 3.0",
+          "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "reuseAllowed": true,
+          "sourceId": "wikidata:Q1416530:P18",
+          "sourceUpdatedAt": "2009-06-19T20:18:46Z",
+          "sourceUrl": "https://commons.wikimedia.org/wiki/File:Karersee_HDR.jpg",
+          "subjectMethod": "verified_GeoNames_P1566_Wikidata_P625_P18",
+          "subjectVerified": true,
+          "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/54/Karersee_HDR.jpg/1280px-Karersee_HDR.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+        }
+      ],
+      "name": "Karersee",
+      "quality": {
+        "gate": "G1",
+        "hasVerifiedShoreline": false,
+        "needsAreaGeometryReview": true,
+        "photoSourceVerified": true,
+        "seoIndexable": false,
+        "sourcePointVerified": true,
+        "textLicenseVerified": true,
+        "wikidataIdentityVerified": true
+      },
+      "slug": "karersee",
+      "sourceIds": {
+        "geonames": "3180523",
+        "wikidata": "Q1416530",
+        "wikidataVerifiedBy": "P1566+P625"
+      },
+      "subtype": "lake",
+      "textSources": [
+        {
+          "kind": "source_excerpt_not_original_editorial",
+          "licence": "CC BY-SA 4.0",
+          "method": "reported",
+          "originalLanguage": "it",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikipedia:it:622602",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://it.wikipedia.org/wiki/Lago_di_Carezza",
+          "text": "Il lago di Carezza (Karersee in tedesco, Lech de Ciareja in ladino) è un piccolo lago alpino situato a 1534 mslm nell'alta Val d'Ega nel comune di Nova Levante, a circa 25 km da Bolzano in Alto Adige, incastonato tra fitti boschi di abeti, sotto le pendici del massiccio del Latemar, che si specchia nella sua acqua limpida."
+        }
+      ]
+    },
+    {
+      "aliases": [],
+      "checkedAt": "2026-11-28T13:26:05.685541+00:00",
+      "description": "Il lago di Alleghe è un lago di sbarramento situato in provincia di Belluno, nella zona delle Dolomiti, e diviso tra i comuni di Alleghe (metà orientale) e Rocca Pietore (metà occidentale).",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216480",
+          "sourceUpdatedAt": "2019-12-04",
+          "sourceUrl": "https://www.geonames.org/3216480/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 967
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216480",
+          "sourceUpdatedAt": "2019-12-04",
+          "sourceUrl": "https://www.geonames.org/3216480/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        },
+        "wikidataElevationReportedM": {
+          "confidence": 0.9,
+          "licence": "CC0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikidata:Q3825896:P2044",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://www.wikidata.org/wiki/Q3825896",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 966.0
+        }
+      },
+      "geo": {
+        "area": null,
+        "areaMethod": null,
+        "areaSourceUrl": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.40639,
+          "lng": 12.01556
+        },
+        "pointSourceUrl": "https://www.geonames.org/3216480/"
+      },
+      "id": "99afc059-535c-5bf1-85f8-eccdafcfcf04",
+      "identitySource": "exact_P1566_P625_one_to_one",
+      "localNames": [
+        {
+          "language": "de",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q3825896",
+          "value": "Alleghesee"
+        },
+        {
+          "language": "en",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q3825896",
+          "value": "Lake Alleghe"
+        },
+        {
+          "language": "fr",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q3825896",
+          "value": "lac d'Alleghe"
+        },
+        {
+          "language": "it",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q3825896",
+          "value": "lago di Alleghe"
+        }
+      ],
+      "media": [],
+      "name": "Lago d'Alleghe",
+      "quality": {
+        "gate": "G1",
+        "hasVerifiedShoreline": false,
+        "needsAreaGeometryReview": true,
+        "photoSourceVerified": false,
+        "seoIndexable": false,
+        "sourcePointVerified": true,
+        "textLicenseVerified": true,
+        "wikidataIdentityVerified": true
+      },
+      "slug": "lago-d-alleghe",
+      "sourceIds": {
+        "geonames": "3216480",
+        "wikidata": "Q3825896",
+        "wikidataVerifiedBy": "P1566+P625"
+      },
+      "subtype": "lake",
+      "textSources": [
+        {
+          "kind": "source_excerpt_not_original_editorial",
+          "licence": "CC BY-SA 4.0",
+          "method": "reported",
+          "originalLanguage": "it",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikipedia:it:1294806",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://it.wikipedia.org/wiki/Lago_di_Alleghe",
+          "text": "Il lago di Alleghe è un lago di sbarramento situato in provincia di Belluno, nella zona delle Dolomiti, e diviso tra i comuni di Alleghe (metà orientale) e Rocca Pietore (metà occidentale)."
+        }
+      ]
+    },
+    {
+      "aliases": [
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3216501/",
+          "value": "Lac de Braies"
+        },
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3216501/",
+          "value": "Lago di Braies"
+        },
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3216501/",
+          "value": "Pragser Wildsee"
+        }
+      ],
+      "checkedAt": "2026-11-28T13:26:05.685541+00:00",
+      "description": "Il lago di Braies (Pragser Wildsee in tedesco) è un lago alpino situato in Val di Braies (una valle laterale alla Val Pusteria) a 1.496 m s.l.m. nel comune di Braies (BZ), a circa 97 km da Bolzano.",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216501",
+          "sourceUpdatedAt": "2021-03-02",
+          "sourceUrl": "https://www.geonames.org/3216501/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1489
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216501",
+          "sourceUpdatedAt": "2021-03-02",
+          "sourceUrl": "https://www.geonames.org/3216501/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        },
+        "osmMappedWaterSurfaceKm2": {
+          "confidence": 0.65,
+          "licence": "ODbL 1.0",
+          "method": "derived",
+          "notes": "Superficie derivata dal contorno OSM, non misura ufficiale del lago",
+          "retrievedAt": "2026-11-28T08:13:50.111392+00:00",
+          "sourceId": "osm:relation/14517899:geometry",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://www.openstreetmap.org/relation/14517899",
+          "unit": "km2",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 0.353697
+        },
+        "wikidataElevationReportedM": {
+          "confidence": 0.9,
+          "licence": "CC0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikidata:Q445369:P2044",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://www.wikidata.org/wiki/Q445369",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1494.0
+        }
+      },
+      "geo": {
+        "area": {
+          "coordinates": [
+            [
+              [
+                [
+                  12.08559,
+                  46.6892953
+                ],
+                [
+                  12.0854021,
+                  46.6894122
+                ],
+                [
+                  12.085309,
+                  46.6894405
+                ],
+                [
+                  12.0851911,
+                  46.6894122
+                ],
+                [
+                  12.0851041,
+                  46.6894262
+                ],
+                [
+                  12.0849576,
+                  46.6894484
+                ],
+                [
+                  12.0847925,
+                  46.6894205
+                ],
+                [
+                  12.0846763,
+                  46.6894345
+                ],
+                [
+                  12.0846015,
+                  46.6894523
+                ],
+                [
+                  12.0845225,
+                  46.6894151
+                ],
+                [
+                  12.0843313,
+                  46.689389
+                ],
+                [
+                  12.0841606,
+                  46.6893997
+                ],
+                [
+                  12.0840067,
+                  46.6894235
+                ],
+                [
+                  12.0837636,
+                  46.6894163
+                ],
+                [
+                  12.0834116,
+                  46.6894236
+                ],
+                [
+                  12.0830682,
+                  46.689265
+                ],
+                [
+                  12.0827481,
+                  46.689263
+                ],
+                [
+                  12.0825227,
+                  46.6892897
+                ],
+                [
+                  12.0824179,
+                  46.6892874
+                ],
+                [
+                  12.0821202,
+                  46.6893232
+                ],
+                [
+                  12.0819726,
+                  46.6892748
+                ],
+                [
+                  12.0817671,
+                  46.6893022
+                ],
+                [
+                  12.0815441,
+                  46.6894069
+                ],
+                [
+                  12.081453,
+                  46.689524
+                ],
+                [
+                  12.0813704,
+                  46.6895691
+                ],
+                [
+                  12.0813378,
+                  46.6895976
+                ],
+                [
+                  12.0813392,
+                  46.6896243
+                ],
+                [
+                  12.081354,
+                  46.6896523
+                ],
+                [
+                  12.0813607,
+                  46.6897237
+                ],
+                [
+                  12.0812962,
+                  46.6898427
+                ],
+                [
+                  12.0813527,
+                  46.6900278
+                ],
+                [
+                  12.0814534,
+                  46.6902221
+                ],
+                [
+                  12.081454,
+                  46.690369
+                ],
+                [
+                  12.0814096,
+                  46.6904789
+                ],
+                [
+                  12.0814166,
+                  46.6906274
+                ],
+                [
+                  12.0812586,
+                  46.6907071
+                ],
+                [
+                  12.0811448,
+                  46.6907773
+                ],
+                [
+                  12.0810539,
+                  46.6908686
+                ],
+                [
+                  12.0809687,
+                  46.690945
+                ],
+                [
+                  12.0808168,
+                  46.6910539
+                ],
+                [
+                  12.0807833,
+                  46.6911537
+                ],
+                [
+                  12.0807087,
+                  46.6912073
+                ],
+                [
+                  12.0806216,
+                  46.6912899
+                ],
+                [
+                  12.0806494,
+                  46.6913589
+                ],
+                [
+                  12.0807307,
+                  46.6914042
+                ],
+                [
+                  12.0809954,
+                  46.6915148
+                ],
+                [
+                  12.0817799,
+                  46.69219
+                ],
+                [
+                  12.0819756,
+                  46.6924304
+                ],
+                [
+                  12.0821039,
+                  46.6924907
+                ],
+                [
+                  12.082177,
+                  46.6925935
+                ],
+                [
+                  12.0822325,
+                  46.6927305
+                ],
+                [
+                  12.0822726,
+                  46.6928662
+                ],
+                [
+                  12.0823668,
+                  46.693008
+                ],
+                [
+                  12.0824073,
+                  46.6931222
+                ],
+                [
+                  12.0825944,
+                  46.6932664
+                ],
+                [
+                  12.0826959,
+                  46.6933455
+                ],
+                [
+                  12.0827765,
+                  46.693328
+                ],
+                [
+                  12.0829603,
+                  46.693423
+                ],
+                [
+                  12.0829192,
+                  46.6935185
+                ],
+                [
+                  12.0831287,
+                  46.6937568
+                ],
+                [
+                  12.0833118,
+                  46.6939657
+                ],
+                [
+                  12.083496,
+                  46.6942537
+                ],
+                [
+                  12.0835797,
+                  46.694469
+                ],
+                [
+                  12.083601,
+                  46.6946054
+                ],
+                [
+                  12.0835392,
+                  46.6948772
+                ],
+                [
+                  12.0834694,
+                  46.6951189
+                ],
+                [
+                  12.0834372,
+                  46.6953348
+                ],
+                [
+                  12.0834551,
+                  46.6955611
+                ],
+                [
+                  12.0833896,
+                  46.6958588
+                ],
+                [
+                  12.0833232,
+                  46.6960303
+                ],
+                [
+                  12.0833181,
+                  46.6960434
+                ],
+                [
+                  12.0833419,
+                  46.6962935
+                ],
+                [
+                  12.0834074,
+                  46.6964304
+                ],
+                [
+                  12.0834339,
+                  46.696686
+                ],
+                [
+                  12.0834398,
+                  46.6967426
+                ],
+                [
+                  12.0835598,
+                  46.6967288
+                ],
+                [
+                  12.0837369,
+                  46.6967405
+                ],
+                [
+                  12.0838736,
+                  46.6967713
+                ],
+                [
+                  12.0839577,
+                  46.6968104
+                ],
+                [
+                  12.0840351,
+                  46.6968666
+                ],
+                [
+                  12.0841037,
+                  46.6969558
+                ],
+                [
+                  12.0841594,
+                  46.6970921
+                ],
+                [
+                  12.0841879,
+                  46.6972184
+                ],
+                [
+                  12.0841914,
+                  46.6973706
+                ],
+                [
+                  12.0841651,
+                  46.6976526
+                ],
+                [
+                  12.0842899,
+                  46.6978619
+                ],
+                [
+                  12.0844098,
+                  46.6980728
+                ],
+                [
+                  12.0844755,
+                  46.6981598
+                ],
+                [
+                  12.0845197,
+                  46.6981985
+                ],
+                [
+                  12.0845921,
+                  46.6982408
+                ],
+                [
+                  12.0847048,
+                  46.6983061
+                ],
+                [
+                  12.0848277,
+                  46.6983847
+                ],
+                [
+                  12.0849535,
+                  46.6984834
+                ],
+                [
+                  12.0851062,
+                  46.6986205
+                ],
+                [
+                  12.0852361,
+                  46.698729
+                ],
+                [
+                  12.0852978,
+                  46.6987709
+                ],
+                [
+                  12.0853514,
+                  46.6987781
+                ],
+                [
+                  12.0853992,
+                  46.6987624
+                ],
+                [
+                  12.0854364,
+                  46.6987082
+                ],
+                [
+                  12.0854947,
+                  46.6986483
+                ],
+                [
+                  12.0855738,
+                  46.6985912
+                ],
+                [
+                  12.085615,
+                  46.6985747
+                ],
+                [
+                  12.0857187,
+                  46.6985314
+                ],
+                [
+                  12.085834,
+                  46.6985084
+                ],
+                [
+                  12.0859641,
+                  46.6984937
+                ],
+                [
+                  12.0861183,
+                  46.6985011
+                ],
+                [
+                  12.0862323,
+                  46.6985084
+                ],
+                [
+                  12.086345,
+                  46.6985342
+                ],
+                [
+                  12.0864563,
+                  46.6985728
+                ],
+                [
+                  12.0865783,
+                  46.6986184
+                ],
+                [
+                  12.0866554,
+                  46.6986694
+                ],
+                [
+                  12.0867171,
+                  46.6987182
+                ],
+                [
+                  12.0867869,
+                  46.6987982
+                ],
+                [
+                  12.0868231,
+                  46.6988598
+                ],
+                [
+                  12.086862,
+                  46.6989467
+                ],
+                [
+                  12.0868774,
+                  46.6990571
+                ],
+                [
+                  12.0868521,
+                  46.6991739
+                ],
+                [
+                  12.0868749,
+                  46.6993316
+                ],
+                [
+                  12.0869389,
+                  46.6994283
+                ],
+                [
+                  12.0869982,
+                  46.6995206
+                ],
+                [
+                  12.0871071,
+                  46.6995855
+                ],
+                [
+                  12.0872294,
+                  46.6996434
+                ],
+                [
+                  12.0873864,
+                  46.6997712
+                ],
+                [
+                  12.0875103,
+                  46.69989
+                ],
+                [
+                  12.0876658,
+                  46.6999722
+                ],
+                [
+                  12.0878158,
+                  46.70003
+                ],
+                [
+                  12.0879518,
+                  46.7001303
+                ],
+                [
+                  12.0880531,
+                  46.700192
+                ],
+                [
+                  12.0882495,
+                  46.7003307
+                ],
+                [
+                  12.0882954,
+                  46.7003502
+                ],
+                [
+                  12.0883393,
+                  46.7003503
+                ],
+                [
+                  12.0883488,
+                  46.7003354
+                ],
+                [
+                  12.088342,
+                  46.7003034
+                ],
+                [
+                  12.088285,
+                  46.7002397
+                ],
+                [
+                  12.0881672,
+                  46.7001571
+                ],
+                [
+                  12.0881069,
+                  46.7000903
+                ],
+                [
+                  12.0880373,
+                  46.7000083
+                ],
+                [
+                  12.0879463,
+                  46.6999196
+                ],
+                [
+                  12.0877901,
+                  46.6997507
+                ],
+                [
+                  12.0876834,
+                  46.6996557
+                ],
+                [
+                  12.0875568,
+                  46.6995775
+                ],
+                [
+                  12.0875326,
+                  46.6995129
+                ],
+                [
+                  12.0875406,
+                  46.6994156
+                ],
+                [
+                  12.087582,
+                  46.6993101
+                ],
+                [
+                  12.0875479,
+                  46.6991221
+                ],
+                [
+                  12.0875179,
+                  46.6989863
+                ],
+                [
+                  12.0874706,
+                  46.6988884
+                ],
+                [
+                  12.0874021,
+                  46.6988271
+                ],
+                [
+                  12.0873433,
+                  46.6987303
+                ],
+                [
+                  12.0873133,
+                  46.6985835
+                ],
+                [
+                  12.0873117,
+                  46.6984794
+                ],
+                [
+                  12.0874293,
+                  46.6982093
+                ],
+                [
+                  12.0875035,
+                  46.6980568
+                ],
+                [
+                  12.0876467,
+                  46.6979324
+                ],
+                [
+                  12.0877495,
+                  46.6978062
+                ],
+                [
+                  12.0878705,
+                  46.6977247
+                ],
+                [
+                  12.0877112,
+                  46.6974772
+                ],
+                [
+                  12.0876179,
+                  46.6972192
+                ],
+                [
+                  12.0875924,
+                  46.6968864
+                ],
+                [
+                  12.0874964,
+                  46.6967979
+                ],
+                [
+                  12.0874968,
+                  46.6964932
+                ],
+                [
+                  12.0877797,
+                  46.6962052
+                ],
+                [
+                  12.0879607,
+                  46.6960248
+                ],
+                [
+                  12.0880084,
+                  46.6958142
+                ],
+                [
+                  12.0880136,
+                  46.6956072
+                ],
+                [
+                  12.0878992,
+                  46.6954955
+                ],
+                [
+                  12.087875,
+                  46.6953124
+                ],
+                [
+                  12.087932,
+                  46.6952326
+                ],
+                [
+                  12.0879273,
+                  46.6951755
+                ],
+                [
+                  12.0879959,
+                  46.6949615
+                ],
+                [
+                  12.0881236,
+                  46.6948362
+                ],
+                [
+                  12.0880789,
+                  46.694389
+                ],
+                [
+                  12.0878399,
+                  46.6938537
+                ],
+                [
+                  12.0874963,
+                  46.6937225
+                ],
+                [
+                  12.0872989,
+                  46.6935672
+                ],
+                [
+                  12.0870909,
+                  46.6933981
+                ],
+                [
+                  12.0868677,
+                  46.6931612
+                ],
+                [
+                  12.0867244,
+                  46.6926338
+                ],
+                [
+                  12.0867433,
+                  46.6924999
+                ],
+                [
+                  12.0866087,
+                  46.6923307
+                ],
+                [
+                  12.0866346,
+                  46.6920729
+                ],
+                [
+                  12.0867086,
+                  46.691881
+                ],
+                [
+                  12.0868704,
+                  46.6916402
+                ],
+                [
+                  12.0869123,
+                  46.6914993
+                ],
+                [
+                  12.0868692,
+                  46.6913758
+                ],
+                [
+                  12.0868184,
+                  46.6911891
+                ],
+                [
+                  12.0867226,
+                  46.6911091
+                ],
+                [
+                  12.0866503,
+                  46.6910565
+                ],
+                [
+                  12.0865367,
+                  46.6910972
+                ],
+                [
+                  12.0862363,
+                  46.6909673
+                ],
+                [
+                  12.0862447,
+                  46.6908602
+                ],
+                [
+                  12.0860286,
+                  46.6904664
+                ],
+                [
+                  12.086069,
+                  46.6902521
+                ],
+                [
+                  12.0859602,
+                  46.6898935
+                ],
+                [
+                  12.086084,
+                  46.6897211
+                ],
+                [
+                  12.0860142,
+                  46.6894476
+                ],
+                [
+                  12.0858123,
+                  46.6892804
+                ],
+                [
+                  12.08559,
+                  46.6892953
+                ]
+              ]
+            ]
+          ],
+          "type": "MultiPolygon"
+        },
+        "areaMethod": "osm_out_geom_multipolygon",
+        "areaSourceUrl": "https://www.openstreetmap.org/relation/14517899",
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.69472,
+          "lng": 12.08472
+        },
+        "pointSourceUrl": "https://www.geonames.org/3216501/"
+      },
+      "id": "f78c5da1-0bf6-5116-a653-0edc84149779",
+      "identitySource": "exact_P1566_P625_one_to_one",
+      "localNames": [
+        {
+          "language": "de",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q445369",
+          "value": "Pragser Wildsee"
+        },
+        {
+          "language": "fr",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q445369",
+          "value": "lac de Braies"
+        },
+        {
+          "language": "it",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q445369",
+          "value": "lago di Braies"
+        }
+      ],
+      "media": [],
+      "name": "Lago di Bràies",
+      "quality": {
+        "gate": "G1",
+        "hasVerifiedShoreline": true,
+        "needsAreaGeometryReview": false,
+        "photoSourceVerified": false,
+        "seoIndexable": false,
+        "sourcePointVerified": true,
+        "textLicenseVerified": true,
+        "wikidataIdentityVerified": true
+      },
+      "slug": "lago-di-braies",
+      "sourceIds": {
+        "geonames": "3216501",
+        "osm": "relation/14517899",
+        "osmVerifiedBy": "P1566_P625_and_exact_OSM_QID_or_GeoNames_ID",
+        "wikidata": "Q445369",
+        "wikidataVerifiedBy": "P1566+P625"
+      },
+      "subtype": "lake",
+      "textSources": [
+        {
+          "kind": "source_excerpt_not_original_editorial",
+          "licence": "CC BY-SA 4.0",
+          "method": "reported",
+          "originalLanguage": "it",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikipedia:it:640418",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://it.wikipedia.org/wiki/Lago_di_Braies",
+          "text": "Il lago di Braies (Pragser Wildsee in tedesco) è un lago alpino situato in Val di Braies (una valle laterale alla Val Pusteria) a 1.496 m s.l.m. nel comune di Braies (BZ), a circa 97 km da Bolzano."
+        }
+      ]
+    },
+    {
+      "aliases": [
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/8354640/",
+          "value": "Fedaia Lake"
+        },
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/8354640/",
+          "value": "Fedaiasee"
+        }
+      ],
+      "checkedAt": "2026-11-28T13:26:05.685541+00:00",
+      "description": "Il lago di Fedaia (Lèch de Fedaa in ladino) è un lago alpino artificiale delle Dolomiti di Fassa, localizzato subito a ovest del passo Fedaia, sotto il gruppo montuoso della Marmolada, nel territorio del comune di Canazei, in provincia di Trento . Lo sbarramento è stato realizzato nel 1956 sulle acque del torrente Avisio.",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:8354640",
+          "sourceUpdatedAt": "2020-11-05",
+          "sourceUrl": "https://www.geonames.org/8354640/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 2040
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:8354640",
+          "sourceUpdatedAt": "2020-11-05",
+          "sourceUrl": "https://www.geonames.org/8354640/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        },
+        "wikidataElevationReportedM": {
+          "confidence": 0.9,
+          "licence": "CC0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikidata:Q1399844:P2044",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1399844",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 2053.0
+        }
+      },
+      "geo": {
+        "area": null,
+        "areaMethod": null,
+        "areaSourceUrl": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.45971,
+          "lng": 11.86983
+        },
+        "pointSourceUrl": "https://www.geonames.org/8354640/"
+      },
+      "id": "8980b56f-1799-5c1e-ac41-a2fe425048b2",
+      "identitySource": "exact_P1566_P625_one_to_one",
+      "localNames": [
+        {
+          "language": "de",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1399844",
+          "value": "Fedaiasee"
+        },
+        {
+          "language": "en",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1399844",
+          "value": "Lake Fedaia"
+        },
+        {
+          "language": "fr",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1399844",
+          "value": "lac de Fedaia"
+        },
+        {
+          "language": "lld",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1399844",
+          "value": "Lech de Fedaa"
+        }
+      ],
+      "media": [
+        {
+          "author": "kallerna",
+          "caption": "Lake Fedaia with the Marmolada massif on the background. Canazei, Trentino.",
+          "descriptionText": "Lake Fedaia with the Marmolada massif on the background. Canazei, Trentino.",
+          "id": "wikimedia:Q1399844:P18:b77cd08624de",
+          "kind": "photo",
+          "licence": "CC BY-SA 4.0",
+          "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "reuseAllowed": true,
+          "sourceId": "wikidata:Q1399844:P18",
+          "sourceUpdatedAt": "2025-06-25T10:20:52Z",
+          "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lake_Fedaia_5.jpg",
+          "subjectMethod": "verified_GeoNames_P1566_Wikidata_P625_P18",
+          "subjectVerified": true,
+          "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/04/Lake_Fedaia_5.jpg/1280px-Lake_Fedaia_5.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+        }
+      ],
+      "name": "Lago di Fedaia",
+      "quality": {
+        "gate": "G1",
+        "hasVerifiedShoreline": false,
+        "needsAreaGeometryReview": true,
+        "photoSourceVerified": true,
+        "seoIndexable": false,
+        "sourcePointVerified": true,
+        "textLicenseVerified": true,
+        "wikidataIdentityVerified": true
+      },
+      "slug": "lago-di-fedaia",
+      "sourceIds": {
+        "geonames": "8354640",
+        "wikidata": "Q1399844",
+        "wikidataVerifiedBy": "P1566+P625"
+      },
+      "subtype": "lake",
+      "textSources": [
+        {
+          "kind": "source_excerpt_not_original_editorial",
+          "licence": "CC BY-SA 4.0",
+          "method": "reported",
+          "originalLanguage": "it",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikipedia:it:728004",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://it.wikipedia.org/wiki/Lago_di_Fedaia",
+          "text": "Il lago di Fedaia (Lèch de Fedaa in ladino) è un lago alpino artificiale delle Dolomiti di Fassa, localizzato subito a ovest del passo Fedaia, sotto il gruppo montuoso della Marmolada, nel territorio del comune di Canazei, in provincia di Trento . Lo sbarramento è stato realizzato nel 1956 sulle acque del torrente Avisio."
+        }
+      ]
+    },
+    {
+      "aliases": [
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3173341/",
+          "value": "Lago Misurina"
+        }
+      ],
+      "checkedAt": "2026-11-28T13:26:05.685541+00:00",
+      "description": "Il lago di Misurina è un lago alpino naturale, il più grande del Cadore e si trova a 1.754 m s.l.m. a Misurina, frazione di Auronzo di Cadore (Belluno). Il perimetro è di 2,6 km mentre la profondità è di 5 metri.",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3173341",
+          "sourceUpdatedAt": "2012-01-19",
+          "sourceUrl": "https://www.geonames.org/3173341/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1744
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3173341",
+          "sourceUpdatedAt": "2012-01-19",
+          "sourceUrl": "https://www.geonames.org/3173341/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        },
+        "osmMappedWaterSurfaceKm2": {
+          "confidence": 0.65,
+          "licence": "ODbL 1.0",
+          "method": "derived",
+          "notes": "Superficie derivata dal contorno OSM, non misura ufficiale del lago",
+          "retrievedAt": "2026-11-28T08:13:50.111392+00:00",
+          "sourceId": "osm:relation/16301091:geometry",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://www.openstreetmap.org/relation/16301091",
+          "unit": "km2",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 0.159604
+        },
+        "wikidataElevationReportedM": {
+          "confidence": 0.9,
+          "licence": "CC0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikidata:Q1177961:P2044",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1177961",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1754.0
+        }
+      },
+      "geo": {
+        "area": {
+          "coordinates": [
+            [
+              [
+                [
+                  12.2587088,
+                  46.5850336
+                ],
+                [
+                  12.2586982,
+                  46.5848358
+                ],
+                [
+                  12.2587458,
+                  46.5847196
+                ],
+                [
+                  12.2587907,
+                  46.5846607
+                ],
+                [
+                  12.2589263,
+                  46.5845752
+                ],
+                [
+                  12.2590599,
+                  46.5844533
+                ],
+                [
+                  12.2590806,
+                  46.5843429
+                ],
+                [
+                  12.259128,
+                  46.5842839
+                ],
+                [
+                  12.2591397,
+                  46.5842422
+                ],
+                [
+                  12.2591123,
+                  46.5841886
+                ],
+                [
+                  12.2590155,
+                  46.584098
+                ],
+                [
+                  12.2589033,
+                  46.5840742
+                ],
+                [
+                  12.2588313,
+                  46.5840742
+                ],
+                [
+                  12.2585981,
+                  46.5839852
+                ],
+                [
+                  12.258457,
+                  46.583999
+                ],
+                [
+                  12.2583202,
+                  46.5839711
+                ],
+                [
+                  12.258206,
+                  46.5839461
+                ],
+                [
+                  12.2580267,
+                  46.5838233
+                ],
+                [
+                  12.2579257,
+                  46.5837092
+                ],
+                [
+                  12.2578626,
+                  46.5835878
+                ],
+                [
+                  12.2576668,
+                  46.5833801
+                ],
+                [
+                  12.2573703,
+                  46.583202
+                ],
+                [
+                  12.2572374,
+                  46.5831286
+                ],
+                [
+                  12.2572263,
+                  46.5830635
+                ],
+                [
+                  12.2572724,
+                  46.5830239
+                ],
+                [
+                  12.2572581,
+                  46.5829832
+                ],
+                [
+                  12.2572625,
+                  46.5829397
+                ],
+                [
+                  12.2573229,
+                  46.5829052
+                ],
+                [
+                  12.2573841,
+                  46.5828747
+                ],
+                [
+                  12.2574571,
+                  46.5828226
+                ],
+                [
+                  12.2574746,
+                  46.5827606
+                ],
+                [
+                  12.2574502,
+                  46.5826908
+                ],
+                [
+                  12.2574306,
+                  46.5826081
+                ],
+                [
+                  12.2575205,
+                  46.5825352
+                ],
+                [
+                  12.257532,
+                  46.5824751
+                ],
+                [
+                  12.2573247,
+                  46.5824054
+                ],
+                [
+                  12.2570713,
+                  46.5822218
+                ],
+                [
+                  12.2569907,
+                  46.582111
+                ],
+                [
+                  12.2568848,
+                  46.5820382
+                ],
+                [
+                  12.2567872,
+                  46.5820025
+                ],
+                [
+                  12.2566637,
+                  46.5820097
+                ],
+                [
+                  12.2564103,
+                  46.5821284
+                ],
+                [
+                  12.2560899,
+                  46.5822216
+                ],
+                [
+                  12.255801,
+                  46.5823139
+                ],
+                [
+                  12.2555765,
+                  46.5824308
+                ],
+                [
+                  12.2553923,
+                  46.5824213
+                ],
+                [
+                  12.2552656,
+                  46.5823247
+                ],
+                [
+                  12.2552172,
+                  46.5822487
+                ],
+                [
+                  12.2550468,
+                  46.5821822
+                ],
+                [
+                  12.2550099,
+                  46.58213
+                ],
+                [
+                  12.254988,
+                  46.5819378
+                ],
+                [
+                  12.2549155,
+                  46.5818086
+                ],
+                [
+                  12.2547151,
+                  46.581693
+                ],
+                [
+                  12.2546713,
+                  46.5814952
+                ],
+                [
+                  12.2546114,
+                  46.5813479
+                ],
+                [
+                  12.2545262,
+                  46.5812545
+                ],
+                [
+                  12.2545608,
+                  46.5811722
+                ],
+                [
+                  12.2546598,
+                  46.5810598
+                ],
+                [
+                  12.2546736,
+                  46.580797
+                ],
+                [
+                  12.2546253,
+                  46.5806181
+                ],
+                [
+                  12.2546575,
+                  46.5804329
+                ],
+                [
+                  12.2547888,
+                  46.5801764
+                ],
+                [
+                  12.2548999,
+                  46.5800597
+                ],
+                [
+                  12.2550652,
+                  46.5799896
+                ],
+                [
+                  12.2551417,
+                  46.579946
+                ],
+                [
+                  12.2551679,
+                  46.5798777
+                ],
+                [
+                  12.2551745,
+                  46.5798154
+                ],
+                [
+                  12.2551563,
+                  46.5797857
+                ],
+                [
+                  12.2551028,
+                  46.5797733
+                ],
+                [
+                  12.2550215,
+                  46.5797796
+                ],
+                [
+                  12.2549086,
+                  46.5797965
+                ],
+                [
+                  12.2546404,
+                  46.5797944
+                ],
+                [
+                  12.2545337,
+                  46.5797417
+                ],
+                [
+                  12.2544438,
+                  46.5796205
+                ],
+                [
+                  12.2544114,
+                  46.5793113
+                ],
+                [
+                  12.254325,
+                  46.5791307
+                ],
+                [
+                  12.2542098,
+                  46.579012
+                ],
+                [
+                  12.2540443,
+                  46.5789749
+                ],
+                [
+                  12.2538643,
+                  46.578965
+                ],
+                [
+                  12.2537276,
+                  46.578913
+                ],
+                [
+                  12.2537482,
+                  46.5788561
+                ],
+                [
+                  12.2539003,
+                  46.5788364
+                ],
+                [
+                  12.2540752,
+                  46.5787749
+                ],
+                [
+                  12.2541148,
+                  46.57873
+                ],
+                [
+                  12.2541127,
+                  46.5786607
+                ],
+                [
+                  12.2540191,
+                  46.5785939
+                ],
+                [
+                  12.2538679,
+                  46.5785346
+                ],
+                [
+                  12.2537546,
+                  46.5785034
+                ],
+                [
+                  12.2535989,
+                  46.5785068
+                ],
+                [
+                  12.2534745,
+                  46.5784688
+                ],
+                [
+                  12.2533524,
+                  46.5784181
+                ],
+                [
+                  12.2532764,
+                  46.5783358
+                ],
+                [
+                  12.2532327,
+                  46.5783105
+                ],
+                [
+                  12.252994,
+                  46.5783374
+                ],
+                [
+                  12.2521829,
+                  46.5786613
+                ],
+                [
+                  12.2521522,
+                  46.5786922
+                ],
+                [
+                  12.2521527,
+                  46.5787203
+                ],
+                [
+                  12.252173,
+                  46.578752
+                ],
+                [
+                  12.2522283,
+                  46.5787798
+                ],
+                [
+                  12.2522836,
+                  46.5788064
+                ],
+                [
+                  12.2523425,
+                  46.5788102
+                ],
+                [
+                  12.2523853,
+                  46.5788285
+                ],
+                [
+                  12.252405,
+                  46.5788528
+                ],
+                [
+                  12.2524005,
+                  46.579003
+                ],
+                [
+                  12.2524351,
+                  46.5791059
+                ],
+                [
+                  12.2524644,
+                  46.5793511
+                ],
+                [
+                  12.2524489,
+                  46.5795602
+                ],
+                [
+                  12.2525272,
+                  46.579755
+                ],
+                [
+                  12.2525594,
+                  46.5799861
+                ],
+                [
+                  12.2525779,
+                  46.5801048
+                ],
+                [
+                  12.2525663,
+                  46.5802061
+                ],
+                [
+                  12.252594,
+                  46.5803075
+                ],
+                [
+                  12.2525839,
+                  46.5803312
+                ],
+                [
+                  12.2523253,
+                  46.5806722
+                ],
+                [
+                  12.2522286,
+                  46.5807656
+                ],
+                [
+                  12.2521549,
+                  46.5808511
+                ],
+                [
+                  12.2520558,
+                  46.5810268
+                ],
+                [
+                  12.2520489,
+                  46.5811519
+                ],
+                [
+                  12.2520282,
+                  46.5812057
+                ],
+                [
+                  12.2519325,
+                  46.5812634
+                ],
+                [
+                  12.2519208,
+                  46.5812789
+                ],
+                [
+                  12.2518822,
+                  46.581393
+                ],
+                [
+                  12.2518748,
+                  46.5814943
+                ],
+                [
+                  12.251884,
+                  46.5816603
+                ],
+                [
+                  12.2519397,
+                  46.5818137
+                ],
+                [
+                  12.2520046,
+                  46.5819107
+                ],
+                [
+                  12.2521152,
+                  46.5820006
+                ],
+                [
+                  12.252255,
+                  46.5820813
+                ],
+                [
+                  12.2523787,
+                  46.5821589
+                ],
+                [
+                  12.2524487,
+                  46.5822133
+                ],
+                [
+                  12.2525224,
+                  46.5823033
+                ],
+                [
+                  12.2525629,
+                  46.5824096
+                ],
+                [
+                  12.2525795,
+                  46.5825008
+                ],
+                [
+                  12.2526219,
+                  46.5825768
+                ],
+                [
+                  12.2527443,
+                  46.5826983
+                ],
+                [
+                  12.252999,
+                  46.5830172
+                ],
+                [
+                  12.2531645,
+                  46.5833091
+                ],
+                [
+                  12.2532657,
+                  46.5835275
+                ],
+                [
+                  12.2533197,
+                  46.5836043
+                ],
+                [
+                  12.2534376,
+                  46.5836765
+                ],
+                [
+                  12.2542426,
+                  46.5839283
+                ],
+                [
+                  12.2543586,
+                  46.5839561
+                ],
+                [
+                  12.254522,
+                  46.583957
+                ],
+                [
+                  12.2547454,
+                  46.5839079
+                ],
+                [
+                  12.2550472,
+                  46.583824
+                ],
+                [
+                  12.2555884,
+                  46.5837512
+                ],
+                [
+                  12.2559129,
+                  46.5837082
+                ],
+                [
+                  12.2561113,
+                  46.5837195
+                ],
+                [
+                  12.2563117,
+                  46.5837686
+                ],
+                [
+                  12.2565927,
+                  46.5838731
+                ],
+                [
+                  12.2569383,
+                  46.5842757
+                ],
+                [
+                  12.2570038,
+                  46.5845204
+                ],
+                [
+                  12.2570058,
+                  46.5846913
+                ],
+                [
+                  12.2571053,
+                  46.5851147
+                ],
+                [
+                  12.257158,
+                  46.5852579
+                ],
+                [
+                  12.2572262,
+                  46.5852006
+                ],
+                [
+                  12.2572573,
+                  46.5851827
+                ],
+                [
+                  12.2573734,
+                  46.5851589
+                ],
+                [
+                  12.2575848,
+                  46.585197
+                ],
+                [
+                  12.2577096,
+                  46.5852601
+                ],
+                [
+                  12.2577945,
+                  46.5853673
+                ],
+                [
+                  12.2577927,
+                  46.585459
+                ],
+                [
+                  12.2577304,
+                  46.5854876
+                ],
+                [
+                  12.2576351,
+                  46.585459
+                ],
+                [
+                  12.2575571,
+                  46.5854733
+                ],
+                [
+                  12.2575224,
+                  46.5855138
+                ],
+                [
+                  12.2575294,
+                  46.5855876
+                ],
+                [
+                  12.2575866,
+                  46.5856412
+                ],
+                [
+                  12.25759,
+                  46.5857127
+                ],
+                [
+                  12.2575571,
+                  46.585765
+                ],
+                [
+                  12.2575017,
+                  46.5857984
+                ],
+                [
+                  12.2575675,
+                  46.5858377
+                ],
+                [
+                  12.25759,
+                  46.5858841
+                ],
+                [
+                  12.2575623,
+                  46.5859306
+                ],
+                [
+                  12.2574913,
+                  46.5859437
+                ],
+                [
+                  12.2574774,
+                  46.5860092
+                ],
+                [
+                  12.2575155,
+                  46.5860568
+                ],
+                [
+                  12.2576507,
+                  46.5860758
+                ],
+                [
+                  12.2577009,
+                  46.5860449
+                ],
+                [
+                  12.2577927,
+                  46.5859758
+                ],
+                [
+                  12.2578551,
+                  46.585933
+                ],
+                [
+                  12.2578361,
+                  46.5858496
+                ],
+                [
+                  12.2577252,
+                  46.5857424
+                ],
+                [
+                  12.2577234,
+                  46.5856638
+                ],
+                [
+                  12.2577858,
+                  46.5855995
+                ],
+                [
+                  12.2579383,
+                  46.5855769
+                ],
+                [
+                  12.2580059,
+                  46.5856245
+                ],
+                [
+                  12.2580682,
+                  46.5857162
+                ],
+                [
+                  12.2581254,
+                  46.5857269
+                ],
+                [
+                  12.2581878,
+                  46.5857007
+                ],
+                [
+                  12.2581999,
+                  46.5856626
+                ],
+                [
+                  12.258141,
+                  46.5856174
+                ],
+                [
+                  12.2581531,
+                  46.5855578
+                ],
+                [
+                  12.2580578,
+                  46.5854935
+                ],
+                [
+                  12.2580596,
+                  46.5854626
+                ],
+                [
+                  12.2580353,
+                  46.5853864
+                ],
+                [
+                  12.2580717,
+                  46.585334
+                ],
+                [
+                  12.2581583,
+                  46.5853197
+                ],
+                [
+                  12.2582086,
+                  46.5853435
+                ],
+                [
+                  12.2582242,
+                  46.5854078
+                ],
+                [
+                  12.2582987,
+                  46.585403
+                ],
+                [
+                  12.258361,
+                  46.5853685
+                ],
+                [
+                  12.2585066,
+                  46.5853209
+                ],
+                [
+                  12.2586175,
+                  46.5852066
+                ],
+                [
+                  12.2587088,
+                  46.5850336
+                ]
+              ],
+              [
+                [
+                  12.2533071,
+                  46.5803598
+                ],
+                [
+                  12.2533889,
+                  46.5803321
+                ],
+                [
+                  12.2534358,
+                  46.5802934
+                ],
+                [
+                  12.2534654,
+                  46.5802455
+                ],
+                [
+                  12.2534412,
+                  46.5801976
+                ],
+                [
+                  12.2533755,
+                  46.5801699
+                ],
+                [
+                  12.2533312,
+                  46.5801588
+                ],
+                [
+                  12.2532696,
+                  46.5801736
+                ],
+                [
+                  12.2532561,
+                  46.5802114
+                ],
+                [
+                  12.2532602,
+                  46.5802676
+                ],
+                [
+                  12.2532602,
+                  46.5803321
+                ],
+                [
+                  12.2532722,
+                  46.5803533
+                ],
+                [
+                  12.2533071,
+                  46.5803598
+                ]
+              ]
+            ]
+          ],
+          "type": "MultiPolygon"
+        },
+        "areaMethod": "osm_out_geom_multipolygon",
+        "areaSourceUrl": "https://www.openstreetmap.org/relation/16301091",
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.58278,
+          "lng": 12.25444
+        },
+        "pointSourceUrl": "https://www.geonames.org/3173341/"
+      },
+      "id": "23c7adb3-bff7-50a5-a275-6f06afd5b69d",
+      "identitySource": "exact_P1566_P625_one_to_one",
+      "localNames": [
+        {
+          "language": "de",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1177961",
+          "value": "Misurinasee"
+        },
+        {
+          "language": "en",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1177961",
+          "value": "Lake Misurina"
+        },
+        {
+          "language": "fr",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1177961",
+          "value": "lac de Misurina"
+        }
+      ],
+      "media": [],
+      "name": "Lago di Misurina",
+      "quality": {
+        "gate": "G1",
+        "hasVerifiedShoreline": true,
+        "needsAreaGeometryReview": false,
+        "photoSourceVerified": false,
+        "seoIndexable": false,
+        "sourcePointVerified": true,
+        "textLicenseVerified": true,
+        "wikidataIdentityVerified": true
+      },
+      "slug": "lago-di-misurina",
+      "sourceIds": {
+        "geonames": "3173341",
+        "osm": "relation/16301091",
+        "osmVerifiedBy": "P1566_P625_and_exact_OSM_QID_or_GeoNames_ID",
+        "wikidata": "Q1177961",
+        "wikidataVerifiedBy": "P1566+P625"
+      },
+      "subtype": "lake",
+      "textSources": [
+        {
+          "kind": "source_excerpt_not_original_editorial",
+          "licence": "CC BY-SA 4.0",
+          "method": "reported",
+          "originalLanguage": "it",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikipedia:it:249848",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://it.wikipedia.org/wiki/Lago_di_Misurina",
+          "text": "Il lago di Misurina è un lago alpino naturale, il più grande del Cadore e si trova a 1.754 m s.l.m. a Misurina, frazione di Auronzo di Cadore (Belluno). Il perimetro è di 2,6 km mentre la profondità è di 5 metri."
+        }
+      ]
+    },
+    {
+      "aliases": [],
+      "checkedAt": "2026-11-28T13:26:05.685541+00:00",
+      "description": "Il lago di Pontesei (lad. Làac di Pontesiei) (775 m s.l.m.) è un piccolo bacino idroelettrico della Val di Zoldo, in provincia di Belluno, ricavato sbarrando il corso del torrente Maè con una diga costruita tra il 1955 e il 1957 che portava il lago a quota 800 m s.l.m. Il 22 marzo 1959 una frana dal suo versante nell'invaso provocò un'ondata che causò una vittima, il custode Arcangelo Tiziani.",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216476",
+          "sourceUpdatedAt": "2012-01-19",
+          "sourceUrl": "https://www.geonames.org/3216476/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 902
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3216476",
+          "sourceUpdatedAt": "2012-01-19",
+          "sourceUrl": "https://www.geonames.org/3216476/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        },
+        "wikidataElevationReportedM": {
+          "confidence": 0.9,
+          "licence": "CC0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikidata:Q3826011:P2044",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://www.wikidata.org/wiki/Q3826011",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 807.0
+        }
+      },
+      "geo": {
+        "area": null,
+        "areaMethod": null,
+        "areaSourceUrl": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.33694,
+          "lng": 12.21861
+        },
+        "pointSourceUrl": "https://www.geonames.org/3216476/"
+      },
+      "id": "c5e283a1-0e39-53ae-8f3c-12c945e87b83",
+      "identitySource": "exact_P1566_P625_one_to_one",
+      "localNames": [
+        {
+          "language": "de",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q3826011",
+          "value": "Pontesei See"
+        }
+      ],
+      "media": [
+        {
+          "author": "VENET01",
+          "caption": "La diga di Pontesei di Zoldo vista da monte. Il livello dell'invaso attuale a quota di sicurezza dopo l'alluvione del novembre 1966. A destra, l'imbuto dell'ex scarico di superfice, a lato la paratoia e il nuovo scarico.",
+          "descriptionText": "La diga di Pontesei di Zoldo vista da monte. Il livello dell'invaso attuale a quota di sicurezza dopo l'alluvione del novembre 1966. A destra, l'imbuto dell'ex scarico di superfice, a lato la paratoia e il nuovo scarico.",
+          "id": "wikimedia:Q3826011:P18:697e24f0dcf0",
+          "kind": "photo",
+          "licence": "CC BY-SA 4.0",
+          "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "reuseAllowed": true,
+          "sourceId": "wikidata:Q3826011:P18",
+          "sourceUpdatedAt": "2017-11-15T20:50:27Z",
+          "sourceUrl": "https://commons.wikimedia.org/wiki/File:DIGA_PONTESEI.jpg",
+          "subjectMethod": "verified_GeoNames_P1566_Wikidata_P625_P18",
+          "subjectVerified": true,
+          "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c3/DIGA_PONTESEI.jpg/1280px-DIGA_PONTESEI.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+        }
+      ],
+      "name": "Lago di Pontesei",
+      "quality": {
+        "gate": "G1",
+        "hasVerifiedShoreline": false,
+        "needsAreaGeometryReview": true,
+        "photoSourceVerified": true,
+        "seoIndexable": false,
+        "sourcePointVerified": true,
+        "textLicenseVerified": true,
+        "wikidataIdentityVerified": true
+      },
+      "slug": "lago-di-pontesei",
+      "sourceIds": {
+        "geonames": "3216476",
+        "wikidata": "Q3826011",
+        "wikidataVerifiedBy": "P1566+P625"
+      },
+      "subtype": "lake",
+      "textSources": [
+        {
+          "kind": "source_excerpt_not_original_editorial",
+          "licence": "CC BY-SA 4.0",
+          "method": "reported",
+          "originalLanguage": "it",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikipedia:it:1430126",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://it.wikipedia.org/wiki/Lago_di_Pontesei",
+          "text": "Il lago di Pontesei (lad. Làac di Pontesiei) (775 m s.l.m.) è un piccolo bacino idroelettrico della Val di Zoldo, in provincia di Belluno, ricavato sbarrando il corso del torrente Maè con una diga costruita tra il 1955 e il 1957 che portava il lago a quota 800 m s.l.m. Il 22 marzo 1959 una frana dal suo versante nell'invaso provocò un'ondata che causò una vittima, il custode Arcangelo Tiziani."
+        }
+      ]
+    },
+    {
+      "aliases": [],
+      "checkedAt": "2026-11-28T13:26:05.685541+00:00",
+      "description": "Il lago di Sauris (Lât di Sauris in friulano) è un lago artificiale che si trova in Val Lumiei (Carnia), nelle vicinanze di Sauris, a 977 metri di altitudine, posto sulla strada che da Ampezzo sale a Sauris, in località la Màina, chiamato appunto anche \"lago della Màina\".",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3217033",
+          "sourceUpdatedAt": "1996-03-21",
+          "sourceUrl": "https://www.geonames.org/3217033/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 955
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3217033",
+          "sourceUpdatedAt": "1996-03-21",
+          "sourceUrl": "https://www.geonames.org/3217033/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        },
+        "wikidataElevationReportedM": {
+          "confidence": 0.9,
+          "licence": "CC0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikidata:Q3826046:P2044",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://www.wikidata.org/wiki/Q3826046",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 977.0
+        }
+      },
+      "geo": {
+        "area": null,
+        "areaMethod": null,
+        "areaSourceUrl": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.44944,
+          "lng": 12.72333
+        },
+        "pointSourceUrl": "https://www.geonames.org/3217033/"
+      },
+      "id": "0fc464e5-e268-5b26-a73b-296b82cdcb01",
+      "identitySource": "exact_P1566_P625_one_to_one",
+      "localNames": [
+        {
+          "language": "fr",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q3826046",
+          "value": "lac de Sauris"
+        }
+      ],
+      "media": [],
+      "name": "Lago di Sauris",
+      "quality": {
+        "gate": "G1",
+        "hasVerifiedShoreline": false,
+        "needsAreaGeometryReview": true,
+        "photoSourceVerified": false,
+        "seoIndexable": false,
+        "sourcePointVerified": true,
+        "textLicenseVerified": true,
+        "wikidataIdentityVerified": true
+      },
+      "slug": "lago-di-sauris",
+      "sourceIds": {
+        "geonames": "3217033",
+        "wikidata": "Q3826046",
+        "wikidataVerifiedBy": "P1566+P625"
+      },
+      "subtype": "lake",
+      "textSources": [
+        {
+          "kind": "source_excerpt_not_original_editorial",
+          "licence": "CC BY-SA 4.0",
+          "method": "reported",
+          "originalLanguage": "it",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikipedia:it:1320419",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://it.wikipedia.org/wiki/Lago_di_Sauris",
+          "text": "Il lago di Sauris (Lât di Sauris in friulano) è un lago artificiale che si trova in Val Lumiei (Carnia), nelle vicinanze di Sauris, a 977 metri di altitudine, posto sulla strada che da Ampezzo sale a Sauris, in località la Màina, chiamato appunto anche \"lago della Màina\"."
+        }
+      ]
+    },
+    {
+      "aliases": [
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3181214/",
+          "value": "Kalterer See"
+        },
+        {
+          "language": null,
+          "sourceUrl": "https://www.geonames.org/3181214/",
+          "value": "Lago di Caldaro"
+        }
+      ],
+      "checkedAt": "2026-11-28T13:26:05.685541+00:00",
+      "description": "Il lago di Caldaro (Kalterer See in tedesco) è il più grande specchio d'acqua naturale della provincia autonoma di Bolzano. È situato nell'Oltradige a 216 m nel comune di Caldaro sulla Strada del Vino (BZ), a circa 20 km da Bolzano.",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3181214",
+          "sourceUpdatedAt": "2013-11-19",
+          "sourceUrl": "https://www.geonames.org/3181214/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 206
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:3181214",
+          "sourceUpdatedAt": "2013-11-19",
+          "sourceUrl": "https://www.geonames.org/3181214/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        },
+        "osmMappedWaterSurfaceKm2": {
+          "confidence": 0.65,
+          "licence": "ODbL 1.0",
+          "method": "derived",
+          "notes": "Superficie derivata dal contorno OSM, non misura ufficiale del lago",
+          "retrievedAt": "2026-11-28T08:13:50.111392+00:00",
+          "sourceId": "osm:relation/7633165:geometry",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://www.openstreetmap.org/relation/7633165",
+          "unit": "km2",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1.309092
+        },
+        "wikidataElevationReportedM": {
+          "confidence": 0.9,
+          "licence": "CC0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikidata:Q252074:P2044",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://www.wikidata.org/wiki/Q252074",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 216.0
+        }
+      },
+      "geo": {
+        "area": {
+          "coordinates": [
+            [
+              [
+                [
+                  11.2583674,
+                  46.379689
+                ],
+                [
+                  11.258416,
+                  46.3797901
+                ],
+                [
+                  11.2585433,
+                  46.3800199
+                ],
+                [
+                  11.2587167,
+                  46.3801994
+                ],
+                [
+                  11.2588087,
+                  46.3806076
+                ],
+                [
+                  11.2588272,
+                  46.3806898
+                ],
+                [
+                  11.2588365,
+                  46.3807308
+                ],
+                [
+                  11.2589572,
+                  46.3812665
+                ],
+                [
+                  11.2590154,
+                  46.3814821
+                ],
+                [
+                  11.2590793,
+                  46.3817554
+                ],
+                [
+                  11.2589804,
+                  46.3820357
+                ],
+                [
+                  11.2589554,
+                  46.3821034
+                ],
+                [
+                  11.258966,
+                  46.382604
+                ],
+                [
+                  11.2589807,
+                  46.3827444
+                ],
+                [
+                  11.2588977,
+                  46.3827618
+                ],
+                [
+                  11.2589051,
+                  46.3827799
+                ],
+                [
+                  11.2590377,
+                  46.3830988
+                ],
+                [
+                  11.259141,
+                  46.3833512
+                ],
+                [
+                  11.2591412,
+                  46.3833847
+                ],
+                [
+                  11.2591414,
+                  46.3834103
+                ],
+                [
+                  11.2593045,
+                  46.3837961
+                ],
+                [
+                  11.2592902,
+                  46.3838025
+                ],
+                [
+                  11.2592656,
+                  46.3838373
+                ],
+                [
+                  11.2592409,
+                  46.3839027
+                ],
+                [
+                  11.2592467,
+                  46.3839732
+                ],
+                [
+                  11.2592525,
+                  46.3840429
+                ],
+                [
+                  11.2593227,
+                  46.3841403
+                ],
+                [
+                  11.2598652,
+                  46.3844318
+                ],
+                [
+                  11.2600808,
+                  46.3844841
+                ],
+                [
+                  11.2600999,
+                  46.3844653
+                ],
+                [
+                  11.2601413,
+                  46.3844504
+                ],
+                [
+                  11.2601803,
+                  46.3844495
+                ],
+                [
+                  11.2602175,
+                  46.3844504
+                ],
+                [
+                  11.2602433,
+                  46.384462
+                ],
+                [
+                  11.260269,
+                  46.3844788
+                ],
+                [
+                  11.2602856,
+                  46.3844986
+                ],
+                [
+                  11.2602939,
+                  46.3845194
+                ],
+                [
+                  11.2602963,
+                  46.3845504
+                ],
+                [
+                  11.2602777,
+                  46.3845786
+                ],
+                [
+                  11.2601457,
+                  46.3847388
+                ],
+                [
+                  11.2601324,
+                  46.3847803
+                ],
+                [
+                  11.2600832,
+                  46.3849399
+                ],
+                [
+                  11.2600799,
+                  46.3850053
+                ],
+                [
+                  11.2599984,
+                  46.3850019
+                ],
+                [
+                  11.2599695,
+                  46.3852105
+                ],
+                [
+                  11.2599322,
+                  46.3852105
+                ],
+                [
+                  11.2599002,
+                  46.3853177
+                ],
+                [
+                  11.2597834,
+                  46.3853326
+                ],
+                [
+                  11.2596874,
+                  46.3854618
+                ],
+                [
+                  11.2595646,
+                  46.3855102
+                ],
+                [
+                  11.2596501,
+                  46.3855777
+                ],
+                [
+                  11.2595281,
+                  46.3856512
+                ],
+                [
+                  11.2594426,
+                  46.3855837
+                ],
+                [
+                  11.2593325,
+                  46.3856059
+                ],
+                [
+                  11.2593112,
+                  46.3856551
+                ],
+                [
+                  11.2592251,
+                  46.3856478
+                ],
+                [
+                  11.2591752,
+                  46.385741
+                ],
+                [
+                  11.2592396,
+                  46.3860372
+                ],
+                [
+                  11.2598156,
+                  46.3859905
+                ],
+                [
+                  11.2601785,
+                  46.385727
+                ],
+                [
+                  11.2606514,
+                  46.3855873
+                ],
+                [
+                  11.2607691,
+                  46.3856381
+                ],
+                [
+                  11.260989,
+                  46.3856177
+                ],
+                [
+                  11.2613625,
+                  46.3856746
+                ],
+                [
+                  11.2614029,
+                  46.3857806
+                ],
+                [
+                  11.2615219,
+                  46.3857775
+                ],
+                [
+                  11.2616127,
+                  46.3856972
+                ],
+                [
+                  11.2620894,
+                  46.3856931
+                ],
+                [
+                  11.2624593,
+                  46.3857311
+                ],
+                [
+                  11.2626426,
+                  46.3857787
+                ],
+                [
+                  11.2629081,
+                  46.385799
+                ],
+                [
+                  11.2631428,
+                  46.3858952
+                ],
+                [
+                  11.2632488,
+                  46.3858832
+                ],
+                [
+                  11.2634838,
+                  46.3859044
+                ],
+                [
+                  11.2647026,
+                  46.3861412
+                ],
+                [
+                  11.2648541,
+                  46.3860932
+                ],
+                [
+                  11.2650652,
+                  46.3861235
+                ],
+                [
+                  11.2663672,
+                  46.3862042
+                ],
+                [
+                  11.266487,
+                  46.3863339
+                ],
+                [
+                  11.2664119,
+                  46.3865112
+                ],
+                [
+                  11.2665278,
+                  46.3865747
+                ],
+                [
+                  11.2666069,
+                  46.3866113
+                ],
+                [
+                  11.266684,
+                  46.3866339
+                ],
+                [
+                  11.2668067,
+                  46.3866325
+                ],
+                [
+                  11.2667819,
+                  46.3865012
+                ],
+                [
+                  11.2668715,
+                  46.3864534
+                ],
+                [
+                  11.2671231,
+                  46.3863377
+                ],
+                [
+                  11.267331,
+                  46.3862197
+                ],
+                [
+                  11.2673914,
+                  46.3861086
+                ],
+                [
+                  11.2674559,
+                  46.3859389
+                ],
+                [
+                  11.2675362,
+                  46.3856974
+                ],
+                [
+                  11.2677642,
+                  46.3854064
+                ],
+                [
+                  11.2678876,
+                  46.3852943
+                ],
+                [
+                  11.2680892,
+                  46.3850717
+                ],
+                [
+                  11.2682244,
+                  46.3848901
+                ],
+                [
+                  11.2682617,
+                  46.3848173
+                ],
+                [
+                  11.2682149,
+                  46.3847952
+                ],
+                [
+                  11.2680228,
+                  46.3847199
+                ],
+                [
+                  11.268018,
+                  46.3846217
+                ],
+                [
+                  11.2680727,
+                  46.3844808
+                ],
+                [
+                  11.2681528,
+                  46.3844874
+                ],
+                [
+                  11.2681943,
+                  46.3844214
+                ],
+                [
+                  11.268231,
+                  46.3843633
+                ],
+                [
+                  11.2681746,
+                  46.3843494
+                ],
+                [
+                  11.2683737,
+                  46.3840745
+                ],
+                [
+                  11.2685539,
+                  46.3840974
+                ],
+                [
+                  11.2686692,
+                  46.383874
+                ],
+                [
+                  11.2687826,
+                  46.3836088
+                ],
+                [
+                  11.2688891,
+                  46.3833293
+                ],
+                [
+                  11.2690923,
+                  46.3832105
+                ],
+                [
+                  11.2693252,
+                  46.3829678
+                ],
+                [
+                  11.2694391,
+                  46.3827997
+                ],
+                [
+                  11.2697584,
+                  46.3825862
+                ],
+                [
+                  11.2698583,
+                  46.382393
+                ],
+                [
+                  11.2700853,
+                  46.3820508
+                ],
+                [
+                  11.2701958,
+                  46.3815881
+                ],
+                [
+                  11.2701188,
+                  46.3811916
+                ],
+                [
+                  11.2700993,
+                  46.3807578
+                ],
+                [
+                  11.270158,
+                  46.380424
+                ],
+                [
+                  11.2701345,
+                  46.3802213
+                ],
+                [
+                  11.270205,
+                  46.3798942
+                ],
+                [
+                  11.270254,
+                  46.3796293
+                ],
+                [
+                  11.2701993,
+                  46.3795422
+                ],
+                [
+                  11.2703265,
+                  46.3790631
+                ],
+                [
+                  11.2707829,
+                  46.3783873
+                ],
+                [
+                  11.2706301,
+                  46.3782225
+                ],
+                [
+                  11.270711,
+                  46.3780057
+                ],
+                [
+                  11.2708809,
+                  46.3779454
+                ],
+                [
+                  11.2713295,
+                  46.3779513
+                ],
+                [
+                  11.2713314,
+                  46.3776021
+                ],
+                [
+                  11.2711244,
+                  46.3775945
+                ],
+                [
+                  11.2711747,
+                  46.3773143
+                ],
+                [
+                  11.2711056,
+                  46.3769577
+                ],
+                [
+                  11.27102,
+                  46.376698
+                ],
+                [
+                  11.2707622,
+                  46.3763655
+                ],
+                [
+                  11.2698353,
+                  46.3756905
+                ],
+                [
+                  11.269537,
+                  46.3753424
+                ],
+                [
+                  11.268977,
+                  46.3751161
+                ],
+                [
+                  11.268583,
+                  46.3750099
+                ],
+                [
+                  11.2681015,
+                  46.3749799
+                ],
+                [
+                  11.2670487,
+                  46.3750857
+                ],
+                [
+                  11.2662309,
+                  46.3753963
+                ],
+                [
+                  11.2654346,
+                  46.3753191
+                ],
+                [
+                  11.2650549,
+                  46.3753018
+                ],
+                [
+                  11.2641704,
+                  46.3750391
+                ],
+                [
+                  11.2639618,
+                  46.3746882
+                ],
+                [
+                  11.2637975,
+                  46.3744419
+                ],
+                [
+                  11.2637385,
+                  46.3741891
+                ],
+                [
+                  11.2635309,
+                  46.374003
+                ],
+                [
+                  11.2631266,
+                  46.373533
+                ],
+                [
+                  11.2624618,
+                  46.3728122
+                ],
+                [
+                  11.2616522,
+                  46.3722013
+                ],
+                [
+                  11.2614955,
+                  46.3721932
+                ],
+                [
+                  11.2611644,
+                  46.3720526
+                ],
+                [
+                  11.2610097,
+                  46.3719174
+                ],
+                [
+                  11.2607276,
+                  46.3717917
+                ],
+                [
+                  11.2603828,
+                  46.3714984
+                ],
+                [
+                  11.2598956,
+                  46.3711864
+                ],
+                [
+                  11.2595777,
+                  46.3711173
+                ],
+                [
+                  11.2593543,
+                  46.3709672
+                ],
+                [
+                  11.2590546,
+                  46.3709172
+                ],
+                [
+                  11.2589488,
+                  46.3707685
+                ],
+                [
+                  11.2588098,
+                  46.3707672
+                ],
+                [
+                  11.2585766,
+                  46.3705969
+                ],
+                [
+                  11.2584026,
+                  46.3705147
+                ],
+                [
+                  11.2582514,
+                  46.3705969
+                ],
+                [
+                  11.2579361,
+                  46.3707794
+                ],
+                [
+                  11.2575639,
+                  46.3708875
+                ],
+                [
+                  11.2572876,
+                  46.3710578
+                ],
+                [
+                  11.2568312,
+                  46.3711281
+                ],
+                [
+                  11.2565143,
+                  46.371249
+                ],
+                [
+                  11.2564335,
+                  46.3712903
+                ],
+                [
+                  11.2564296,
+                  46.3714755
+                ],
+                [
+                  11.2565961,
+                  46.3716836
+                ],
+                [
+                  11.2565158,
+                  46.3718634
+                ],
+                [
+                  11.256412,
+                  46.371985
+                ],
+                [
+                  11.256222,
+                  46.3720621
+                ],
+                [
+                  11.256171,
+                  46.3723742
+                ],
+                [
+                  11.2559771,
+                  46.3727514
+                ],
+                [
+                  11.2558635,
+                  46.3728298
+                ],
+                [
+                  11.2557557,
+                  46.372996
+                ],
+                [
+                  11.2554157,
+                  46.3732803
+                ],
+                [
+                  11.2553731,
+                  46.3739853
+                ],
+                [
+                  11.2555811,
+                  46.3747015
+                ],
+                [
+                  11.2556651,
+                  46.3755743
+                ],
+                [
+                  11.2556303,
+                  46.3763833
+                ],
+                [
+                  11.2553912,
+                  46.3765936
+                ],
+                [
+                  11.255228,
+                  46.3768126
+                ],
+                [
+                  11.2553659,
+                  46.376871
+                ],
+                [
+                  11.2552118,
+                  46.3769998
+                ],
+                [
+                  11.2552699,
+                  46.3770507
+                ],
+                [
+                  11.2554758,
+                  46.3770524
+                ],
+                [
+                  11.2557479,
+                  46.3769048
+                ],
+                [
+                  11.2557975,
+                  46.3767771
+                ],
+                [
+                  11.2563036,
+                  46.3771143
+                ],
+                [
+                  11.2569177,
+                  46.3777867
+                ],
+                [
+                  11.2569409,
+                  46.3780427
+                ],
+                [
+                  11.2571701,
+                  46.3781508
+                ],
+                [
+                  11.2580191,
+                  46.3790628
+                ],
+                [
+                  11.2583674,
+                  46.379689
+                ]
+              ]
+            ]
+          ],
+          "type": "MultiPolygon"
+        },
+        "areaMethod": "osm_out_geom_multipolygon",
+        "areaSourceUrl": "https://www.openstreetmap.org/relation/7633165",
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.37934,
+          "lng": 11.26286
+        },
+        "pointSourceUrl": "https://www.geonames.org/3181214/"
+      },
+      "id": "ce5401e1-1077-54b9-84c8-5dd96f97640c",
+      "identitySource": "exact_P1566_P625_one_to_one",
+      "localNames": [
+        {
+          "language": "de",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q252074",
+          "value": "Kalterer See"
+        },
+        {
+          "language": "fr",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q252074",
+          "value": "lac de Caldaro"
+        },
+        {
+          "language": "it",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q252074",
+          "value": "lago di Caldaro"
+        }
+      ],
+      "media": [],
+      "name": "Lake Kaltern",
+      "quality": {
+        "gate": "G1",
+        "hasVerifiedShoreline": true,
+        "needsAreaGeometryReview": false,
+        "photoSourceVerified": false,
+        "seoIndexable": false,
+        "sourcePointVerified": true,
+        "textLicenseVerified": true,
+        "wikidataIdentityVerified": true
+      },
+      "slug": "lake-kaltern",
+      "sourceIds": {
+        "geonames": "3181214",
+        "osm": "relation/7633165",
+        "osmVerifiedBy": "P1566_P625_and_exact_OSM_QID_or_GeoNames_ID",
+        "wikidata": "Q252074",
+        "wikidataVerifiedBy": "P1566+P625"
+      },
+      "subtype": "lake",
+      "textSources": [
+        {
+          "kind": "source_excerpt_not_original_editorial",
+          "licence": "CC BY-SA 4.0",
+          "method": "reported",
+          "originalLanguage": "it",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikipedia:it:640414",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://it.wikipedia.org/wiki/Lago_di_Caldaro",
+          "text": "Il lago di Caldaro (Kalterer See in tedesco) è il più grande specchio d'acqua naturale della provincia autonoma di Bolzano. È situato nell'Oltradige a 216 m nel comune di Caldaro sulla Strada del Vino (BZ), a circa 20 km da Bolzano."
+        }
+      ]
+    },
+    {
+      "aliases": [],
+      "checkedAt": "2026-11-28T13:26:05.685541+00:00",
+      "description": "Il lago di Neves (Neves-Stausee o Neveser See in tedesco) si trova in cima alla valle dei Molini, una valle laterale della valle Aurina, in Alto Adige. Per raggiungere il lago, dal paese di Selva dei Molini, si raggiunge il paesino di Lappago (Lappach), a 1.430 metri s.l.m.. Da qui si può proseguire a piedi, su sentiero, per giungere al lago in circa un'ora. In alternativa si può proseguire in macchina, percorrendo una strada di 5 chilometri ripida e stretta, e non sempre aperta (soprattutto nelle stagioni invernali). Il lago, con il suo attiguo parcheggio, è per gli escursionisti anche un importante punto di partenza per svariate gite in alta montagna. Risalendo la sua sponda occidentale è infatti possibile raggiungere il rifugio Passo Ponte di Ghiaccio e il Rifugio Gran Pilastro. Risalendo la sponda orientale del lago si può invece raggiungere il rifugio Giovanni Porro.",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:7627807",
+          "sourceUpdatedAt": "2010-12-31",
+          "sourceUrl": "https://www.geonames.org/7627807/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1856
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:7627807",
+          "sourceUpdatedAt": "2010-12-31",
+          "sourceUrl": "https://www.geonames.org/7627807/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        }
+      },
+      "geo": {
+        "area": null,
+        "areaMethod": null,
+        "areaSourceUrl": null,
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.94663,
+          "lng": 11.78172
+        },
+        "pointSourceUrl": "https://www.geonames.org/7627807/"
+      },
+      "id": "dd96f456-4fe6-5f2f-94d8-630ce899dee3",
+      "identitySource": "exact_P1566_P625_one_to_one",
+      "localNames": [
+        {
+          "language": "de",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1761445",
+          "value": "Neves-Stausee"
+        },
+        {
+          "language": "fr",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1761445",
+          "value": "lac de Neves"
+        },
+        {
+          "language": "it",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q1761445",
+          "value": "lago di Neves"
+        }
+      ],
+      "media": [],
+      "name": "Neves Stausee",
+      "quality": {
+        "gate": "G1",
+        "hasVerifiedShoreline": false,
+        "needsAreaGeometryReview": true,
+        "photoSourceVerified": false,
+        "seoIndexable": false,
+        "sourcePointVerified": true,
+        "textLicenseVerified": true,
+        "wikidataIdentityVerified": true
+      },
+      "slug": "neves-stausee",
+      "sourceIds": {
+        "geonames": "7627807",
+        "wikidata": "Q1761445",
+        "wikidataVerifiedBy": "P1566+P625"
+      },
+      "subtype": "lake",
+      "textSources": [
+        {
+          "kind": "source_excerpt_not_original_editorial",
+          "licence": "CC BY-SA 4.0",
+          "method": "reported",
+          "originalLanguage": "it",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikipedia:it:1071698",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://it.wikipedia.org/wiki/Lago_di_Neves",
+          "text": "Il lago di Neves (Neves-Stausee o Neveser See in tedesco) si trova in cima alla valle dei Molini, una valle laterale della valle Aurina, in Alto Adige. Per raggiungere il lago, dal paese di Selva dei Molini, si raggiunge il paesino di Lappago (Lappach), a 1.430 metri s.l.m.. Da qui si può proseguire a piedi, su sentiero, per giungere al lago in circa un'ora. In alternativa si può proseguire in macchina, percorrendo una strada di 5 chilometri ripida e stretta, e non sempre aperta (soprattutto nelle stagioni invernali). Il lago, con il suo attiguo parcheggio, è per gli escursionisti anche un importante punto di partenza per svariate gite in alta montagna. Risalendo la sua sponda occidentale è infatti possibile raggiungere il rifugio Passo Ponte di Ghiaccio e il Rifugio Gran Pilastro. Risalendo la sponda orientale del lago si può invece raggiungere il rifugio Giovanni Porro."
+        }
+      ]
+    },
+    {
+      "aliases": [],
+      "checkedAt": "2026-11-28T13:26:05.685541+00:00",
+      "description": "Il lago di Dobbiaco (Toblacher See in tedesco) è un piccolo lago alpino, di origine franosa, situato in val Pusteria a 1.251 m s.l.m. nel comune di Dobbiaco, a circa 106 km da Bolzano. Il lago si trova a sud dell'omonimo paese. La Rienza è il suo immissario ed emissario.",
+      "facts": {
+        "elevationM": {
+          "confidence": 0.6,
+          "licence": "CC BY 4.0",
+          "method": "estimated",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:7627511",
+          "sourceUpdatedAt": "2010-12-29",
+          "sourceUrl": "https://www.geonames.org/7627511/",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1257
+        },
+        "geoNamesFeatureCode": {
+          "confidence": 0.85,
+          "licence": "CC BY 4.0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:34:56.705232+00:00",
+          "sourceId": "geonames:7627511",
+          "sourceUpdatedAt": "2010-12-29",
+          "sourceUrl": "https://www.geonames.org/7627511/",
+          "unit": null,
+          "validFrom": null,
+          "validUntil": null,
+          "value": "LK"
+        },
+        "osmMappedWaterSurfaceKm2": {
+          "confidence": 0.65,
+          "licence": "ODbL 1.0",
+          "method": "derived",
+          "notes": "Superficie derivata dal contorno OSM, non misura ufficiale del lago",
+          "retrievedAt": "2026-11-28T08:13:50.111392+00:00",
+          "sourceId": "osm:relation/9795244:geometry",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://www.openstreetmap.org/relation/9795244",
+          "unit": "km2",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 0.130995
+        },
+        "wikidataElevationReportedM": {
+          "confidence": 0.9,
+          "licence": "CC0",
+          "method": "reported",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikidata:Q2438157:P2044",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://www.wikidata.org/wiki/Q2438157",
+          "unit": "m",
+          "validFrom": null,
+          "validUntil": null,
+          "value": 1259.0
+        }
+      },
+      "geo": {
+        "area": {
+          "coordinates": [
+            [
+              [
+                [
+                  12.2170159,
+                  46.7018726
+                ],
+                [
+                  12.2176637,
+                  46.7016183
+                ],
+                [
+                  12.2182238,
+                  46.7014296
+                ],
+                [
+                  12.2187085,
+                  46.7014443
+                ],
+                [
+                  12.2188694,
+                  46.701442
+                ],
+                [
+                  12.2192842,
+                  46.7014659
+                ],
+                [
+                  12.2194022,
+                  46.7011898
+                ],
+                [
+                  12.219919,
+                  46.7010985
+                ],
+                [
+                  12.2203052,
+                  46.7011721
+                ],
+                [
+                  12.2208631,
+                  46.7013928
+                ],
+                [
+                  12.2210133,
+                  46.7014222
+                ],
+                [
+                  12.2212386,
+                  46.7014811
+                ],
+                [
+                  12.2213459,
+                  46.7016798
+                ],
+                [
+                  12.2213995,
+                  46.7019078
+                ],
+                [
+                  12.2214927,
+                  46.7022541
+                ],
+                [
+                  12.2214562,
+                  46.7030089
+                ],
+                [
+                  12.2204751,
+                  46.7036739
+                ],
+                [
+                  12.2201389,
+                  46.7039238
+                ],
+                [
+                  12.2196753,
+                  46.7042584
+                ],
+                [
+                  12.2196347,
+                  46.7053766
+                ],
+                [
+                  12.2196163,
+                  46.7059316
+                ],
+                [
+                  12.2196435,
+                  46.7060611
+                ],
+                [
+                  12.2196435,
+                  46.7061351
+                ],
+                [
+                  12.2195814,
+                  46.7061652
+                ],
+                [
+                  12.2188462,
+                  46.706274
+                ],
+                [
+                  12.2187199,
+                  46.7062866
+                ],
+                [
+                  12.2184824,
+                  46.7062353
+                ],
+                [
+                  12.2182411,
+                  46.7061303
+                ],
+                [
+                  12.2181509,
+                  46.7059745
+                ],
+                [
+                  12.2179908,
+                  46.7058723
+                ],
+                [
+                  12.2177861,
+                  46.7058465
+                ],
+                [
+                  12.2176068,
+                  46.7057869
+                ],
+                [
+                  12.217441,
+                  46.7056109
+                ],
+                [
+                  12.2174904,
+                  46.705587
+                ],
+                [
+                  12.2174767,
+                  46.7054992
+                ],
+                [
+                  12.2174634,
+                  46.7054699
+                ],
+                [
+                  12.2172304,
+                  46.7052883
+                ],
+                [
+                  12.2169807,
+                  46.7051484
+                ],
+                [
+                  12.2171054,
+                  46.7049454
+                ],
+                [
+                  12.2171065,
+                  46.7047896
+                ],
+                [
+                  12.2172281,
+                  46.7046276
+                ],
+                [
+                  12.2172882,
+                  46.7045475
+                ],
+                [
+                  12.2174717,
+                  46.704324
+                ],
+                [
+                  12.2174469,
+                  46.7041997
+                ],
+                [
+                  12.2172839,
+                  46.7039181
+                ],
+                [
+                  12.2174328,
+                  46.7038978
+                ],
+                [
+                  12.2174695,
+                  46.7037929
+                ],
+                [
+                  12.2175746,
+                  46.7037405
+                ],
+                [
+                  12.2176197,
+                  46.7035513
+                ],
+                [
+                  12.2175951,
+                  46.7034633
+                ],
+                [
+                  12.2175677,
+                  46.7033656
+                ],
+                [
+                  12.2173964,
+                  46.7032773
+                ],
+                [
+                  12.2172475,
+                  46.7032764
+                ],
+                [
+                  12.2171762,
+                  46.703148
+                ],
+                [
+                  12.2168382,
+                  46.7029477
+                ],
+                [
+                  12.2168222,
+                  46.7028569
+                ],
+                [
+                  12.2168226,
+                  46.7025032
+                ],
+                [
+                  12.2168612,
+                  46.7019483
+                ],
+                [
+                  12.2169793,
+                  46.7019299
+                ],
+                [
+                  12.2170159,
+                  46.7018726
+                ]
+              ]
+            ]
+          ],
+          "type": "MultiPolygon"
+        },
+        "areaMethod": "osm_out_geom_multipolygon",
+        "areaSourceUrl": "https://www.openstreetmap.org/relation/9795244",
+        "method": "geonames_point",
+        "point": {
+          "lat": 46.70306,
+          "lng": 12.21917
+        },
+        "pointSourceUrl": "https://www.geonames.org/7627511/"
+      },
+      "id": "31aea1b4-57fa-58f0-89aa-f59838bc43b5",
+      "identitySource": "exact_P1566_P625_one_to_one",
+      "localNames": [
+        {
+          "language": "fr",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q2438157",
+          "value": "lac de Dobbiaco"
+        },
+        {
+          "language": "it",
+          "sourceUrl": "https://www.wikidata.org/wiki/Q2438157",
+          "value": "lago di Dobbiaco"
+        }
+      ],
+      "media": [],
+      "name": "Toblacher See",
+      "quality": {
+        "gate": "G1",
+        "hasVerifiedShoreline": true,
+        "needsAreaGeometryReview": false,
+        "photoSourceVerified": false,
+        "seoIndexable": false,
+        "sourcePointVerified": true,
+        "textLicenseVerified": true,
+        "wikidataIdentityVerified": true
+      },
+      "slug": "toblacher-see",
+      "sourceIds": {
+        "geonames": "7627511",
+        "osm": "relation/9795244",
+        "osmVerifiedBy": "P1566_P625_and_exact_OSM_QID_or_GeoNames_ID",
+        "wikidata": "Q2438157",
+        "wikidataVerifiedBy": "P1566+P625"
+      },
+      "subtype": "lake",
+      "textSources": [
+        {
+          "kind": "source_excerpt_not_original_editorial",
+          "licence": "CC BY-SA 4.0",
+          "method": "reported",
+          "originalLanguage": "it",
+          "retrievedAt": "2026-11-28T07:35:13.333431+00:00",
+          "sourceId": "wikipedia:it:640392",
+          "sourceUpdatedAt": null,
+          "sourceUrl": "https://it.wikipedia.org/wiki/Lago_di_Dobbiaco",
+          "text": "Il lago di Dobbiaco (Toblacher See in tedesco) è un piccolo lago alpino, di origine franosa, situato in val Pusteria a 1.251 m s.l.m. nel comune di Dobbiaco, a circa 106 km da Bolzano. Il lago si trova a sud dell'omonimo paese. La Rienza è il suo immissario ed emissario."
+        }
+      ]
+    }
+  ],
+  "excludedCanonicalG2": 2,
+  "g2Duplicated": 0,
+  "generatedAt": "2026-11-28T13:26:05.685541+00:00",
+  "isCanonicalPublished": false,
+  "noindexFollow": true,
+  "releaseChannel": "NATURAL_LAKE_IDENTIFIED_PROFILES_G1_V1",
+  "schemaVersion": "1.0",
+  "seoIndexable": false,
+  "sourceG1Candidates": 13
+}
