@@ -77,7 +77,7 @@ def query_for_water_ids(osm_ids, qids, bbox=BBOX):
                              f'["wikidata"~"{qexpr}"]{bounds};')
     if not selectors:
         raise ValueError("No audited OSM identities or WD QIDs to request")
-    return "[out:json][timeout:65];("+"".join(selectors)+");out body geom;"
+    return "[out:json][timeout:65];("+"".join(selectors)+");out meta geom;"
 
 
 def fetch_overpass(query, endpoints=ENDPOINTS, timeout=82):
@@ -228,6 +228,12 @@ def extract_polygon(row):
             candidates=[group for group in groups if inside_ring(hole[0],group[0])]
             if len(candidates)!=1:
                 raise ValueError("Island cannot be assigned unambiguously to water polygon")
+            outer=candidates[0][0]
+            if any(not inside_ring(p,outer) for p in hole[:-1]):
+                raise ValueError("Island extends beyond outer lake shoreline")
+            if any(inside_ring(hole[0],prior) or inside_ring(prior[0],hole)
+                   for prior in candidates[0][1:]):
+                raise ValueError("Overlapping island rings require review")
             candidates[0].append(hole)
     else:
         raise ValueError("Water outline requires OSM way or relation")
@@ -242,10 +248,25 @@ def extract_polygon(row):
     return {"type":"MultiPolygon","coordinates":groups},round(area,6)
 
 
+def on_ring_boundary(point,ring):
+    """Exact boundary predicate; an island shore is not interior water."""
+    pp=(int(round(point[0]*10_000_000)),
+        int(round(point[1]*10_000_000)))
+    for a,b in zip(ring,ring[1:]):
+        aa=(int(round(a[0]*10_000_000)),int(round(a[1]*10_000_000)))
+        bb=(int(round(b[0]*10_000_000)),int(round(b[1]*10_000_000)))
+        if ((bb[0]-aa[0])*(pp[1]-aa[1])==(bb[1]-aa[1])*(pp[0]-aa[0])
+            and min(aa[0],bb[0])<=pp[0]<=max(aa[0],bb[0])
+            and min(aa[1],bb[1])<=pp[1]<=max(aa[1],bb[1])):
+            return True
+    return False
+
+
 def point_inside_polygon(point,polygon):
     for rings in polygon["coordinates"]:
         if inside_ring(point,rings[0]) and not any(
-            inside_ring(point,hole) for hole in rings[1:]):
+            inside_ring(point,hole) or on_ring_boundary(point,hole)
+            for hole in rings[1:]):
             return True
     return False
 
@@ -410,6 +431,7 @@ def run(osm,gn,cross,rows,*,query=None,at=None):
             "notes":"Superficie derivata dal contorno OSM, non misura ufficiale del lago"
         }
         e["quality"].update({"areaNotVerified":False,
+             "wikidataIdentityVerified":True,
              "geometryTopologyVerified":True,"identityMethod":"exact_GeoNames_P1566_P625_OSM_Tag",
              "seoIndexable":False,"gate":"G1",
              "needsTextAndMediaG2":True,"reviewRequired":False})
@@ -469,12 +491,13 @@ def main():
     raw=json.loads(args.raw_file.read_text(encoding="utf-8")) if args.raw_file else fetch_overpass(query)
     if not isinstance(raw.get("elements"),list):
         raise ValueError("No complete, audited Overpass water geometry response")
-    result,report=run(osm,gn,cross,raw["elements"],query=query)
+    actual_query=raw.get("query",query) if args.raw_file else query
+    result,report=run(osm,gn,cross,raw["elements"],query=actual_query)
     path=args.out
     write(path/"raw/water-geometry-response.json",{
         "capturedAt":result["generatedAt"],
         "source":"OpenStreetMap Overpass","licence":ODBL,
-        "sha256":result["sourceSha256"],"query":query,
+        "sha256":result["sourceSha256"],"query":actual_query,
         "elements":raw["elements"]})
     write(path/"water-geometry-staging.json",result)
     write(path/"water-geometry-report.json",report)
