@@ -197,6 +197,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
     <DetailJumpNav items={[
       {id:"cb-place-essential",label:"Dati",icon:"compass"},
       {id:"cb-place-contacts",label:"Contatti",icon:"house"},
+      ...(municipality&&Boolean(place.connectedPeople?.length)?[{id:"cb-place-people",label:"Personaggi",icon:"mountain" as const}]:[]),
       ...(!municipality&&(place.description||wikiUrl)?[{id:"cb-place-story",label:"Territorio",icon:"mountain" as const}]:[]),
       {id:"cb-place-weather",label:"Meteo",icon:"compass"},
       {id:"cb-place-itineraries",label:"Sentieri",icon:"route"},
@@ -227,6 +228,31 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
           <DetailSectionHeading kicker="03 / STORIA E TERRITORIO" title="CONOSCERE IL LUOGO."/>
           {place.description&&<p className="cb-location-story">{place.description}</p>}
           {wikiUrl&&<a className="cb-location-wiki cb-icon-link" href={wikiUrl} target="_blank" rel="noopener noreferrer"><FaIcon name="arrow-up-right-from-square" size={12}/> Approfondimento enciclopedico</a>}
+        </section>}
+        {municipality&&Boolean(place.connectedPeople?.length)&&<section id="cb-place-people" className="cb-detail-group cb-location-section">
+          <DetailSectionHeading kicker="PERSONE / STORIA DEL TERRITORIO" title="VITE LEGATE ALLA MONTAGNA."
+            description="Nascita, residenza storica e luogo di attività sono relazioni distinte, verificate mediante gli identificativi di Wikidata. Nessuna appartenenza è dedotta dalla sola provincia."/>
+          <div className="cb-person-grid">
+            {place.connectedPeople!.filter(p=>p.verified&&p.category==='montagna').map(p=><article key={p.personId+':'+p.relationType} className="cb-person-card">
+              <div className="cb-person-card-top"><span>ALPINISMO E MONTAGNA</span><span>{p.relationType==='birthplace_of'?'NATA/O QUI':p.relationType==='historical_residence_of'?'RESIDENZA STORICA':'ATTIVITÀ QUI'}</span></div>
+              <h3>{p.name}</h3><p className="cb-person-role">{p.role}</p>
+              {(p.birthDate||p.deathDate)&&<p className="cb-person-dates">{[p.birthDate,p.deathDate].filter(Boolean).join(' – ')}</p>}
+              {p.description&&<p>{p.description}</p>}
+              {p.wikipediaUrl&&<a href={p.wikipediaUrl} target="_blank" rel="noopener noreferrer">Biografia documentata ↗</a>}
+            </article>)}
+          </div>
+          {place.connectedPeople!.some(p=>p.verified&&p.category==='cultura_e_ricerca')&&<>
+            <h3 className="cb-person-section-subtitle">Altre figure del territorio</h3>
+            <div className="cb-person-grid">
+              {place.connectedPeople!.filter(p=>p.verified&&p.category==='cultura_e_ricerca').map(p=><article key={p.personId+':'+p.relationType} className="cb-person-card">
+                <div className="cb-person-card-top"><span>CULTURA E RICERCA</span><span>PERSONA NATA QUI</span></div>
+                <h3>{p.name}</h3><p className="cb-person-role">{p.role}</p>
+                {(p.birthDate||p.deathDate)&&<p className="cb-person-dates">{[p.birthDate,p.deathDate].filter(Boolean).join(' – ')}</p>}
+                {p.description&&<p>{p.description}</p>}
+                {p.wikipediaUrl&&<a href={p.wikipediaUrl} target="_blank" rel="noopener noreferrer">Approfondimento biografico ↗</a>}
+              </article>)}
+            </div>
+          </>}
         </section>}
         <section id="cb-place-weather" className="cb-detail-group cb-location-section" aria-label="Meteo del luogo">
           <AlpineWeatherPanel lat={place.lat} lng={place.lng} name={place.name}/>
