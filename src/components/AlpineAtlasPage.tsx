@@ -134,6 +134,10 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
     ? `${place.name} è una località di montagna censita nell'Atlante Cima Becco.`
     : `${place.name} è un ${kindLabel} censito nell'Atlante Cima Becco.`;
   const municipality=place.subtype==='italian_municipality';
+  const archivalImages=municipality?(place.media||[]).filter(m=>m.kind==='historical_photo' &&
+    m.subjectVerified&&m.reuseAllowed&&m.capturedAt&&m.licence&&m.author):[];
+  const todayImage=municipality?(place.media||[]).find(m=>m.kind==='photo' &&
+    m.subjectVerified&&m.reuseAllowed):undefined;
   const detailRows: { label:string; value:string }[]=[
     ...(municipality?[{label:'Regione',value:place.administrativeHierarchy?.region||'Non indicata'},
       {label:'Provincia',value:place.administrativeHierarchy?.province||'Non indicata'},
@@ -198,13 +202,14 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
       </div>
       <figure className="cb-location-hero-media">
         <AlpinePlaceVisual key={place.slug} place={place}/>
-        <div className="cb-location-avatar">{place.logo?<img src={place.logo.url} alt={'Logo ufficiale di '+place.name}/>:<AlpinePlaceIcon kind={place.kind} size={39}/>}</div>
+        <div className="cb-location-avatar">{place.logo?<img src={place.logo.url} alt={(place.logo.symbolType==='coat_of_arms'?'Stemma di ':'Logo istituzionale di ')+place.name}/>:<AlpinePlaceIcon kind={place.kind} size={39}/>}</div>
         <figcaption>{place.photo?'Fotografia del luogo':'Rappresentazione topografica: fotografia del luogo non disponibile'}</figcaption>
       </figure>
     </header>
     <DetailJumpNav items={[
       {id:"cb-place-essential",label:"Dati",icon:"compass"},
       {id:"cb-place-contacts",label:"Contatti",icon:"house"},
+      ...(municipality&&archivalImages.length?[{id:"cb-place-history-photos",label:"Ieri e oggi",icon:"mountain" as const}]:[]),
       ...(municipality&&Boolean(place.connectedPeople?.length)?[{id:"cb-place-people",label:"Personaggi",icon:"mountain" as const}]:[]),
       ...(!municipality&&(place.description||wikiUrl)?[{id:"cb-place-story",label:"Territorio",icon:"mountain" as const}]:[]),
       {id:"cb-place-weather",label:"Meteo",icon:"compass"},
@@ -286,10 +291,21 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
           </div>)}</div>
         </section>}
 
+        {municipality&&archivalImages.length>0&&<section id="cb-place-history-photos" className="cb-detail-group cb-location-section cb-location-photo-history">
+          <DetailSectionHeading kicker="ARCHIVIO / MEMORIA DEL LUOGO" title="IERI E OGGI."
+            description="Fotografie con data storica documentata e soggetto identificato su Wikimedia Commons; non attribuiamo date alle immagini prive di riscontri."/>
+          <div className="cb-location-history-gallery">
+            {todayImage&&<figure><img src={todayImage.url} alt={'Veduta attuale documentata di '+place.name} loading="lazy"/><figcaption>Il luogo oggi · fotografia di riferimento</figcaption></figure>}
+            {archivalImages.map(image=><figure key={image.id}>
+              <img src={image.url} alt={'Fotografia storica di '+place.name+' del '+image.capturedAt} loading="lazy"/>
+              <figcaption>{image.caption||'Fotografia storica di '+place.name}{image.capturedAt?' · '+image.capturedAt:''}</figcaption>
+            </figure>)}
+          </div>
+        </section>}
         <AtlasDossierBlocks record={place} placement="core"/>
         <NearbyAtlasPlaces items={nearbyPlaces}/>
         <AtlasDossierBlocks record={place} placement="connections"/>
-        <AtlasDossierBlocks record={place} placement="media"/>
+        <AtlasDossierBlocks record={municipality?{...place,media:[]} :place} placement="media"/>
         <footer className="cb-location-credits">
           Informazioni indicative e aggiornabili: verificare le condizioni reali sul territorio.
         </footer>
