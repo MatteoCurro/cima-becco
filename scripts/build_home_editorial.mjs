@@ -7,6 +7,8 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { atlasCanonicalPath } from '../src/lib/placePermalinks.js';
+import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
+import { mergeSheltersForSeo } from './merge_shelters_for_seo.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
@@ -30,12 +32,18 @@ const excerpt = value => {
 function photo(entity) {
   const m = (entity.media || []).find(m => m.kind === 'photo' && m.subjectVerified === true &&
     m.reuseAllowed === true && safe(m.url).startsWith('https://') &&
-    safe(m.sourceUrl).startsWith('https://') && m.licence && m.author);
-  return m ? { url:m.url, sourceUrl:m.sourceUrl, author:m.author,
-    licence:m.licence, sourceId:m.sourceId || null } : null;
+    safe(m.sourceUrl).startsWith('https://') && m.licence);
+  if (m) return {url:m.url,sourceUrl:m.sourceUrl,author:m.author || null,
+    licence:m.licence,sourceId:m.sourceId || null};
+  // Same photo already admitted by the canonical refuge/shelter SEO adapter.
+  const p = entity.photo;
+  return safe(p?.url).startsWith('https://') && safe(p?.sourceUrl).startsWith('https://') &&
+    safe(p?.license) ? {url:p.url,sourceUrl:p.sourceUrl,author:p.author || null,
+      licence:p.license,sourceId:null} : null;
 }
 function item(kind, entity, href, { gateRequired = false } = {}) {
-  const p = entity.geo?.point;
+  const p = entity.geo?.point ||
+    (Number.isFinite(entity.lat)&&Number.isFinite(entity.lng)?{lat:entity.lat,lng:entity.lng}:null);
   if (!validPoint(p) || !validName(entity.name) || !safe(entity.slug) ||
     !publishedPath(href) || entity.quality?.reviewRequired ||
     (entity.quality?.gate && entity.quality.gate !== 'G2') ||
@@ -45,11 +53,18 @@ function item(kind, entity, href, { gateRequired = false } = {}) {
     kind, id:entity.id || entity.slug, slug:entity.slug, name:entity.name, href,
     lat:p.lat, lng:p.lng, cover, text:excerpt(entity.description || entity.shortSummary),
     elevationM: typeof entity.facts?.elevationM?.value === 'number' ? entity.facts.elevationM.value :
-      typeof entity.facts?.quotaCentroM?.value === 'number' ? entity.facts.quotaCentroM.value : null,
+      typeof entity.facts?.quotaCentroM?.value === 'number' ? entity.facts.quotaCentroM.value :
+      typeof entity.elevationM === 'number' ? entity.elevationM : null,
     factsCount:Object.values(entity.facts || {}).filter(f => f?.value != null).length,
     sourceIds:entity.sourceIds || {},
+    slugAliases:entity.slugAliases || [],
   };
-  if (!cover || richness(record) < 8) return null;
+  if (kind==='refuge' || kind==='bivacco') {
+    // The official CAI dossiers have valuable service facts without necessarily
+    // having a photograph. Never invent one: use a typographic card instead.
+    if (!record.id || record.factsCount<2 ||
+      (!cover && (record.factsCount<4 || record.text.length<90))) return null;
+  } else if (!cover || richness(record) < 8) return null;
   return record;
 }
 const places = { town:[], refuge:[], bivacco:[], summit:[] };
@@ -82,44 +97,18 @@ if (settlementRelease?.isPublished && settlementRelease?.releaseChannel === 'IST
   }
 }
 const refugeRelease = release('refuges');
-if (refugeRelease?.releaseChannel === 'OSM_CAI_REFUGES' &&
-  refugeRelease?.schemaVersion === '1.1') {
-  for (const e of refugeRelease.entities || []) {
-    if (e.kind !== 'refuge' || !e.sourceIds?.cai && !e.sourceIds?.osm) continue;
-    const x = item('refuge', e, atlasCanonicalPath({...e,kind:'rifugio'}));
-    if (x) places.refuge.push(x);
-  }
-}
-console.log('Home source audit: rifugi', (refugeRelease?.entities||[]).length,
-  (refugeRelease?.entities||[]).slice(0,2).map(e=>({
-    name:e.name,kind:e.kind,slug:e.slug,geo:!!e.geo?.point,
-    photoCount:e.media?.filter(m=>m.kind==='photo').length,
-    authors:e.media?.filter(m=>m.kind==='photo').slice(0,1).map(m=>Boolean(m.author)),
-    textLength:safe(e.description||e.shortSummary).length,
-    factsCount:Object.keys(e.facts||{}).length,
-    published:publishedPath(atlasCanonicalPath({...e,kind:'rifugio'})),
-    sourceIds:e.sourceIds
-  })));
 const sheltersRelease = release('shelters');
-if (sheltersRelease?.releaseChannel === 'CAI_OSM_BIVOUACS_SHELTERS' &&
-  sheltersRelease?.schemaVersion === '2.0') {
-  for (const e of sheltersRelease.entities || []) {
-    if (!['bivouac','shelter'].includes(e.kind) ||
-      !e.sourceIds?.cai && !e.sourceIds?.osm) continue;
-    const x = item('bivacco', e, atlasCanonicalPath({...e,kind:'bivacco'}));
-    if (x) places.bivacco.push(x);
-  }
+// Exactly the adapters already used by build_seo.mjs: no parallel identity system.
+const legacyPlaces = read(join(DATA,'alpine-places.json'))?.places || [];
+const publishedPlaces = mergeSheltersForSeo(
+  mergeRefugesForSeo(legacyPlaces,refugeRelease),sheltersRelease);
+for (const p of publishedPlaces) {
+  if ((p.kind!=='rifugio' && p.kind!=='bivacco') || !p.id ||
+    !p.sourceIds?.cai && !p.sourceIds?.osm) continue;
+  const kind=p.kind==='rifugio'?'refuge':'bivacco';
+  const x=item(kind,p,atlasCanonicalPath(p));
+  if (x) places[kind].push(x);
 }
-console.log('Home source audit: bivacchi', (sheltersRelease?.entities||[]).length,
-  (sheltersRelease?.entities||[]).slice(0,2).map(e=>({
-    name:e.name,kind:e.kind,slug:e.slug,geo:!!e.geo?.point,
-    photoCount:e.media?.filter(m=>m.kind==='photo').length,
-    authors:e.media?.filter(m=>m.kind==='photo').slice(0,1).map(m=>Boolean(m.author)),
-    textLength:safe(e.description||e.shortSummary).length,
-    factsCount:Object.keys(e.facts||{}).length,
-    published:publishedPath(atlasCanonicalPath({...e,kind:'bivacco'})),
-    sourceIds:e.sourceIds
-  })));
 const summitRelease = release('summits');
 if (summitRelease?.isPublished && summitRelease?.releaseChannel === 'GEONAMES_SUMMITS_G2') {
   for (const e of summitRelease.entities || []) {
