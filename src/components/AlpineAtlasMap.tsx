@@ -34,8 +34,32 @@ function naturalPointsGeoJSON(points:readonly NaturalMapPoint[]) {
   };
 }
 
+
+/** Verified lake geometry; never confuse water bodies with drinking-water POIs. */
+export interface NaturalWaterPolygon {
+  slug:string;
+  name:string;
+  subtype:'lake'|'reservoir';
+  lat:number;
+  lng:number;
+  geometry:{type:'MultiPolygon';coordinates:number[][][][]};
+}
+const NO_NATURAL_POLYGONS:NaturalWaterPolygon[]=[];
+function naturalWaterGeoJSON(features:readonly NaturalWaterPolygon[]){
+  return {
+    type:'FeatureCollection' as const,
+    features:features.map(p=>({
+      type:'Feature' as const,
+      properties:{slug:p.slug,name:p.name,subtype:p.subtype},
+      geometry:p.geometry,
+    })),
+  };
+}
+
 interface Props {
   places: AlpinePlace[];
+  naturalPolygons?:NaturalWaterPolygon[];
+  onNaturalPolygonSelect?:(place:NaturalWaterPolygon)=>void;
   naturalPoints?:NaturalMapPoint[];
   onNaturalSelect?:(place:NaturalMapPoint)=>void;
   kind: AlpinePlace['kind'];
@@ -66,7 +90,7 @@ function routeGeometry(routes: Route[]) {
 
 /** Mappa riusabile per listati rifugi, paesi e singole pagine locali. */
 const NO_ROUTES: Route[] = [];
-export function AlpineAtlasMap({places,kind,naturalPoints=[],onNaturalSelect,selected=null,selectedPoint=null,routes=NO_ROUTES,height=380,water=[],selectedWaterSlug=null,onWaterSelect,onSelect,caption,hoverPoint=null,onRouteHover}:Props) {
+export function AlpineAtlasMap({places,kind,naturalPoints=[],onNaturalSelect,naturalPolygons=NO_NATURAL_POLYGONS,onNaturalPolygonSelect,selected=null,selectedPoint=null,routes=NO_ROUTES,height=380,water=[],selectedWaterSlug=null,onWaterSelect,onSelect,caption,hoverPoint=null,onRouteHover}:Props) {
   const container=useRef<HTMLDivElement>(null);
   const mapRef=useRef<MapLibreMap | null>(null);
   const onSelectRef=useRef(onSelect);
@@ -75,6 +99,8 @@ export function AlpineAtlasMap({places,kind,naturalPoints=[],onNaturalSelect,sel
   placesRef.current=places;
   const naturalRef=useRef(naturalPoints);naturalRef.current=naturalPoints;
   const naturalSelectRef=useRef(onNaturalSelect);naturalSelectRef.current=onNaturalSelect;
+  const waterPolygonsRef=useRef(naturalPolygons);waterPolygonsRef.current=naturalPolygons;
+  const polygonSelectRef=useRef(onNaturalPolygonSelect);polygonSelectRef.current=onNaturalPolygonSelect;
   const routesRef=useRef(routes);
   routesRef.current=routes;
   const onRouteHoverRef=useRef(onRouteHover);
@@ -111,6 +137,27 @@ export function AlpineAtlasMap({places,kind,naturalPoints=[],onNaturalSelect,sel
       if(mapRef.current!==map)return;
       installMountainBasemap(map);
       addAlpinePlaceLayers(map,places,{kind,onSelect:(place)=>onSelectRef.current?.(place),getPlace:(slug)=>placesRef.current.find(p=>p.slug===slug)});
+      // One additional source on the same map instance. Only published G2
+      // lake polygons are supplied; water points retain their own layer.
+      map.addSource('cb-atlas-natural-lakes',{type:'geojson',
+        data:naturalWaterGeoJSON(waterPolygonsRef.current)});
+      map.addLayer({id:'cb-atlas-natural-lakes-fill',type:'fill',
+        source:'cb-atlas-natural-lakes',
+        paint:{'fill-color':['match',['get','subtype'],'reservoir','#679bb1','#57abb7'],
+          'fill-opacity':0.5}});
+      map.addLayer({id:'cb-atlas-natural-lakes-outline',type:'line',
+        source:'cb-atlas-natural-lakes',
+        paint:{'line-color':'#154c5a','line-width':2.5,'line-opacity':0.9}});
+      map.on('click','cb-atlas-natural-lakes-fill',(event)=>{
+        const slug=event.features?.[0]?.properties?.slug;
+        if(typeof slug!=='string')return;
+        const lake=waterPolygonsRef.current.find(item=>item.slug===slug);
+        if(!lake)return;
+        if(polygonSelectRef.current)polygonSelectRef.current(lake);
+        else window.location.assign(import.meta.env.BASE_URL+'laghi/'+encodeURIComponent(slug)+'/');
+      });
+      map.on('mouseenter','cb-atlas-natural-lakes-fill',()=>{map.getCanvas().style.cursor='pointer';});
+      map.on('mouseleave','cb-atlas-natural-lakes-fill',()=>{map.getCanvas().style.cursor='';});
       // A generic POI overlay in the SAME map engine, not a parallel map.
       // Nature points remain distinct from source-only water and refuges.
       map.addSource('cb-atlas-natural',{type:'geojson',
@@ -225,6 +272,7 @@ export function AlpineAtlasMap({places,kind,naturalPoints=[],onNaturalSelect,sel
     }
     function sync(){
       if(!initialized.current||mapRef.current!==map)return;
+      (map.getSource('cb-atlas-natural-lakes') as GeoJSONSource).setData(naturalWaterGeoJSON(waterPolygonsRef.current));
       (map.getSource('cb-atlas-natural') as GeoJSONSource).setData(naturalPointsGeoJSON(naturalRef.current));
       (map.getSource('cb-atlas-nearby-routes') as GeoJSONSource).setData(routeGeometry(routes));
       (map.getSource('cb-atlas-water') as GeoJSONSource).setData({
@@ -251,6 +299,12 @@ export function AlpineAtlasMap({places,kind,naturalPoints=[],onNaturalSelect,sel
     (map.getSource('cb-atlas-natural') as GeoJSONSource | undefined)
       ?.setData(naturalPointsGeoJSON(naturalPoints));
   },[naturalPoints,ready]);
+
+  useEffect(()=>{
+    const map=mapRef.current;if(!map||!initialized.current)return;
+    (map.getSource('cb-atlas-natural-lakes') as GeoJSONSource | undefined)
+      ?.setData(naturalWaterGeoJSON(naturalPolygons));
+  },[naturalPolygons,ready]);
 
   useEffect(()=>{
     const map=mapRef.current;if(!map||!initialized.current)return;
@@ -294,12 +348,24 @@ export function AlpineAtlasMap({places,kind,naturalPoints=[],onNaturalSelect,sel
         map.fitBounds([[west,south],[east,north]],{padding:45,maxZoom:11,duration:300});
         return;
       }
+      if(!list.length && naturalPolygons.length){
+        // The actual shoreline, not a provider's centroid, controls framing.
+        const coords=naturalPolygons.flatMap(lake=>lake.geometry.coordinates.flatMap(
+          group=>group.flatMap(ring=>ring)));
+        if(coords.length){
+          map.fitBounds([
+            [Math.min(...coords.map(p=>p[0])),Math.min(...coords.map(p=>p[1]))],
+            [Math.max(...coords.map(p=>p[0])),Math.max(...coords.map(p=>p[1]))],
+          ],{padding:45,maxZoom:11,duration:300});
+          return;
+        }
+      }
       if(!list.length){if(routeExtent) map.fitBounds(routeExtent,{padding:45,maxZoom:11,duration:300});return;}
       const west=Math.min(...list.map(p=>p.lng)),east=Math.max(...list.map(p=>p.lng));
       const south=Math.min(...list.map(p=>p.lat)),north=Math.max(...list.map(p=>p.lat));
       map.fitBounds([[west,south],[east,north]],{padding:45,maxZoom:11,duration:300});
     }
-  },[selected,selectedPoint,kind,places,naturalPoints,routeExtent,ready]);
+  },[selected,selectedPoint,kind,places,naturalPoints,naturalPolygons,routeExtent,ready]);
 
   useEffect(()=>{
     const map=mapRef.current;if(!map||!ready)return;
@@ -343,6 +409,6 @@ export function AlpineAtlasMap({places,kind,naturalPoints=[],onNaturalSelect,sel
       </span>)}
     </div>}
     <div ref={container} className="cb-atlas-map" style={{height}} role="application"
-      aria-label={caption ? `Mappa topografica: ${caption}` : selected||selectedPoint ? `Mappa topografica di ${(selected??selectedPoint)!.name} con sentieri vicini` : naturalPoints.length ? 'Mappa topografica dei passi con punti documentati' : `Mappa topografica dedicata a ${kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'paesi di montagna'}`}/>
+      aria-label={caption ? `Mappa topografica: ${caption}` : selected||selectedPoint ? `Mappa topografica di ${(selected??selectedPoint)!.name} con sentieri vicini` : naturalPoints.length ? 'Mappa topografica dei passi con punti documentati' : naturalPolygons.length ? 'Mappa topografica dei laghi con perimetri verificati' : `Mappa topografica dedicata a ${kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'paesi di montagna'}`}/>
   </div>;
 }
