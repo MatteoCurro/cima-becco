@@ -1,0 +1,83 @@
+name: Pilot summit and mountain-group importer (GeoNames G0/G1 staging)
+on:
+  push:
+    branches: [feat/summits-geonames-staging-v1-20261128]
+    paths:
+      - scripts/import_summits_v1.py
+      - tests/test_import_summits_v1.py
+      - scripts/summit_field_registry_v1.json
+      - .github/workflows/test-import-summits-v1.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/import_summits_v1.py
+      - tests/test_import_summits_v1.py
+      - scripts/summit_field_registry_v1.json
+      - .github/workflows/test-import-summits-v1.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cima-becco-summits-staging-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test-and-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline contract tests
+        run: python -m unittest discover -s tests -p 'test_import_summits_v1.py' -v
+      - name: GeoNames Dolomiti pilot from committed tiles
+        run: |
+          set -euo pipefail
+          python scripts/import_summits_v1.py --bbox 46.1 11.2 47.1 13.0 --max-entities 250 --min-entities 30 --with-near --out build/import-summits-v1
+      - name: Verify staging quality and factual provenance
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path("build/import-summits-v1")
+          data=json.loads((root/"summits.json").read_text())
+          report=json.loads((root/"report.json").read_text())
+          entities=data["entities"]
+          assert data["releaseChannel"]=="GEONAMES_SUMMITS_STAGING_V1"
+          assert data["isPublished"] is False
+          assert len(entities)>=30
+          assert len(entities)==len({e["id"] for e in entities})
+          assert len(entities)==len({e["slug"] for e in entities})
+          assert len(entities)==len({e["sourceIds"]["geonames"] for e in entities})
+          for e in entities:
+              assert e["kind"] in ("summit","mountain_group")
+              assert e["quality"]["gate"] in ("G0","G1")
+              assert e["quality"]["seoIndexable"] is False
+              assert e["geo"]["point"] and e["sourceIds"]["geonames"]
+              assert all(f["sourceId"] and f["licence"] and f["sourceUrl"]
+                         and f["retrievedAt"] and f["method"]
+                         for f in e["facts"].values())
+              assert all(r["type"]=="near" and not r["verified"]
+                         and not r["accessVerified"] for r in e["relations"])
+              assert not e["media"]
+              assert all(not m["subjectVerified"] and not m["reuseAllowed"]
+                         for m in e.get("mediaCandidates",[]))
+          assert report["staged"]==len(entities)
+          assert report["indexable"]==0 and report["published"]==0
+          print("GeoNames pilot:", report)
+          PY
+      - name: Assert no production file was modified
+        run: |
+          if [ -n "$(git status --porcelain -- public/ src/)" ]; then
+            echo 'Staging importer must not update live data or frontend' >&2
+            exit 1
+          fi
+      - name: Archive raw, review and QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-summits-staging-v1
+          path: build/import-summits-v1/
+          retention-days: 14
+          if-no-files-found: warn
