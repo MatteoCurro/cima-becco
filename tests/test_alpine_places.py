@@ -28,6 +28,32 @@ class AlpinePlacesTest(unittest.TestCase):
             'tags':{'name':'Bivacco di Emergenza','amenity':'shelter','shelter_type':'basic_hut'}})
         self.assertEqual(shelter['kind'],'bivacco')
 
+    def test_verified_casere_are_shelters_not_generic_alpine_huts(self):
+        examples = [
+            (175876228, "Malga Casera Campigàt"),
+            (199050050, "Malga Valbona"),
+        ]
+        for osm_id, name in examples:
+            item=atlas.parse_item({
+                'type':'way','id':osm_id,'center':{'lat':46.29,'lon':11.89},
+                'tags':{'tourism':'alpine_hut','name':name},
+            })
+            self.assertEqual(item['kind'],'bivacco')
+            self.assertEqual(item['subtype'],'alpine_casera_shelter')
+            self.assertEqual(item['classificationEvidence']['previousKind'],'rifugio')
+
+    def test_malga_food_only_is_staged_and_not_invented_as_bivouac(self):
+        row={'type':'way','id':87654,'center':{'lat':46.38,'lon':11.85},
+             'tags':{'name':'Malga Prato di Prova','amenity':'restaurant'}}
+        candidate=atlas.rural_candidate(row)
+        self.assertEqual(candidate['classification'],'unverified_candidate')
+        self.assertEqual(candidate['sourceIds']['osm'],'way/87654')
+        self.assertFalse(candidate['seoIndexable'])
+        self.assertIsNone(atlas.parse_item(row))
+        # Name alone never downgrades a verified Alpine hut.
+        sample={**row,'tags':{'name':'Malga Stia','tourism':'alpine_hut'}}
+        self.assertEqual(atlas.parse_item(sample)['kind'],'rifugio')
+
     def test_six_disjoint_import_cells_cover_the_pilot(self):
         cells=atlas.alpine_cells()
         self.assertEqual(len(cells),6)
