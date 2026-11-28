@@ -132,7 +132,7 @@ def classify(role_qid,role_label):
         return "cultura_e_ricerca"
     return None
 
-def build(release,*,getter=None,previous_people=None,checked_at=None,batch=6,max_mountain=12,max_culture=4):
+def build(release,*,getter=None,previous_people=None,checked_at=None,batch=6,max_mountain=20,max_culture=4):
     require(release.get("releaseChannel")=="ISTAT_DAIT_MUNICIPALITIES","Archivio comuni atteso")
     municipalities=release.get("entities") or []
     town_to_municipality={
@@ -219,8 +219,19 @@ def build(release,*,getter=None,previous_people=None,checked_at=None,batch=6,max
             existing=unique.get(key)
             if existing is None or (entry["category"]=="montagna" and existing["category"]!="montagna"):
                 unique[key]=entry
+        def prominence(e):
+            role=e["role"].casefold()
+            if "guida alpina" in role or "alpinista" in role or "mountaineer" in role or "mountain guide" in role:
+                return 0
+            if "arrampic" in role or "climber" in role or "sci alpin" in role or "ski mountaineer" in role:
+                return 1
+            if "soccorso" in role or "mountain rescu" in role:
+                return 2
+            if "sciatore" in role or "fondista" in role or "ski" in role:
+                return 3
+            return 4
         ordered=sorted(unique.values(),key=lambda e:(0 if e["category"]=="montagna" else 1,
-            priority[e["relationType"]],e["name"],e["personId"]))
+            prominence(e),priority[e["relationType"]],e["name"],e["personId"]))
         mountain=[x for x in ordered if x["category"]=="montagna"][:max_mountain]
         culture=[x for x in ordered if x["category"]=="cultura_e_ricerca"][:max_culture]
         new=mountain+culture
