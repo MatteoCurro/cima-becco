@@ -4,6 +4,7 @@ import { canonicalAtlasSlug } from './placePermalinks';
 import { mergeRefugeRelease } from './refugeRelease';
 import { mergeShelterRelease } from './shelterRelease';
 import { mergeMunicipalityRelease } from './municipalityRelease';
+import { applyRuralStructureEvidence } from './ruralStructureEvidence';
 
 export interface AlpinePlace extends AtlasEntityMetadata {
   slug: string;
@@ -22,6 +23,7 @@ export interface AlpinePlace extends AtlasEntityMetadata {
   officialUrl?: string;
   /** Sottotipo dichiarato (Bivacco, Capanna sociale, Punto d'appoggio). */
   shelterTypeLabel?: string;
+  classificationEvidence?: {sourceUrl:string;note:string;recordedAt?:string;coordinateSource?:string;previousKind?:string};
   elevationM?: number;
   /** OSM = quota indicata dal mappatore; DEM = terreno stimato. */
   elevationSource?: 'osm' | 'dem' | 'cai';
@@ -68,9 +70,15 @@ export function loadAlpinePlaces(): Promise<AlpinePlacesDataset> {
     fetch(`${DATA_BASE}/atlas/municipalities-v1.json`)
       .then(response => response.ok ? response.json() as Promise<unknown> : null)
       .catch(() => null),
+    fetch(`${DATA_BASE}/atlas/alpine-structure-evidence-v1.json`)
+      .then(response => response.ok ? response.json() as Promise<unknown> : null)
+      .catch(() => null),
   ])
-    .then(([legacy, refuges, shelters, municipalities]) => mergeMunicipalityRelease(
-      mergeShelterRelease(mergeRefugeRelease(legacy, refuges), shelters), municipalities))
+    .then(([legacy, refuges, shelters, municipalities, rural]) => {
+      const linked = mergeMunicipalityRelease(
+        mergeShelterRelease(mergeRefugeRelease(legacy, refuges), shelters), municipalities);
+      return {...linked, places: applyRuralStructureEvidence(linked.places, rural)};
+    })
     .catch(() => { pending = null; return empty; });
   return pending;
 }
