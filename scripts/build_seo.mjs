@@ -47,7 +47,7 @@ if (!existsSync(DIST)) {
   process.exit(1);
 }
 // Start from the app alone, so a second run does not count its own pages.
-for (const dir of ['place', 'country', 'route']) rmSync(join(DIST, dir), { recursive: true, force: true });
+for (const dir of ['place', 'country', 'route', 'cime']) rmSync(join(DIST, dir), { recursive: true, force: true });
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const venues = readJson(join(DATA, 'venues.json')).venues;
@@ -97,6 +97,21 @@ writeFileSync(join(DIST,'data','featured-routes.json'),JSON.stringify({generated
 const descriptions = existsSync(join(DATA, 'descriptions.json')) ? readJson(join(DATA, 'descriptions.json')).descriptions ?? {} : {};
 const index = readJson(join(DATA, 'peaks', 'index.json'));
 const peakPhotos = existsSync(join(DATA, 'peaks', 'photos.json')) ? readJson(join(DATA, 'peaks', 'photos.json')).photos ?? {} : {};
+const summitReleasePath=join(DATA,'atlas','summits-v1.json');
+const summitRelease=existsSync(summitReleasePath)?readJson(summitReleasePath):null;
+const summits=summitRelease?.releaseChannel==='GEONAMES_SUMMITS_G2' &&
+  summitRelease?.isPublished===true && Array.isArray(summitRelease.entities)
+  ? summitRelease.entities.filter(e=>e.kind==='summit' &&
+      e.quality?.gate==='G2' && e.quality?.seoIndexable===true &&
+      !e.quality?.reviewRequired && !e.quality?.slugRequiresReview &&
+      e.geo?.point && e.textSources?.some(t=>t.text&&t.licence&&t.sourceUrl) &&
+      e.media?.some(m=>m.kind==='photo'&&m.subjectVerified&&m.reuseAllowed&&m.licence&&m.author))
+  : [];
+const publishedSummitLegacySlugs=new Set(summits.flatMap(e=>
+  (e.slugAliases||[]).filter(s=>/^gn[1-9][0-9]*-m?[0-9]+xm?[0-9]+$/.test(s))));
+const legacyPeakCredits=Object.fromEntries(Object.entries(peakPhotos).filter(
+  ([slug])=>!publishedSummitLegacySlugs.has(slug)));
+
 const alpinePlacesBase = mergeSheltersForSeo(mergeRefugesForSeo(
   existsSync(join(DATA, 'alpine-places.json')) ? readJson(join(DATA, 'alpine-places.json')).places ?? [] : [],
   existsSync(join(DATA, 'atlas', 'refuges-v1.json')) ? readJson(join(DATA, 'atlas', 'refuges-v1.json')) : null
@@ -122,7 +137,7 @@ const peopleReleasePath=join(DATA,'atlas','people-v1.json');
 const peopleRelease=existsSync(peopleReleasePath)?readJson(peopleReleasePath):null;
 const people=peopleRelease?.releaseChannel==='ALPINE_PEOPLE_LINKS' &&
     Array.isArray(peopleRelease?.entities)?peopleRelease.entities:[];
-const centralCredits = makeCentralCredits(alpinePlaces, routes, peakPhotos, TODAY,municipalities,people);
+const centralCredits = makeCentralCredits(alpinePlaces, routes, legacyPeakCredits, TODAY,municipalities,people,summits);
 mkdirSync(join(DIST,'data','atlas'),{recursive:true});
 writeFileSync(join(DIST,'data','atlas','credits-v1.json'),JSON.stringify(centralCredits));
 // Lightweight, public catalogue observability; regenerate on every deploy from
@@ -401,11 +416,88 @@ for (const venue of venues) {
 const countFiles = (dir) => readdirSync(dir, { withFileTypes: true }).reduce((n, entry) => n + (entry.isDirectory() ? countFiles(join(dir, entry.name)) : 1), 0);
 const refugeAliases = alpinePlaces.filter(p=>(p.kind==='rifugio'||p.kind==='bivacco') && canonicalAtlasSlug(p)!==p.slug).length;
 const reserved = countFiles(DIST) + Object.keys(index.byCountry).length + routes.length +
-  alpinePlaces.length + refugeAliases + trekProjects.length + 12;
+  alpinePlaces.length + refugeAliases + trekProjects.length + summits.length * 2 + 13;
 const room = Math.max(0, MAX_FILES - reserved);
 const score = (spec) => (spec.routesHere.length ? 4 : 0) + (spec.photo ? 2 : 0) + (spec.text ? 1 : 0);
 placeSpecs.sort((a, b) => score(b) - score(a) || (b.heightM ?? 0) - (a.heightM ?? 0));
 for (const spec of placeSpecs.slice(0, room)) placePage(spec);
+
+// Source-verified alpine summit dossiers supplement the existing GeoNames map.
+// The old gn-ID permalink is retained as a noindex redirect, not a second
+// indexable page. The live map continues to use the stable legacy venue slug.
+for (const e of summits) {
+  const legacy=(e.slugAliases||[]).find(s=>publishedSummitLegacySlugs.has(s));
+  if(!legacy)continue;
+  const photo=e.media.find(m=>m.kind==='photo'&&m.subjectVerified&&m.reuseAllowed&&m.author&&m.licence);
+  const p=e.geo.point;
+  const height=e.facts?.elevationM?.value??e.facts?.wikidataElevationReportedM?.value;
+  const wikipedia=e.textSources.find(t=>t.text&&t.sourceUrl)?.text||'';
+  const near=(e.relations||[]).filter(rel=>rel.type==='near'&&rel.target?.slug&&
+    ['refuge','bivouac','shelter'].includes(rel.target.kind)&&
+    Number.isFinite(rel.straightLineKm)).slice(0,6);
+  const href=SITE+'/cime/'+encodeURIComponent(e.slug)+'/';
+  const summary=e.name+(Number.isFinite(height)?', '+metres(height):'')+
+    '. '+wikipedia.slice(0,200);
+  const nearHtml=near.length?
+    '<section class="cima-seo-related"><h2>Rifugi e bivacchi nei dintorni</h2>'+
+    near.map(rel=>'<a href="'+SITE+'/'+(rel.target.kind==='refuge'?'rifugi':'bivacchi')+'/'+
+      encodeURIComponent(rel.target.slug)+'/"><strong>'+escape(rel.target.name)+
+      '</strong><small>'+escape(rel.straightLineKm)+' km in linea d’aria, non un accesso verificato</small></a>').join('')+
+    '</section>':'';
+  const alt=e.facts?.wikidataElevationReportedM?.value;
+  const metrics='<ul class="facts cima-seo-facts">'+[
+    ...(Number.isFinite(height)?[['Quota GeoNames',metres(height)]]:[]),
+    ...(Number.isFinite(alt)&&alt!==height?[['Quota riportata su Wikidata',metres(alt)]]:[]),
+    ['Coordinate',p.lat.toFixed(4)+', '+p.lng.toFixed(4)]
+  ].map(([label,value])=>'<li><strong>'+escape(value)+'</strong>'+escape(label)+'</li>').join('')+'</ul>';
+  page({
+    path:'cime/'+e.slug+'/',
+    title:e.name+(Number.isFinite(height)?' ('+metres(height)+')':'')+' · Storia e territorio | Cima Becco',
+    description:summary.slice(0,295),
+    image:photo?.url,
+    jsonLd:{'@context':'https://schema.org','@graph':[
+      {'@type':'Place','@id':href+'#cima',name:e.name,url:href,description:wikipedia,
+       geo:{'@type':'GeoCoordinates',latitude:p.lat,longitude:p.lng,
+         ...(Number.isFinite(height)?{elevation:height}: {})},
+       ...(photo?.url?{image:photo.url}:{}),
+       identifier:[{'@type':'PropertyValue',propertyID:'GeoNames',value:e.sourceIds.geonames},
+                   {'@type':'PropertyValue',propertyID:'Wikidata',value:e.sourceIds.wikidata}],
+       ...(e.localNames?.length?{alternateName:e.localNames.map(a=>a.value)}:{})},
+      breadcrumbLd([['Cime',SITE+'/cime/'],[e.name,null]])
+    ]},
+    body:crumbs([['Cime',SITE+'/cime/'],[e.name]])+
+      '<div class="cima-seo-eyebrow">CIMA BECCO · CIMA DOCUMENTATA</div>'+
+      '<h1>'+escape(e.name)+'</h1>'+
+      (photo?.url?'<figure class="cima-seo-photo"><img src="'+escape(photo.url)+
+        '" alt="'+escape('Fotografia documentata di '+e.name)+'" loading="lazy"></figure>':'')+
+      metrics+'<section class="cima-seo-body"><h2>Territorio e caratteristiche</h2><p>'+
+      escape(wikipedia)+'</p></section>'+nearHtml+
+      '<p class="sub">Le quote delle diverse fonti non vanno confuse con misure certificate. '+
+      'La vicinanza dei sentieri e dei rifugi non garantisce accessibilità o condizioni di sicurezza.</p>'+
+      '<p><a class="cta" href="'+appLink('#venue/'+encodeURIComponent(legacy))+
+      '">Esplora la cima sulla mappa</a></p>'
+  });
+  placeUrlBySlug.set(legacy,href);
+  const path='place/'+legacy+'/';
+  const listed=pages.indexOf(SITE+'/'+path);
+  if(listed>=0)pages.splice(listed,1);
+  const aliasFile=join(DIST,path,'index.html');
+  mkdirSync(dirname(aliasFile),{recursive:true});
+  writeFileSync(aliasFile,'<!doctype html><html lang="it"><head><meta charset="utf-8">'+
+    '<meta name="robots" content="noindex,follow"><link rel="canonical" href="'+escape(href)+'">'+
+    '<meta http-equiv="refresh" content="0;url='+escape(href)+'"></head><body>'+
+    '<p><a href="'+escape(href)+'">'+escape(e.name)+'</a></p></body></html>');
+}
+if(summits.length) {
+  page({path:'cime/',title:'Cime alpine e montagne documentate | Cima Becco',
+    description:'Cime alpine con dati GeoNames e Wikidata verificati, fotografie Commons attribuite e testi documentati.',
+    jsonLd:{'@context':'https://schema.org','@type':'CollectionPage',name:'Cime alpine',url:SITE+'/cime/'},
+    body:crumbs([['Cime']])+'<h1>CIME DOCUMENTATE.</h1>'+
+      '<p class="cima-seo-lead">Solo dossier verificati con fonte identificata, fotografia e testo attribuito.</p>'+
+      '<ul class="list">'+summits.map(e=>'<li><a href="'+SITE+'/cime/'+
+         encodeURIComponent(e.slug)+'/">'+escape(e.name)+'</a></li>').join('')+'</ul>'});
+}
+
 if (placeSpecs.length > room) console.warn(`SEO: ${(placeSpecs.length - room).toLocaleString('en')} place pages left out to stay under ${MAX_FILES.toLocaleString('en')} files.`);
 
 // One page per country: its tallest summits.
