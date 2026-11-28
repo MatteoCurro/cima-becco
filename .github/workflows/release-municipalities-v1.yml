@@ -1,11 +1,15 @@
 name: Release Comuni con Wikimedia (G2)
 on:
   push:
-    branches: [feat/municipalities-istat-dait-pilot-v1]
+    branches: [main, feat/municipality-altimetry-import-insights-20261128]
     paths:
       - .github/workflows/release-municipalities-v1.yml
       - scripts/enrich_municipalities_v1.py
       - tests/test_enrich_municipalities_v1.py
+      - scripts/enrich_municipality_altimetry_v1.py
+      - tests/test_enrich_municipality_altimetry_v1.py
+      - scripts/import_metrics_v1.mjs
+      - src/components/SiteInsightsPage.tsx
   schedule:
     - cron: '40 4 * * *'
   workflow_dispatch:
@@ -30,6 +34,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_import_municipalities_v1.py' -v
           python -m unittest discover -s tests -p 'test_enrich_municipalities_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_municipality_altimetry_v1.py' -v
       - name: Scarica ISTAT e DAIT ufficiali
         shell: bash
         run: |
@@ -79,6 +84,18 @@ jobs:
             args+=(--previous build/import-municipalities-v1/previous.json)
           fi
           python scripts/enrich_municipalities_v1.py "${args[@]}"
+      - name: Altimetria territoriale ISTAT DEM 2021 (fonte ufficiale)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 3 --connect-timeout 15 --max-time 100 \
+            -A 'CimaBecco-OpenData/1.0 (https://www.cimabecco.it)' \
+            'https://www.istat.it/wp-content/uploads/2026/02/Altimetria_Comuni-al-31_12_2021.xlsx' \
+            -o build/import-municipalities-v1/input/istat-altimetry-2021.xlsx
+          python scripts/enrich_municipality_altimetry_v1.py \
+            --municipalities public/data/atlas/municipalities-v1.json \
+            --source build/import-municipalities-v1/input/istat-altimetry-2021.xlsx \
+            --report build/import-municipalities-v1/altimetry-report.json
       - name: Quality gate reale dei documenti pubblicabili
         shell: bash
         run: |
@@ -92,6 +109,8 @@ jobs:
           assert r['municipalities']>=7800 and r['mayorsMatched']>=7500
           assert r['daitRowsOfficialCrosswalkRejected']<=100
           assert e and len(e)==len({x['id'] for x in e})==len({x['slug'] for x in e})
+          assert all(any(x['facts'].get(k,{}).get('value') is not None for k in \
+            ('quotaCentroM','elevationReportedM','altitudineTerritorioMediaM','altitudineTerritorioMinM','altitudineTerritorioMaxM')) for x in e), 'Comuni G2 senza quota documentata'
           for x in e:
               assert x['kind']=='municipality' and x['quality']['gate']=='G2'
               assert x['sourceIds'].get('wikidataVerifiedBy')=='P635'
@@ -127,15 +146,21 @@ jobs:
           path: |
             build/import-municipalities-v1/report.json
             build/import-municipalities-v1/enrichment-report.json
+            build/import-municipalities-v1/altimetry-report.json
           retention-days: 14
           if-no-files-found: warn
+      - name: Registra telemetria pubblica solo dopo il collaudo
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/import_metrics_v1.mjs comuni "$GITHUB_RUN_ID" build/import-municipalities-v1/enrichment-report.json
       - name: Commit dei soli comuni dopo i gate
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/data/atlas/municipalities-v1.json
+          git add public/data/atlas/municipalities-v1.json public/data/atlas/import-history-v1.json
           if ! git diff --cached --quiet; then
             git commit -m 'data(atlas): update source-verified municipality dossiers'
             git fetch origin "$GITHUB_REF_NAME"
