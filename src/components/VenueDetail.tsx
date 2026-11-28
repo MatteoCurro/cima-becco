@@ -120,7 +120,7 @@ function useVenueContent(venue: Venue) {
     // Open-licence photos taken nearby fill out a hill's grid, after its own
     // photos. Never for blocks and stairs: nearby is not the place.
     const stored = venuePhotos(venue);
-    if (!BUILT_TYPES.has(venue.type) && stored.length < GRID_SIZE) {
+    if (!BUILT_TYPES.has(venue.type) && venue.sourceIds?.wikidataVerifiedBy !== 'P1566+P625' && stored.length < GRID_SIZE) {
       const peakPhoto = stored.length === 0 && isWorldPeakSlug(venue.slug)
         ? loadPeakPhotos().then((photos) => photos.get(venue.slug))
         : Promise.resolve(undefined);
@@ -203,7 +203,7 @@ function NoPhotos({ venue, onAdd, actions }: { venue: Venue; onAdd: () => void; 
  * the full-screen viewer, which steps through every photo with its credit; the
  * last cell says how many more there are. One photo fills the frame.
  */
-function PhotoGrid({ photos, venueName, onAdd }: { photos: GalleryPhoto[]; venueName: string; onAdd: () => void }) {
+function PhotoGrid({ photos, venueName, onAdd, centralCreditsOnly = false }: { photos: GalleryPhoto[]; venueName: string; onAdd: () => void; centralCreditsOnly?: boolean }) {
   const [viewer, setViewer] = useState<number | null>(null);
   const closeViewer = useCallback(() => setViewer(null), []);
   const shown = photos.slice(0, GRID_SIZE);
@@ -219,7 +219,7 @@ function PhotoGrid({ photos, venueName, onAdd }: { photos: GalleryPhoto[]; venue
               type="button"
               key={photo.key}
               className="venue-photo-cell"
-              title={creditTitle(photo)}
+              title={centralCreditsOnly ? venueName : creditTitle(photo)}
               aria-label={`Open photo ${i + 1} of ${count} of ${venueName}`}
               onClick={() => setViewer(i)}
             >
@@ -232,8 +232,8 @@ function PhotoGrid({ photos, venueName, onAdd }: { photos: GalleryPhoto[]; venue
           <button type="button" className="venue-photo-pill" onClick={onAdd}><PlusIcon />Add photos</button>
         </div>
       </div>
-      <p className="venue-photo-credit"><PhotoCreditText photo={photos[0]} /></p>
-      {viewer != null && <Lightbox photos={photos} index={viewer} onIndex={setViewer} onClose={closeViewer} />}
+      {!centralCreditsOnly && <p className="venue-photo-credit"><PhotoCreditText photo={photos[0]} /></p>}
+      {viewer != null && <Lightbox photos={photos} index={viewer} onIndex={setViewer} onClose={closeViewer} centralCreditsOnly={centralCreditsOnly} />}
     </div>
   );
 }
@@ -245,7 +245,7 @@ const AUTOPLAY_MS = 5000;
  * auto-advance that pauses while you are hovering or have interacted — the
  * Airbnb listing carousel on phones. Tapping the photo opens it full screen.
  */
-function PhotoCarousel({ photos, onAdd, actions }: { photos: GalleryPhoto[]; onAdd: () => void; actions: ReactNode }) {
+function PhotoCarousel({ photos, onAdd, actions, centralCreditsOnly = false }: { photos: GalleryPhoto[]; onAdd: () => void; actions: ReactNode; centralCreditsOnly?: boolean }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -285,9 +285,9 @@ function PhotoCarousel({ photos, onAdd, actions }: { photos: GalleryPhoto[]; onA
         )}
         <div className="carousel-actions">{actions}</div>
         <button type="button" className="carousel-add" onClick={onAdd} aria-label="Add photos" data-tip="Add photos"><PlusIcon /></button>
-        <p className="carousel-credit"><PhotoCreditText photo={photos[index]} /></p>
+        {!centralCreditsOnly && <p className="carousel-credit"><PhotoCreditText photo={photos[index]} /></p>}
       </div>
-      {fullscreen && <Lightbox photos={photos} index={index} onIndex={setIndex} onClose={closeFullscreen} />}
+      {fullscreen && <Lightbox photos={photos} index={index} onIndex={setIndex} onClose={closeFullscreen} centralCreditsOnly={centralCreditsOnly} />}
     </>
   );
 }
@@ -334,7 +334,7 @@ function Slides({ photos, index, onIndex, onOpen }: { photos: GalleryPhoto[]; in
   );
 }
 
-function Lightbox({ photos, index, onIndex, onClose }: { photos: GalleryPhoto[]; index: number; onIndex: (i: number) => void; onClose: () => void }) {
+function Lightbox({ photos, index, onIndex, onClose, centralCreditsOnly = false }: { photos: GalleryPhoto[]; index: number; onIndex: (i: number) => void; onClose: () => void; centralCreditsOnly?: boolean }) {
   const count = photos.length;
   useEffect(() => {
     // Capture on window, ahead of the dialog underneath: Escape closes only this.
@@ -380,7 +380,7 @@ function Lightbox({ photos, index, onIndex, onClose }: { photos: GalleryPhoto[];
           </>
         )}
       </div>
-      <p className="lightbox-credit"><PhotoCreditText photo={photos[index]} /></p>
+      {!centralCreditsOnly && <p className="lightbox-credit"><PhotoCreditText photo={photos[index]} /></p>}
     </div>,
     document.body,
   );
@@ -800,7 +800,9 @@ function VenueDetailInner({
     ].filter(unique);
   }, [venue, communityPhotos, commons]);
 
-  const about = generated?.text ?? wiki?.extract ?? aboutFallback(venue, typeLabel, area, heightText, routes.length);
+  const isVerifiedSummit = venue.type === 'hill' && venue.sourceIds?.wikidataVerifiedBy === 'P1566+P625';
+  const documentedSummitText = isVerifiedSummit ? venue.textSources?.find(t => t.sourceId?.startsWith('wikipedia:it:'))?.text : undefined;
+  const about = documentedSummitText ?? generated?.text ?? wiki?.extract ?? aboutFallback(venue, typeLabel, area, heightText, routes.length);
 
   // Only offer "Read more" when three lines actually cut the text off.
   useLayoutEffect(() => {
@@ -880,10 +882,10 @@ function VenueDetailInner({
 
         <div className="cb-venue-hero-media">
           {photos.length===0?<NoPhotos venue={venue} onAdd={()=>setAddingPhotos(true)} actions={iconActions}/>:
-            <PhotoCarousel photos={photos} onAdd={()=>setAddingPhotos(true)} actions={iconActions}/>}
+            <PhotoCarousel photos={photos} onAdd={()=>setAddingPhotos(true)} actions={iconActions} centralCreditsOnly={isVerifiedSummit}/>}
           {photos.length>1&&!narrow&&<details className="cb-venue-gallery-more">
             <summary>Apri tutte le {photos.length} fotografie</summary>
-            <PhotoGrid photos={photos} venueName={venue.name} onAdd={()=>setAddingPhotos(true)}/>
+            <PhotoGrid photos={photos} venueName={venue.name} onAdd={()=>setAddingPhotos(true)} centralCreditsOnly={isVerifiedSummit}/>
           </details>}
         </div>
 
