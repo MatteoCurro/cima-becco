@@ -144,7 +144,8 @@ class TestOSMWaterGeometry(unittest.TestCase):
         self.assertEqual(linked["facts"]["elevationM"]["value"],2200)
         self.assertNotIn("isSwimmable",linked["facts"])
         self.assertNotIn("potable",linked["facts"])
-        self.assertIsNone(linked["restrictions"] if linked["restrictions"] is None else None)
+        self.assertEqual(linked["restrictions"],[])
+        self.assertEqual(linked["relations"],[])
 
     def test_exact_geonames_tag_can_bridge_with_independent_crosswalk(self):
         sources=originals()
@@ -162,12 +163,15 @@ class TestOSMWaterGeometry(unittest.TestCase):
         self.assertIn("no_unique_exact_osm_identifier",report["rejectedOrReview"])
 
     def test_reservoir_vs_natural_lake_conflict_is_not_silently_retyped(self):
-        sources=originals()
+        osm,gn_doc,cross=originals()
+        # The original OSM source says reservoir; GeoNames calls it a lake.
+        osm["entities"][0]["subtype"]="reservoir"
+        osm["entities"][0]["facts"]["osmFeatureTag"]["value"]="reservoir"
         feature=outline(water="reservoir")
-        doc,report=run(*sources,[feature],at=AT)
+        doc,report=run(osm,gn_doc,cross,[feature],at=AT)
         self.assertEqual(report["geonamesIdentityAndAreaVerified"],0)
         self.assertEqual(report["rejectedOrReview"]["water_subtype_conflict"],1)
-        self.assertEqual(doc["osmEntities"][0]["subtype"],"lake") # source metadata remains originally typed
+        self.assertEqual(doc["osmEntities"][0]["subtype"],"reservoir")
         self.assertEqual(doc["osmEntities"][0]["geo"]["area"]["type"],"MultiPolygon")
 
     def test_geonames_coordinate_outside_or_on_island_not_verified(self):
@@ -193,8 +197,11 @@ class TestOSMWaterGeometry(unittest.TestCase):
             run({**sources[0],"isPublished":True},sources[1],sources[2],[outline()],at=AT)
         with self.assertRaises(ValueError):
             run(*sources,[outline(),outline()],at=AT)
-        with self.assertRaises(ValueError):
-            run(*sources,[{"type":"node","id":1}],at=AT) if False else None
+        changed=outline(water="reservoir")
+        doc,report=run(*sources,[changed],at=AT)
+        self.assertEqual(report["polygonVerified"],0)
+        self.assertEqual(report["rejectedOrReview"]["source_subtype_changed"],1)
+        self.assertEqual(doc["osmEntities"],[])
 
 if __name__=="__main__":
     unittest.main()
