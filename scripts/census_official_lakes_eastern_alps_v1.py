@@ -33,9 +33,9 @@ REGION_BBOX = {
     # Veneto Alpine and Prealpine belt, not Venice lagoon.
     "arpav_water_surfaces": (10.70, 45.55, 13.35, 46.85),
 }
-MAX_REQUESTS = 76
-MAX_DEPTH = 3
-MAX_TOTAL_BYTES = 45_000_000
+MAX_REQUESTS = 128
+MAX_DEPTH = 4
+MAX_TOTAL_BYTES = 80_000_000
 RESPONSE_LIMIT = 5_000_000
 PAUSE_SECONDS = 0.2
 
@@ -141,6 +141,7 @@ def census(provider, *, fetcher=fetch_limited, max_requests=MAX_REQUESTS,
     todo = deque([(bbox, 0)])
     staged_by_id = {}
     seen_raw_fids = set()
+    raw_meta = {}
     snapshots = []
     unresolved = []
     rejected = Counter()
@@ -163,6 +164,28 @@ def census(provider, *, fetcher=fetch_limited, max_requests=MAX_REQUESTS,
         # valid source IDs and correct polygon topology.
         parsed, diagnostic = parse_geojson(raw, provider, at=at, request_url=url)
         received = diagnostic["received"]
+        # Preserve a record's source FID and non-geometric attributes even
+        # when the polygon is held for topology review. Never give such
+        # records an inferred point, geometry, link or public dossier.
+        for feature in json.loads(raw)["features"]:
+            if not isinstance(feature, dict):
+                continue
+            fid = feature.get("id")
+            attrs = feature.get("properties")
+            if not isinstance(fid, (int, str)) or not str(fid).strip():
+                continue
+            if not isinstance(attrs, dict):
+                continue
+            fid = str(fid)
+            minimal = {
+                str(k):v for k,v in attrs.items()
+                if isinstance(k,str) and len(k)<=80 and
+                (v is None or type(v) in (str,int,float,bool)) and
+                len(str(v))<=250
+            }
+            if fid in raw_meta and raw_meta[fid] != minimal:
+                raise ValueError("Official WFS FID changed attributes during census")
+            raw_meta[fid] = minimal
         if received >= MAX_FEATURES:
             # Do NOT assume a capped request exhausts a cell. Split into
             # four non-overlapping cells and deduplicate by the original FID.
@@ -173,7 +196,6 @@ def census(provider, *, fetcher=fetch_limited, max_requests=MAX_REQUESTS,
             else:
                 unresolved.append({"bbox":tile, "depth":depth,
                                    "reason":"feature cap at maximum split depth"})
-        seen_before = len(seen_raw_fids)
         for entity in parsed["entities"]:
             fid = entity["sourceFeatureId"]
             seen_raw_fids.add(fid)
@@ -206,6 +228,30 @@ def census(provider, *, fetcher=fetch_limited, max_requests=MAX_REQUESTS,
     for tile, depth in todo:
         unresolved.append({"bbox":tile, "depth":depth,
                            "reason":"request/byte budget exhausted"})
+    pending = []
+    for fid in sorted(raw_meta):
+        if fid in staged_by_id:
+            continue
+        pending.append({
+            "sourceFeatureId":fid,
+            "sourceIds":{provider:fid},
+            "sourceLayerClass":PROVIDERS[provider]["layerSuffix"],
+            "sourcePropertiesRaw":raw_meta[fid],
+            "kind":"natural_feature", "subtype":None,
+            "facts":{}, "relations":[], "media":[], "restrictions":[],
+            "quality":{"gate":"G0","seoIndexable":False,
+                       "geometryVerified":False,"needsReview":True,
+                       "officialIdentityCrosswalkVerified":False},
+        })
+    pending_doc = {
+        "releaseChannel":CHANNEL, "isPublished":False,
+        "sourceProvider":provider,
+        "sourceDatasetId":PROVIDERS[provider]["sourceDatasetId"],
+        "licence":PROVIDERS[provider]["licence"],
+        "retrievedAt":at,"sampleOnly":True,"completeDataset":False,
+        "geometryReviewOnly":True, "entities":pending,
+    }
+    pending_doc, _ = enrich_staged(pending_doc)
     result = {
         "releaseChannel":CHANNEL, "isPublished":False,
         "sourceProvider":provider,
@@ -229,6 +275,16 @@ def census(provider, *, fetcher=fetch_limited, max_requests=MAX_REQUESTS,
     # Total raw feature count is inferred only if the tiles are provably
     # exhaustive and repeat/edge features do not change identity.
     census_is_complete = not unresolved
+    hits_issues = []
+    # Some WFS1 GeoServer endpoints return numberOfFeatures=0 for
+    # resultType=hits despite a positive real GetFeature payload.
+    # A demonstrated false zero is "unreliable", never a trustworthy total.
+    for key in ("layer","region"):
+        n = hits.get(key)
+        if n is not None and n < len(seen_raw_fids):
+            hits_issues.append(
+                f"{key}: hits {n} less than observed {len(seen_raw_fids)}")
+            hits[key] = None
     region_hits = hits.get("region")
     if region_hits is not None and len(seen_raw_fids) < region_hits:
         census_is_complete = False
@@ -239,6 +295,10 @@ def census(provider, *, fetcher=fetch_limited, max_requests=MAX_REQUESTS,
         "sourceLayerNumberMatched":hits.get("layer"),
         "requestedRegionNumberMatched":region_hits,
         "featuresRawDistinctSeen":len(seen_raw_fids),
+        "sourceIdsWithGeometryReviewG0":len(pending_doc["entities"]),
+        "namedGeometryPendingRecords":sum(
+            bool(source_name(e,provider)) for e in pending_doc["entities"]),
+        "hitsReliabilityWarnings":hits_issues,
         "acceptedIndependentSourceRecordsG0":len(normalized["entities"]),
         "namedAcceptedRecords":named,
         "providerClassifications":dict(classifications),
@@ -259,7 +319,7 @@ def census(provider, *, fetcher=fetch_limited, max_requests=MAX_REQUESTS,
         "recordsAreNotUniquePhysicalLakes":True,
         "snapshots":snapshots,
     }
-    return normalized, report
+    return normalized, pending_doc, report
 
 
 def main():
@@ -270,11 +330,14 @@ def main():
     p.add_argument("--out",type=Path,
                    default=ROOT / "build/official-lake-eastern-alps-census")
     args = p.parse_args()
-    doc, audit = census(args.provider, max_requests=args.max_requests,
-                        max_depth=args.max_depth)
+    doc, pending, audit = census(args.provider, max_requests=args.max_requests,
+                                 max_depth=args.max_depth)
     args.out.mkdir(parents=True,exist_ok=True)
     (args.out/"regional-lake-records-g0.json").write_text(
         json.dumps(doc,indent=2,ensure_ascii=False)+"\n",encoding="utf-8"
+    )
+    (args.out/"geometry-pending-records-g0.json").write_text(
+        json.dumps(pending,indent=2,ensure_ascii=False)+"\n",encoding="utf-8"
     )
     (args.out/"regional-lake-census-audit.json").write_text(
         json.dumps(audit,indent=2,ensure_ascii=False)+"\n",encoding="utf-8"
@@ -283,7 +346,8 @@ def main():
         k:audit[k] for k in (
             "provider", "sourceLayerNumberMatched",
             "requestedRegionNumberMatched","acceptedIndependentSourceRecordsG0",
-            "namedAcceptedRecords","providerClassifications",
+            "namedAcceptedRecords","sourceIdsWithGeometryReviewG0",
+            "providerClassifications",
             "regionEnumerationComplete","regionEnumerationProvenByHits",
             "remainingUnresolvedCells","published",
         )
