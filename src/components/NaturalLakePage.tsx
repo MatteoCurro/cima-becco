@@ -460,10 +460,9 @@ export function NaturalLakePage(){
       :a.name.localeCompare(b.name,'it')),[features,q,sort]);
   const shownG1=useMemo(()=>identified.entities.filter(x=>
     [x.name,...x.localNames.map(n=>n.value),...x.aliases.map(n=>n.value)]
-      .some(n=>n.toLocaleLowerCase('it').includes(q)) &&
-    !(providerFilter!=='all' && providerFilter!=='bolzano_lakes' &&
-      providerFilter!=='arpav_water_surfaces')), 
-    [identified.entities,q,providerFilter]);
+      .some(n=>n.toLocaleLowerCase('it').includes(q)))
+    .sort((a,b)=>lakeIdentifiedDisplayName(a).localeCompare(lakeIdentifiedDisplayName(b),'it')),
+    [identified.entities,q]);
   const shownSource=useMemo(()=>allSources.filter(r=>
     (providerFilter==='all'||r.provider===providerFilter)&&
     (typeFilter==='all'||sourceType(r)===typeFilter)&&
