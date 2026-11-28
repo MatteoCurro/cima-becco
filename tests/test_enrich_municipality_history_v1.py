@@ -54,6 +54,9 @@ class HistoryContract(unittest.TestCase):
       {"descriptionText":"Longarone (BL) prima e dopo il disastro del Vajont del 1963"},"1960"))
     self.assertTrue(safe_historical_scene(
       {"descriptionText":"Pirago, hamlet of Longarone before Vajont dam disaster"},"1961"))
+    self.assertFalse(safe_historical_scene(
+      {"descriptionText":"Meyers Konversations-Lexikon 1890",
+       "sourceUrl":"https://commons.wikimedia.org/wiki/File:Bozen-Bolzano_MKL_Bd._3_1890.jpg"},"1890"))
   def test_exact_depicts_and_date_not_upload(self):
     self.assertTrue(sdc_depicts_exact({"claims":{"P180":[claim_item("Q12345") ]}},"Q12345"))
     self.assertFalse(sdc_depicts_exact({"claims":{"P180":[claim_item("Q999")]}},"Q12345"))
