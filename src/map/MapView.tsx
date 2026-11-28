@@ -467,6 +467,7 @@ export function MapView({
   const { units } = useUnits();
 
   const [busy, setBusy] = useState(false);
+  const [mapSlow, setMapSlow] = useState(false);
   const markersRef = useRef<VenueMarkers | null>(null);
   const refreshMarkersRef = useRef<(force?: boolean) => void>(() => {});
   const onSelectRef = useRef(onSelectVenue);
@@ -769,11 +770,23 @@ export function MapView({
     });
 
     let showTimer: ReturnType<typeof setTimeout> | null = null;
+    let slowTimer: ReturnType<typeof setTimeout> | null = null;
+    let waitingForIdle = false;
     const markBusy = () => {
-      if (showTimer) return;
+      if (showTimer || waitingForIdle) return;
       showTimer = setTimeout(() => {
+        waitingForIdle=true;
         setBusy(true);
+        setMapSlow(false);
         showTimer = null;
+        // Tile servers can stall without ever producing an idle event. Keep
+        // the map interactive and replace infinite spinning with an honest
+        // non-blocking status until MapLibre finally becomes idle.
+        slowTimer=setTimeout(()=>{
+          setBusy(false);
+          setMapSlow(true);
+          slowTimer=null;
+        },9000);
       }, 280);
     };
     const markIdle = () => {
@@ -781,7 +794,13 @@ export function MapView({
         clearTimeout(showTimer);
         showTimer = null;
       }
+      if (slowTimer) {
+        clearTimeout(slowTimer);
+        slowTimer = null;
+      }
+      waitingForIdle=false;
       setBusy(false);
+      setMapSlow(false);
     };
     map.on('dataloading', markBusy);
     map.on('idle', markIdle);
@@ -817,6 +836,7 @@ export function MapView({
       clearTimeout(refitTimer);
       cancelAnimationFrame(routeHoverFrame);
       if (showTimer) clearTimeout(showTimer);
+      if (slowTimer) clearTimeout(slowTimer);
       observer.disconnect();
       markersRef.current?.remove();
       markersRef.current = null;
@@ -1068,9 +1088,12 @@ export function MapView({
             <span className="dot" />
             <span className="dot" />
           </span>
-          <span className="visually-hidden">Loading the map</span>
+          <span className="visually-hidden">Caricamento della mappa</span>
         </div>
       )}
+      {mapSlow && !busy && <div className="map-busy map-busy--slow" role="status">
+        Alcuni dettagli cartografici tardano a caricarsi
+      </div>}
       {viewerIndex >= 0 && routePhotos && (
         <RoutePhotoViewer
           photos={routePhotos}
