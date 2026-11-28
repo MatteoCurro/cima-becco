@@ -65,8 +65,16 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          from hashlib import sha256
           from pathlib import Path
-          d=json.loads(Path('build/trail-network-g0-pilot/physical-graph-g0.json').read_text())
+          base=Path('build/trail-network-g0-pilot')
+          d=json.loads((base/'physical-graph-g0.json').read_text())
+          raw=(base/'source-overpass-g0.json').read_text(encoding='utf-8').rstrip('\n')
+          audit=json.loads((base/'audit.json').read_text(encoding='utf-8'))
+          assert sha256(raw.encode('utf-8')).hexdigest()==d['sourceSnapshotSha256']
+          assert audit['sourceSnapshotSha256']==d['sourceSnapshotSha256']
+          assert audit['sourceSnapshotFile']=='source-overpass-g0.json'
+          assert len(json.loads(raw)['elements'])==d['counts']['sourceElements']
           c=d['counts']
           assert d['releaseChannel']=='OSM_TRAIL_PHYSICAL_GRAPH_G0_STAGING_V1'
           assert d['isPublished'] is False and d['seoIndexable'] is False
