@@ -59,7 +59,7 @@ class HistoryContract(unittest.TestCase):
     self.assertEqual(report["historicalMunicipalities"],1)
     items=doc["entities"][0]["media"]
     self.assertEqual(len(items),1)
-    self.assertEqual(items[0]["capturedAt"],"1912")
+    self.assertEqual(items[0]["capturedAt"],"1912-01-01")
     self.assertEqual(items[0]["historicalDateMethod"],"commons-sdc:P571")
     self.assertEqual(items[0]["subjectMethod"],"commons_media_info_P180_exact_municipality_QID")
     self.assertEqual(items[0]["author"],"Archive photographer")
