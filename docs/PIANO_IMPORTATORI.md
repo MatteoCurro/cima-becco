@@ -1,6 +1,6 @@
 # Cima Becco — piano di importazione e collegamenti
 
-**Data aggiornamento:** 28/11/2026. **Stato verificato:** rifugi e ricoveri pubblicati; comuni e persone in aggiornamento G1/G2; località ISTAT/OSM incremental G2 pubblicate; **18 cime GeoNames/Wikidata G2 pubblicate**, release #46120388757 e deploy Pages #46120573758 riusciti, cursore offset 100; elementi naturali §5: **5 valichi G2 pubblicati**, release #46122593884 e deploy Pages #46122745479 riusciti; laghi/valli/aree restano G1 senza SEO.
+**Data aggiornamento:** 28/11/2026. **Stato verificato:** rifugi e ricoveri pubblicati; comuni e persone in aggiornamento G1/G2; località ISTAT/OSM incremental G2 pubblicate; **27 cime GeoNames/Wikidata G2 pubblicate**, release #46120388757 e #46123329772 riuscite, cursore offset 200; elementi naturali §5: **5 valichi G2 pubblicati**, release #46122593884 e deploy Pages #46122745479 riusciti; laghi/valli/aree restano G1 senza SEO.
 **Specifica superiore e vincolante:** [MODELLO_METADATI_E_LAYOUT.md](MODELLO_METADATI_E_LAYOUT.md). Il presente piano organizza i lavori e NON cambia la tassonomia o le regole canoniche.  
 **UI:** [ARCHITECTURE.md](ARCHITECTURE.md); un solo sistema di ricerca, mappa, dettaglio e filtri.
 
@@ -39,6 +39,10 @@
 ---
 
 ## Blocco 5 — passaggio G2 e rilascio incrementale cime (28/11/2026)
+
+**Audit batch cime 100–199 (28/11/2026):** la release [#46123329772](https://github.com/MatteoCurro/cima-becco/actions/runs/46123329772) ha completato 84 identità GeoNames↔Wikidata verificate. 9 nuove cime con foto e testo G2 (totale pubblico **27**); una cima, **Monte Magro**, è conservata in `heldEntities[]` come G1 per divergenza altimetrica >100 m, con entrambe le quote e le fonti; nessuna pagina inventata. Lo storico `import-history-cime-v1.json` avanza soltanto dopo commit riuscito: **offset successivo 200**. Due problemi emersi dai test reali e corretti in [PR #33](https://github.com/MatteoCurro/cima-becco/pull/33) (QID unico globalmente, non per singolo batch) e [PR #35](https://github.com/MatteoCurro/cima-becco/pull/35) (quota discordante trattenuta G1, senza bloccare gli altri G2). I due tentativi precedenti falliti non hanno modificato i dati né fatto avanzare il cursore.
+
+
 
 - **Identità verificata nel pilot reale:** [run #46119578189](https://github.com/MatteoCurro/cima-becco/actions/runs/46119578189): 100 candidati campionati, 82 crosswalk P1566/P625 compatibili, 18 QID in revisione/non risolti, 18 dossier G2 con foto P18 Commons e testo itwiki verificato, 24 test Python superati. G2 in staging: 0 SEO fino alla release.
 - **Bibbia §§1/4/30–32 rispettata:** `wikidataElevationReportedM` (P2044) resta separata dalla quota originale GeoNames; P18 fotografa esattamente l'entità (non semplice vicinanza), Wikipedia conserva autore collettivo/licenza CC BY-SA nel registro centrale; gruppi senza perimetro e nomi ambigui restano G0/noindex.
