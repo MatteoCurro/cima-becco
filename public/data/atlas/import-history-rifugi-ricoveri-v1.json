@@ -191,6 +191,44 @@
         "rifugi": 0,
         "ricoveri": 0
       }
+    },
+    {
+      "runId": "46120388743",
+      "pipeline": "rifugi-ricoveri",
+      "status": "success",
+      "recordedAt": "2026-11-28T07:17:20.612Z",
+      "sourceSha": "e022c1b887c65a30c9dba7d90a42fb7364b68f3c",
+      "sources": {
+        "rifugi": {
+          "count": 779,
+          "facts": 22123,
+          "media": 659,
+          "relations": 2589,
+          "coverage": {
+            "Quota": 456,
+            "Posti letto": 370,
+            "Fotografie": 355
+          },
+          "denominator": 779
+        },
+        "ricoveri": {
+          "count": 389,
+          "facts": 11034,
+          "media": 546,
+          "relations": 268,
+          "coverage": {
+            "Quota": 389,
+            "Posti dichiarati": 346,
+            "Fotografie": 317
+          },
+          "denominator": 389
+        }
+      },
+      "report": {},
+      "delta": {
+        "rifugi": 0,
+        "ricoveri": 0
+      }
     }
   ]
 }
