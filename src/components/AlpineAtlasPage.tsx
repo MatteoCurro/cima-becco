@@ -243,9 +243,10 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
           <div className="cb-person-grid">
             {place.connectedPeople!.filter(p=>p.verified&&p.category==='montagna').map(p=><article key={p.personId+':'+p.relationType} className="cb-person-card">
               <div className="cb-person-card-top"><span>ALPINISMO E MONTAGNA</span><span>{p.relationType==='birthplace_of'?'NATA/O QUI':p.relationType==='historical_residence_of'?'RESIDENZA STORICA':'ATTIVITÀ QUI'}</span></div>
+              {p.portrait?.url&&p.portrait.subjectVerified&&p.portrait.reuseAllowed&&<img className="cb-person-portrait" src={p.portrait.url} alt={'Ritratto di '+p.name} loading="lazy" decoding="async"/>}
               <h3>{p.name}</h3><p className="cb-person-role">{p.role}</p>
               {(p.birthDate||p.deathDate)&&<p className="cb-person-dates">{[p.birthDate,p.deathDate].filter(Boolean).join(' – ')}</p>}
-              {p.description&&<p>{p.description}</p>}
+              {(p.biography||p.description)&&<p>{(p.biography||p.description)?.slice(0,280)}</p>}
               {p.wikipediaUrl&&<a href={p.wikipediaUrl} target="_blank" rel="noopener noreferrer">Biografia documentata ↗</a>}
             </article>)}
           </div>
@@ -254,9 +255,10 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
             <div className="cb-person-grid">
               {place.connectedPeople!.filter(p=>p.verified&&p.category==='cultura_e_ricerca').map(p=><article key={p.personId+':'+p.relationType} className="cb-person-card">
                 <div className="cb-person-card-top"><span>CULTURA E RICERCA</span><span>PERSONA NATA QUI</span></div>
-                <h3>{p.name}</h3><p className="cb-person-role">{p.role}</p>
+                {p.portrait?.url&&p.portrait.subjectVerified&&p.portrait.reuseAllowed&&<img className="cb-person-portrait" src={p.portrait.url} alt={'Ritratto di '+p.name} loading="lazy" decoding="async"/>}
+              <h3>{p.name}</h3><p className="cb-person-role">{p.role}</p>
                 {(p.birthDate||p.deathDate)&&<p className="cb-person-dates">{[p.birthDate,p.deathDate].filter(Boolean).join(' – ')}</p>}
-                {p.description&&<p>{p.description}</p>}
+                {(p.biography||p.description)&&<p>{(p.biography||p.description)?.slice(0,280)}</p>}
                 {p.wikipediaUrl&&<a href={p.wikipediaUrl} target="_blank" rel="noopener noreferrer">Approfondimento biografico ↗</a>}
               </article>)}
             </div>
