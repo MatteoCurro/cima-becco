@@ -159,6 +159,12 @@ Per le fotografie, la pagina attribuisce ogni media visibile alla sua **scheda c
 
 **Layout**: hero → pochi KPI appropriati → spiegazione → accesso → natura/storia → dintorni → media; niente campi vuoti o meteo identico duplicato senza necessità.
 
+**Importazione elementi naturali — requisiti operativi (28/11/2026).** Una singola categoria canonica `natural_feature` distingue `mountain_pass`, `saddle`, `lake`, `reservoir`, `valley`, `waterfall`, `viewpoint`, con identificativo stabile indipendente dal nome/slug. **Lago e invaso artificiale non sono sinonimi**, quota assoluta `elevationM` e salto di cascata `waterfallDropM` non sono la stessa misura; un punto rappresentativo estratto dal centro di una way/relation **non** è un poligono lacustre, una riva, una valle delimitata o un accesso. Quote DEM vanno etichettate come stime e mantenute separate dalle quote dichiarate. Per i passi l'apertura, la transitabilità e il collegamento ai sentieri richiedono una fonte appropriata e datata; nessuna apertura viene dedotta dal solo tag di localizzazione.
+
+**Proprietà della fonte e riconciliazione.** Gli elementi OSM usano `sourceIds.osm` con `node/way/relation`; GeoNames usa `sourceIds.geonames`, feature class/codice e origine CC BY 4.0. Identità OSM e GeoNames sono **dataset indipendenti** finché Wikidata e coordinate non confermano il crosswalk; distanza/nome non bastano. `natural=spring`, fontane e rubinetti rimangono nella pipeline `import_alpine_water.py` e in `alpine-water.json`: non creare duplicati di sorgenti nella pipeline di feature naturali, né qualificare l'acqua potabile per sola presenza. I collegamenti `near` sono distanze in linea d'aria, non `accessible_from`. I raw del pilota restano in staging G0/G1 e **noindex**; solo identità verificata, contenuto specifico, media con fonte/licenza e QA consentono future schede G2.
+
+
+
 ---
 
 ## 6. Rifugi alpini

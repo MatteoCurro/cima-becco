@@ -1,0 +1,90 @@
+name: Pilot natural features from GeoNames and OSM offline contracts
+on:
+  push:
+    branches: [feat/natural-features-osm-pilot-20261128]
+    paths:
+      - scripts/import_natural_features_v1.py
+      - scripts/import_natural_geonames_v1.py
+      - tests/test_import_natural_geonames_v1.py
+      - scripts/natural_feature_field_registry_v1.json
+      - tests/test_import_natural_features_v1.py
+      - .github/workflows/test-import-natural-features-v1.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/import_natural_features_v1.py
+      - scripts/import_natural_geonames_v1.py
+      - tests/test_import_natural_geonames_v1.py
+      - scripts/natural_feature_field_registry_v1.json
+      - tests/test_import_natural_features_v1.py
+      - .github/workflows/test-import-natural-features-v1.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cima-natural-features-pilot-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test-and-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline identity, lake/spring, classification and provenance contracts
+        run: python -m unittest discover -s tests -p 'test_import_natural_features_v1.py' -v
+      - name: Offline GeoNames subtype, elevation and source identity contracts
+        run: python -m unittest discover -s tests -p 'test_import_natural_geonames_v1.py' -v
+      - name: Official GeoNames IT country dump, not dependent on Overpass
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/natural-source
+          curl --fail --location --silent --show-error --retry 3 --retry-delay 6 \
+            --connect-timeout 20 --max-time 180 \
+            -A 'CimaBecco-OpenDataPilot/1.0 (https://www.cimabecco.it)' \
+            https://download.geonames.org/export/dump/IT.zip \
+            -o build/natural-source/IT.zip
+          unzip -t build/natural-source/IT.zip >/dev/null
+          python scripts/import_natural_geonames_v1.py \
+            --source build/natural-source/IT.zip \
+            --max-records 250 --min-records 8 \
+            --with-near --out build/import-natural-features-v1
+      - name: Source and G0/G1 quality gate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('build/import-natural-features-v1')
+          data=json.loads((root/'features-geonames.json').read_text())
+          report=json.loads((root/'geonames-report.json').read_text())
+          entities=data['entities']
+          assert data['releaseChannel']=='GEONAMES_NATURAL_FEATURES_STAGING_V1'
+          assert data['isPublished'] is False and len(entities)>=8
+          assert len(entities)==len({e['id'] for e in entities})
+          assert len(entities)==len({e['slug'] for e in entities})
+          assert len(entities)==len({e['sourceIds']['geonames'] for e in entities})
+          for e in entities:
+              assert e['kind']=='natural_feature' and e['subtype'] in ('mountain_pass','saddle','valley','lake','reservoir','waterfall')
+              assert e['quality']['gate'] in ('G0','G1') and not e['quality']['seoIndexable']
+              assert e['geo']['point'] and e['facts']
+              assert not e['media'] and not e['textSources']
+              for v in e['facts'].values():
+                  assert v['sourceId'].startswith('geonames:') and v['sourceUrl'].startswith('https://www.geonames.org/') and v['licence']=='CC BY 4.0'
+              assert all(r['type']=='near' and not r['verified'] and not r['accessVerified'] for r in e['relations'])
+          assert report['published']==0 and report['indexable']==0 and report['crossSourceMerges']==0
+          print('GeoNames natural feature pilot:',report)
+          PY
+      - name: Ensure no public catalog, legacy URL or frontend changes
+        run: |
+          test -z "$(git status --porcelain -- public/ src/)"
+      - name: Retain audit raw and candidate metadata for next enrichment phase
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-natural-features-osm-staging
+          path: build/import-natural-features-v1/
+          retention-days: 14
+          if-no-files-found: warn

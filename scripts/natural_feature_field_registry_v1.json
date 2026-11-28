@@ -1,0 +1,178 @@
+{
+  "schemaVersion": "1.0",
+  "canonicalSpec": "docs/MODELLO_METADATI_E_LAYOUT.md sections 1 and 5",
+  "kind": "natural_feature",
+  "status": "G0_G1_real_pilots_verified_no_production_release",
+  "subtypes": [
+    {
+      "type": "mountain_pass",
+      "evidence": "OSM mountain_pass=yes",
+      "meta": [
+        "elevationM",
+        "localNames",
+        "routes_crossing",
+        "road_status"
+      ]
+    },
+    {
+      "type": "saddle",
+      "evidence": "OSM natural=saddle",
+      "meta": [
+        "elevationM",
+        "routes_crossing"
+      ]
+    },
+    {
+      "type": "lake",
+      "evidence": "OSM natural=water + water=lake",
+      "meta": [
+        "area",
+        "depthM",
+        "elevationM",
+        "naturalOrigin"
+      ]
+    },
+    {
+      "type": "reservoir",
+      "evidence": "OSM natural=water + water=reservoir",
+      "meta": [
+        "area",
+        "depthM",
+        "elevationM",
+        "operator"
+      ]
+    },
+    {
+      "type": "valley",
+      "evidence": "OSM natural=valley",
+      "meta": [
+        "watercourses",
+        "communities",
+        "lengthKm",
+        "routes"
+      ]
+    },
+    {
+      "type": "waterfall",
+      "evidence": "OSM waterway=waterfall",
+      "meta": [
+        "waterfallDropM",
+        "seasonalFlow",
+        "viewpoints",
+        "access"
+      ]
+    },
+    {
+      "type": "viewpoint",
+      "evidence": "OSM tourism=viewpoint + name",
+      "meta": [
+        "orientation",
+        "views",
+        "photographs"
+      ]
+    }
+  ],
+  "waterReuse": {
+    "existing": "public/data/alpine-water.json",
+    "importer": "scripts/import_alpine_water.py",
+    "rule": "spring and drinking_water remain in existing water importer; availability is not potability; never reimport duplicate physical points"
+  },
+  "sourceCandidates": [
+    {
+      "id": "osm",
+      "status": "real_pilot_verified_intermitttent",
+      "license": "ODbL 1.0",
+      "content": "stable OSM ID, name, typed tags and representative coordinate",
+      "schedule": "small cells and provider-friendly refresh",
+      "notes": "successful cell 2/6 after two endpoint failures; use throttled retry and cached snapshots"
+    },
+    {
+      "id": "wikidata",
+      "status": "future",
+      "content": "QID verified independent location, alternative names, photos"
+    },
+    {
+      "id": "geonames",
+      "status": "real_pilot_verified",
+      "content": "PASS LK VAL FLLS feature codes, separate ID reconciliation",
+      "license": "CC BY 4.0",
+      "notes": "Official IT.zip snapshot with checksum, independent IDs; do not join OSM by name/distance"
+    },
+    {
+      "id": "regional_geoportal",
+      "status": "future",
+      "content": "lake polygons, boundaries, official elevation and protection"
+    },
+    {
+      "id": "commons",
+      "status": "future",
+      "content": "subject-verified photos and historical media with author/license"
+    },
+    {
+      "id": "cai_sat",
+      "status": "future",
+      "content": "confirmed pass crossing and route access"
+    },
+    {
+      "id": "regional_meteo",
+      "status": "future",
+      "content": "closures, restrictions, seasonal flow; separate TTL"
+    }
+  ],
+  "verifiedNow": [
+    "id uuid5 from OSM source ID",
+    "kind/subtype",
+    "displayName",
+    "geo.point",
+    "sourceIds.osm",
+    "elevationM if explicit ele",
+    "waterfallDropM if explicit height",
+    "localNames if explicit OSM tagged",
+    "facts provenance fields",
+    "near only with no access claims"
+  ],
+  "pendingG2": [
+    "verify Wikidata QID and names",
+    "verify polygon geometry for lakes/valleys",
+    "verify media P18 or authorized official images",
+    "source-backed informative text",
+    "canonical/legacy URL policy",
+    "SEO+frontend adapters",
+    "quality checks against published atlas",
+    "verified access/routes for mountain passes"
+  ],
+  "negativeGuarantees": [
+    "No raw nearest water assumed potable",
+    "No lake centroid called a shore or polygon",
+    "No pass open/closed status inferred",
+    "No waterfall height used as altitude",
+    "No near relation interpreted as reachable",
+    "No unpublished G0/G1 SEO pages"
+  ],
+  "pilotEvidence": {
+    "osm": {
+      "run": "46120830491",
+      "raw": 497,
+      "eligible": 276,
+      "staged": 250,
+      "reviewRequired": 7,
+      "status": "verified_with_fallback_endpoint",
+      "notes": "Overpass first provider timeout, second DNS failure, third succeeded"
+    },
+    "geonames": {
+      "run": "46121051196",
+      "source": "GeoNames official IT.zip",
+      "eligible": 206,
+      "staged": 206,
+      "reviewRequired": 2,
+      "status": "verified",
+      "sha256": "8dc9458f57eaad2467475b284c2972fd9fb00783e221315e379818de4f382047"
+    }
+  },
+  "stagingArtifacts": [
+    "build/import-natural-features-v1/features.json when Overpass available",
+    "build/import-natural-features-v1/features-geonames.json from official GeoNames",
+    "run-reports and source snapshots in GitHub Actions artifacts"
+  ],
+  "nextStep": "Cross-source entity resolution and source-specific multimedia enrichment before any G2/SEO release"
+}
