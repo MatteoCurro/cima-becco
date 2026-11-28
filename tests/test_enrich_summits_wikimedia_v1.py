@@ -139,12 +139,21 @@ class SummitG2Tests(unittest.TestCase):
 
     def test_conflicting_altitude_is_separate_and_held_for_review(self):
         doc,report=self.call(wd_getter=wd(item(elevation="+2745")))
-        e=doc["entities"][0]
+        # A disputed G1 must never be hidden inside a G2 release batch.
+        self.assertEqual(doc["entities"],[])
+        self.assertEqual(report["enrichedG2"],0)
+        self.assertEqual(report["heldForReviewG1"],1)
+        e=doc["heldEntities"][0]
         self.assertEqual(e["facts"]["elevationM"]["value"],2450)
         self.assertEqual(e["facts"]["wikidataElevationReportedM"]["value"],2745)
+        self.assertEqual(e["quality"]["gate"],"G1")
+        self.assertFalse(e["quality"]["candidateIndexable"])
+        self.assertFalse(e["quality"]["seoIndexable"])
         self.assertTrue(e["quality"]["reviewRequired"])
         self.assertTrue(e["quality"]["elevationConflictReview"])
         self.assertEqual(report["withElevationDisagreement"],1)
+        self.assertEqual(report["heldReasons"]["altitude_conflict_held_G1"],1)
+        self.assertFalse(doc["isPublished"])
 
     def test_crosswalk_claim_required_and_one_to_one(self):
         bad=crosswalk()
