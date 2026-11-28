@@ -12,6 +12,11 @@ on:
       - scripts/build_source_credits.mjs
       - src/lib/summitRelease.ts
       - src/lib/worldPeaks.ts
+      - src/App.tsx
+      - src/components/VenueDetail.tsx
+      - src/lib/summitRelease.test.ts
+      - tests/test_publish_summits_v1.py
+      - tests/test_summit_batch_cursor_v1.py
   pull_request:
     branches: [main]
     paths:
@@ -24,6 +29,11 @@ on:
       - scripts/build_source_credits.mjs
       - src/lib/summitRelease.ts
       - src/lib/worldPeaks.ts
+      - src/App.tsx
+      - src/components/VenueDetail.tsx
+      - src/lib/summitRelease.test.ts
+      - tests/test_publish_summits_v1.py
+      - tests/test_summit_batch_cursor_v1.py
   schedule:
     - cron: '20 5 * * *'
   workflow_dispatch:
@@ -31,8 +41,8 @@ permissions:
   contents: write
   actions: write
 concurrency:
-  group: cima-summits-g2-main-safe-release
-  cancel-in-progress: false
+  group: cima-summits-g2-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   contract:
     runs-on: ubuntu-latest
