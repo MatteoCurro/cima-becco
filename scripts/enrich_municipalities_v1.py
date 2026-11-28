@@ -228,9 +228,18 @@ def find_heraldry_commons(municipality, *,getter=None):
         asset=assets.get(basename.replace(" ","_"))
         if not asset:continue
         desc=norm(asset.get("descriptionText"))
-        if not desc or not re.search(r"(stemma|wappen|coat of arms|armoiries|blason)",desc):
+        if not desc:continue
+        heraldic_proof=("stemma di "+town,"stemma del comune di "+town,
+          "stemma comune di "+town,"coat of arms of "+town,
+          "wappen von "+town,"wappen "+town,"blason de "+town,
+          town+" coat of arms",town+" stemma")
+        if not any(proof in desc for proof in heraldic_proof):continue
+        # Do not mistake the crest of a bishopric, a family or a
+        # historic building for the municipal administration's own.
+        if any(term in desc for term in (
+          "principato","vescovile","principality","bishopric",
+          "su una casa","on a house","stemma di famiglia","family arms")):
             continue
-        if not (" "+town+" ") in (" "+desc+" "):continue
         matched.append((basename,asset))
     return matched[:2]
 
