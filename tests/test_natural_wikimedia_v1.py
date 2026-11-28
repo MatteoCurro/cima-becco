@@ -209,6 +209,33 @@ class TestNaturalWikimedia(unittest.TestCase):
         self.assertEqual(e["quality"]["gate"],"G1")
         self.assertTrue(e["quality"]["elevationConflictReview"])
 
+    def test_reconcile_documented_article_altitude_before_seo(self):
+        def alternative(_url,_params):
+            d=wiki(_url,_params)
+            d["query"]["pages"]["55"]["extract"]=(
+                "Il Passo delle Prove è un valico alpino posto a quota "
+                "2.390 m s.l.m. Il valico si trova lungo un'antica via "
+                "di comunicazione attraverso le montagne, con sentieri "
+                "e testimonianze documentate del paesaggio alpino."
+            )
+            return d
+        doc,report=self.call(wiki_getter=alternative)
+        e=doc["entities"][0]
+        self.assertEqual(e["facts"]["elevationM"]["value"],2450)
+        self.assertEqual(e["factsAlternatives"][0]["key"],"elevationM")
+        self.assertEqual(e["factsAlternatives"][0]["fact"]["value"],2390)
+        self.assertEqual(e["factsAlternatives"][0]["fact"]["licence"],"CC BY-SA 4.0")
+        self.assertTrue(e["quality"]["wikiAltitudeDisagreementReview"])
+        self.assertTrue(e["quality"]["reviewRequired"])
+        self.assertEqual(e["quality"]["gate"],"G1")
+        self.assertEqual(report["heldReasons"]["article_altitude_difference_over_45m"],1)
+
+    def test_caption_does_not_misidentify_photo_of_a_nearby_facility(self):
+        doc,_=self.call()
+        caption=doc["entities"][0]["media"][0]["caption"]
+        self.assertEqual(caption,"Fotografia del valico")
+        self.assertNotIn("Fotografia documentata di Passo",caption)
+
     def test_invalid_crosswalk_fails_closed(self):
         row=mapped()
         row["links"][0]["identityMethod"]="same_name_nearest"
