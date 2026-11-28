@@ -19,7 +19,7 @@ import { routesBounds } from '../lib/routes';
 import { fetchCommunityRoutes } from '../lib/api';
 import { detectCountry } from '../lib/country';
 import { openMapWith } from '../lib/mapIntent';
-import { countrySummaries, notablePeakCountry, notablePeaks, peaksInView } from '../lib/worldPeaks';
+import { countrySummaries, notablePeakCountry, notablePeaks, peaksInView, searchGeoNamesPeaks } from '../lib/worldPeaks';
 import { loadAlpinePlaces, alpinePlaceLink, type AlpinePlace } from '../lib/alpinePlaces';
 import { normaliseQuery } from '../lib/streetTerms';
 import { useUnits } from './UnitsContext';
@@ -212,30 +212,32 @@ function matchPlaces(places: Place[], q: string): { exact: Place | null; prefix:
 /**
  * Search.
  *
- * Venue matching runs over every loaded venue on every keystroke — not just the
- * ones on screen. Searching only what was in view meant a country or a hill
- * somewhere else could never be found, and pressing Search left the camera
- * where it was. At ~18k venues a lowercase substring scan is a few
- * milliseconds, so there is no index and no debounce.
+ * Venue matching combines the current viewport, national highlights and
+ * lazy GeoNames name hits from all 24k raw records. Only the matching shortlist
+ * becomes Venue objects; full geographic tile data stays unloaded until
+ * the user chooses an area or a specific summit.
  */
 export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRouteOnMap, onFitBounds, onEmptySubmit, onLocate = locateNearMe }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [lookup, setLookup] = useState<Lookup>({ state: 'idle' });
   const [alpinePlaces, setAlpinePlaces] = useState<AlpinePlace[]>([]);
+  const [peakSearchHits, setPeakSearchHits] = useState<Venue[]>([]);
   const lookupIdRef = useRef(0);
   const rootRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const units = useUnits();
   const places = usePlaces();
   const notable = useNotablePeaks();
-  // What is loaded (on screen) plus the world's best-known summits, so a
-  // summit on another continent is found too.
+  // Source tiles stay lazy; when typing, a separate compact catalog adds
+  // matches across the entire five-country archive without loading map tiles.
   const pool = useMemo(() => {
-    if (notable.length === 0) return venues;
-    const loaded = new Set(venues.map((v) => v.slug));
-    return [...venues, ...notable.filter((v) => !loaded.has(v.slug))];
-  }, [venues, notable]);
+    const bySlug = new Map(venues.map(v => [v.slug, v] as const));
+    for (const venue of [...notable, ...peakSearchHits]) {
+      if (!bySlug.has(venue.slug)) bySlug.set(venue.slug, venue);
+    }
+    return [...bySlug.values()];
+  }, [venues, notable, peakSearchHits]);
   const loadedSlugs = useMemo(() => new Set(venues.map((v) => v.slug)), [venues]);
 
   // Lowercase, accent-free names once, not once per keystroke.
@@ -245,6 +247,16 @@ export function SearchBar({ venues, routes = [], onPick, onPickRoute = openRoute
   // Place names are matched on the plain query: street expansions would turn
   // "st" into "street" and miss "St Lucia".
   const plain = fold(query).trim().replace(/\s+/g, ' ');
+  useEffect(() => {
+    if (plain.length < 2) { setPeakSearchHits([]); return; }
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void searchGeoNamesPeaks(plain)
+        .then(found => { if (active) setPeakSearchHits(found); })
+        .catch(() => { if (active) setPeakSearchHits([]); });
+    }, 160);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [plain]);
   useEffect(() => {
     if (plain.length < 2 || alpinePlaces.length) return;
     let active=true;
