@@ -108,6 +108,7 @@ const alpinePlacesBeforeRural=mergeSettlementsForSeo(alpinePlacesBase,settlement
 const ruralEvidencePath=join(DATA,'atlas','alpine-structure-evidence-v1.json');
 const alpinePlaces=applyRuralStructureEvidence(alpinePlacesBeforeRural,
   existsSync(ruralEvidencePath)?readJson(ruralEvidencePath):null);
+const alpinePlaceBySlug=new Map(alpinePlaces.map(p=>[p.slug,p]));
 // Comuni G2, dataset semantico distinto dagli OSM borghi.
 const municipalityReleasePath=join(DATA,'atlas','municipalities-v1.json');
 const municipalityRelease=existsSync(municipalityReleasePath)?readJson(municipalityReleasePath):null;
@@ -567,7 +568,17 @@ for (const route of routes) {
     </dl>
     ${official ? `<p><a href="${escape(official)}" rel="noopener noreferrer" target="_blank">Consulta la scheda del gestore ↗</a></p>` : ''}
     ${passes.length ? `<h2>Cime e luoghi vicini</h2><ul class="list">${passes.map((v) => `<li><a href="${SITE}/place/${v.slug}/">${escape(v.name)}</a></li>`).join('')}</ul>` : ''}
-    ${route.stops?.length ? `<h2>Rifugi, bivacchi e paesi lungo il percorso</h2><p>Luoghi geograficamente vicini al GPX, non accessi garantiti.</p><ul class="list">${route.stops.slice(0,12).map(s=>`<li><a href="${SITE}/${s.kind==='rifugio'?'rifugi':s.kind==='bivacco'?'bivacchi':'borghi'}/${s.slug}/">${escape(s.name)}</a> · ${s.kind==='rifugio'?'Rifugio':s.kind==='bivacco'?'Bivacco':'Paese'}</li>`).join('')}</ul>` : ''}
+    ${route.stops?.length ? `<h2>Rifugi, bivacchi e paesi lungo il percorso</h2><p>Luoghi geograficamente vicini al GPX, non accessi garantiti.</p><ul class="list">${route.stops.slice(0,12).map(s=>{
+      const current=alpinePlaceBySlug.get(s.slug);
+      const currentKind=current?.kind||s.kind;
+      const typeLabel=current?.subtype==='rural_type_unverified'?'Malga / casera (tipologia in verifica)':
+        current?.subtype==='support_point'?'Malga e punto d’appoggio':
+        current?.shelterTypeLabel||(currentKind==='rifugio'?'Rifugio':currentKind==='bivacco'?'Bivacco':'Paese');
+      const permalink=current?SITE+atlasCanonicalPath(current):
+        SITE+'/'+(currentKind==='rifugio'?'rifugi':currentKind==='bivacco'?'bivacchi':'borghi')+
+        '/'+encodeURIComponent(s.slug)+'/';
+      return `<li><a href="${escape(permalink)}">${escape(s.name)}</a> · ${escape(typeLabel)}</li>`;
+    }).join('')}</ul>` : ''}
     ${route.activity === 'ferrata' ? '<p class="cima-seo-warning">Una ferrata richiede attrezzatura e competenze specifiche. Il GPX non rappresenta esposizione e difficoltà tecnica.</p>' : '<p class="cima-seo-warning">Traccia e dislivelli sono indicativi: verifica percorribilità e condizioni prima di partire.</p>'}
   </section>
 </article>`,
