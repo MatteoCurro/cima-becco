@@ -19,7 +19,8 @@ permissions:
   contents: read
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    # Playwright --with-deps non è ancora compatibile coi pacchetti Ubuntu 26.04 del runner latest.
+    runs-on: ubuntu-24.04
     timeout-minutes: 22
     steps:
       - uses: actions/checkout@v4
