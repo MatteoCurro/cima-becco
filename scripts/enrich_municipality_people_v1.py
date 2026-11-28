@@ -193,6 +193,10 @@ def enrich_profiles(profiles, details, *,getter=None, checked_at=None):
         except Exception as exc:failed.append("wikidata:"+str(exc)[:120])
     portrait_requests={}
     for qid,profile in profiles.items():
+        profile.setdefault("profileKind","biographical_person")
+        profile.setdefault("claim",{"status":"not_enabled","requiresVerification":True,
+                                    "verifiedUserId":None})
+        profile.setdefault("sourceIds",{"wikidata":qid})
         item=details.get(qid)
         if not item or item.get("missing"):continue
         if "Q5" not in wd_claim_targets(item,"P31"):continue
@@ -221,7 +225,7 @@ def enrich_profiles(profiles, details, *,getter=None, checked_at=None):
             if values:
                 profile[key]=values
                 profile.setdefault("facts",{})[key]={
-                    "value":values,"sourceId":"wikidata:"+qid+":"+prop,
+                    "value":values[0],"sourceId":"wikidata:"+qid+":"+prop,
                     "sourceUrl":wd_source,"licence":"CC0","retrievedAt":checked_at,
                     "method":"reported"}
         aliases=[]
@@ -290,7 +294,8 @@ def enrich_profiles(profiles, details, *,getter=None, checked_at=None):
         "profilesProcessed":len(profiles),
         "portraitCandidates":len(portrait_requests),
         "portraitsAdded":new_photos,
-        "profilesWithPortrait":sum(bool(p.get("media")) for p in profiles.values()),
+        "profilesWithPortrait":sum(any(m.get("kind")=="photo" and m.get("reuseAllowed") and
+            m.get("subjectVerified") for m in p.get("media",[])) for p in profiles.values()),
         "biographiesAdded":len(biographies),
         "profilesWithBiography":sum(bool(p.get("textSources")) for p in profiles.values()),
         "associationsObserved":sum(len(p.get("externalEntityLinks",[])) for p in profiles.values()),
@@ -352,6 +357,9 @@ def build(release,*,getter=None,previous_people=None,checked_at=None,batch=6,max
                 "roles":[],"relations":[],"quality":{"gate":"G1","seoIndexable":False},
                 "editorialStatus":"linked",
             }
+            # A refreshed Wikidata identity never erases the earlier verified
+            # picture, Wikipedia extract, or source links on transient errors.
+            identity={**previous.get(c["person"],{}),**identity}
             p=profiles.setdefault(c["person"],identity)
             if not any(r["occupationQid"]==c["occupation"] for r in p["roles"]):
                 p["roles"].append({"occupationQid":c["occupation"],"label":c["roleLabel"],
