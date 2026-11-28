@@ -1,0 +1,37 @@
+/* Cima: gerarchia editoriale condivisa con il dossier, senza nuove cards. */
+.cb-summit-section{padding-top:24px;min-width:0}
+.cb-summit-kicker{margin:0 0 7px!important;font:850 10px/1.3 'Space Grotesk',sans-serif!important;letter-spacing:.13em;color:#527c63}
+.cb-summit-section>h2{margin:0 0 12px;font:900 clamp(23px,2.8vw,34px)/1.08 'Bricolage Grotesque',sans-serif;letter-spacing:-.04em;color:#204632}
+.cb-summit-lead{margin:0 0 24px;color:#456354;font-size:14px;line-height:1.72;max-width:64ch}
+.cb-summit-status{padding:12px 0;color:#617969;font-size:13px}
+.cb-summit-route-group{margin:24px 0 30px;min-width:0}
+.cb-summit-route-group>h3{display:flex;align-items:baseline;gap:10px;margin:0;font:850 clamp(16px,1.8vw,20px)/1.2 'Bricolage Grotesque',sans-serif;color:#1d4531}
+.cb-summit-route-group>h3 span{font:650 12px/1.5 'Space Grotesk',sans-serif;color:#67836d}
+.cb-summit-group-note{margin:6px 0 12px;color:#6d8071;font-size:12px;line-height:1.6}
+.cb-summit-route-list,.cb-summit-support-list{border-top:1px solid #cfdccd}
+.cb-summit-route,.cb-summit-support-row{display:flex;justify-content:space-between;align-items:center;gap:16px;min-width:0;padding:15px 0;border-bottom:1px solid #dce5d8;background:transparent;text-decoration:none!important;color:#1c4632}
+.cb-summit-route:hover .cb-summit-route-main>strong,.cb-summit-support-row:hover .cb-summit-support-main>strong{color:#317a46;text-decoration:underline;text-underline-offset:3px}
+.cb-summit-route:focus-visible,.cb-summit-support-row:focus-visible{outline:2px solid #29774b;outline-offset:3px}
+.cb-summit-route-main,.cb-summit-support-main{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
+.cb-summit-route-main>strong,.cb-summit-support-main>strong{font:800 14px/1.4 'Space Grotesk',sans-serif;overflow-wrap:anywhere}
+.cb-summit-route-main>small,.cb-summit-support-main>small{font:500 11px/1.6 'Space Grotesk',sans-serif;color:#62786b}
+.cb-summit-route-extra,.cb-summit-support-extra{flex:0 1 165px;display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right}
+.cb-summit-route-extra>em{font:900 11px/1.35 'Space Grotesk',sans-serif;color:#245a3f;font-style:normal;letter-spacing:.045em}
+.cb-summit-route-extra>small,.cb-summit-support-extra>small{font-size:11px;line-height:1.45;color:#738477}
+.cb-summit-support-extra>strong{font:850 15px/1.3 'Space Grotesk',sans-serif;color:#24543c}
+.cb-summit-route--technical{border-left:3px solid #bb6a23;padding-left:11px}
+.cb-summit-technical-tag{font:900 9px/1.2 'Space Grotesk',sans-serif;letter-spacing:.07em;color:#915219}
+.cb-summit-method{font-size:11px;line-height:1.6;color:#7d8a7e;margin:18px 0 0}
+.cb-route-equipment-warning{padding:12px 16px;border-left:3px solid #b46126;background:#fff8ee;color:#5e421f;margin:10px 0 20px}
+.cb-route-equipment-warning>strong{font:900 11px/1.3 'Space Grotesk',sans-serif;letter-spacing:.07em}
+.cb-route-equipment-warning p{font-size:12px;line-height:1.65;margin:7px 0 0}
+.cb-route-effort-explanation{margin:9px 0 17px;padding:0 0 12px;border-bottom:1px solid #dce5d8}
+.cb-route-effort-explanation strong{font:800 12px/1.4 'Space Grotesk',sans-serif;color:#22543b}
+.cb-route-effort-explanation p{font-size:12px;line-height:1.7;color:#607567;margin:4px 0 0}
+/* Summit page only: editorial labels and whitespace, not stacked metric boxes. */
+.cb-venue-document.cb-is-summit .venue-detail-intro{border-bottom:1px solid #d9e3d7}
+.cb-venue-document.cb-is-summit .venue-detail-intro h2{font:900 clamp(30px,4vw,50px)/1 'Bricolage Grotesque',sans-serif;letter-spacing:-.055em}
+.cb-venue-document.cb-is-summit .venue-detail-section>h2{letter-spacing:-.035em}
+.cb-venue-document.cb-is-summit .venue-about-source{display:none}
+.cb-venue-document.cb-is-summit .cb-summit-overview-line{margin:6px 0 0;color:#67806d;font:600 12px/1.6 'Space Grotesque',sans-serif}
+@media(max-width:680px){.cb-summit-route,.cb-summit-support-row{gap:10px;align-items:flex-start}.cb-summit-route-extra,.cb-summit-support-extra{flex-basis:117px}.cb-summit-section>h2{font-size:26px}}
