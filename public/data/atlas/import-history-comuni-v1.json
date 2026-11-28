@@ -1399,6 +1399,82 @@
         "comuni": 5,
         "persone": 0
       }
+    },
+    {
+      "runId": "46139031581",
+      "pipeline": "comuni",
+      "status": "success",
+      "recordedAt": "2026-11-28T11:19:08.687Z",
+      "sourceSha": "b0cdeca2b5f9704d3d5cba2c50f68b148c8fe83a",
+      "sources": {
+        "comuni": {
+          "count": 317,
+          "facts": 10584,
+          "media": 379,
+          "relations": 466,
+          "coverage": {
+            "Quota documentata": 316,
+            "Altimetria del territorio": 317,
+            "Superficie": 317,
+            "Popolazione ISTAT datata": 0,
+            "Sindaco (DAIT)": 314,
+            "Sito istituzionale": 111,
+            "Foto attribuita": 317,
+            "Testo documentato": 317,
+            "Relazioni territoriali": 126,
+            "Stemma o logo verificato": 51,
+            "Stemma comunale": 50,
+            "Archivio fotografico storico datato": 8,
+            "Personaggi documentati": 124,
+            "Figure di montagna": 48
+          },
+          "denominator": 317
+        },
+        "persone": {
+          "count": 570,
+          "facts": 1893,
+          "media": 181,
+          "relations": 1169,
+          "coverage": {
+            "Con relazione documentata": 570,
+            "Fotografia verificata": 175,
+            "Biografia con QID verificato": 324,
+            "Data di nascita documentata": 560,
+            "Opere, eventi o associazioni": 189
+          },
+          "denominator": 570
+        }
+      },
+      "report": {
+        "newG2": 15,
+        "newMedia": 87,
+        "newWikiText": 15,
+        "publishedG2": 317,
+        "selectedCandidates": 80,
+        "municipalities": 7894,
+        "mayorsMatched": 7779,
+        "daitRowsOfficialCrosswalkRejected": 3,
+        "sourceAltimetryMatched": 317,
+        "metricsAdded": 30,
+        "municipalityPeopleLinks": 400,
+        "peopleCatalogued": 570,
+        "mountainLinks": 175,
+        "otherNotableLinks": 225,
+        "portraitsAdded": 4,
+        "imagesHeldForReview": 6,
+        "profilesWithPortrait": 175,
+        "biographiesAdded": 7,
+        "profilesWithBiography": 324,
+        "associationsObserved": 598,
+        "historicPhotosAdded": 4,
+        "historicCommunesCovered": 8,
+        "historicCandidatesChecked": 170,
+        "failuresCount": 8
+      },
+      "delta": {
+        "comuni": 15,
+        "persone": 9
+      }
     }
   ]
 }
