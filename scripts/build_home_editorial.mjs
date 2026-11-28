@@ -156,6 +156,10 @@ function closest(kind,route,maxKm,except=new Set()) {
       a.km-b.km || a.item.slug.localeCompare(b.item.slug))[0] || null;
 }
 const featured=read(join(DIST,'data','featured-routes.json'))?.routes || [];
+const baseRoutes=read(join(DATA,'routes.json'))?.routes || [];
+// Both sets already have SEO permalinks: widen the editorial geographic pool
+// without loading a single new GPX shard in the browser.
+const candidateRoutes=[...new Map([...featured,...baseRoutes].map(r=>[r.slug,r])).values()];
 const territories=[];
 for (const r of featured) {
   if (r.source !== 'curated' || r.held || r.rejected ||
