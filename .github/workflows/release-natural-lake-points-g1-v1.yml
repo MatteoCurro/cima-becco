@@ -1,0 +1,260 @@
+name: Release G1 lake point profiles and verified Wikimedia media
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/publish_natural_lake_points_g1_v1.py
+      - tests/test_publish_natural_lake_points_g1_v1.py
+      - src/lib/naturalLakePointsG1.ts
+      - src/lib/naturalLakePointsG1.test.ts
+      - src/components/NaturalLakePage.tsx
+      - src/components/AlpineAtlasMap.tsx
+      - src/App.tsx
+      - scripts/build_seo.mjs
+      - scripts/build_source_credits.mjs
+      - tests/lake-identified-g1.spec.ts
+      - .github/workflows/release-natural-lake-points-g1-v1.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/publish_natural_lake_points_g1_v1.py
+      - src/lib/naturalLakePointsG1.ts
+      - src/components/NaturalLakePage.tsx
+      - .github/workflows/release-natural-lake-points-g1-v1.yml
+  schedule:
+    # Identities and stable points come from versioned source snapshots.
+    # Wikimedia may be refreshed weekly, independently of G2 geometry.
+    - cron: '10 7 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: cima-natural-lake-point-g1-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Offline G1 identity, geom, photo provenance and noindex safeguards
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_publish_natural_lake_points_g1_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_natural_lakes_wikimedia_v1.py' -v
+          python -m unittest discover -s tests -p 'test_publish_natural_lakes_v1.py' -v
+      - name: Recover source-exact point and Wikimedia staging from permanent cache or original audit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/g1-source
+          if test -s data/snapshots/natural-lake-geonames-point-g1.json &&
+             test -s data/snapshots/natural-lake-wikimedia-point-g1.json; then
+            cp data/snapshots/natural-lake-geonames-point-g1.json build/g1-source/gn.json
+            cp data/snapshots/natural-lake-wikimedia-point-g1.json build/g1-source/enriched.json
+            echo 'Reused versioned GeoNames and Commons P18 source snapshots'
+          else
+            gh run download 46121844323 --repo ${{ github.repository }} \
+              -n cima-becco-natural-wikidata-g2-staging -D build/g1-original
+            cp build/g1-original/import-natural-features-v1/features-geonames.json build/g1-source/gn.json
+            cp build/g1-original/import-natural-features-v1/natural-enriched.json build/g1-source/enriched.json
+            echo 'Original source-audited G1/Commons snapshot recovered before artifact expiry'
+          fi
+      - name: Generate point-first lake profiles and audit exact live published G2 exclusions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/publish_natural_lake_points_g1_v1.py \
+            --geonames build/g1-source/gn.json \
+            --identity data/snapshots/natural-lake-identity-v1.json \
+            --geometry data/snapshots/natural-lake-geometry-g1.json \
+            --enriched build/g1-source/enriched.json \
+            --out public/data/atlas/natural-lake-points-g1-v1.json \
+            --source-cache build/g1-source/staged-lakes-only.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('public/data/atlas/natural-lake-points-g1-v1.json').read_text())
+          c=d['counts']
+          assert d['releaseChannel']=='NATURAL_LAKE_IDENTIFIED_PROFILES_G1_V1'
+          assert d['seoIndexable'] is False and d['noindexFollow'] is True
+          assert d['crossSourceWfsMerges']==0 and d['g2Duplicated']==0
+          assert d['sourceG1Candidates']==13
+          assert c['profiles']>=10 and c['pointOnly']>=7 and c['withVerifiedP18']>=3
+          assert c['pointOnly']+c['withOsmGeometry']==c['profiles']
+          assert c['withVerifiedItwiki']>=8
+          assert not any(p['geo']['area'] and p['quality']['needsAreaGeometryReview']
+                         for p in d['entities'])
+          assert not any(p['geo']['area'] is None and p['facts'].get('osmMappedWaterSurfaceKm2')
+                         for p in d['entities'])
+          print('G1_POINT_LAKES',c)
+          PY
+      - name: Build the shared UI; verify both SEO and noindex with licensed photos
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
+          node - <<'JS'
+          const fs=require('node:fs');
+          const dir='dist/laghi/identificati/';
+          const d=JSON.parse(fs.readFileSync('dist/data/atlas/natural-lake-points-g1-v1.json','utf8'));
+          const g2=JSON.parse(fs.readFileSync('dist/data/atlas/natural-lakes-v1.json','utf8'));
+          const credits=JSON.parse(fs.readFileSync('dist/data/atlas/credits-v1.json','utf8'));
+          const sitemap=fs.readFileSync('dist/sitemap.xml','utf8');
+          if(sitemap.includes('/laghi/identificati/'))throw Error('G1 leaked into SEO sitemap');
+          if(g2.entities.length<2||!g2.entities.some(e=>e.slug==='lago-sorapis'))
+            throw Error('Previously verified G2 lake dossier lost');
+          for(const e of d.entities){
+            if(g2.entities.some(x=>x.sourceIds?.wikidata===e.sourceIds.wikidata))
+              throw Error('Duplicate QID across G1/G2');
+            const path=dir+e.slug+'/index.html';
+            if(!fs.existsSync(path))throw Error('Missing G1 HTML: '+path);
+            const html=fs.readFileSync(path,'utf8');
+            if(!html.includes('name="robots" content="noindex,follow"')||
+               !html.includes('WebPage')||html.includes('LakeBodyOfWater'))
+              throw Error('G1 noindex/schema gate not met: '+e.slug);
+          }
+          if(credits.photoCredits.filter(e=>e.kind==='natural_lake_g1').length<3)
+            throw Error('Licensed G1 Commons photos absent from central registry');
+          if(credits.textCredits.filter(e=>e.kind==='natural_lake_g1').length<8)
+            throw Error('Sourced G1 Wikipedia extracts absent from central registry');
+          console.log('G1=point/verified media, G2=canonical SEO, all source photos credited');
+          JS
+      - name: Point-only lake layouts and map navigation on desktop/mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx playwright install --with-deps chromium webkit
+          npx playwright test tests/lake-identified-g1.spec.ts --project=chromium --project=webkit
+      - name: Keep failing G1 browser traces for audit
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g1-lake-point-browser-review
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+  publish:
+    needs: contract
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 26
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reuse source identity/photos, bootstrap only if not yet cached
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/g1-source
+          if test -s data/snapshots/natural-lake-geonames-point-g1.json &&
+             test -s data/snapshots/natural-lake-wikimedia-point-g1.json; then
+            cp data/snapshots/natural-lake-geonames-point-g1.json build/g1-source/gn.json
+            cp data/snapshots/natural-lake-wikimedia-point-g1.json build/g1-source/enriched.json
+          else
+            gh run download 46121844323 --repo ${{ github.repository }} \
+              -n cima-becco-natural-wikidata-g2-staging -D build/g1-original
+            cp build/g1-original/import-natural-features-v1/features-geonames.json build/g1-source/gn.json
+            cp build/g1-original/import-natural-features-v1/natural-enriched.json build/g1-source/enriched.json
+          fi
+      - name: Refresh QID-specific Wikimedia sources when official data is accessible
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if python scripts/enrich_natural_wikimedia_v1.py \
+              --geonames-stage build/g1-source/gn.json \
+              --crosswalk data/snapshots/natural-lake-identity-v1.json \
+              --max-items 240 \
+              --out build/g1-source/enriched-live.json \
+              --report build/g1-source/live-report.json; then
+            python - <<'PY'
+          import json,shutil
+          from pathlib import Path
+          src=Path('build/g1-source/enriched.json')
+          current=json.loads(src.read_text())
+          latest=json.loads(Path('build/g1-source/enriched-live.json').read_text())
+          def links(d):
+              return {e['sourceIds'].get('geonames'):e['sourceIds'].get('wikidata')
+                      for e in d['entities'] if e.get('subtype')=='lake'}
+          def media_count(d):
+              return sum(bool(e.get('media')) for e in d['entities'] if e.get('subtype')=='lake')
+          def text_count(d):
+              return sum(bool(e.get('textSources')) for e in d['entities'] if e.get('subtype')=='lake')
+          if (links(latest)==links(current) and
+                media_count(latest)>=media_count(current) and
+                text_count(latest)>=text_count(current)):
+              shutil.copyfile('build/g1-source/enriched-live.json',src)
+              print('Verified G1 Commons/Wikipedia refreshed; same 13 QIDs and no evidence lost')
+          else:
+              print('Live Wikimedia incomplete/conflicting; keep last verified timestamped evidence')
+          PY
+          else
+            echo 'Wikimedia refresh unavailable; preserving exact archived verification'
+          fi
+      - name: Persist source caches and G1 data with main fast-forward only
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3 4 5 6 7 8; do
+            git fetch origin main
+            git reset --hard origin/main
+            python scripts/publish_natural_lake_points_g1_v1.py \
+              --geonames build/g1-source/gn.json \
+              --identity data/snapshots/natural-lake-identity-v1.json \
+              --geometry data/snapshots/natural-lake-geometry-g1.json \
+              --enriched build/g1-source/enriched.json \
+              --g2 public/data/atlas/natural-lakes-v1.json \
+              --out public/data/atlas/natural-lake-points-g1-v1.json \
+              --source-cache data/snapshots/natural-lake-geonames-point-g1.json \
+              --enriched-cache data/snapshots/natural-lake-wikimedia-point-g1.json
+            git add public/data/atlas/natural-lake-points-g1-v1.json \
+              data/snapshots/natural-lake-geonames-point-g1.json \
+              data/snapshots/natural-lake-wikimedia-point-g1.json
+            if git diff --cached --quiet; then
+              echo 'No new G1 source or Wikimedia content'
+              exit 0
+            fi
+            git commit -m 'data(laghi): G1 geolocated profiles, QID-licensed media and source cache'
+            if git push origin HEAD:main; then
+              echo 'G1_LAKE_RELEASE_COMMITTED=true' >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "Main changed concurrently: retry exact source-to-current-G2 exclusion ($attempt)"
+            sleep "$((attempt*2))"
+          done
+          echo 'Source-only G1 publish held after concurrent repo updates' >&2
+          exit 1
+      - name: Trigger Pages after committed point-only lake profiles
+        if: env.G1_LAKE_RELEASE_COMMITTED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref main

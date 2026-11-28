@@ -92,6 +92,7 @@ export type TrackedEvent =
   | 'atlas_pass_view'
   | 'atlas_lake_view'
   | 'atlas_lake_source_preview'
+  | 'atlas_lake_identified_view'
   | 'atlas_place_search'
   | 'hut_claim_request'
   | 'water_source_open';
@@ -105,7 +106,7 @@ export interface LocalInsightEvent {
 }
 const LOCAL_KEY='cimabecco:insights:v1';
 const INTERESTING = new Set<TrackedEvent>([
-  'search','route_open','gpx_download','route_bookmarked','atlas_place_view','atlas_pass_view','atlas_lake_view','atlas_lake_source_preview',
+  'search','route_open','gpx_download','route_bookmarked','atlas_place_view','atlas_pass_view','atlas_lake_view','atlas_lake_source_preview','atlas_lake_identified_view',
   'atlas_place_search','hut_claim_request','water_source_open',
 ]);
 export function localInsights():LocalInsightEvent[]{
