@@ -31,25 +31,29 @@ function PersonCards({people,title}:{people:AtlasPersonConnection[];title:string
   if(!people.length)return null;
   return <div className="cb-municipality-people-group">
     <h3>{title} <span>{people.length}</span></h3>
-    <div className="cb-person-grid">{people.map(person=><article
-      className="cb-person-card" key={person.personId+':'+person.relationType}>
-      <div className="cb-person-card-top">
-        <span>{person.category==='montagna'?'ALPINISMO E MONTAGNA':'CULTURA E RICERCA'}</span>
-        <span>{person.relationType==='birthplace_of'?'NATA/O QUI':
-          person.relationType==='historical_residence_of'?'RESIDENZA STORICA':'ATTIVITÀ DOCUMENTATA'}</span>
-      </div>
-      {person.portrait?.url&&person.portrait.portraitCandidate&&person.portrait.subjectVerified&&
-        person.portrait.reuseAllowed&&<img className="cb-person-portrait" src={person.portrait.url}
-          alt={'Immagine attribuita a '+person.name} loading="lazy" decoding="async"/>}
-      <h4>{person.name}</h4>
-      <p className="cb-person-role">{person.role}</p>
-      {(person.birthDate||person.deathDate)&&<p className="cb-person-dates">
-        {person.birthDate?.slice(0,4)||'—'}{person.deathDate?' – '+person.deathDate.slice(0,4):''}
-      </p>}
-      {(person.biography||person.description)&&<p>{(person.biography||person.description)?.slice(0,320)}</p>}
-      {person.wikipediaUrl?.startsWith('https://')&&<a href={person.wikipediaUrl}
-        target="_blank" rel="noopener noreferrer">Approfondimento biografico ↗</a>}
-    </article>)}</div>
+    <div className="cb-person-grid">{people.map(person=>{
+      const portrait=person.portrait?.url&&person.portrait.portraitCandidate&&
+        person.portrait.subjectVerified&&person.portrait.reuseAllowed?person.portrait.url:null;
+      return <article className={'cb-person-card'+(portrait?' has-portrait':'')}
+        key={person.personId+':'+person.relationType}>
+        {portrait&&<img className="cb-person-portrait" src={portrait}
+          alt={'Ritratto di '+person.name} loading="lazy" decoding="async"/>}
+        <div className="cb-municipality-person-copy">
+          <div className="cb-person-card-top">
+            <span>{person.relationType==='birthplace_of'?'NATO/A QUI':
+              person.relationType==='historical_residence_of'?'HA VISSUTO QUI':'HA OPERATO QUI'}</span>
+          </div>
+          <h4>{person.name}</h4>
+          <p className="cb-person-role">{person.role}</p>
+          {(person.birthDate||person.deathDate)&&<p className="cb-person-dates">
+            {person.birthDate?.slice(0,4)||'—'}{person.deathDate?' – '+person.deathDate.slice(0,4):''}
+          </p>}
+          {(person.biography||person.description)&&<p>{(person.biography||person.description)?.slice(0,320)}</p>}
+          {person.wikipediaUrl?.startsWith('https://')&&<a href={person.wikipediaUrl}
+            target="_blank" rel="noopener noreferrer">Leggi la biografia ↗</a>}
+        </div>
+      </article>;
+    })}</div>
   </div>;
 }
 export function MunicipalityProfile({place,routeGroups,loadingRoutes,nearbyPlaces,water,
@@ -82,34 +86,34 @@ export function MunicipalityProfile({place,routeGroups,loadingRoutes,nearbyPlace
   const territoryRows=[
     ...(region?[{label:'Regione',value:region}]:[]),
     ...(province?[{label:'Provincia',value:province}]:[]),
-    ...(centre!==null?[{label:'Quota del centro abitato (fonte dichiarata)',value:centre.toLocaleString('it-IT')+' m'}]:[]),
-    ...(reported!==null?[{label:'Quota riportata da Wikidata',value:reported.toLocaleString('it-IT')+' m'}]:[]),
-    ...(minimum!==null?[{label:'Quota minima del territorio (DEM 2021)',value:minimum.toLocaleString('it-IT')+' m'}]:[]),
-    ...(average!==null?[{label:'Quota media del territorio (DEM 2021)',value:average.toLocaleString('it-IT')+' m'}]:[]),
-    ...(maximum!==null?[{label:'Quota massima del territorio (DEM 2021)',value:maximum.toLocaleString('it-IT')+' m'}]:[]),
-    ...(surface!==null?[{label:'Superficie comunale',value:surface.toLocaleString('it-IT',{maximumFractionDigits:2})+' km²'}]:[]),
+    ...(centre!==null?[{label:'Altitudine del centro',value:centre.toLocaleString('it-IT')+' m'}]:[]),
+    ...(reported!==null?[{label:'Altitudine (Wikidata)',value:reported.toLocaleString('it-IT')+' m'}]:[]),
+    ...(minimum!==null?[{label:'Quota minima del territorio',value:minimum.toLocaleString('it-IT')+' m'}]:[]),
+    ...(average!==null?[{label:'Quota media del territorio',value:average.toLocaleString('it-IT')+' m'}]:[]),
+    ...(maximum!==null?[{label:'Quota massima del territorio',value:maximum.toLocaleString('it-IT')+' m'}]:[]),
+    ...(surface!==null?[{label:'Superficie',value:surface.toLocaleString('it-IT',{maximumFractionDigits:2})+' km²'}]:[]),
     ...(population!==null&&populationReference?[{label:'Popolazione ('+populationReference+')',
       value:population.toLocaleString('it-IT')}]:[]),
   ];
   const hasRoutes=Object.values(routeGroups).some(group=>group.length);
   const hasRelations=Boolean(place.relations?.some(r=>r.target?.kind!=='person'&&r.target?.name));
   const synopsis=place.description?.trim()||place.shortSummary?.trim()||
-    place.name+' è un comune delle Alpi italiane. Esplora il territorio e le relazioni documentate.';
+    place.name+' è un comune delle Alpi italiane. Tra cime e sentieri da scoprire.';
 
   return <div className="cb-municipality-profile">
     <header className="cb-location-hero cb-municipality-hero">
       <div className="cb-location-hero-copy">
-        <span className="cb-municipality-eyebrow"><AlpinePlaceIcon kind="borgo" size={16}/> COMUNE ITALIANO
+        <span className="cb-municipality-eyebrow"><AlpinePlaceIcon kind="borgo" size={16}/> PAESE DI MONTAGNA
           {province?' · '+province:''}</span>
         <h1>{place.name}</h1>
         {aliases.length>0&&<p className="cb-municipality-aliases">
-          Conosciuto anche come <strong>{aliases.map(a=>a.value).join(' · ')}</strong>
+          Anche <strong>{aliases.map(a=>a.value).join(' · ')}</strong>
         </p>}
         <p className="cb-municipality-intro">{synopsis}</p>
         <AtlasDossierBlocks record={place} placement="alerts"/>
         <DetailMetrics label="Il comune in sintesi" items={[
-          ...(centre!==null?[{label:'Quota del centro',value:centre.toLocaleString('it-IT')+' m'}]:
-            reported!==null?[{label:'Quota riportata',value:reported.toLocaleString('it-IT')+' m'}]:[]),
+          ...(centre!==null?[{label:'Altitudine del centro',value:centre.toLocaleString('it-IT')+' m'}]:
+            reported!==null?[{label:'Altitudine',value:reported.toLocaleString('it-IT')+' m'}]:[]),
           ...(surface!==null?[{label:'Superficie',value:surface.toLocaleString('it-IT',{maximumFractionDigits:1})+' km²'}]:[]),
           ...(maximum!==null?[{label:'Quota massima del territorio',value:maximum.toLocaleString('it-IT')+' m'}]:[]),
           ...(population!==null&&populationReference?[{label:'Residenti ('+populationReference+')',value:population.toLocaleString('it-IT')}]:[]),
@@ -144,24 +148,24 @@ export function MunicipalityProfile({place,routeGroups,loadingRoutes,nearbyPlace
     ]}/>
 
     <section id="cb-municipality-territory" className="cb-detail-group cb-detail-group--first cb-location-section cb-municipality-territory">
-      <DetailSectionHeading kicker="01 / GEOGRAFIA" title="Il territorio in cifre"
-        description="La quota del centro e le quote minime e massime del territorio comunale sono misure distinte."/>
+      <DetailSectionHeading kicker="01 / GEOGRAFIA" title="Il territorio"
+        />
       {minimum!==null&&maximum!==null&&<div className="cb-municipality-altitude">
-        <div><span>MINIMO TERRITORIALE</span><strong>{minimum.toLocaleString('it-IT')} <small>m</small></strong></div>
-        <div className="cb-municipality-altitude-track" aria-hidden="true"><span/></div>
-        <div><span>MASSIMO TERRITORIALE</span><strong>{maximum.toLocaleString('it-IT')} <small>m</small></strong></div>
+        <div><span>DA</span><strong>{minimum.toLocaleString('it-IT')} <small>m</small></strong></div>
+        <div className="cb-municipality-altitude-track" aria-hidden="true"/>
+        <div><span>A</span><strong>{maximum.toLocaleString('it-IT')} <small>m</small></strong></div>
+        <p className="cb-municipality-altitude-caption">Dal punto più basso a quello più alto del territorio.</p>
       </div>}
       <DetailFacts rows={territoryRows}/>
       {(minimum!==null||maximum!==null||average!==null)&&
-        <p className="cb-municipality-data-note">Le quote territoriali derivano da un modello altimetrico con riferimento 2021: non rappresentano le altitudini del municipio o del centro abitato.</p>}
+        <p className="cb-municipality-data-note">Quote territoriali dal modello altimetrico 2021, distinte dall'altitudine del centro abitato.</p>}
     </section>
     {hasAdministration&&<section id="cb-municipality-admin" className="cb-detail-group cb-location-section">
-      <DetailSectionHeading kicker="02 / AMMINISTRAZIONE" title="Il Comune"
-        description="Dati istituzionali documentati; le cariche e gli incarichi non sono aggiornamenti in tempo reale."/>
+      <DetailSectionHeading kicker="02 / VITA DEL PAESE" title="Il Comune"/>
       <div className="cb-municipality-administration">
         {mayor&&<div className="cb-municipality-mayor">
-          <span>{t('carica')||'Sindaco'} riportato dal DAIT</span><strong>{mayor}</strong>
-          {mandate&&<small>Incarico dal {municipalityDisplayDate(mandate)}</small>}
+          <span>{t('carica')||'Sindaco'}</span><strong>{mayor}</strong>
+          {mandate&&<small>Dal {municipalityDisplayDate(mandate)}</small>}
         </div>}
         <DetailFacts rows={[
           ...(election?[{label:'Data dell’elezione',value:municipalityDisplayDate(election)||election}]:[]),
@@ -173,14 +177,14 @@ export function MunicipalityProfile({place,routeGroups,loadingRoutes,nearbyPlace
       </div>
     </section>}
     {people.length>0&&<section id="cb-municipality-people" className="cb-detail-group cb-location-section">
-      <DetailSectionHeading kicker="03 / PERSONE E MEMORIA" title="Vite legate alla montagna"
-        description="Sono distinti il luogo di nascita, la residenza storica e l’attività documentata. Nessun legame è dedotto dalla sola vicinanza."/>
+      <DetailSectionHeading kicker="03 / STORIE DI PERSONE" title="Chi ha lasciato il segno"
+        description="Nati qui, vissuti qui o protagonisti di queste montagne: ogni legame ha la sua storia."/>
       <PersonCards people={mountainPeople} title="Alpinismo e montagna"/>
       <PersonCards people={culturalPeople} title="Altre figure del territorio"/>
     </section>}
     <section id="cb-place-itineraries" className="cb-detail-group cb-location-section cb-location-itineraries">
       <DetailSectionHeading kicker="04 / DA QUI ALLA MONTAGNA" title="Sentieri e itinerari"
-        description="I collegamenti geometrici indicano vicinanza alle tracce, non necessariamente un accesso percorribile."/>
+        description="Percorsi nei dintorni, da esplorare sulla mappa."/>
       {loadingRoutes?<p className="cb-atlas-loading">Recupero i percorsi cartografati…</p>:<>
         <AtlasRouteGroup title="Partono da qui" items={routeGroups.departures}/>
         <AtlasRouteGroup title="Arrivano qui" items={routeGroups.arrivals}/>
@@ -190,14 +194,14 @@ export function MunicipalityProfile({place,routeGroups,loadingRoutes,nearbyPlace
       </>}
     </section>
     {(nearbyPlaces.length>0||hasRelations)&&<section id="cb-municipality-nearby" className="cb-detail-group cb-location-section">
-      <DetailSectionHeading kicker="05 / ATLANTE RELAZIONALE" title="Luoghi e collegamenti"
-        description="Rifugi, bivacchi e località vicini o con una relazione documentata; la distanza in linea d'aria non descrive un itinerario."/>
-      <NearbyAtlasPlaces items={nearbyPlaces}/>
+      <DetailSectionHeading kicker="05 / INTORNO AL PAESE" title="Luoghi da scoprire"
+        description="Rifugi, bivacchi e località vicini. Le distanze sono in linea d'aria."/>
+      <NearbyAtlasPlaces items={nearbyPlaces} embedded/>
       <AtlasDossierBlocks record={place} placement="connections"/>
     </section>}
     {water.length>0&&<section id="cb-place-water" className="cb-detail-group cb-location-section">
-      <DetailSectionHeading kicker="06 / RISORSE CARTOGRAFATE" title="Punti acqua nei dintorni"
-        description="Fontanelle, sorgenti e rubinetti entro circa 1,8 km, identificati sulla mappa dallo stesso numero."/>
+      <DetailSectionHeading kicker="06 / LUNGO LA STRADA" title="Dove trovare acqua"
+        description="Fontanelle, sorgenti e rubinetti entro circa 1,8 km, numerati come sulla mappa."/>
       <WaterNearbyList points={water} selectedSlug={selectedWaterSlug} onSelect={onWaterSelect}/>
     </section>}
     <section id="cb-place-weather" className="cb-detail-group cb-location-section">
@@ -218,6 +222,6 @@ export function MunicipalityProfile({place,routeGroups,loadingRoutes,nearbyPlace
       </details>
     </section>}
     <AtlasDossierBlocks record={{...place,media:[]}} placement="media"/>
-    <footer className="cb-location-credits">Dati e immagini conservano provenienza e aggiornamenti nel registro centralizzato delle fonti.</footer>
+    <footer className="cb-location-credits">Un atlante in evoluzione. <a href="/fonti-e-crediti/">Fonti e crediti</a>.</footer>
   </div>;
 }
