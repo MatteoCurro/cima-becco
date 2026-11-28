@@ -1,5 +1,6 @@
 import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
 import { mergeSheltersForSeo } from './merge_shelters_for_seo.mjs';
+import { applyRuralStructureEvidence } from '../src/lib/ruralStructureEvidence.js';
 import { canonicalAtlasSlug, atlasCanonicalPath } from '../src/lib/placePermalinks.js';
 /** Verifica prerender SEO + hydration delle URL profonde sulla build reale. */
 import {readFileSync,readdirSync,existsSync} from 'node:fs';
@@ -38,13 +39,16 @@ if(!sitemap.includes('<loc>'+canonical+'/</loc>'))throw Error('Sitemap non usa i
 if(!robots.includes('Sitemap: '+canonical+'/sitemap.xml'))throw Error('Robots non usa la sitemap principale');
 console.log('OK: dominio canonico, base Vite, sitemap e robots');
 
-const alpine=mergeSheltersForSeo(mergeRefugesForSeo(
+const alpineBase=mergeSheltersForSeo(mergeRefugesForSeo(
   JSON.parse(readFileSync(join(dist,'data','alpine-places.json'),'utf8')).places,
   existsSync(join(dist,'data','atlas','refuges-v1.json')) ?
     JSON.parse(readFileSync(join(dist,'data','atlas','refuges-v1.json'),'utf8')) : null
 ), existsSync(join(dist,'data','atlas','shelters-v1.json')) ?
     JSON.parse(readFileSync(join(dist,'data','atlas','shelters-v1.json'),'utf8')) : null
 );
+const evidencePath=join(dist,'data','atlas','alpine-structure-evidence-v1.json');
+const evidence=existsSync(evidencePath)?JSON.parse(readFileSync(evidencePath,'utf8')):null;
+const alpine=applyRuralStructureEvidence(alpineBase,evidence);
 const settlementsPath=join(dist,'data','atlas','settlements-v1.json');
 const settlementRelease=existsSync(settlementsPath)?
   JSON.parse(readFileSync(settlementsPath,'utf8')):null;
@@ -76,6 +80,34 @@ for(const place of alpine){
     const html=readFileSync(legacy,'utf8');
     if(!html.includes('http-equiv="refresh"')||!html.includes('noindex,follow'))
       throw Error('Permalink storico senza redirect e noindex: '+section+'/'+place.slug);
+  }
+}
+// Check previous wrong-category URLs and allow G1 rural support points to
+// remain present but explicitly noindex until stronger evidence is acquired.
+if(evidence?.releaseChannel==='VERIFIED_RURAL_STRUCTURE_TYPES'){
+  for(const record of evidence.entries||[]){
+    if(record.sourceIds?.osm){
+      const item=alpine.find(p=>p.sourceIds?.osm===record.sourceIds.osm||
+        p.osmUrl==='https://www.openstreetmap.org/'+record.sourceIds.osm);
+      if(!item)throw Error('Casera verified but absent from atlas: '+record.name);
+      if(item.kind!=='bivacco')throw Error('Casera still shown as refuge: '+item.name);
+      const newPath=atlasCanonicalPath(item);
+      const oldItem={...item,kind:'rifugio'};
+      for(const oldPath of [atlasCanonicalPath(oldItem),'/rifugi/'+item.slug+'/']){
+        const file=join(dist,oldPath.slice(1),'index.html');
+        if(!existsSync(file))throw Error('Missing former refuge redirect '+oldPath);
+        const html=readFileSync(file,'utf8');
+        if(!html.includes('noindex,follow')||!html.includes(newPath))
+          throw Error('Former refuge URL lacks safe canonical redirect '+oldPath);
+      }
+    }else if(record.sourceIds?.official){
+      const item=alpine.find(p=>p.sourceIds?.official===record.sourceIds.official);
+      if(!item||item.kind!=='bivacco'||item.subtype!=='support_point')
+        throw Error('Rural support point missing '+record.name);
+      const file=join(dist,'bivacchi',item.slug,'index.html');
+      if(!existsSync(file)||!readFileSync(file,'utf8').includes('noindex,follow'))
+        throw Error('G1 rural support must stay accessible but noindex '+item.name);
+    }
   }
 }
 const example=join(dist,'borghi','osm-n-240044790','index.html');

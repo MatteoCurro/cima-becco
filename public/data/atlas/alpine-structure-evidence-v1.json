@@ -1,0 +1,117 @@
+{
+  "schemaVersion": "1.0",
+  "releaseChannel": "VERIFIED_RURAL_STRUCTURE_TYPES",
+  "policy": "Evidence-based identity overrides; neither name nor OSM alpine_hut alone proves routine overnight lodging",
+  "checkedAt": "2026-11-28",
+  "entries": [
+    {
+      "sourceIds": {
+        "osm": "way/175876228"
+      },
+      "name": "Malga Casera Campigàt",
+      "kind": "bivacco",
+      "subtype": "alpine_casera_shelter",
+      "shelterTypeLabel": "Casera · ricovero alpino non custodito",
+      "officialUrl": "https://www.agordinodolomiti.it/it_IT/esperienze/cosa-vedere/rifugi-malghe-e-casere-in-agordino/casere-e-bivacchi-in-agordino/casera-campigat-agordino-dolomiti/",
+      "classificationSource": "https://www.agordinodolomiti.it/it_IT/esperienze/cosa-vedere/rifugi-malghe-e-casere-in-agordino/casere-e-bivacchi-in-agordino/casera-campigat-agordino-dolomiti/",
+      "classificationNote": "Ricovero alpino pubblico, non rifugio gestito; fonte territoriale descrive cucina e possibilità di dormire, senza certificare disponibilità attuale.",
+      "aliases": [
+        {
+          "value": "Casera Campigat"
+        }
+      ],
+      "previousKind": "rifugio"
+    },
+    {
+      "sourceIds": {
+        "osm": "way/199050050"
+      },
+      "name": "Malga Valbona",
+      "kind": "bivacco",
+      "subtype": "alpine_casera_shelter",
+      "shelterTypeLabel": "Casera · riparo alpino",
+      "officialUrl": "https://www.agordinodolomiti.it/it_IT/esperienze/cosa-vedere/rifugi-malghe-e-casere-in-agordino/casere-e-bivacchi-in-agordino/el-teaz-e-casera-valbona-agordino-dolomiti/",
+      "classificationSource": "https://www.agordinodolomiti.it/it_IT/esperienze/cosa-vedere/rifugi-malghe-e-casere-in-agordino/casere-e-bivacchi-in-agordino/el-teaz-e-casera-valbona-agordino-dolomiti/",
+      "classificationNote": "Storico riparo alpino; ex Malga Valbona, non più utilizzata per alpeggio.",
+      "aliases": [
+        {
+          "value": "Casera Valbona"
+        },
+        {
+          "value": "Ex Malga Valbona",
+          "historical": true
+        }
+      ],
+      "previousKind": "rifugio"
+    },
+    {
+      "id": "official:falcade:bosch-brusa",
+      "slug": "malga-bosch-brusa",
+      "name": "Malga Bosch Brusà",
+      "kind": "bivacco",
+      "subtype": "support_point",
+      "shelterTypeLabel": "Malga con ristoro · punto d'appoggio",
+      "lat": 46.387611,
+      "lng": 11.85525,
+      "elevationM": 1867,
+      "elevationSource": "official",
+      "officialUrl": "https://www.falcadedolomiti.it/malga/malga-bosch-brusa/",
+      "website": "https://www.falcadedolomiti.it/malga/malga-bosch-brusa/",
+      "osmUrl": "https://www.openstreetmap.org/#map=15/46.387611/11.855250",
+      "description": "Malga comunale di Falcade sulle pendici del Sas de la Palaza, raggiungibile da Sappade lungo il sentiero 631. Attività tradizionale d'alpeggio e punto di ristoro stagionale; eventuale ricovero soltanto di emergenza, non pernottamento turistico. L'operatività attuale richiede conferma del gestore.",
+      "classificationSource": "https://www.visitsantomaso.it/altavia-dei-pastori-2/",
+      "coordinateSource": "https://www.magicoveneto.it/trekking/infoRifugiMini.asp?xSezione=Marmolada",
+      "elevationSourceUrl": "https://www.falcadedolomiti.it/malga/malga-bosch-brusa/",
+      "classificationNote": "Fonti distinguono ristoro estivo da pernottamento ordinario; documentato solo ricovero di emergenza. Una fonte storica segnala chiusura per ristrutturazione: non affermare apertura corrente.",
+      "sourceIds": {
+        "official": "falcade:malga-bosch-brusa"
+      },
+      "facts": {
+        "emergencyUseOnly": {
+          "value": true,
+          "sourceId": "visitsantomaso:altavia-dei-pastori:bosch-brusa",
+          "sourceUrl": "https://www.visitsantomaso.it/altavia-dei-pastori-2/",
+          "method": "reported",
+          "retrievedAt": "2026-11-28",
+          "notes": "Ricovero indicato solo per emergenza; disponibilità non verificata"
+        },
+        "regularOvernightAccommodation": {
+          "value": false,
+          "sourceId": "visitsantomaso:altavia-dei-pastori:bosch-brusa",
+          "sourceUrl": "https://www.visitsantomaso.it/altavia-dei-pastori-2/",
+          "method": "reported",
+          "retrievedAt": "2026-11-28",
+          "notes": "Nessun servizio ordinario di pernottamento documentato"
+        },
+        "seasonalFoodServiceReported": {
+          "value": true,
+          "sourceId": "agordinodolomiti:bosch-brusa",
+          "sourceUrl": "https://www.agordinodolomiti.it/it_IT/esperienze/cosa-vedere/rifugi-malghe-e-casere-in-agordino/casere-e-bivacchi-in-agordino/malga-bosch-brusa-agordino-dolomiti/",
+          "method": "reported",
+          "retrievedAt": "2026-11-28",
+          "notes": "Servizio stagionale storico; apertura attuale sconosciuta"
+        },
+        "accessTrailRef": {
+          "value": "631",
+          "sourceId": "visitsantomaso:altavia-dei-pastori:bosch-brusa",
+          "sourceUrl": "https://www.visitsantomaso.it/altavia-dei-pastori-2/",
+          "method": "reported",
+          "retrievedAt": "2026-11-28"
+        }
+      },
+      "aliases": [
+        {
+          "value": "Malga Bòsch Brusá"
+        },
+        {
+          "value": "Bosch Brusa"
+        }
+      ],
+      "quality": {
+        "gate": "G1",
+        "seoIndexable": false,
+        "reviewRequired": true
+      }
+    }
+  ]
+}

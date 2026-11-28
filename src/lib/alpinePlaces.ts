@@ -5,6 +5,7 @@ import { mergeRefugeRelease } from './refugeRelease';
 import { mergeShelterRelease } from './shelterRelease';
 import { mergeMunicipalityRelease } from './municipalityRelease';
 import { mergeSettlementRelease } from './settlementRelease';
+import { applyRuralStructureEvidence } from './ruralStructureEvidence';
 
 export interface AlpinePlace extends AtlasEntityMetadata {
   slug: string;
@@ -23,9 +24,11 @@ export interface AlpinePlace extends AtlasEntityMetadata {
   officialUrl?: string;
   /** Sottotipo dichiarato (Bivacco, Capanna sociale, Punto d'appoggio). */
   shelterTypeLabel?: string;
+  classificationEvidence?:{sourceUrl:string;note:string;recordedAt?:string;coordinateSource?:string;previousKind?:string};
+  quality?:{gate:string;seoIndexable:boolean;reviewRequired?:boolean};
   elevationM?: number;
   /** OSM = quota indicata dal mappatore; DEM = terreno stimato. */
-  elevationSource?: 'osm' | 'dem' | 'cai';
+  elevationSource?: 'osm' | 'dem' | 'cai' | 'official';
   wikidata?: string;
   website?: string;
   operator?: string;
@@ -72,11 +75,17 @@ export function loadAlpinePlaces(): Promise<AlpinePlacesDataset> {
     fetch(`${DATA_BASE}/atlas/settlements-v1.json`)
       .then(response => response.ok ? response.json() as Promise<unknown> : null)
       .catch(() => null),
+    fetch(`${DATA_BASE}/atlas/alpine-structure-evidence-v1.json`)
+      .then(response => response.ok ? response.json() as Promise<unknown> : null)
+      .catch(() => null),
   ])
-    .then(([legacy, refuges, shelters, municipalities, settlements]) => mergeSettlementRelease(
-      mergeMunicipalityRelease(
-        mergeShelterRelease(mergeRefugeRelease(legacy, refuges), shelters), municipalities),
-      settlements))
+    .then(([legacy, refuges, shelters, municipalities, settlements, rural]) => {
+      const merged = mergeSettlementRelease(
+        mergeMunicipalityRelease(
+          mergeShelterRelease(mergeRefugeRelease(legacy, refuges), shelters), municipalities),
+        settlements);
+      return {...merged, places:applyRuralStructureEvidence(merged.places, rural)};
+    })
     .catch(() => { pending = null; return empty; });
   return pending;
 }

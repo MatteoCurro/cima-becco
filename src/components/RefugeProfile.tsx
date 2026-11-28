@@ -133,6 +133,8 @@ function RouteLine({route}:{route:Route}){
 }
 export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces,water,onWaterSelect}:RefugeProfileProps){
   const isShelter=place.kind==='bivacco';
+  const isRuralSupportPoint=isShelter&&place.subtype==='support_point';
+  const isRuralUnverified=isShelter&&place.subtype==='rural_type_unverified';
   const facts=place.facts??{};
   const knownServices=hutServiceFacts(place);
   const territoryLinks=resolveRefugeTerritory(place,allPlaces);
@@ -199,7 +201,10 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
           </details>}
         </div>}
         <p className="cb-refuge-intro">{fullDescription||(isShelter?(place.shortSummary||shelterOverview(place)):refugeOverview(place))}</p>
-        {isShelter&&<p className="cb-hut-safety-notice">Ricovero non necessariamente custodito: accesso, dotazioni e utilizzabilità possono cambiare. Verifica prima della salita.</p>}
+        {isShelter&&<p className="cb-hut-safety-notice">{isRuralSupportPoint?
+          "Malga e punto di ristoro, non struttura per il pernottamento ordinario. L'eventuale ricovero d'emergenza e i servizi stagionali non sono garantiti: verifica apertura e condizioni prima della salita.":
+          isRuralUnverified?"Struttura rurale censita da OSM, ma non ancora verificata come rifugio, bivacco o luogo di ristoro. Non sono attestati pernottamento, apertura o accessibilità.":
+          "Ricovero non necessariamente custodito: accesso, dotazioni e utilizzabilità possono cambiare. Verifica prima della salita."}</p>}
         <DetailMetrics label="Riepilogo della struttura" items={[
           ...(typeof elevation==='number'&&elevation>0?[{label:'Quota dichiarata',value:elevation.toLocaleString('it-IT')+' m'}]:[]),
           ...(typeof beds==='number'&&beds>0?[{label:isShelter?'Posti indicati':'Posti letto indicati',value:beds}]:[]),
@@ -218,7 +223,8 @@ export function RefugeProfile({place,routes,loadingRoutes,nearbyPlaces,allPlaces
     <AtlasDossierBlocks record={place} placement="alerts"/>
     <DetailJumpNav items={items}/>
     <RefugeBlock id="cb-refuge-stay" kicker="PRIMA DI SALIRE"
-      title={isShelter?'Accesso, capienza e regole d’uso':'Ospitalità e informazioni pratiche'} icon={isShelter?'tent':'bed'}>
+      title={isRuralSupportPoint?'Malga: accesso, ristoro e uso d’emergenza':isRuralUnverified?'Tipologia e servizi in verifica':isShelter?'Accesso, capienza e regole d’uso':'Ospitalità e informazioni pratiche'} icon={isShelter?'tent':'bed'}>
+      {isRuralSupportPoint&&<p className="cb-refuge-disclaimer">Ristoro stagionale documentato, ma operatività attuale non verificata. Non utilizzare questa scheda per programmare un pernottamento o presumere la disponibilità di un ricovero.</p>}
       {isShelter&&hasRules&&<div className="cb-refuge-subsection"><h3>Regole e accesso</h3>
         <FactLines place={place} keys={SHELTER_RULES}/></div>}
       {!isShelter&&hasOpen&&<div className="cb-refuge-subsection"><h3><FaIcon name="clock" size={14}/> Apertura dichiarata</h3>

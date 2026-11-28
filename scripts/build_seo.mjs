@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
 import { mergeSheltersForSeo } from './merge_shelters_for_seo.mjs';
 import { mergeSettlementsForSeo } from './merge_settlements_for_seo.mjs';
+import { applyRuralStructureEvidence } from '../src/lib/ruralStructureEvidence.js';
 import { makeCentralCredits } from './build_source_credits.mjs';
 import { atlasCanonicalPath,atlasLegacyPath,canonicalAtlasSlug } from '../src/lib/placePermalinks.js';
 import { resolveRefugeTerritory, relatedAtlasPlaces } from '../src/lib/atlasConnections.js';
@@ -103,7 +104,11 @@ const alpinePlacesBase = mergeSheltersForSeo(mergeRefugesForSeo(
   readJson(join(DATA, 'atlas', 'shelters-v1.json')) : null);
 const settlementReleasePath=join(DATA,'atlas','settlements-v1.json');
 const settlementRelease=existsSync(settlementReleasePath)?readJson(settlementReleasePath):null;
-const alpinePlaces=mergeSettlementsForSeo(alpinePlacesBase,settlementRelease);
+const alpinePlacesBeforeRural=mergeSettlementsForSeo(alpinePlacesBase,settlementRelease);
+const ruralEvidencePath=join(DATA,'atlas','alpine-structure-evidence-v1.json');
+const alpinePlaces=applyRuralStructureEvidence(alpinePlacesBeforeRural,
+  existsSync(ruralEvidencePath)?readJson(ruralEvidencePath):null);
+const alpinePlaceBySlug=new Map(alpinePlaces.map(p=>[p.slug,p]));
 // Comuni G2, dataset semantico distinto dagli OSM borghi.
 const municipalityReleasePath=join(DATA,'atlas','municipalities-v1.json');
 const municipalityRelease=existsSync(municipalityReleasePath)?readJson(municipalityReleasePath):null;
@@ -563,7 +568,17 @@ for (const route of routes) {
     </dl>
     ${official ? `<p><a href="${escape(official)}" rel="noopener noreferrer" target="_blank">Consulta la scheda del gestore ↗</a></p>` : ''}
     ${passes.length ? `<h2>Cime e luoghi vicini</h2><ul class="list">${passes.map((v) => `<li><a href="${SITE}/place/${v.slug}/">${escape(v.name)}</a></li>`).join('')}</ul>` : ''}
-    ${route.stops?.length ? `<h2>Rifugi, bivacchi e paesi lungo il percorso</h2><p>Luoghi geograficamente vicini al GPX, non accessi garantiti.</p><ul class="list">${route.stops.slice(0,12).map(s=>`<li><a href="${SITE}/${s.kind==='rifugio'?'rifugi':s.kind==='bivacco'?'bivacchi':'borghi'}/${s.slug}/">${escape(s.name)}</a> · ${s.kind==='rifugio'?'Rifugio':s.kind==='bivacco'?'Bivacco':'Paese'}</li>`).join('')}</ul>` : ''}
+    ${route.stops?.length ? `<h2>Rifugi, bivacchi e paesi lungo il percorso</h2><p>Luoghi geograficamente vicini al GPX, non accessi garantiti.</p><ul class="list">${route.stops.slice(0,12).map(s=>{
+      const current=alpinePlaceBySlug.get(s.slug);
+      const currentKind=current?.kind||s.kind;
+      const typeLabel=current?.subtype==='rural_type_unverified'?'Malga / casera (tipologia in verifica)':
+        current?.subtype==='support_point'?'Malga e punto d’appoggio':
+        current?.shelterTypeLabel||(currentKind==='rifugio'?'Rifugio':currentKind==='bivacco'?'Bivacco':'Paese');
+      const permalink=current?SITE+atlasCanonicalPath(current):
+        SITE+'/'+(currentKind==='rifugio'?'rifugi':currentKind==='bivacco'?'bivacchi':'borghi')+
+        '/'+encodeURIComponent(s.slug)+'/';
+      return `<li><a href="${escape(permalink)}">${escape(s.name)}</a> · ${escape(typeLabel)}</li>`;
+    }).join('')}</ul>` : ''}
     ${route.activity === 'ferrata' ? '<p class="cima-seo-warning">Una ferrata richiede attrezzatura e competenze specifiche. Il GPX non rappresenta esposizione e difficoltà tecnica.</p>' : '<p class="cima-seo-warning">Traccia e dislivelli sono indicativi: verifica percorribilità e condizioni prima di partire.</p>'}
   </section>
 </article>`,
@@ -595,7 +610,7 @@ for (const place of alpinePlaces) {
      place.subtype==='abitato_osm_non_classificato') &&
     place.sourceIds?.wikidata && place.media?.some(m=>m.kind==='photo'&&m.subjectVerified&&m.reuseAllowed) &&
     typeof place.description==='string' && place.description.length>=120;
-  if (!isVerifiedSettlement && !/^(?:osm-[nwr]-\d+|cai-\d+)$/.test(place.slug)) continue;
+  if (!isVerifiedSettlement && !/^(?:osm-[nwr]-\d+|cai-\d+)$/.test(place.slug) && !place.sourceIds?.official) continue;
   const related=(byStop.get(place.slug)||[]).slice(0,24);
   const canonicalPath=atlasCanonicalPath(place);
   const isHut=place.kind==='rifugio'||place.kind==='bivacco';
@@ -649,9 +664,10 @@ for (const place of alpinePlaces) {
   const photo=place.photo?.url?.startsWith('https://') && place.photo?.license && place.photo?.sourceUrl ? place.photo : null;
   page({
     path:canonicalPath.replace(/^\//,''),
-    noindex:(place.kind==='borgo' && !related.length && !place.website && !place.description && !place.photo) ||
+    noindex:Boolean(place.subtype==='rural_type_unverified' || (place.sourceIds?.official && place.quality?.gate!=='G2')) ||
+      (place.kind==='borgo' && !related.length && !place.website && !place.description && !place.photo) ||
       (isCaiOnly && knownCaiFacts<5 && (!place.description || place.description.length < 100) && !photo),
-    title:`${place.name} · ${place.kind==='rifugio'?'Rifugio':place.kind==='bivacco'?'Bivacco':'Paese'}, altitudine, sentieri e meteo | Cima Becco`,
+    title:`${place.name} · ${place.subtype==='rural_type_unverified'?'Malga o casera':place.subtype==='support_point'?'Malga e ristoro':place.kind==='rifugio'?'Rifugio':place.kind==='bivacco'?'Bivacco':'Paese'}, altitudine, sentieri e meteo | Cima Becco`,
     description:description.slice(0,285),
     image:photo?.url||null,
     jsonLd:{'@context':'https://schema.org','@graph':[
@@ -733,6 +749,22 @@ for (const place of alpinePlaces) {
       <p class="sub">Dati e immagini con provenienza conservata nel <a href="${SITE}/fonti-e-crediti/">registro centralizzato delle fonti e dei crediti</a>.</p>`,
   });
   if(isHut)writePlaceAlias(place);
+  // A documented casera was previously published as an alpine hut on OSM.
+  // Preserve BOTH old /rifugi/ URLs as noindex, canonical redirect aliases.
+  if(place.kind==='bivacco' && place.classificationEvidence?.previousKind==='rifugio') {
+    const target=SITE+canonicalPath;
+    const former={...place,kind:'rifugio'};
+    const oldPaths=new Set([atlasLegacyPath(former),atlasCanonicalPath(former)]);
+    for(const oldPath of oldPaths) {
+      const file=join(DIST,oldPath.slice(1),'index.html');
+      mkdirSync(dirname(file),{recursive:true});
+      writeFileSync(file,'<!doctype html><html lang="it"><head><meta charset="utf-8">'+
+        '<link rel="canonical" href="'+escape(target)+'">'+
+        '<meta name="robots" content="noindex,follow">'+
+        '<meta http-equiv="refresh" content="0;url='+escape(target)+'"></head>'+
+        '<body><a href="'+escape(target)+'">'+escape(place.name)+'</a></body></html>');
+    }
+  }
   if(isVerifiedSettlement) {
     for(const alias of place.slugAliases||[]) {
       if(!/^osm-[nwr]-[1-9][0-9]*$/.test(alias) || alias===place.slug)continue;
