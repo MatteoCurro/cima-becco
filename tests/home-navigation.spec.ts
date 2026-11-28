@@ -29,7 +29,7 @@ test('Menu Esplora: chiusura con Escape e clic fuori',async({page})=>{
   await expect(menu).toHaveCount(0);
   await trigger.click();
   await expect(menu).toBeVisible();
-  await page.locator('.cb-hero-v3').click({position:{x:9,y:9}});
+  await page.locator('.home-main').click({position:{x:8,y:8}});
   await expect(menu).toHaveCount(0);
 });
 
