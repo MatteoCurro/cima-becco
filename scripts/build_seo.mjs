@@ -793,8 +793,8 @@ for(const e of municipalities) {
   const peopleHtml=people.length?'<section class="cima-seo-related"><h2>Personaggi nati o legati al territorio</h2>'+
      '<p>Il luogo di nascita, la residenza storica e l’attività documentata sono relazioni diverse; nessuna connessione è ricavata dalla sola provincia.</p>'+
      people.map(person=>'<article>'+
-       (person.portrait?.url&&person.portrait.subjectVerified&&person.portrait.reuseAllowed?
-         '<img src="'+escape(person.portrait.url)+'" width="140" loading="lazy" alt="'+escape('Ritratto di '+person.name)+'">':'')+
+       (person.portrait?.url&&person.portrait.portraitCandidate&&person.portrait.subjectVerified&&person.portrait.reuseAllowed?
+         '<img src="'+escape(person.portrait.url)+'" width="140" loading="lazy" alt="'+escape('Immagine di '+person.name)+'">':'')+
        '<strong>'+escape(person.name)+'</strong> · '+
        escape(person.role||'')+' · '+escape(person.relationType==='birthplace_of'?'Nata/o qui':
        person.relationType==='historical_residence_of'?'Residenza storica':'Luogo di attività')+
