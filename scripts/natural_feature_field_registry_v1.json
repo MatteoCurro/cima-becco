@@ -124,7 +124,7 @@
       "sourceUrl": "https://data.civis.bz.it/dataset/laghi",
       "license": "CC0",
       "scope": "Provincia autonoma Bolzano, physical lake boundaries",
-      "notes": "Live run #46127602617: 20 WFS features received; 17 valid non-public G0 geometries; 3 with non-consecutive repeated vertices held for review. BBOX axis order lon/lat verified for this server. WFS feature IDs not yet audited for long-term stability; no merges or SEO."
+      "notes": "Live run #46127602617: 20 WFS features received; 17 valid non-public G0 geometries; 3 with non-consecutive repeated vertices held for review. BBOX axis order lon/lat verified for this server. WFS feature IDs not yet audited for long-term stability; no merges or SEO.; fact audit #46129862851 normalized 17 with elevation, area, volume, length/width and multilingual labels, zero published"
     },
     {
       "id": "arpav_water_bodies_wfs",
@@ -132,7 +132,7 @@
       "sourceUrl": "https://geodati.gov.it/geoportale/visualizzazione-metadati/scheda-metadati?metadataid=arpa_ve:idrografia_specchio_acqua",
       "license": "CC BY 3.0",
       "scope": "Veneto, mapped surface water bodies at 1:10,000 scale",
-      "notes": "Live run #46127602617: 20 received/20 non-public G0 polygons valid. Includes lakes, artificial water and lagoon surfaces; no automatic lake classification; WFS feature IDs provisional; no OSM/GN joins."
+      "notes": "Live run #46127602617: 20 received/20 non-public G0 polygons valid. Includes lakes, artificial water and lagoon surfaces; no automatic lake classification; WFS feature IDs provisional; no OSM/GN joins.; fact audit #46129862851 normalized 20, source-type distribution Lago14/Invaso5/Bacino artificiale1, zero published"
     }
   ],
   "verifiedNow": [
@@ -294,5 +294,67 @@
       }
     },
     "status": "bounded_live_g0_verified_without_publication"
+  },
+  "officialLakeWFSFactAudit": {
+    "run": "46129862851",
+    "pullRequest": 42,
+    "gate": "G0_staging_only",
+    "status": "source_replay_normalization_and_review_only_osm_candidates_verified",
+    "scripts": [
+      "scripts/normalize_official_lake_wfs_facts_v1.py",
+      "scripts/audit_official_lake_facts_v1.py"
+    ],
+    "tests": "tests/test_normalize_official_lake_wfs_facts_v1.py",
+    "normalizedCount": {
+      "bolzano_lakes": 17,
+      "arpav_water_surfaces": 20
+    },
+    "repeatSampleIdAndAttributesConsistent": {
+      "bolzano_lakes": 17,
+      "arpav_water_surfaces": 20
+    },
+    "longTermIdStability": "unverified",
+    "sourceTypesArpav": {
+      "Lago": 14,
+      "Invaso": 5,
+      "Bacino artificiale": 1
+    },
+    "bolzanoDepthNonNull": 0,
+    "candidateReviewCount": 5,
+    "candidateIdentifiers": [
+      {
+        "official": "arpav_water_surfaces:idrografia_specchio_acqua.277",
+        "osm": "relation/16301091",
+        "name": "Lago di Misurina",
+        "identityVerified": false
+      },
+      {
+        "official": "arpav_water_surfaces:idrografia_specchio_acqua.296",
+        "osm": "way/262100725",
+        "name": "Lago di Alleghe",
+        "identityVerified": false
+      },
+      {
+        "official": "bolzano_lakes:Lakes.7270",
+        "osm": "relation/17177943",
+        "name": "Völser Weiher",
+        "identityVerified": false
+      },
+      {
+        "official": "bolzano_lakes:Lakes.7388",
+        "osm": "relation/18054420",
+        "name": "Lago di Carezza",
+        "identityVerified": false
+      },
+      {
+        "official": "bolzano_lakes:Lakes.7390",
+        "osm": "relation/4058530",
+        "name": "Lago di Costalovara",
+        "identityVerified": false
+      }
+    ],
+    "published": 0,
+    "mergesApproved": 0,
+    "next": "Review exact independent cross-source IDs; no automatic merge on bounding-box and name; preserve historic GN/OSM conflict at Carezza."
   }
 }
