@@ -12,6 +12,10 @@ on:
       - tests/test_enrich_municipality_people_v1.py
       - scripts/import_metrics_v1.mjs
       - src/components/SiteInsightsPage.tsx
+      - src/components/AlpineAtlasPage.tsx
+      - src/lib/atlasDossier.ts
+      - scripts/build_seo.mjs
+      - src/lib/municipalityRelease.ts
   schedule:
     - cron: '40 4 * * *'
   workflow_dispatch:
@@ -131,7 +135,17 @@ jobs:
               assert any(m['kind']=='photo' and m.get('author') and m.get('licence') and
                 m.get('subjectVerified') and m.get('reuseAllowed') and
                 m['sourceUrl'].startswith('https://commons.wikimedia.org/') for m in x['media'])
-          print('Comuni G2:',len(e))
+          persondoc=json.loads(Path('public/data/atlas/people-v1.json').read_text())
+          assert persondoc['releaseChannel']=='ALPINE_PEOPLE_LINKS'
+          assert all(p['quality']['gate']=='G1' and not p['quality']['seoIndexable'] for p in persondoc['entities'])
+          for commune in e:
+              for person in commune.get('connectedPeople',[]):
+                  assert person['verified'] and person['relationType'] in ('birthplace_of','historical_residence_of','workplace_of')
+                  assert person['sourceId'].startswith('wikidata:'+person['qid']+':P')
+                  assert person['category'] in ('montagna','cultura_e_ricerca')
+          print('Comuni G2:',len(e),
+                'Persone G1:',len(persondoc['entities']),
+                'Relazioni persone:',sum(len(m.get('connectedPeople',[])) for m in e))
           PY
       - uses: actions/setup-node@v4
         with:
@@ -159,13 +173,40 @@ jobs:
             build/import-municipalities-v1/enrichment-report.json
             build/import-municipalities-v1/altimetry-report.json
             build/import-municipalities-v1/people-report.json
+            build/import-municipalities-v1/combined-report.json
           retention-days: 14
           if-no-files-found: warn
+      - name: Compone report di acquisizione delle diverse fonti verificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          base=Path('build/import-municipalities-v1')
+          data=json.loads((base/'enrichment-report.json').read_text())
+          registry=json.loads((base/'report.json').read_text())
+          alt=json.loads((base/'altimetry-report.json').read_text())
+          people=json.loads((base/'people-report.json').read_text())
+          data.update({
+              'municipalities':registry['municipalities'],
+              'mayorsMatched':registry['mayorsMatched'],
+              'daitRowsOfficialCrosswalkRejected':registry['daitRowsOfficialCrosswalkRejected'],
+              'sourceAltimetryMatched':alt['matched'],
+              'metricsAdded':alt['metricsAdded'],
+              'municipalityPeopleLinks':people['municipalityPeopleLinks'],
+              'peopleCatalogued':people['peopleCatalogued'],
+              'mountainLinks':people['mountainLinks'],
+              'otherNotableLinks':people['otherNotableLinks'],
+              'failuresCount':len(data.get('failures') or [])+len(people.get('errors') or [])
+          })
+          (base/'combined-report.json').write_text(json.dumps(data,ensure_ascii=False,indent=2))
+          PY
       - name: Registra telemetria pubblica solo dopo il collaudo
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/import_metrics_v1.mjs comuni "$GITHUB_RUN_ID" build/import-municipalities-v1/enrichment-report.json
+          node scripts/import_metrics_v1.mjs comuni "$GITHUB_RUN_ID" build/import-municipalities-v1/combined-report.json
       - name: Commit dei soli comuni dopo i gate
         shell: bash
         run: |
