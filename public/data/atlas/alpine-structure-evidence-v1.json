@@ -19,7 +19,8 @@
         {
           "value": "Casera Campigat"
         }
-      ]
+      ],
+      "previousKind": "rifugio"
     },
     {
       "sourceIds": {
@@ -40,7 +41,8 @@
           "value": "Ex Malga Valbona",
           "historical": true
         }
-      ]
+      ],
+      "previousKind": "rifugio"
     },
     {
       "id": "official:falcade:bosch-brusa",
