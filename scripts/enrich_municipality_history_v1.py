@@ -73,7 +73,7 @@ def search_depicts(qid,*,getter=None,limit=35):
     for r in rows:
         name=r.get("title","")
         pid=r.get("pageid")
-        if isinstance(pid,int) and name.startswith("File:") and PHOTO_EXT.search(name):
+        if isinstance(pid,int) and name.startswith("File:") and PHOTO_EXT.search(name) and not NON_PHOTO.search(name):
             pages.append({"pageid":pid,"filename":name.removeprefix("File:")})
     return pages
 
@@ -158,6 +158,8 @@ def commons_pages_by_title(files,*,getter=None):
 def safe_historical_scene(media, date):
     """One dated scene only, never composite 'before / after' misdated as one year."""
     desc=str(media.get("descriptionText") or "")
+    original=unquote(str(media.get("sourceUrl") or "").rsplit("/",1)[-1])
+    if NON_PHOTO.search(original) or NON_PHOTO.search(desc):return False
     if re.search(r"prima\s+e\s+dopo|before\s+and\s+after|collage|montaggio|photomontage|confronto",
                  desc,re.I):return False
     documented_years={int(x) for x in re.findall(r"(?<!\d)(?:18\d{2}|19\d{2})(?!\d)",desc)}
