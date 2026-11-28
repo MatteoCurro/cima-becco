@@ -1,0 +1,84 @@
+name: SAT official trails G0 source schema audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/pilot_sat_trail_source_v1.py
+      - tests/test_pilot_sat_trail_source_v1.py
+      - docs/PIANO_IMPORTATORI.md
+      - docs/MODELLO_METADATI_E_LAYOUT.md
+      - .github/workflows/test-sat-trails-source-g0-v1.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/pilot_sat_trail_source_v1.py
+      - tests/test_pilot_sat_trail_source_v1.py
+      - .github/workflows/test-sat-trails-source-g0-v1.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: cima-sat-source-g0-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Offline ZIP/KML provenance and safety tests
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_pilot_sat_trail_source_v1.py' -v
+          python -m compileall -q scripts/pilot_sat_trail_source_v1.py
+          test -z "$(git status --porcelain -- public/ src/)"
+  source-real:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Audit published SAT source ZIP (metadata and original geometry only)
+        run: |
+          python scripts/pilot_sat_trail_source_v1.py \
+            --out build/sat-trails-g0-source-audit
+      - name: Guard source fingerprint, no SEO or auto crosswalk
+        run: |
+          python - <<'PY'
+          import json
+          from hashlib import sha256
+          from pathlib import Path
+          root=Path('build/sat-trails-g0-source-audit')
+          raw=(root/'source-sat-official.kml.zip').read_bytes()
+          d=json.loads((root/'source-schema-audit-g0.json').read_text())
+          c=d['counts']; q=d['quality']
+          assert sha256(raw).hexdigest()==d['sourceArchiveSha256']
+          assert d['releaseChannel']=='SAT_TRAIL_SOURCE_G0_SCHEMA_AUDIT_V1'
+          assert d['isPublished'] is False and d['seoIndexable'] is False
+          assert d['routeCatalogueModified'] is False
+          assert c['sourcePlacemarks']>=1
+          assert c['validLineStringFeatures']>=1
+          assert q['osmCrosswalkVerified'] is False
+          assert q['canonicalTrailIdsAssigned'] is False
+          assert q['officialCategoryFieldVerified'] is False
+          assert q['routingAllowed'] is False and q['publicationAllowed'] is False
+          print('SAT G0 source schema audit:',c)
+          PY
+          test -z "$(git status --porcelain -- public/)"
+      - name: Preserve original SAT source and source-schema audit outside public
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sat-trails-source-schema-g0
+          path: build/sat-trails-g0-source-audit/
+          retention-days: 14
+          if-no-files-found: warn
