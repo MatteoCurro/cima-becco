@@ -33,7 +33,7 @@ export type AtlasRelationKind =
   | 'worked_in' | 'workplace_of';
 export interface AtlasRelation {
   type: AtlasRelationKind;
-  target: { id: string; kind: string; name: string; href?: string };
+  target: { id: string; kind: string; name: string; slug?: string; href?: string };
   straightLineKm?: number;
   method?: string;
   sourceUrl?: string;
