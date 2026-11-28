@@ -24,6 +24,8 @@ export function SummitConnections({ venue, connectedRoutes }: SummitConnectionsP
     let active=true;
     setRouteState('loading');
     setPlaceState('loading');
+    setMapped([]);
+    setPlaces([]);
     void loadRoutesInBounds(radiusBounds(venue.lng,venue.lat,4500))
       .then(routes=>{if(active){setMapped(routes);setRouteState('ready');}})
       .catch(()=>{if(active)setRouteState('unavailable');});
@@ -34,8 +36,10 @@ export function SummitConnections({ venue, connectedRoutes }: SummitConnectionsP
   },[venue.slug,venue.lng,venue.lat]);
 
   const linked=useMemo(()=>{
-    const unique=new Map(connectedRoutes.map(route=>[route.slug,route]));
-    for(const route of mapped)unique.set(route.slug,route);
+    // Do not overwrite an already related route with a tile copy whose
+    // metadata may omit its documented summit relation.
+    const unique=new Map(mapped.map(route=>[route.slug,route]));
+    for(const route of connectedRoutes)unique.set(route.slug,route);
     return summitRoutes(venue,[...unique.values()]);
   },[venue,mapped,connectedRoutes]);
   const support=useMemo(()=>summitSupportPlaces(venue,places,linked),[venue,places,linked]);
@@ -55,7 +59,7 @@ export function SummitConnections({ venue, connectedRoutes }: SummitConnectionsP
       {linked.length>0 ? <>
         <SummitRouteGroup title="Accessi documentati" caption="Solo collegamenti esplicitamente verificati nelle fonti." items={documented}/>
         <SummitRouteGroup title="Ferrate e percorsi attrezzati" caption="Tipologia e difficoltà tecnica possono richiedere verifica. La vicinanza non prova un collegamento alla vetta." items={ferrate} technical/>
-        <SummitRouteGroup title="Tracce che terminano vicino alla cima" caption="Il punto iniziale o finale è entro 100 metri dalle coordinate della cima; non è un accesso confermato." items={endpoints}/>
+        <SummitRouteGroup title="Tracce con un’estremità vicino alla cima" caption="Il punto iniziale oppure finale è entro 100 metri dalle coordinate della cima; non è un accesso confermato." items={endpoints}/>
         <SummitRouteGroup title="Sentieri che passano nei pressi" caption="La traccia transita entro circa 160 metri dalla cima. Non è necessariamente una via di salita." items={passes}/>
       </> : routeState!=='loading' ? <p className="cb-summit-status">Nessun tracciato collegabile con sufficiente evidenza nei dati attualmente disponibili. Non significa che la cima non abbia vie di salita.</p> : null}
       <p className="cb-summit-method">I tracciati OSM o GPX non sono relazioni tecniche di ascensione e non indicano lo stato di attrezzature, nevai, esposizione o chiusure.</p>
@@ -86,22 +90,25 @@ function SummitRouteGroup({title,caption,items,technical=false}:{
       {items.map(item=>{
         const category=routePresentationCategory(item.route);
         const mood=trailMood(item.route);
-        const length=(item.route.distanceM/1000).toLocaleString('it-IT',{maximumFractionDigits:1});
+        const length=item.route.distanceM>0
+          ? (item.route.distanceM/1000).toLocaleString('it-IT',{maximumFractionDigits:1})+' km'
+          : 'Lunghezza non disponibile';
         const elevation=item.route.elevationAvailable!==false&&item.route.gainM>0?
           ' · +'+Math.round(item.route.gainM)+' m':'';
         const status=item.relation==='documented'?'Relazione verificata':
           item.relation==='endpoint_near'?'Estremità nei pressi della cima':
           item.relation==='passes_near'?'Passa vicino alla cima':
-          'Ferrata nell’area · '+item.distanceM+' m dalla cima';
+          (category.kind==='attrezzato'?'Percorso attrezzato nell’area':'Possibile ferrata nell’area')+
+            ' · '+item.distanceM+' m dalla cima';
         return <a key={item.route.slug}
           className={technical?'cb-summit-route cb-summit-route--technical':'cb-summit-route'}
           href={routeDetailHref(item.route.slug,item.route.source)}>
           <span className="cb-summit-route-main">
             <strong>{trailTitle(item.route)}</strong>
-            <small>{category.label} · {length} km{elevation}</small>
+            <small>{category.label} · {length}{elevation}</small>
           </span>
           <span className="cb-summit-route-extra">
-            {technical&&<b className="cb-summit-technical-tag">{category.evidence==='inferred'?'DA VERIFICARE':'PERCORSO ATTREZZATO'}</b>}
+            {technical&&<b className="cb-summit-technical-tag">{category.evidence==='inferred'?'TIPOLOGIA DA VERIFICARE':category.kind==='ferrata'?'FERRATA CENSITA':'PERCORSO ATTREZZATO'}</b>}
             <em>{mood.quip}</em>
             <small>{status}</small>
           </span>
