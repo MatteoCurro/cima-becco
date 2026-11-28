@@ -64,6 +64,8 @@ export interface AtlasPersonConnection {
   deathDate?:string|null;
   description?:string;
   wikipediaUrl?:string|null;
+  biography?:string;
+  portrait?:AtlasMedia;
   sourceId:string;
   sourceUrl:string;
   verified:boolean;
