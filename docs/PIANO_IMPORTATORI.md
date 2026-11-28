@@ -1,8 +1,24 @@
 # Cima Becco — piano di importazione e collegamenti
 
-**Data:** 27/11/2026. **Stato:** blocchi 1 e 2 pubblicati e verificati; blocco 3 Comuni in pilota di staging separato (non pubblicato).  
+**Data aggiornamento:** 28/11/2026. **Stato verificato:** rifugi e ricoveri pubblicati; Comuni incrementali G2 pubblicati (111 al run 46108239132) e 258 profili persone G1 noindex; blocco 4 località ISTAT/OSM in pilota isolato PR #21, non pubblicato.  
 **Specifica superiore e vincolante:** [MODELLO_METADATI_E_LAYOUT.md](MODELLO_METADATI_E_LAYOUT.md). Il presente piano organizza i lavori e NON cambia la tassonomia o le regole canoniche.  
 **UI:** [ARCHITECTURE.md](ARCHITECTURE.md); un solo sistema di ricerca, mappa, dettaglio e filtri.
+
+## Blocco 4 — località censuarie e borghi: pilota ISTAT 2021 + OSM (28/11/2026)
+
+**PR di staging:** [#21](https://github.com/MatteoCurro/cima-becco/pull/21) · [adapter](../scripts/import_settlements_v1.py) · [registro campi](../scripts/settlement_field_registry_v1.json) · [test](../tests/test_import_settlements_v1.py) · [workflow](../.github/workflows/test-import-settlements-v1.yml).
+
+**Perimetro:** Basi territoriali ISTAT 2021 (LOC_Rxx_21.csv negli ZIP regionali) e snapshot alpine-places.json con 1.857 elementi OSM etichettati «borgo». Pilota reale R04 Trentino-Alto Adige e R05 Veneto. Non riscaricare Overpass per normalizzare.
+
+**Identità:** LOC21_ID = PRO_COM + COD_LOC. TIPO_LOC distingue centro abitato, nucleo abitato, località produttiva, case sparse. Soltanto i primi due sono candidati a schede. Centro censuario non significa frazione amministrativa; no sindaco, popolazione, superficie ereditati dal Comune.
+
+**Grafo:** part_of verificato dal PRO_COM con vintage 2021 (solo per Comuni già catalogati); near Haversine, mai accessibilità. Non fondere elementi OSM e ISTAT per nome/distanza. Le persone vanno collegate al luogo esatto e non solo al Comune.
+
+**Media e storia:** immagini con soggetto esatto, licenza e autore; per storiche data di scatto documentata. Lo stemma comunale non diventa automaticamente lo stemma della località. Il ciclo Comuni continua l'arricchimento stemmi, foto storiche e popolazione ISTAT datata.
+
+**Gate:** output solo in build/import-settlements-v1 e artifact CI. G0/noindex fino a geometrie e reconciliation verificata e contenuto G2. Zero scritture in public/data, permalink e cron in questa PR. Test offline e pilota reale prima di promozione.
+
+---
 
 ## Estensione Comuni — qualità territoriale, personaggi e osservatorio (28/11/2026)
 
