@@ -53,6 +53,13 @@ export interface AtlasMedia {
   /** Uso autorizzato dalla licenza/permesso della singola risorsa. */
   reuseAllowed: boolean;
   /** P18 is related to the person, but a poster/monument is not an avatar. */
+  /** Classification of town crest versus institution's separate brand logo. */
+  symbolType?:'coat_of_arms'|'institutional_logo';
+  /** Historic image date backed by MediaInfo P571 or DateTimeOriginal. */
+  historicalDateMethod?:string;
+  subjectMethod?:string;
+  municipalityQid?:string;
+  sourceId?:string;
   portraitCandidate?:boolean;
   needsPortraitReview?:boolean;
 }

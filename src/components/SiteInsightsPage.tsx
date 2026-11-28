@@ -19,7 +19,10 @@ type ImportStats={
   total:{publicEntities:number;municipalities:number;refuges:number;shelters:number;
     routes:number;osmPlaces:number;sourcedFacts:number;attributedMedia:number;documentedRelations:number;
     peopleInGraph:number;municipalityPersonRelations:number;
-    verifiedPeoplePortraits?:number;documentedPeopleBiographies?:number;peopleExternalConnections?:number};
+    verifiedPeoplePortraits?:number;documentedPeopleBiographies?:number;peopleExternalConnections?:number;
+    municipalitiesWithHeraldry?:number;municipalitiesWithHistoricalPhotos?:number;
+    verifiedHistoricalPhotos?:number;municipalitiesEverAttempted?:number;
+    municipalitiesPendingRetry?:number};
   quality:{municipalitiesG2:number;missingMunicipalElevation:number;missingMunicipalPopulation:number};
 };
 type Metric='count'|'facts'|'media'|'relations';
@@ -162,7 +165,10 @@ export function SiteInsightsPage(){
             ['PERSONE NEL GRAFO (G1)',stats.total.peopleInGraph||0],
             ['LEGAMI PERSONA-COMUNE',stats.total.municipalityPersonRelations||0],
             ['FOTO PERSONE VERIFICATE',stats.total.verifiedPeoplePortraits||0],
-            ['BIOGRAFIE ATTRIBUITE',stats.total.documentedPeopleBiographies||0]
+            ['BIOGRAFIE ATTRIBUITE',stats.total.documentedPeopleBiographies||0],
+            ['STEMMI COMUNALI',stats.total.municipalitiesWithHeraldry||0],
+            ['FOTO STORICHE DATATE',stats.total.verifiedHistoricalPhotos||0],
+            ['COMUNI TENTATI',stats.total.municipalitiesEverAttempted||0]
           ].map(([label,value])=><div key={label}><strong>{nf(Number(value))}</strong><span>{label}</span></div>)}
         </div>
         <div className="cb-import-section-heading"><div>
@@ -219,6 +225,8 @@ export function SiteInsightsPage(){
             <h2>Completezza dei Comuni</h2>
             <p className="cb-import-big-number">{nf(stats.total.municipalities)} <small>schede G2 pubblicate</small></p>
             {latestComuni?.report?.municipalities!=null&&<p>Su {nf(Number(latestComuni.report.municipalities))} comuni presenti nell'ultimo snapshot ISTAT.</p>}
+            <p>{nf(stats.total.municipalitiesEverAttempted||0)} Comuni distinti sottoposti ad acquisizione progressiva; {nf(stats.total.municipalitiesPendingRetry||0)} ancora da arricchire nei passaggi successivi. Il contatore dei tentativi parte dall'introduzione del cursore, non ricostruisce i batch precedenti.</p>
+            <p>{nf(stats.total.municipalitiesWithHeraldry||0)} Comuni con stemma confermato; {nf(stats.total.municipalitiesWithHistoricalPhotos||0)} con fotografie d'epoca datate ({nf(stats.total.verifiedHistoricalPhotos||0)} immagini).</p>
             <p>{nf(stats.quality.missingMunicipalElevation)} schede senza quota documentata;
               {' '}{nf(stats.quality.missingMunicipalPopulation)} senza popolazione ISTAT datata.</p>
             <p>{nf(stats.total.peopleInGraph||0)} persone G1 · {nf(stats.total.municipalityPersonRelations||0)} legami con i comuni · {nf(stats.total.verifiedPeoplePortraits||0)} fotografie attribuite · {nf(stats.total.documentedPeopleBiographies||0)} estratti biografici · {nf(stats.total.peopleExternalConnections||0)} associazioni Wikidata con opere, eventi e organizzazioni da riconciliare.</p>
@@ -235,6 +243,7 @@ export function SiteInsightsPage(){
               <span>Relazioni con personaggi: {latestComuni.report?.municipalityPeopleLinks!=null?nf(Number(latestComuni.report.municipalityPeopleLinks)):'n.d.'}</span>
               <span>Ritratti: {latestComuni.report?.profilesWithPortrait!=null?nf(Number(latestComuni.report.profilesWithPortrait)):'n.d.'} · Biografie: {latestComuni.report?.profilesWithBiography!=null?nf(Number(latestComuni.report.profilesWithBiography)):'n.d.'}</span>
               <span>Quote territoriali associate: {latestComuni.report?.sourceAltimetryMatched!=null?nf(Number(latestComuni.report.sourceAltimetryMatched)):'n.d.'}</span>
+              <span>Fotografie d'epoca aggiunte: {latestComuni.report?.historicPhotosAdded!=null?nf(Number(latestComuni.report.historicPhotosAdded)):'n.d.'}</span>
               <a href={'https://github.com/MatteoCurro/cima-becco/actions/runs/'+latestComuni.runId} target="_blank" rel="noopener noreferrer">Apri esecuzione GitHub Actions ↗</a>
             </div>:<p>Il primo registro degli importatori sarà alimentato dal prossimo rilascio verificato.</p>}
           </section>

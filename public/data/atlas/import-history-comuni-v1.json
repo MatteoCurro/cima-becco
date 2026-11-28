@@ -335,6 +335,158 @@
         "comuni": 0,
         "persone": 0
       }
+    },
+    {
+      "runId": "46107032568",
+      "pipeline": "comuni",
+      "status": "success",
+      "recordedAt": "2026-11-28T04:22:47.524Z",
+      "sourceSha": "dd14a842d43ed12577fca3165726ee217719c2ec",
+      "sources": {
+        "comuni": {
+          "count": 37,
+          "facts": 1241,
+          "media": 48,
+          "relations": 145,
+          "coverage": {
+            "Quota documentata": 37,
+            "Altimetria del territorio": 37,
+            "Superficie": 37,
+            "Popolazione ISTAT datata": 0,
+            "Sindaco (DAIT)": 35,
+            "Sito istituzionale": 18,
+            "Foto attribuita": 37,
+            "Testo documentato": 37,
+            "Relazioni territoriali": 21,
+            "Stemma o logo verificato": 6,
+            "Stemma comunale": 4,
+            "Archivio fotografico storico datato": 2,
+            "Personaggi documentati": 18,
+            "Figure di montagna": 11
+          },
+          "denominator": 37
+        },
+        "persone": {
+          "count": 156,
+          "facts": 512,
+          "media": 45,
+          "relations": 329,
+          "coverage": {
+            "Con relazione documentata": 156,
+            "Fotografia verificata": 40,
+            "Biografia con QID verificato": 98,
+            "Data di nascita documentata": 156,
+            "Opere, eventi o associazioni": 50
+          },
+          "denominator": 156
+        }
+      },
+      "report": {
+        "newG2": 14,
+        "newMedia": 69,
+        "newWikiText": 21,
+        "publishedG2": 37,
+        "selectedCandidates": 80,
+        "municipalities": 7894,
+        "mayorsMatched": 7779,
+        "daitRowsOfficialCrosswalkRejected": 3,
+        "sourceAltimetryMatched": 37,
+        "metricsAdded": 28,
+        "municipalityPeopleLinks": 103,
+        "peopleCatalogued": 156,
+        "mountainLinks": 69,
+        "otherNotableLinks": 34,
+        "portraitsAdded": 16,
+        "imagesHeldForReview": 5,
+        "profilesWithPortrait": 40,
+        "biographiesAdded": 23,
+        "profilesWithBiography": 98,
+        "associationsObserved": 172,
+        "historicPhotosAdded": 5,
+        "historicCommunesCovered": 2,
+        "historicCandidatesChecked": 85,
+        "failuresCount": 2
+      },
+      "delta": {
+        "comuni": 14,
+        "persone": 36
+      }
+    },
+    {
+      "runId": "46107454943",
+      "pipeline": "comuni",
+      "status": "success",
+      "recordedAt": "2026-11-28T04:27:50.307Z",
+      "sourceSha": "e2f28ca5c79f93e7a481506ede999a75c019b859",
+      "sources": {
+        "comuni": {
+          "count": 49,
+          "facts": 1660,
+          "media": 64,
+          "relations": 163,
+          "coverage": {
+            "Quota documentata": 49,
+            "Altimetria del territorio": 49,
+            "Superficie": 49,
+            "Popolazione ISTAT datata": 0,
+            "Sindaco (DAIT)": 47,
+            "Sito istituzionale": 29,
+            "Foto attribuita": 49,
+            "Testo documentato": 49,
+            "Relazioni territoriali": 26,
+            "Stemma o logo verificato": 7,
+            "Stemma comunale": 6,
+            "Archivio fotografico storico datato": 5,
+            "Personaggi documentati": 22,
+            "Figure di montagna": 13
+          },
+          "denominator": 49
+        },
+        "persone": {
+          "count": 162,
+          "facts": 534,
+          "media": 47,
+          "relations": 343,
+          "coverage": {
+            "Con relazione documentata": 162,
+            "Fotografia verificata": 42,
+            "Biografia con QID verificato": 100,
+            "Data di nascita documentata": 162,
+            "Opere, eventi o associazioni": 53
+          },
+          "denominator": 162
+        }
+      },
+      "report": {
+        "newG2": 12,
+        "newMedia": 68,
+        "newWikiText": 14,
+        "publishedG2": 49,
+        "selectedCandidates": 80,
+        "municipalities": 7894,
+        "mayorsMatched": 7779,
+        "daitRowsOfficialCrosswalkRejected": 3,
+        "sourceAltimetryMatched": 49,
+        "metricsAdded": 24,
+        "municipalityPeopleLinks": 109,
+        "peopleCatalogued": 162,
+        "mountainLinks": 72,
+        "otherNotableLinks": 37,
+        "portraitsAdded": 2,
+        "imagesHeldForReview": 5,
+        "profilesWithPortrait": 42,
+        "biographiesAdded": 2,
+        "profilesWithBiography": 100,
+        "associationsObserved": 180,
+        "historicPhotosAdded": 4,
+        "historicCommunesCovered": 5,
+        "historicCandidatesChecked": 238,
+        "failuresCount": 2
+      },
+      "delta": {
+        "comuni": 12,
+        "persone": 6
+      }
     }
   ]
 }
