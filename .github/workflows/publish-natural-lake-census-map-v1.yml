@@ -1,0 +1,139 @@
+name: Publish source-only lake census map (G0, no canonical lake pages)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/publish_natural_lake_census_map_v1.py
+      - tests/test_publish_natural_lake_census_map_v1.py
+      - src/lib/naturalLakeCensus.ts
+      - src/lib/naturalLakeCensus.test.ts
+      - src/components/NaturalLakePage.tsx
+      - src/components/AlpineAtlasMap.tsx
+      - src/alpineAtlas.css
+      - .github/workflows/publish-natural-lake-census-map-v1.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/publish_natural_lake_census_map_v1.py
+      - src/lib/naturalLakeCensus.ts
+      - src/components/NaturalLakePage.tsx
+      - data/snapshots/official-lakes-source-registry-g0.json
+      - .github/workflows/publish-natural-lake-census-map-v1.yml
+  schedule:
+    # Refresh only after the Sunday regional WFS census has saved sources.
+    - cron: '35 5 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cima-lake-map-only-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Source-only projection gates and real 438-ID source snapshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_publish_natural_lake_census_map_v1.py' -v
+          python -m unittest discover -s tests -p 'test_publish_natural_lakes_v1.py' -v
+          python scripts/publish_natural_lake_census_map_v1.py \
+            --out public/data/atlas/natural-lake-census-map-v1.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('public/data/atlas/natural-lake-census-map-v1.json').read_text())
+          registry=json.loads(Path('data/snapshots/official-lakes-source-registry-g0.json').read_text())
+          assert d['shownPolygons'] == sum(p['validPolygons'] for p in registry['providers'].values())
+          assert d['geometryPendingReview']==sum(p['geometryReviewOnly'] for p in registry['providers'].values())
+          assert d['shownPolygons'] >= 100
+          assert d['canonicalAtlasEntitiesAdded']==0
+          assert d['crossSourceIdentityLinksAdded']==0
+          assert d['individualPagesAllowed'] is False and d['seoIndexable'] is False
+          assert not any('slug' in r or 'relations' in r or 'sourceIds' in r for r in d['records'])
+          print('OFFICIAL_LAKES_MAP_ONLY',d['shownPolygons'],'polygon source records',
+                d['geometryPendingReview'],'topology review records')
+          PY
+      - name: TypeScript, regression tests, real build and SEO isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
+          node - <<'JS'
+          const fs=require('node:fs');
+          const data=JSON.parse(fs.readFileSync('dist/data/atlas/natural-lake-census-map-v1.json','utf8'));
+          if(!data.sourceOnlyCatalogue||data.individualPagesAllowed||data.seoIndexable||
+             data.canonicalAtlasEntitiesAdded!==0||data.shownPolygons<100)
+            throw Error('Invalid G0-only published map projection');
+          const sitemap=fs.readFileSync('dist/sitemap.xml','utf8');
+          if(sitemap.includes('natural-lake-census-map')||sitemap.includes('/laghi/bolzano_lakes')||
+             sitemap.includes('/laghi/arpav_water_surfaces'))
+            throw Error('Source-only records leaked into SEO sitemap');
+          const g2=JSON.parse(fs.readFileSync('dist/data/atlas/natural-lakes-v1.json','utf8'));
+          if(g2.releaseChannel!=='NATURAL_FEATURES_LAKES_G2'||!g2.isPublished||
+             !g2.entities?.length)
+            throw Error('Known source-verified G2 dossiers disappeared');
+          console.log('G0 map data, G2 dossier separation, sitemap and static build OK');
+          JS
+          test -z "$(git status --porcelain -- src/)"
+  publish:
+    needs: contract
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Create thin source-only map release on latest main, safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            python scripts/publish_natural_lake_census_map_v1.py \
+              --out public/data/atlas/natural-lake-census-map-v1.json
+            git add public/data/atlas/natural-lake-census-map-v1.json
+            if git diff --cached --quiet; then
+              echo 'No changes to source-only map data'
+              exit 0
+            fi
+            git commit -m 'data(laghi): map-only agency WFS G0 source records'
+            if git push origin HEAD:main; then
+              echo 'MAP_ONLY_RELEASE_COMMITTED=true' >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "Main changed during source map commit, recomputing from latest main ($attempt)"
+            sleep "$((attempt*2))"
+          done
+          echo 'Source-only map release safely blocked by concurrent writes' >&2
+          exit 1
+      - name: Deploy static catalogue after bot data commit
+        if: env.MAP_ONLY_RELEASE_COMMITTED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref main
