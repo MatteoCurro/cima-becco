@@ -99,6 +99,12 @@ class TestSummitPublication(unittest.TestCase):
         h=append_history(None,{"offset":0,"selectedCandidates":100,"eligible":1884},"run-123",at="2026-11-28T00:00:00Z")
         self.assertEqual(h["events"][0]["report"]["offset"],0)
         self.assertEqual(len(append_history(h,{"offset":0,"selectedCandidates":100,"eligible":1884},"run-123")["events"]),1)
+        # A different workflow ID must not double-count the same consecutive batch.
+        self.assertEqual(len(append_history(h,{"offset":0,"selectedCandidates":100,"eligible":1884},"run-124")["events"]),1)
+        advanced=append_history(h,{"offset":100,"selectedCandidates":100,"eligible":1884},"run-125")
+        self.assertEqual(len(advanced["events"]),2)
+        # A future cycle can revisit a source offset after making real progress.
+        self.assertEqual(len(append_history(advanced,{"offset":0,"selectedCandidates":100,"eligible":1884},"run-126")["events"]),3)
         with self.assertRaises(ValueError):
             append_history(None,{"offset":0,"selectedCandidates":0,"eligible":1884},"run-124")
         with self.assertRaises(ValueError):

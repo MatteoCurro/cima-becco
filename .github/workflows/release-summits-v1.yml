@@ -123,6 +123,11 @@ jobs:
         with:
           node-version: '24'
           cache: npm
+      - name: Synchronize the summit source cursor with current main
+        # The workflow trigger SHA may predate another successful batch.
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
       - name: Select only next successfully completed source batch
         run: |
           offset="$(python scripts/summit_batch_cursor_v1.py --history public/data/atlas/import-history-cime-v1.json --size 100)"
@@ -174,6 +179,11 @@ jobs:
             git fetch origin main
             # The source dossier is kept outside this disposable CI checkout.
             git reset --hard origin/main
+            latest_offset="$(python scripts/summit_batch_cursor_v1.py --history public/data/atlas/import-history-cime-v1.json --size 100)"
+            if [ "$latest_offset" != "$CIME_OFFSET" ]; then
+              echo "Stale summit batch at offset $CIME_OFFSET (main expects $latest_offset). Do not publish a duplicate."
+              exit 0
+            fi
             python scripts/publish_summits_v1.py \
               --current public/data/atlas/summits-v1.json \
               --incoming "$temp/incoming.json" \

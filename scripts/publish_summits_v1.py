@@ -166,6 +166,15 @@ def append_history(current, report, run_id, *, at=None):
     if any(e.get("pipeline")==HISTORY and str(e.get("runId"))==str(run_id)
            for e in result["events"] if isinstance(e,dict)):
         return result
+    # Two jobs launched from different commits can accidentally select the
+    # same source offset. The raw candidates are the same: do not count that
+    # repeated batch as progress. Wrapping after the last offset is permitted.
+    latest=next((event for event in reversed(result["events"])
+                 if isinstance(event,dict) and event.get("pipeline")==HISTORY
+                 and event.get("status")=="success"),None)
+    if latest and all((latest.get("report") or {}).get(k)==report[k] for k in
+                      ("offset","eligible","selectedCandidates")):
+        return result
     result["events"].append({
         "pipeline":HISTORY,"status":"success","runId":str(run_id),
         "recordedAt":at or datetime.now(timezone.utc).isoformat(),
