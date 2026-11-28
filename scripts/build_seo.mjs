@@ -184,6 +184,37 @@ const naturalLakes=naturalLakesRelease?.releaseChannel==='NATURAL_FEATURES_LAKES
         m.author && m.licence && m.sourceUrl?.startsWith('https://commons.wikimedia.org/')))
   : [];
 
+// Independently identified point/optional-shoreline lakes G1. Never promote
+// to G2 just because a P18 or a Wikipedia page exists; no index/sitemap.
+const pointLakeG1Path=join(DATA,'atlas','natural-lake-points-g1-v1.json');
+const pointLakeG1Release=existsSync(pointLakeG1Path)?readJson(pointLakeG1Path):null;
+const lakePointsG1=pointLakeG1Release?.releaseChannel==='NATURAL_LAKE_IDENTIFIED_PROFILES_G1_V1'&&
+  pointLakeG1Release?.isCanonicalPublished===false&&
+  pointLakeG1Release?.seoIndexable===false&&
+  pointLakeG1Release?.noindexFollow===true&&
+  pointLakeG1Release?.crossSourceWfsMerges===0&&
+  pointLakeG1Release?.g2Duplicated===0&&
+  Array.isArray(pointLakeG1Release.entities)&&
+  pointLakeG1Release.counts?.profiles===pointLakeG1Release.entities.length
+  ? pointLakeG1Release.entities.filter(e=>
+    e?.quality?.gate==='G1'&&e.quality.seoIndexable===false&&
+    e.quality.sourcePointVerified===true&&
+    e.quality.wikidataIdentityVerified===true&&
+    e.identitySource==='exact_P1566_P625_one_to_one'&&
+    e.sourceIds?.wikidataVerifiedBy==='P1566+P625'&&
+    /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(e.slug||'')&&
+    /^[1-9][0-9]*$/.test(e.sourceIds?.geonames||'')&&
+    /^Q[1-9][0-9]*$/.test(e.sourceIds?.wikidata||'')&&
+    Number.isFinite(e.geo?.point?.lat)&&Number.isFinite(e.geo?.point?.lng)&&
+    !naturalLakes.some(v=>
+      v.sourceIds?.geonames===e.sourceIds.geonames||
+      v.sourceIds?.wikidata===e.sourceIds.wikidata))
+  : [];
+if(pointLakeG1Release&&
+  (lakePointsG1.length!==pointLakeG1Release.counts?.profiles||
+   new Set(lakePointsG1.map(x=>x.slug)).size!==lakePointsG1.length))
+  throw Error('G1 lake source failed noindex exclusion or canonical identity separation');
+
 const alpinePlacesBase = mergeSheltersForSeo(mergeRefugesForSeo(
   existsSync(join(DATA, 'alpine-places.json')) ? readJson(join(DATA, 'alpine-places.json')).places ?? [] : [],
   existsSync(join(DATA, 'atlas', 'refuges-v1.json')) ? readJson(join(DATA, 'atlas', 'refuges-v1.json')) : null
@@ -209,7 +240,7 @@ const peopleReleasePath=join(DATA,'atlas','people-v1.json');
 const peopleRelease=existsSync(peopleReleasePath)?readJson(peopleReleasePath):null;
 const people=peopleRelease?.releaseChannel==='ALPINE_PEOPLE_LINKS' &&
     Array.isArray(peopleRelease?.entities)?peopleRelease.entities:[];
-const centralCredits = makeCentralCredits(alpinePlaces, routes, legacyPeakCredits, TODAY,municipalities,people,summits,naturalPasses,naturalLakes);
+const centralCredits = makeCentralCredits(alpinePlaces, routes, legacyPeakCredits, TODAY,municipalities,people,summits,naturalPasses,naturalLakes,lakePointsG1);
 mkdirSync(join(DIST,'data','atlas'),{recursive:true});
 writeFileSync(join(DIST,'data','atlas','credits-v1.json'),JSON.stringify(centralCredits));
 // Lightweight, public catalogue observability; regenerate on every deploy from
@@ -690,6 +721,59 @@ for(const e of naturalLakes){
       '<p class="cima-seo-warning">Il perimetro deriva dalla cartografia OSM; la superficie non è una misura ufficiale. '+
       'Riva, balneabilità, potabilità e accessibilità non sono verificate dalla sola mappa.</p>'+
       '<p><a class="cta" href="'+href+'">ESPLORA IL LAGO NELL’ATLANTE</a></p>',
+  });
+}
+// G1 has a source-verified identity and a map point, but still NO G2
+// editorial gate: intentionally unindexed. Missing shoreline is not faked.
+for(const e of lakePointsG1){
+  const href=SITE+'/laghi/identificati/'+encodeURIComponent(e.slug)+'/';
+  const p=e.geo.point;
+  const title=e.localNames?.find(x=>x.language==='it')?.value||e.name;
+  const article=e.textSources?.[0]?.text||null;
+  const image=e.media?.find(m=>m.kind==='photo'&&m.subjectVerified===true&&
+    m.reuseAllowed===true&&m.sourceId==='wikidata:'+e.sourceIds.wikidata+':P18');
+  const alt=e.facts?.elevationM;
+  const mapped=e.facts?.osmMappedWaterSurfaceKm2;
+  const coords=p.lat.toFixed(5)+', '+p.lng.toFixed(5);
+  const detail=article||(
+    title+' è identificato dai riferimenti indipendenti GeoNames e Wikidata. '+
+    'La scheda è un profilo G1 senza il dossier editoriale completo.');
+  const desc=(title+'. Identità GeoNames e Wikidata verificata. '+
+    (e.geo.area?'Perimetro OSM associato. ':'Contorno dello specchio d’acqua non disponibile. ')+
+    detail.slice(0,140)).slice(0,300);
+  const facts=[
+    ['Coordinate GeoNames',coords],
+    ...(typeof alt?.value==='number'&&Number.isFinite(alt.value)?
+        [['Quota GeoNames '+(alt.method==='estimated'?'· stimata':'· riportata'),metres(alt.value)]]:[]),
+    ...(e.geo.area&&typeof mapped?.value==='number'&&Number.isFinite(mapped.value)?
+        [['Superficie derivata dal contorno OSM',
+          (mapped.value<1?(mapped.value*100).toLocaleString('it-IT',{maximumFractionDigits:2})+' ha':
+            mapped.value.toLocaleString('it-IT',{maximumFractionDigits:2})+' km²')]]:[]),
+  ];
+  page({
+    path:'laghi/identificati/'+e.slug+'/',
+    noindex:true,
+    title:title+' · Lago identificato G1 (noindex) | Cima Becco',
+    description:desc,image:image?.url,
+    jsonLd:{'@context':'https://schema.org','@type':'WebPage',
+      name:title+' · Identità geografica verificata, approfondimento in corso',
+      url:href,description:desc,
+      isPartOf:{'@type':'CollectionPage',url:SITE+'/laghi/'}},
+    body:crumbs([['Laghi',SITE+'/laghi/'],[title]])+
+      '<div class="cima-seo-eyebrow">CIMA BECCO · IDENTITÀ VERIFICATA G1 · NOINDEX</div>'+
+      '<h1>'+escape(title)+'</h1>'+
+      (image?'<figure class="cima-seo-photo"><img loading="lazy" src="'+escape(image.url)+
+        '" alt="'+escape('Fotografia associata a '+title+' tramite Wikidata P18')+'"></figure>':'')+
+      '<p class="cima-seo-lead">'+escape(desc)+'</p>'+
+      '<ul class="facts cima-seo-facts">'+facts.map(([label,value])=>
+        '<li><strong>'+escape(value)+'</strong>'+escape(label)+'</li>').join('')+'</ul>'+
+      (article?'<section class="cima-seo-body"><h2>Paesaggio e territorio</h2><p>'+
+        escape(article)+'</p></section>':'')+
+      '<p class="cima-seo-warning">'+(e.geo.area?
+        'Il contorno OSM è cartografia verificata, non una certificazione di accesso. ':
+        'Le coordinate GeoNames non sono una riva né un punto di accesso. ')+
+      'Balneabilità, potabilità, apertura e percorribilità non sono dedotte dalla mappa.</p>'+
+      '<p><a class="cta" href="'+href+'">APRI LA SCHEDA GEOGRAFICA</a></p>',
   });
 }
 // Independent evidence pages: noindex,follow; NOT a unique/verified lake,
