@@ -169,7 +169,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
       <div className="cb-location-hero-copy">
         <PlaceBadge place={place}/>
         <h1>{place.name}</h1>
-        {municipality&&place.aliases?.length>0&&<p className="cb-location-muted-note">Noto anche come {place.aliases.map(a=>('name' in a ? String(a.name) : a.value)).join(' · ')}</p>}
+        {municipality&&Boolean(place.aliases?.length)&&<p className="cb-location-muted-note">Noto anche come {(place.aliases||[]).map(a=>a.value).join(' · ')}</p>}
         <p className="cb-location-lead">{place.shortSummary || placeLine}</p>
         {municipality&&place.description&&<p className="cb-location-story">{place.description}</p>}
 
