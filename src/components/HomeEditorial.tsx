@@ -17,6 +17,15 @@ const LABELS:Record<HomeEditorialKind,string>={
 function link(path:string) {
   return import.meta.env.BASE_URL.replace(/\/$/,'') + path;
 }
+/** CAI uppercase register names remain verbatim in data, but read naturally in the UI. */
+function editorialName(name:string) {
+  if (!name || name !== name.toLocaleUpperCase('it-IT') ||
+    !/[A-ZÀ-Ý]{4}/.test(name)) return name;
+  return name.toLocaleLowerCase('it-IT')
+    .replace(/(^|[\s/'(-])([a-zà-ÿ])/g,(_full,sep:string,letter:string)=>
+      sep+letter.toLocaleUpperCase('it-IT'))
+    .replace(/\bE\b/g,'e');
+}
 function height(place:HomeEditorialPlace) {
   return place.elevationM != null && Number.isFinite(place.elevationM)
     ? Math.round(place.elevationM).toLocaleString('it-IT')+' m' : null;
@@ -38,7 +47,7 @@ function PlaceFeature({place,variant}:{place:HomeEditorialPlace;variant:string})
     <span className="cb-home-focus-shade"/>
     <span className="cb-home-focus-copy">
       <small className="cb-home-focus-overline">{LABELS[place.kind]}</small>
-      <strong>{place.name}</strong>
+      <strong>{editorialName(place.name)}</strong>
       {variant==='lead' && place.text && <span className="cb-home-focus-description">{place.text}</span>}
       <span className="cb-home-focus-meta">
         {[height(place),relationship(place)].filter(Boolean).join(' · ')}
