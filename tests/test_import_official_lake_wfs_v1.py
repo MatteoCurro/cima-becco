@@ -119,6 +119,21 @@ class TestOfficialLakeWFS(unittest.TestCase):
         self.assertLess(area2, area1)
         self.assertEqual(whole["coordinates"][0][0], OUTER)
 
+    def test_only_exact_adjacent_duplicate_vertices_are_ignored(self):
+        noisy = [OUTER[0], OUTER[0], OUTER[1], OUTER[1],
+                 OUTER[2], OUTER[3], OUTER[4]]
+        geometry, area = validate_geometry({"type": "Polygon",
+                                             "coordinates": [noisy]})
+        self.assertEqual(geometry["coordinates"][0][0], OUTER)
+        self.assertGreater(area, 0)
+        # A repeated vertex separated by an actual edge remains a topology
+        # warning, not a licence to delete or reshape a problematic shoreline.
+        non_adjacent = [OUTER[0], OUTER[1], OUTER[2], OUTER[1],
+                        OUTER[3], OUTER[4]]
+        with self.assertRaises(ValueError):
+            validate_geometry({"type": "Polygon",
+                               "coordinates": [non_adjacent]})
+
     def test_unclosed_self_crossing_or_non_polygon_never_passes(self):
         errors = [
             {"type": "Polygon", "coordinates": [OUTER[:-1]]},
