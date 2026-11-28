@@ -32,7 +32,7 @@ export const SOURCE_PROVIDERS = Object.freeze([
    url:'https://github.com/StarlightsJourney/HillGPX',licence:'MIT e altre licenze nelle dipendenze'},
 ]);
 
-export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedAt='',municipalities=[],people=[],summits=[],naturalPasses=[],naturalLakes=[]) {
+export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedAt='',municipalities=[],people=[],summits=[],naturalPasses=[],naturalLakes=[],lakePointsG1=[]) {
   const records=[];
   const dedup=new Set();
   const add=(kind,slug,name,src,author,licence,mediaUrl)=>{
@@ -43,7 +43,7 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
     // SAME detail page: uniqueness must include each individual media URL.
     const key=[kind,slug,src,mediaUrl||''].join('\x1f');
     if(dedup.has(key))return; dedup.add(key);
-    const path=kind==='person'?'fonti-e-crediti':kind==='route'?'route':kind==='peak'?'place':kind==='summit'?'cime':kind==='natural_pass'?'passi':kind==='natural_lake'?'laghi':kind==='municipality'?'comuni':
+    const path=kind==='person'?'fonti-e-crediti':kind==='route'?'route':kind==='peak'?'place':kind==='summit'?'cime':kind==='natural_pass'?'passi':kind==='natural_lake'?'laghi':kind==='natural_lake_g1'?'laghi/identificati':kind==='municipality'?'comuni':
       kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'borghi';
     records.push({
       kind,slug,name:String(name||slug).slice(0,180),
@@ -164,6 +164,27 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
           entityUrl:'/laghi/'+encodeURIComponent(e.slug)+'/',
           sourceUrl:t.sourceUrl,author:'Contributori di Wikipedia',licence:t.licence,
           sourceId:t.sourceId,sourceUpdatedAt:t.sourceUpdatedAt||null});
+    }
+  }
+  // G1 lake pages have no new accordion. The existing central register
+  // derives attribution from verified P18 photo / itwiki QID fields.
+  for(const e of lakePointsG1){
+    if(e?.quality?.gate!=='G1'||e.quality.seoIndexable!==false||
+       e.sourceIds?.wikidataVerifiedBy!=='P1566+P625'||!e.slug)continue;
+    for(const m of e.media||[]){
+      if(m.kind==='photo'&&m.subjectVerified&&m.reuseAllowed&&
+         m.author&&m.licence&&m.sourceUrl&&m.url&&
+         m.sourceId==='wikidata:'+e.sourceIds.wikidata+':P18')
+        add('natural_lake_g1',e.slug,e.name,m.sourceUrl,m.author,m.licence,m.url);
+    }
+    for(const t of e.textSources||[]){
+      if(t.text&&t.sourceId?.startsWith('wikipedia:it:')&&t.licence&&
+         t.sourceUrl?.startsWith('https://it.wikipedia.org/'))
+        textCredits.push({kind:'natural_lake_g1',slug:e.slug,name:e.name,
+          entityUrl:'/laghi/identificati/'+encodeURIComponent(e.slug)+'/',
+          sourceUrl:t.sourceUrl,author:'Contributori di Wikipedia',
+          licence:t.licence,sourceId:t.sourceId,
+          sourceUpdatedAt:t.sourceUpdatedAt||null});
     }
   }
   for(const r of routes) {
