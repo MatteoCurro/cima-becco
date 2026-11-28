@@ -22,6 +22,7 @@ import { FlagIcon, LinkIcon, PlusIcon, ReportModal } from './ReportModal';
 import { useReveal } from './useReveal';
 import { SiteFooter, SiteHeader } from './SiteChrome';
 import { AtlasDossierBlocks } from './AtlasDossierBlocks';
+import { SummitConnections } from './SummitConnections';
 import { DetailJumpNav } from './DetailJumpNav';
 import { FaIcon } from './FaIcon';
 import { MapContextLabel } from './MapContextLabel';
@@ -739,7 +740,8 @@ function aboutFallback(venue: Venue, typeLabel: string, area: string | null, hei
   if (venue.type === 'hdb_block') {
     return `A ${venue.storeys ?? ''}-storey residential block${where}, climbed by its public stairwell. ${heightText} from the ground floor to the top landing. Check the stairwell is open before you go and keep noise down for residents.`.replace('  ', ' ');
   }
-  const routes = routeCount > 0 ? `${routeCount} shared route${routeCount === 1 ? '' : 's'} pass${routeCount === 1 ? 'es' : ''} here.` : 'No one has shared a route up it yet.';
+  if (venue.type === 'hill') return `Cima${area ? ' nell’area ' + area : ''}. ${heightText}. Le informazioni sugli accessi e sui punti di appoggio vengono presentate solo quando i dati cartografici permettono collegamenti espliciti o di prossimità.`;
+  const routes = routeCount > 0 ? `${routeCount} percorsi associati al luogo.` : 'Non ci sono ancora percorsi collegati al luogo.';
   return `${typeLabel}${where}, ${heightText}. ${routes}`;
 }
 
@@ -771,12 +773,13 @@ function VenueDetailInner({
   useEffect(() => lockPageScroll(), []);
   const { reviews, setReviews, communityPhotos, reloadPhotos, commons, wiki, generated } = useVenueContent(venue);
   const narrow = useNarrow();
+  const isSummit = venue.type === 'hill';
   const height = venueHeight(venue);
-  const typeLabel = venueKindLabel(venue);
+  const typeLabel = isSummit ? 'Cima' : venueKindLabel(venue);
   const area = townName(venue.town) ?? regionOf(venue.lng, venue.lat);
   const street = venue.street ? titleCaseStreet(venue.street) : null;
   const address = [venue.blkNo ? titleCaseStreet(venue.blkNo) : null, street].filter(Boolean).join(' ');
-  const heightText = height ? `${units.height(height.value)} ${HEIGHT_LABEL[height.kind]}` : 'height not recorded';
+  const heightText = height ? `${units.height(height.value)} ${isSummit ? 'di quota' : HEIGHT_LABEL[height.kind]}` : 'quota non disponibile';
   const rating = combinedRating(venue.rating, reviews);
   const nearby = useMemo(
     () => tallestWithin(allVenues, venue.lng, venue.lat, 1000, 7).filter((item) => item.venue.slug !== venue.slug).slice(0, 6),
@@ -802,7 +805,9 @@ function VenueDetailInner({
 
   const isVerifiedSummit = venue.type === 'hill' && venue.sourceIds?.wikidataVerifiedBy === 'P1566+P625';
   const documentedSummitText = isVerifiedSummit ? venue.textSources?.find(t => t.sourceId?.startsWith('wikipedia:it:'))?.text : undefined;
-  const about = documentedSummitText ?? generated?.text ?? wiki?.extract ?? aboutFallback(venue, typeLabel, area, heightText, routes.length);
+  const about = isSummit
+    ? documentedSummitText ?? venue.shortSummary ?? aboutFallback(venue,typeLabel,area,heightText,routes.length)
+    : generated?.text ?? wiki?.extract ?? aboutFallback(venue,typeLabel,area,heightText,routes.length);
 
   // Only offer "Read more" when three lines actually cut the text off.
   useLayoutEffect(() => {
@@ -836,7 +841,7 @@ function VenueDetailInner({
     </div>
   );
 
-  const heightBlock = height ? <><strong>{units.height(height.value)}</strong> {HEIGHT_LABEL[height.kind]}</> : 'Height not recorded';
+  const heightBlock = height ? <><strong>{units.height(height.value)}</strong> {isSummit?'di quota':HEIGHT_LABEL[height.kind]}</> : 'Quota non disponibile';
 
   return createPortal(
     <div className="venue-detail" ref={pageRef}>
@@ -848,22 +853,22 @@ function VenueDetailInner({
         )}
       />
 
-      <main className="venue-detail-content cb-venue-document cb-document-page">
+      <main className={`venue-detail-content cb-venue-document cb-document-page${isSummit?' cb-is-summit':''}`}>
         <div className="venue-detail-layout cb-venue-grid">
           <div className="venue-detail-head">
             <div className="venue-detail-title-row">
           <div>
             <h1>{venue.name}</h1>
             <p className="venue-detail-sub">
-              <button type="button" className="venue-rating-link" onClick={() => reviewsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+              {!isSummit&&<button type="button" className="venue-rating-link" onClick={() => reviewsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
                 {rating ? (
                   <><StarIcon size={12} filled /> {rating.average.toFixed(2)} · <u>{rating.count} review{rating.count === 1 ? '' : 's'}</u></>
                 ) : (
                   <RatingLabel />
                 )}
-              </button>
-              <span aria-hidden="true"> · </span>
-              {area ? `${typeLabel} in ${area}` : typeLabel}
+              </button>}
+              {!isSummit&&<span aria-hidden="true"> · </span>}
+              {area ? `${typeLabel} · ${area}` : typeLabel}
             </p>
           </div>
           {!narrow && (
@@ -895,8 +900,13 @@ function VenueDetailInner({
             <DetailJumpNav items={[
               {id:'cb-venue-overview',label:'In breve',icon:'mountain'},
               {id:'cb-venue-about',label:'Descrizione',icon:'compass'},
-              {id:'cb-venue-planning',label:'Pianifica',icon:'route'},
-              {id:'cb-venue-routes',label:'Percorsi',icon:'map'},
+              ...(isSummit?[
+                {id:'cb-summit-access',label:'Accessi e ferrate',icon:'route' as const},
+                {id:'cb-summit-support',label:'Rifugi e bivacchi',icon:'house' as const},
+              ]:[
+                {id:'cb-venue-routes',label:'Percorsi',icon:'map' as const},
+              ]),
+              {id:'cb-venue-planning',label:'Meteo e pianificazione',icon:'route'},
               {id:'reviews',label:'Recensioni'},
               ...(nearby.length?[{id:'cb-venue-nearby',label:'Dintorni',icon:'location-dot' as const}]:[]),
               {id:'cb-venue-map',label:'Mappa',icon:'map'},
@@ -904,7 +914,7 @@ function VenueDetailInner({
             <section id="cb-venue-overview" className="venue-detail-intro cb-detail-group cb-detail-group--first">
               <div className="venue-intro-row">
                 <h2>{heightBlock}</h2>
-                <div className="quick-rate" role="radiogroup" aria-label="Rate this place">
+                {!isSummit&&<div className="quick-rate" role="radiogroup" aria-label="Valuta questo luogo">
               <span>Rate it</span>
               {[1, 2, 3, 4, 5].map((value) => (
                 <button
@@ -922,8 +932,9 @@ function VenueDetailInner({
                   <StarIcon size={18} filled={value <= quickRating} />
                 </button>
               ))}
-            </div>
+            </div>}
               </div>
+              {isSummit&&<p className="cb-summit-overview-line">{isVerifiedSummit?'Identità della cima verificata · dati topografici documentati':'Dati cartografici della cima · quota e accessi da approfondire'}</p>}
               {(venue.storeys || address) && <p>{[venue.storeys ? `${venue.storeys} floors` : null, address || null].filter(Boolean).join(' · ')}</p>}
             </section>
 
@@ -940,26 +951,27 @@ function VenueDetailInner({
               </div>
               {(aboutOverflows || aboutExpanded) && (
                 <button type="button" className="venue-read-more" aria-expanded={aboutExpanded} onClick={() => setAboutExpanded((value) => !value)}>
-                  {aboutExpanded ? 'Show less' : 'Read more'}
+                  {aboutExpanded ? 'Mostra meno' : 'Leggi tutto'}
                   <ChevronRightIcon size={12} />
                 </button>
               )}
-              <p className="venue-about-source">
+              {!isSummit&&<p className="venue-about-source">
                 {generated
-                  ? `Summarised from ${generated.sources.join(', ')}`
+                  ? `Sintesi da: ${generated.sources.join(', ')}`
                   : wiki
-                    ? <>From <a href={wiki.url} target="_blank" rel="noreferrer">Wikipedia</a>, CC BY-SA</>
-                    : 'Know this place? Add a review below and it shapes this description.'}
-              </p>
+                    ? <>Testo da <a href={wiki.url} target="_blank" rel="noreferrer">Wikipedia</a>, CC BY-SA</>
+                    : 'Conosci il luogo? Puoi contribuire con una recensione.'}
+              </p>}
             </section>
 
             <AtlasDossierBlocks record={venue} placement="core"/>
+            {isSummit&&<SummitConnections venue={venue} connectedRoutes={routes}/>}
             <section id="cb-venue-planning" className="venue-detail-section cb-detail-group cb-venue-planning" aria-label="Pianificazione e meteo">
               <PlanCard venue={venue}/>
               <button type="button" className="plan-report" onClick={() => setReporting(true)}><FlagIcon/> Segnala un problema su questo luogo</button>
             </section>
 
-            <section id="cb-venue-routes" className="venue-detail-section cb-detail-group venue-routes-section">
+            {!isSummit&&<section id="cb-venue-routes" className="venue-detail-section cb-detail-group venue-routes-section">
               <h2>Percorsi e itinerari collegati</h2>
               {routes.length > 0 ? (
                   <div className="venue-route-grid">
@@ -1008,7 +1020,7 @@ function VenueDetailInner({
                   <a className="btn btn-dark venue-empty-btn" href="#import" onClick={openImportHere}><UploadIcon size={15} />Upload GPX</a>
                 </div>
               )}
-            </section>
+            </section>}
 
             <ReviewsSection venue={venue} reviews={reviews} rating={rating} initialRating={quickRating} sectionRef={reviewsRef} onPosted={(review) => setReviews((current) => [review, ...current])} />
 
