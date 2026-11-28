@@ -1,5 +1,6 @@
 import type { Route } from '../types';
 import { routeActivity } from './routeAnalysis';
+import { routePhysicalEffort, routePresentationCategory } from './routeClassification';
 
 export type EffortLevel = 'gentle' | 'regular' | 'demanding' | 'technical' | 'unknown';
 export interface TrailMood {
@@ -7,6 +8,8 @@ export interface TrailMood {
   label: string;
   quip: string | null;
   basis: string;
+  /** Explains the editorial quip without promoting computed exertion to a technical grade. */
+  explanation: string;
 }
 
 /** Macroarea indicativa ricavata dal punto medio, non un comune di partenza inventato. */
@@ -84,27 +87,73 @@ export function trailTitle(route: Route): string {
 
 function viaFerrataValue(raw: string | undefined): number | null {
   if (!raw) return null;
-  const v = raw.match(/(?:^|\D)([1-6])\+?/);
-  return v ? Number(v[1]) : null;
+  const code=raw.trim().toUpperCase().replace(/^EEA\s*[-–]\s*/, '');
+  const match=code.match(/(?:^|[^0-9])(?:K)?([1-6])\+?/);
+  if(match)return Number(match[1]);
+  // Source-specific classifications, not CAI T/E/EE conversions.
+  const grades:{[key:string]:number}={F:1,PD:2,D:4,MD:5,ED:6};
+  return grades[code]??null;
 }
 
-/** Distinguere sempre una scala CAI/SAC da un soprannome editoriale. */
-export function trailMood(route: Route): TrailMood {
-  // Slang editoriale deliberatamente esagerato, mai spacciato per grado CAI.
-  // "label" è il dato serio, "quip" il titolo irriverente in evidenza.
-  if (routeActivity(route) === 'ferrata') {
-    const num = viaFerrataValue(route.viaFerrataScale);
-    if (num == null) return { level: 'unknown', label: 'Scala ferrata non disponibile', quip: 'GRADO IN LATITANZA', basis: 'Difficoltà tecnica da verificare' };
-    if (num <= 2) return { level: 'regular', label: 'Ferrata poco difficile', quip: 'BRACCIA IN GITA', basis: 'Scala ferrata: ' + route.viaFerrataScale };
-    if (num === 3) return { level: 'demanding', label: 'Ferrata impegnativa', quip: 'AVAMBRACCI IN LEASING', basis: 'Scala ferrata: ' + route.viaFerrataScale };
-    return { level: 'technical', label: 'Ferrata molto impegnativa', quip: num >= 5 ? 'IL VUOTO TI FA CIAO' : 'LA ROCCIA TI SGAMA', basis: 'Scala ferrata: ' + route.viaFerrataScale };
+/**
+ * Irreverent titles are an editorial layer, never technical certification.
+ * Combine original CAI/SAC/ferrata metadata with independently computed
+ * route length and ascent. Fitness and exposure remain distinct dimensions.
+ */
+export function trailMood(route: Route, metrics?: {gainM?:number;elevationAvailable?:boolean}): TrailMood {
+  const category=routePresentationCategory(route);
+  const physical=routePhysicalEffort(route,metrics);
+  const effort=physical.level;
+  const effortNote=physical.explanation;
+  const knownCategory=category.evidence==='inferred' ? 'Categoria da verificare: '+category.reason+'. ' : '';
+  if (category.kind==='ferrata') {
+    const num=viaFerrataValue(route.viaFerrataScale);
+    if(num===null)return {
+      level:'unknown',label:category.evidence==='inferred'?'Possibile ferrata · grado non verificato':'Scala ferrata non disponibile',
+      quip:'GRADO IN LATITANZA',basis:'Difficoltà tecnica da verificare',
+      explanation:knownCategory+'Nessuna difficoltà tecnica originale della ferrata disponibile. '+effortNote,
+    };
+    const strength=num<=2?'regular':num===3?'demanding':'technical';
+    const quip=num<=2?'BRACCIA IN GITA':num===3?'AVAMBRACCI IN LEASING':num>=5?'IL VUOTO TI FA CIAO':'LA ROCCIA TI SGAMA';
+    const label=num<=2?'Ferrata poco difficile':num===3?'Ferrata impegnativa':'Ferrata molto impegnativa';
+    return {level:strength,label,quip,basis:'Scala ferrata: '+route.viaFerrataScale,
+      explanation:'Scala tecnica dichiarata nei dati: '+route.viaFerrataScale+'. '+knownCategory+effortNote+
+      ' Il grado tecnico non certifica lo stato delle attrezzature.'};
   }
-  const level = route.caiDifficulty;
-  if (level === 'T') return { level: 'gentle', label: 'Turistico · CAI T', quip: 'MERENDEROS', basis: 'Classificazione CAI T' };
-  if (level === 'E') return { level: 'regular', label: 'Escursionistico · CAI E', quip: route.gainM >= 850 && route.elevationAvailable !== false ? 'GAMBE IN SCIOPERO' : 'MUOVI QUELLE GAMBE', basis: 'Classificazione CAI E' };
-  if (level === 'EE') return { level: 'demanding', label: 'Escursionisti esperti · CAI EE', quip: route.gainM >= 900 && route.elevationAvailable !== false ? 'DO VETO MORE?' : 'OGGI SI BESTEMMIA', basis: 'Classificazione CAI EE' };
-  if (level === 'EEA') return { level: 'technical', label: 'Esperti con attrezzatura · CAI EEA', quip: 'NON FARE IL FENOMENO', basis: 'Classificazione CAI EEA' };
-  return { level: 'unknown', label: 'Difficoltà da verificare', quip: 'GRADO IN LATITANZA', basis: 'Classificazione CAI assente' };
+  const level=route.caiDifficulty;
+  const scale=route.sacScale;
+  const physicalLevel=effort==='demanding'?'demanding':effort==='regular'?'regular':'gentle';
+  const tough=effort==='demanding';
+  if(level==='T')return {level:tough?'demanding':'gentle',label:'Turistico · CAI T',
+    quip:tough?'GAMBE IN SCIOPERO':'MERENDEROS',basis:'Classificazione CAI T',
+    explanation:'Difficoltà tecnica dichiarata CAI T. '+effortNote+
+      ' La fatica della traccia non cambia il grado CAI.'};
+  if(level==='E')return {level:physicalLevel==='demanding'?'demanding':'regular',
+    label:'Escursionistico · CAI E',quip:tough?'GAMBE IN SCIOPERO':'MUOVI QUELLE GAMBE',
+    basis:'Classificazione CAI E',
+    explanation:'Difficoltà tecnica dichiarata CAI E. '+effortNote+
+      ' Il maggiore sforzo non implica passaggi tecnici di livello EE.'};
+  if(level==='EE')return {level:'demanding',label:'Escursionisti esperti · CAI EE',
+    quip:tough?'DO VETO MORE?':'OGGI SI BESTEMMIA',basis:'Classificazione CAI EE',
+    explanation:'Difficoltà dichiarata CAI EE, distinta dall’impegno fisico. '+effortNote};
+  if(level==='EEA'||category.kind==='attrezzato')return {
+    level:'technical',label:level==='EEA'?'Esperti con attrezzatura · CAI EEA':'Itinerario attrezzato · classe da verificare',
+    quip:'NON FARE IL FENOMENO',basis:level==='EEA'?'Classificazione CAI EEA':'Presenza di attrezzatura suggerita dal nome',
+    explanation:(level==='EEA'?'Classificazione CAI EEA dichiarata. ':'Attrezzatura tecnica ipotizzata dalla denominazione. ')+
+      'Il grado EEA non prova di per sé che si tratti di una via ferrata. '+effortNote,
+  };
+  const sac=/^T[1-6]$/i.test(scale||'')?scale!.toUpperCase():null;
+  if(sac)return {level:sac==='T1'||sac==='T2'?'regular':'demanding',label:'Scala SAC '+sac,
+    quip:tough?'GAMBE IN SCIOPERO':'OGGI SI BESTEMMIA',basis:'Scala SAC dichiarata',
+    explanation:'Scala SAC '+sac+' presente nei dati originali, senza conversione artificiale in CAI. '+effortNote};
+  if(physical.distanceKm!==null||physical.gainM!==null)return {
+    level:physicalLevel,label:physical.label+' · grado tecnico da verificare',
+    quip:tough?'GAMBE IN SCIOPERO':effort==='regular'?'MUOVI QUELLE GAMBE':'MERENDEROS',
+    basis:'Stima editoriale basata su lunghezza e salita',
+    explanation:effortNote+' Manca una classificazione tecnica CAI/SAC confermata: non si deducono esposizione, passaggi attrezzati o percorribilità dal solo GPX.',
+  };
+  return {level:'unknown',label:'Difficoltà da verificare',quip:'GRADO IN LATITANZA',
+    basis:'Classificazione CAI assente',explanation:'Nessuna classe tecnica e nessuna metrica sufficiente per stimare l’impegno fisico.'};
 }
 
 export function trailDescription(route: Route): string {
