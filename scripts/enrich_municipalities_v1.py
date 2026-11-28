@@ -165,7 +165,9 @@ def commons_files(filenames,*, getter=None, allow_svg=False):
         result[title.removeprefix("File:").replace(" ","_")]={
             "url":fileurl,"sourceUrl":original,"licence":license_name,
             "licenceUrl":licence_url if licence_url and str(licence_url).startswith("https://") else None,
-            "author":artist,"retrievedAt":None,
+            "author":artist,
+            "descriptionText":text_only(meta_value(meta,"ImageDescription"))[:400] or None,
+            "retrievedAt":None,
             "sourceUpdatedAt":info.get("timestamp"),
             "subjectVerified":True,"reuseAllowed":True
         }
@@ -184,6 +186,39 @@ def municipality_heraldry_filename(filename, municipality):
     if len(name)<3 or not ((" "+name+" ") in (" "+basename+" ")):return False
     return bool(re.search(r"\b(stemma|wappen|coat of arms|blason|blasonnement|heraldic|armoiries)\b",basename)) and not bool(
         re.search(r"\b(blank|template|provisional|facsimile|sample|bozza|modello|fake)\b",basename))
+
+def find_heraldry_commons(municipality, *,getter=None):
+    """Fallback direct Commons search, with strong subject evidence.
+
+    An image filename alone is NOT enough: the Commons description must
+    explicitly say the image is the municipality's crest. P635 identity is
+    independently verified by the calling importer.
+    """
+    if not municipality or len(municipality)<3:return []
+    d=request_json(COMMONS_API,{"action":"query","format":"json",
+       "list":"search","srsearch":'intitle:"'+municipality.replace('"','')+'" stemma',
+       "srnamespace":"6","srlimit":"20","srprop":""},getter=getter)
+    names=[x.get("title","") for x in (d.get("query") or {}).get("search",[])
+           if municipality_heraldry_filename(x.get("title",""),municipality)]
+    if not names:return []
+    assets=commons_files([name.removeprefix("File:") for name in names[:6]],getter=getter,allow_svg=True)
+    import unicodedata
+    def norm(v):
+        v=unicodedata.normalize("NFKD",str(v or ""))
+        v="".join(z for z in v if not unicodedata.combining(z))
+        return re.sub(r"[^a-z0-9]+"," ",v.casefold()).strip()
+    town=norm(municipality)
+    matched=[]
+    for name in names[:6]:
+        basename=name.removeprefix("File:")
+        asset=assets.get(basename.replace(" ","_"))
+        if not asset:continue
+        desc=norm(asset.get("descriptionText"))
+        if not desc or not re.search(r"(stemma|wappen|coat of arms|armoiries|blason)",desc):
+            continue
+        if not (" "+town+" ") in (" "+desc+" "):continue
+        matched.append((basename,asset))
+    return matched[:2]
 
 def verified_article_heraldry_images(intro, municipality):
     if not isinstance(intro,dict):return []
@@ -260,6 +295,7 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, progress
     chosen=choose_candidates(list(entities.values()),qid_map,max_new,previous,progress)
     media_count=text_count=g2_count=0
     failures=[]
+    commons_crest_searches=0
     for offset in range(0,len(chosen),25):
         part=chosen[offset:offset+25]
         qids=[qid_map[code] for code in part]
@@ -365,6 +401,26 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, progress
                                     media_count+=1
                                     break
                 except Exception as exc:failures.append("wiki:"+code+":"+str(exc)[:70])
+            # A named Commons file may be absent from P94 and from the
+            # verified itwiki infobox. Require both an exact municipal name
+            # and an explicitly heraldic Commons description; otherwise
+            # retain as an unverified candidate, never force a logo.
+            if not any(m.get("kind")=="logo" for m in entity.get("media",[])) and commons_crest_searches<24:
+                commons_crest_searches+=1
+                try:
+                    direct=find_heraldry_commons(entity["name"],getter=getter)
+                except Exception as exc:
+                    direct=[]
+                    failures.append("commons_crest_search:"+code+":"+str(exc)[:80])
+                for filename,asset in direct[:1]:
+                    entity["media"].append({**asset,
+                      "id":"commons:crest:"+qid+":"+
+                         hashlib.sha1(filename.encode()).hexdigest()[:12],
+                      "kind":"logo","symbolType":"coat_of_arms",
+                      "retrievedAt":retrieved_at,
+                      "caption":"Stemma del Comune di "+entity["name"],
+                      "subjectMethod":"verified_P635_and_exact_heraldic_commons_description"})
+                    media_count+=1
             if code in old and not any(m["kind"]=="photo" for m in entity["media"]):
                 entity["media"]=old[code].get("media",[])
             if code in old and not entity.get("textSources"):
@@ -428,6 +484,7 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, progress
             "newG2":g2_count,"newMedia":media_count,"newWikiText":text_count,
             "elevationReportedCoverage":sum(e.get("facts",{}).get("elevationReportedM",{}).get("value") is not None for e in public),
             "areaCoverage":sum(e.get("facts",{}).get("superficieKm2",{}).get("value") is not None for e in public),
+            "commonsCrestSearches":commons_crest_searches,
             "municipalitiesWithSymbols":sum(any(m.get("kind")=="logo" for m in e.get("media",[])) for e in public),
             "municipalitiesWithHistoricPhotos":sum(any(m.get("kind")=="historical_photo" for m in e.get("media",[])) for e in public),
             "selectedCandidates":len(chosen),"selectedCodes":chosen,
