@@ -42,7 +42,7 @@ export function Landing() {
     <SiteHeader sticky center={<SiteSearch/>}/>
     <TrailHero/>
     <main className="home-shell home-main">
-      <HomeEditorial routes={featuredRoutes??dataset?.routes??[]}/>
+      <HomeEditorial routes={[...(featuredRoutes??[]),...(dataset?.routes??[])]}/>
       {loadError&&<section className="home-load-error" role="alert">
         <h2>La mappa si prende una pausa. Non ci piace nemmeno a noi.</h2>
         <p>{loadError}</p>
