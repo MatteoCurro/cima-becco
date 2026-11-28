@@ -2,7 +2,7 @@
   "version": "1.0",
   "canonicalSpec": "docs/MODELLO_METADATI_E_LAYOUT.md",
   "entityKind": "settlement",
-  "phase": "block_4_staging_pilot",
+  "phase": "release_candidate_G2_with_strict_qa",
   "date": "2026-11-28",
   "sources": [
     {
@@ -41,6 +41,29 @@
       "name": "Comune official",
       "state": "later_verified_frazione_status",
       "note": "statistical locality is not legal frazione"
+    },
+    {
+      "name": "ISTAT LocalitaPuntuali 2021",
+      "url": "https://www.istat.it/storage/cartografia/basi_territoriali/2021/LocalitaPuntuali_21.zip",
+      "state": "tested_national_source",
+      "unit": "LOC_ID",
+      "vintage": "2021-12-31",
+      "crs": "EPSG:32632_to_EPSG:4326",
+      "fields": [
+        "PRO_COM",
+        "LOC_ID",
+        "LOC",
+        "TIPO_LOC",
+        "NOME",
+        "POINT_X",
+        "POINT_Y",
+        "POP21",
+        "FAM21",
+        "ABI21",
+        "EDI21",
+        "ALTITUDINE"
+      ],
+      "recordCountFromOfficialDBF": 69003
     }
   ],
   "rules": {
@@ -53,7 +76,10 @@
     "istatMunicipalityCodeVintage": "2021; do not infer 2026 equivalence for changed municipalities",
     "credits": "preserve author/license for each future media object, aggregate via /fonti-e-crediti/",
     "osmCurrentLimitation": "existing OSM snapshot stores 'borgo' but lacks original place=town|village|hamlet subtype; reacquire exact tag before subtype classification",
-    "historicPhotos": "Commons media requires subject QID or official title evidence AND documented capture date, not upload timestamp"
+    "historicPhotos": "Commons media requires subject QID or official title evidence AND documented capture date, not upload timestamp",
+    "release": "G0/G1 retained only in workflow artifact; public data contains G2 with QID, P625, consistent label, exact QID itwiki extract and licensed Commons P18 image; publish only after build+SEO+UI gates.",
+    "historicalPhotos": "MediaInfo P180 exact settlement QID, OR confirmed matching itwiki QID+full settlement title; P571/DateTimeOriginal before 1975; author/licence verified; no inherited municipal emblem.",
+    "nearAfterPoint": "Official geo coordinates joined first; then Haversine near to CAI/OSM refuges and shelters, not access"
   },
   "fields": [
     {
@@ -155,8 +181,8 @@
     {
       "key": "geo.point",
       "priority": "P0",
-      "status": "partial",
-      "validation": "OSM point; ISTAT CSV point missing"
+      "status": "implemented",
+      "validation": "ISTAT national LOC_ID EPSG32632 converted to WGS84; OSM point separately, cross-source ID gate"
     },
     {
       "key": "geo.area",
@@ -167,20 +193,20 @@
     {
       "key": "elevationM",
       "priority": "P1",
-      "status": "partial",
+      "status": "implemented",
       "validation": "OSM/DEM with method; never inherit municipal min/max"
     },
     {
       "key": "populationLocal",
       "priority": "P2",
-      "status": "waiting_source",
-      "validation": "only submunicipal data with 2021 reference and matching locality ID"
+      "status": "implemented",
+      "validation": "official DBF POP21 in fact popolazione, only 2021 locality, allow zero"
     },
     {
       "key": "populationReferenceDate",
       "priority": "P2",
-      "status": "waiting_source",
-      "validation": "explicit vintage"
+      "status": "implemented",
+      "validation": "2021-12-31 explicit in populationReferenceDate fact"
     },
     {
       "key": "frazioneAdministrativeStatus",
@@ -209,7 +235,7 @@
     {
       "key": "relations.near",
       "priority": "P1",
-      "status": "partial",
+      "status": "implemented",
       "validation": "haversine straight line, not access"
     },
     {
@@ -221,13 +247,13 @@
     {
       "key": "relations.born_in/people",
       "priority": "P2",
-      "status": "waiting_wikidata_P19",
+      "status": "partial",
       "validation": "specific locality QID not just municipality"
     },
     {
       "key": "media.current",
       "priority": "P1",
-      "status": "waiting_subject_and_license",
+      "status": "partial",
       "validation": "Commons verified subject, author, licence"
     },
     {
@@ -239,7 +265,7 @@
     {
       "key": "media.historical_photo",
       "priority": "P2",
-      "status": "waiting_capture_date_and_subject",
+      "status": "partial",
       "validation": "documented date + reused rights"
     },
     {
@@ -277,6 +303,30 @@
       "priority": "P1",
       "status": "not_applicable_staging",
       "validation": "future release gate G2 only"
+    },
+    {
+      "key": "familiesLocal21",
+      "priority": "P2",
+      "status": "implemented",
+      "validation": "official FAM21 same LOC_ID, fact famiglie; never inherited"
+    },
+    {
+      "key": "dwellingsLocal21",
+      "priority": "P2",
+      "status": "implemented",
+      "validation": "official ABI21 same LOC_ID, fact abitazioni"
+    },
+    {
+      "key": "buildingsLocal21",
+      "priority": "P2",
+      "status": "implemented",
+      "validation": "official EDI21 same LOC_ID, fact edifici"
+    },
+    {
+      "key": "historicalDateMethod",
+      "priority": "P2",
+      "status": "partial",
+      "validation": "P571 or DateTimeOriginal; capture date != upload"
     }
   ],
   "tests": [
@@ -290,6 +340,9 @@
     "non-indexability",
     "no inherited municipal facts",
     "no unlicensed media",
-    "real ISTAT04+05 and OSM pilot"
+    "real ISTAT04+05 and OSM pilot",
+    "official 69,003 point DBF geometry and POP21/FAM21/ABI21/EDI21",
+    "daily release G2 gate, URL alias redirects, sitemap and schema.org build",
+    "historical P180 scene and author/rights"
   ]
 }
