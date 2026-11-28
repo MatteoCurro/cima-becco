@@ -227,6 +227,19 @@ def build(release,*,getter=None,previous_people=None,checked_at=None,batch=6,max
         if new:
             m["connectedPeople"]=new
             linked+=len(new)
+            # Links are first-class graph edges; the visible dossier is an
+            # adapter of the same relationships, not an unrelated text list.
+            for entry in new:
+                relation={"type":entry["relationType"],
+                  "target":{"id":entry["personId"],"kind":"person",
+                            "name":entry["name"]},
+                  "sourceId":entry["sourceId"],
+                  "sourceUrl":entry["sourceUrl"],"method":"reported",
+                  "verified":True,"retrievedAt":now}
+                if not any(r.get("type")==relation["type"] and
+                           r.get("target",{}).get("id")==entry["personId"]
+                           for r in m.get("relations",[])):
+                    m.setdefault("relations",[]).append(relation)
         elif m.get("connectedPeople"):
             # Preserve source-verified historical links if WDQS timed out.
             m["connectedPeople"]=[p for p in m["connectedPeople"] if p.get("verified")]
