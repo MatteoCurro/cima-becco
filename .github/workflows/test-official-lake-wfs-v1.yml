@@ -6,6 +6,9 @@ on:
       - scripts/import_official_lake_wfs_v1.py
       - tests/test_import_official_lake_wfs_v1.py
       - .github/workflows/test-official-lake-wfs-v1.yml
+      - scripts/normalize_official_lake_wfs_facts_v1.py
+      - scripts/audit_official_lake_facts_v1.py
+      - tests/test_normalize_official_lake_wfs_facts_v1.py
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,6 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m unittest discover -s tests -p 'test_import_official_lake_wfs_v1.py' -v
+          python -m unittest discover -s tests -p 'test_normalize_official_lake_wfs_facts_v1.py' -v
           python -m unittest discover -s tests -p 'test_enrich_natural_water_geometry_v1.py' -v
           python -m unittest discover -s tests -p 'test_publish_natural_lakes_v1.py' -v
           test -z "$(git status --porcelain -- public/ src/)"
@@ -71,5 +75,74 @@ jobs:
         with:
           name: official-lakes-${{ matrix.provider }}-G0-audit
           path: build/official-lakes-${{ matrix.provider }}/
+          retention-days: 20
+          if-no-files-found: warn
+
+  source-evidence-audit:
+    needs: [offline-regressions, source-probes]
+    # Source availability is not a license to publish; network failures do
+    # not break the existing two lake G2 dossiers or the static site.
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download the two independent G0 source samples from this run
+        uses: actions/download-artifact@v4
+        with:
+          pattern: official-lakes-*-G0-audit
+          path: build/official-sources
+          merge-multiple: false
+      - name: Compare to an earlier WFS run for short-term source-ID consistency
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/earlier-bz build/earlier-arpav
+          gh run download 46127602617 --repo ${{ github.repository }} \
+            -n official-lakes-bolzano_lakes-G0-audit -D build/earlier-bz
+          gh run download 46127602617 --repo ${{ github.repository }} \
+            -n official-lakes-arpav_water_surfaces-G0-audit -D build/earlier-arpav
+      - name: Audit sourced values, measured units, stable IDs and review-only OSM overlaps
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/audit_official_lake_facts_v1.py \
+            --bolzano-lakes build/official-sources/official-lakes-bolzano_lakes-G0-audit/official-lake-source-g0.json \
+            --arpav-water-surfaces build/official-sources/official-lakes-arpav_water_surfaces-G0-audit/official-lake-source-g0.json \
+            --previous-bolzano-lakes build/earlier-bz/official-lake-source-g0.json \
+            --previous-arpav-water-surfaces build/earlier-arpav/official-lake-source-g0.json \
+            --osm-snapshot data/snapshots/natural-lake-geometry-g1.json \
+            --out build/official-lake-facts-audit
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('build/official-lake-facts-audit/official-lake-facts-audit.json')
+          audit=json.loads(p.read_text())
+          assert audit['g2NewEntities']==0
+          assert audit['crossSourceLinksPublished']==0
+          for provider,report in audit['providerReports'].items():
+              assert report['normalizedFeatures']>0
+              assert report['replayConsistency'] is not None
+              assert report['replayConsistency']['longTermIdStabilityVerified'] is False
+              print(provider,'features',report['normalizedFeatures'],
+                    'repeat IDs',report['replayConsistency']['sameFidCount'],
+                    'review-only matches',report.get('possibleSamePlaceReviewOnly',0))
+          print('G0 review-only OSM candidates:',audit['candidateReviews'])
+          PY
+          test -z "$(git status --porcelain -- public/ src/)"
+      - name: Retain non-public structured source facts and QA reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-lakes-normalized-g0-review
+          path: build/official-lake-facts-audit
           retention-days: 20
           if-no-files-found: warn
