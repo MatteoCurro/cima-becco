@@ -175,7 +175,15 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
 
         <AtlasDossierBlocks record={place} placement="alerts"/>
         <DetailMetrics label="Informazioni principali" items={[
-          { label: municipality ? (place.facts?.quotaCentroM ? 'Quota del centro ISTAT' : place.facts?.elevationReportedM ? 'Quota riportata Wikidata' : 'Quota non disponibile') : 'Altitudine' + (place.elevationSource === 'dem' ? ' stimata' : ''), value: place.elevationM != null ? place.elevationM.toLocaleString('it-IT') + ' m' : 'n.d.' },
+          { label: municipality ? (place.facts?.quotaCentroM ? 'Quota del centro ISTAT' :
+              place.facts?.elevationReportedM ? 'Quota riportata Wikidata' :
+              place.facts?.altitudineTerritorioMinM&&place.facts?.altitudineTerritorioMaxM?'Quota territorio (min–max DEM)':'Quota non disponibile')
+              : 'Altitudine' + (place.elevationSource === 'dem' ? ' stimata' : ''),
+            value: place.elevationM != null ? place.elevationM.toLocaleString('it-IT') + ' m' :
+              municipality && typeof place.facts?.altitudineTerritorioMinM?.value==='number' &&
+              typeof place.facts?.altitudineTerritorioMaxM?.value==='number'?
+              place.facts.altitudineTerritorioMinM.value.toLocaleString('it-IT')+'–'+
+              place.facts.altitudineTerritorioMaxM.value.toLocaleString('it-IT')+' m':'n.d.' },
           ...(municipality&&typeof place.facts?.superficieKm2?.value==='number'?[{label:'Superficie',value:place.facts.superficieKm2.value.toLocaleString('it-IT',{maximumFractionDigits:1})+' km²'}]:[]),
           ...(municipality&&typeof place.facts?.altitudineTerritorioMaxM?.value==='number'?[{label:'Quota massima (territorio DEM)',value:place.facts.altitudineTerritorioMaxM.value.toLocaleString('it-IT')+' m'}]:[]),
           ...(place.capacity != null ? [{ label: 'Posti letto', value: place.capacity }] : []),
