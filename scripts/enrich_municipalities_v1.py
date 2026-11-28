@@ -334,7 +334,6 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, progress
                     intro=wikipedia_intro(wiki,qid,getter=getter)
                     if intro:
                         intro["retrievedAt"]=retrieved_at
-                        intro.pop("linkedImages",None) if not verified_article_heraldry_images(intro,entity["name"]) else None
                         entity["textSources"]=[{k:v for k,v in intro.items() if k!="linkedImages"}]
                         entity["description"]=intro["text"]
                         if not any(t.get("sourceId")==intro["sourceId"]
