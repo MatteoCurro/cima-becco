@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Route } from '../types';
 import { routePresentationCategory, routePhysicalEffort } from './routeClassification';
+import { trailMood } from './routeEditorial';
 const example=(over:Partial<Route>={}):Route=>({
   slug:'test',name:'Sentiero 12',venueSlugs:[],distanceM:6000,gainM:300,lossM:200,
   elevationAvailable:true,loop:false,coordinates:[[12,46,1000],[12.03,46.04,1300]],
@@ -27,5 +28,22 @@ describe('Catalogazione cauta senza modificare l’importatore',()=>{
     const missing=routePhysicalEffort(example({elevationAvailable:false,gainM:0,distanceM:10000}));
     expect(missing.gainM).toBeNull();
     expect(missing.explanation).toMatch(/parziale/);
+    expect(missing.level).toBe('unknown');
+  });
+  it('non presenta una breve traccia senza dislivello come facile o merenderos',()=>{
+    const incomplete=example({distanceM:4000,gainM:0,elevationAvailable:false,caiDifficulty:'E'});
+    expect(routePhysicalEffort(incomplete).level).toBe('unknown');
+    expect(trailMood(incomplete).label).toContain('CAI E');
+    expect(trailMood(incomplete).quip).toBeNull();
+  });
+  it('una dimensione molto impegnativa resta evidente anche se l’altra manca',()=>{
+    const long=example({distanceM:20000,gainM:0,elevationAvailable:false});
+    expect(routePhysicalEffort(long).level).toBe('demanding');
+    expect(trailMood(long).quip).toBe('GAMBE IN SCIOPERO');
+  });
+  it('non ricava un grado ferrata da numeri inseriti in testo ambiguo',()=>{
+    expect(trailMood(example({activity:'ferrata',viaFerrataScale:'K3'})).quip).toBe('AVAMBRACCI IN LEASING');
+    expect(trailMood(example({activity:'ferrata',viaFerrataScale:'Nota informale livello 3'})).quip)
+      .toBe('GRADO IN LATITANZA');
   });
 });

@@ -21,9 +21,26 @@ describe('Collegamenti topografici prudenti delle cime',()=>{
     expect(result[0].distanceM).toBe(0);
   });
   it('un link ascends_to è documentato solo se verificato e riferito alla stessa cima',()=>{
-    const link={type:'ascends_to' as const,target:{id:'summit-id',kind:'summit',name:'Test'},verified:true};
+    const link={type:'ascends_to' as const,target:{id:'summit-id',kind:'summit',name:'Test'},verified:true,
+      sourceUrl:'https://example.org/summits/test'};
     expect(summitRoutes(peak,[route({relations:[link]})])[0].relation).toBe('documented');
     expect(summitRoutes(peak,[route({relations:[{...link,verified:false}]})])[0].relation).not.toBe('documented');
+    expect(summitRoutes(peak,[route({relations:[{...link,sourceUrl:undefined}]})])[0].relation).not.toBe('documented');
+    expect(summitRoutes(peak,[route({relations:[{...link,target:{...link.target,id:'other-id',slug:peak.slug}}]})])[0].relation).not.toBe('documented');
+  });
+  it('non lascia che molte tracce di sola prossimità nascondano tutte le ferrate nell’area',()=>{
+    const ordinary=Array.from({length:8},(_,i)=>route({slug:'walk-'+i}));
+    const ferrata=route({slug:'ferrata-near',activity:'ferrata',viaFerrataScale:'K3',
+      coordinates:[[12.01,46.51,1800],[12.013,46.514,2100]]});
+    const out=summitRoutes(peak,[...ordinary,ferrata],5);
+    expect(out).toHaveLength(5);
+    expect(out.some(x=>x.route.slug==='ferrata-near'&&x.relation==='ferrata_area')).toBe(true);
+  });
+  it('non eleva una relazione rifugio priva di fonte a collegamento verificato',()=>{
+    const relation={type:'accessible_from' as const,target:{id:'hut-1',kind:'rifugio',name:'Rifugio Test',slug:'rif-test'},verified:true};
+    const place=hut({id:'hut-1'});
+    expect(summitSupportPlaces({...peak,relations:[relation]},[place],[])[0].relation).toBe('nearby');
+    expect(summitSupportPlaces({...peak,relations:[{...relation,sourceUrl:'https://example.org/route'}]},[place],[])[0].relation).toBe('documented');
   });
   it('una ferrata a distanza non diventa un sentiero che arriva in vetta',()=>{
     const out=summitRoutes(peak,[route({

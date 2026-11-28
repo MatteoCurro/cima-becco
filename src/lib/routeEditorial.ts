@@ -87,8 +87,10 @@ export function trailTitle(route: Route): string {
 
 function viaFerrataValue(raw: string | undefined): number | null {
   if (!raw) return null;
-  const code=raw.trim().toUpperCase().replace(/^EEA\s*[-–]\s*/, '');
-  const match=code.match(/(?:^|[^0-9])(?:K)?([1-6])\+?/);
+  const code=raw.trim().toUpperCase().replace(/\s+/g,'').replace(/^EEA[-–]/, '');
+  // Interpret only complete, recognizable source grades. A number embedded
+  // in arbitrary text is not a documented technical grade.
+  const match=code.match(/^(?:K)?([0-6])[+-]?$/);
   if(match)return Number(match[1]);
   // Source-specific classifications, not CAI T/E/EE conversions.
   const grades:{[key:string]:number}={F:1,PD:2,D:4,MD:5,ED:6};
@@ -128,14 +130,15 @@ export function trailMood(route: Route, metrics?: {gainM?:number;elevationAvaila
   }
   const level=route.caiDifficulty;
   const scale=route.sacScale;
-  const physicalLevel=effort==='demanding'?'demanding':effort==='regular'?'regular':'gentle';
+  const physicalLevel=effort;
+  const effortUnknown=effort==='unknown';
   const tough=effort==='demanding';
-  if(level==='T')return {level:tough?'demanding':'gentle',label:'Turistico · CAI T',
-    quip:tough?'GAMBE IN SCIOPERO':'MERENDEROS',basis:'Classificazione CAI T',
+  if(level==='T')return {level:tough?'demanding':effortUnknown?'unknown':'gentle',label:'Turistico · CAI T',
+    quip:effortUnknown?null:tough?'GAMBE IN SCIOPERO':'MERENDEROS',basis:'Classificazione CAI T',
     explanation:'Difficoltà tecnica dichiarata CAI T. '+effortNote+
       ' La fatica della traccia non cambia il grado CAI.'};
-  if(level==='E')return {level:physicalLevel==='demanding'?'demanding':'regular',
-    label:'Escursionistico · CAI E',quip:tough?'GAMBE IN SCIOPERO':'MUOVI QUELLE GAMBE',
+  if(level==='E')return {level:effortUnknown?'unknown':physicalLevel==='demanding'?'demanding':'regular',
+    label:'Escursionistico · CAI E',quip:effortUnknown?null:tough?'GAMBE IN SCIOPERO':'MUOVI QUELLE GAMBE',
     basis:'Classificazione CAI E',
     explanation:'Difficoltà tecnica dichiarata CAI E. '+effortNote+
       ' Il maggiore sforzo non implica passaggi tecnici di livello EE.'};
@@ -154,7 +157,7 @@ export function trailMood(route: Route, metrics?: {gainM?:number;elevationAvaila
     explanation:'Scala SAC '+sac+' presente nei dati originali, senza conversione artificiale in CAI. '+effortNote};
   if(physical.distanceKm!==null||physical.gainM!==null)return {
     level:physicalLevel,label:physical.label+' · grado tecnico da verificare',
-    quip:tough?'GAMBE IN SCIOPERO':effort==='regular'?'MUOVI QUELLE GAMBE':'MERENDEROS',
+    quip:effortUnknown?null:tough?'GAMBE IN SCIOPERO':effort==='regular'?'MUOVI QUELLE GAMBE':'MERENDEROS',
     basis:'Stima editoriale basata su lunghezza e salita',
     explanation:effortNote+' Manca una classificazione tecnica CAI/SAC confermata: non si deducono esposizione, passaggi attrezzati o percorribilità dal solo GPX.',
   };
