@@ -23,6 +23,7 @@ import { useReveal } from './useReveal';
 import { SiteFooter, SiteHeader } from './SiteChrome';
 import { AtlasDossierBlocks } from './AtlasDossierBlocks';
 import { SummitConnections } from './SummitConnections';
+import { SummitGeography } from './SummitGeography';
 import { DetailJumpNav } from './DetailJumpNav';
 import { FaIcon } from './FaIcon';
 import { MapContextLabel } from './MapContextLabel';
@@ -900,6 +901,7 @@ function VenueDetailInner({
             <DetailJumpNav items={[
               {id:'cb-venue-overview',label:'In breve',icon:'mountain'},
               {id:'cb-venue-about',label:'Descrizione',icon:'compass'},
+              ...(isSummit?[{id:'cb-summit-geography',label:'Geografia',icon:'mountain' as const}]:[]),
               ...(isSummit?[
                 {id:'cb-summit-access',label:'Accessi e ferrate',icon:'route' as const},
                 {id:'cb-summit-support',label:'Rifugi e bivacchi',icon:'house' as const},
@@ -939,7 +941,7 @@ function VenueDetailInner({
             </section>
 
             <section id="cb-venue-about" className="venue-detail-section cb-detail-group">
-              <h2>Il luogo e la sua storia</h2>
+              <h2>{isSummit?'La montagna, in breve':'Il luogo e la sua storia'}</h2>
               {/* Three lines; a clear "Read more" (or a double-click) opens the rest. */}
               <div
                 ref={aboutRef}
@@ -964,7 +966,7 @@ function VenueDetailInner({
               </p>}
             </section>
 
-            <AtlasDossierBlocks record={venue} placement="core"/>
+            {isSummit?<SummitGeography venue={venue}/>:<AtlasDossierBlocks record={venue} placement="core"/>}
             {isSummit&&<SummitConnections venue={venue} connectedRoutes={routes}/>}
             <section id="cb-venue-planning" className="venue-detail-section cb-detail-group cb-venue-planning" aria-label="Pianificazione e meteo">
               <PlanCard venue={venue}/>
@@ -1043,7 +1045,7 @@ function VenueDetailInner({
             )}
 
             <AtlasDossierBlocks record={venue} placement="connections"/>
-            <AtlasDossierBlocks record={venue} placement="media"/>
+            <AtlasDossierBlocks record={venue} placement="media" excludeImages={isSummit}/>
             <AtlasDossierBlocks record={venue} placement="credits"/>
           </div>
 
@@ -1051,7 +1053,7 @@ function VenueDetailInner({
             <div className="cb-venue-map-pane">
               <MapContextLabel kicker="CARTOGRAFIA DEL LUOGO" title={venue.name}/>
               <Suspense fallback={<div className="mini-map mini-map-fallback" />}><MiniMap venue={venue}/></Suspense>
-              <button type="button" className="cb-venue-map-open" onClick={()=>onShowOnMap()}><MapIcon size={15}/> Esplora i percorsi sulla mappa <FaIcon name="arrow-up-right-from-square" size={12}/></button>
+              <button type="button" className="cb-venue-map-open" onClick={()=>onShowOnMap()}><MapIcon size={15}/> {isSummit?'Esplora la posizione e le tracce nei dintorni':'Esplora i percorsi sulla mappa'} <FaIcon name="arrow-up-right-from-square" size={12}/></button>
             </div>
           </aside>
         </div>
