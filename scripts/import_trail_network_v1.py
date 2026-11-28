@@ -114,7 +114,12 @@ def parse_way(row):
     tags=row.get("tags") or {}
     if row.get("type")!="way" or type(ident) is not int or ident<=0 or not isinstance(tags,dict):
         return None
-    if tags.get("highway") not in HIGHWAYS and not _is_ferrata(tags):
+    highway=tags.get("highway")
+    # An explicit non-walking road class must not be converted into a
+    # mountain trail even when it carries a stray ferrata-related tag.
+    if highway is not None and highway not in HIGHWAYS:
+        return None
+    if highway not in HIGHWAYS and not _is_ferrata(tags):
         return None
     geometry=_way_points(row)
     if geometry is None:return None
@@ -250,8 +255,9 @@ def build_graph(source,bbox=BBOX,*,at="2026-11-28T00:00:00+00:00",max_ways=1400)
     for r in sorted(relations.values(),key=lambda x:x["osmRelationId"]):
         members=[x["osmWayId"] for x in r["members"]]
         missing=sorted(set(members)-set(ways))
-        edges=[s for s in segments if s["sourceIds"]["osmWay"].split("/")[1] in
-               {str(x) for x in members if x in ways}]
+        member_way_ids=set(members)&set(ways)
+        edges=[s for s in segments if
+               int(s["sourceIds"]["osmWay"].split("/")[1]) in member_way_ids]
         # "Connected" only describes mapped topology; it does not certify
         # safety, completeness of the route on the ground or official status.
         connected=_components(edges)
