@@ -174,6 +174,21 @@ def enrich_historical(release,*,getter=None,max_municipalities=20,
     require(release.get("isPublished") is True,"Archivio comuni non pubblicato")
     checked_at=checked_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
     all_m=release.get("entities") or []
+    # Remove previously accepted composites or scenes with contradictory
+    # years from incremental releases. Keep their originals in Commons;
+    # dropping a misleading display is not deleting a source.
+    historical_discarded=0
+    for commune in all_m:
+        original=commune.get("media") or []
+        accepted=[]
+        for media in original:
+            if media.get("kind")=="historical_photo" and (
+              not media.get("capturedAt") or
+              not safe_historical_scene(media,media["capturedAt"])):
+                historical_discarded+=1
+                continue
+            accepted.append(media)
+        commune["media"]=accepted
     # prioritize communes not already covered; retain previous archive on
     # live-query failures. Batch is bounded to protect Commons and CI budgets.
     eligible=[e for e in all_m if e.get("sourceIds",{}).get("wikidataVerifiedBy")=="P635"
@@ -186,6 +201,7 @@ def enrich_historical(release,*,getter=None,max_municipalities=20,
     selected=(eligible+eligible)[offset:offset+min(max_municipalities,len(eligible))]
     report={"municipalitiesEligible":len(eligible),"municipalitiesChecked":len(selected),
             "imagesConsidered":0,"imagesSaved":0,
+            "previousCompositesRejected":historical_discarded,
             "historicalMunicipalities":0,"errors":[]}
     for commune in selected:
         qid=commune["sourceIds"]["wikidata"]
