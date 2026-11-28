@@ -96,6 +96,19 @@ def claim_string(item, prop):
         if isinstance(v,str) and v:return v
     return None
 
+def claim_quantity(item, prop, expected_unit, minimum, maximum):
+    """Wikidata quantity with explicit unit and controlled domain; no implicit conversion."""
+    unit_uri="http://www.wikidata.org/entity/"+expected_unit
+    for claim in (item.get("claims") or {}).get(prop,[]):
+        if claim.get("rank")=="deprecated":continue
+        value=((claim.get("mainsnak") or {}).get("datavalue") or {}).get("value")
+        if not isinstance(value,dict) or value.get("unit")!=unit_uri:continue
+        try:amount=float(value.get("amount"))
+        except (ValueError,TypeError):continue
+        if math.isfinite(amount) and minimum<=amount<=maximum:
+            return amount
+    return None
+
 def claim_coord(item):
     for claim in (item.get("claims") or {}).get("P625",[]):
         if claim.get("rank")=="deprecated":continue
@@ -238,6 +251,19 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
             if point and not entity["geo"].get("point"):
                 entity["geo"]={"point":point,"area":None,"method":"reported",
                                "sourceUrl":wd_url,"sourceId":"wikidata:"+qid+":P625"}
+            # P2044 describes the elevation of an entity, not necessarily
+            # the municipality's administrative centre. Never call it quotaCentroM.
+            elevation=claim_quantity(item,"P2044","Q11573",-5,4800)
+            if elevation is not None and "elevationReportedM" not in entity["facts"]:
+                entity["facts"]["elevationReportedM"]=fact(
+                    elevation,"wikidata:"+qid+":P2044",wd_url,unit="m",
+                    as_of=retrieved_at,licence="CC0",method="reported")
+            # P2046: square kilometres only, never reinterpret hectares/m².
+            area=claim_quantity(item,"P2046","Q712226",0.01,3000)
+            if area is not None and "superficieKm2" not in entity["facts"]:
+                entity["facts"]["superficieKm2"]=fact(
+                    area,"wikidata:"+qid+":P2046",wd_url,unit="km2",
+                    as_of=retrieved_at,licence="CC0",method="reported")
             website=claim_string(item,"P856")
             if website and website.startswith("https://"):
                 entity["facts"]["sitoUfficiale"]=fact(website,"wikidata:"+qid+":P856",
@@ -272,11 +298,14 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
             elif has_point:
                 entity["quality"]={"gate":"G1","seoIndexable":False,"reviewRequired":False}
                 entity["editorialStatus"]="linked"
+    # Existing G2 records must keep their facts when a run only processes
+    # *new* candidates; ISTAT/DAIT facts in the current snapshot win.
     # preserve existing enriched identities/media across incremental refresh
     for code,old_e in old.items():
         if code not in entities:continue
         e=entities[code]
         if e.get("quality",{}).get("gate")=="G0" and old_e.get("quality",{}).get("gate") in ("G1","G2"):
+            e["facts"]={**old_e.get("facts",{}), **e.get("facts",{})}
             for k in ("geo","media","textSources","description","editorialStatus","quality"):
                 if k in old_e:e[k]=old_e[k]
             for source in ("wikidata","wikidataVerifiedBy"):
@@ -290,6 +319,8 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
     public.sort(key=lambda e:e["sourceIds"]["istat"])
     report={"nationalEntities":len(enriched),"publishedG2":len(public),
             "newG2":g2_count,"newMedia":media_count,"newWikiText":text_count,
+            "elevationReportedCoverage":sum(e.get("facts",{}).get("elevationReportedM",{}).get("value") is not None for e in public),
+            "areaCoverage":sum(e.get("facts",{}).get("superficieKm2",{}).get("value") is not None for e in public),
             "selectedCandidates":len(chosen),"failures":failures,
             "qualityG1":sum(e.get("quality",{}).get("gate")=="G1" for e in enriched),
             "qualityG0":sum(e.get("quality",{}).get("gate")=="G0" for e in enriched)}
