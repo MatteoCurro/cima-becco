@@ -4,6 +4,16 @@
 **Specifica superiore e vincolante:** [MODELLO_METADATI_E_LAYOUT.md](MODELLO_METADATI_E_LAYOUT.md). Il presente piano organizza i lavori e NON cambia la tassonomia o le regole canoniche.  
 **UI:** [ARCHITECTURE.md](ARCHITECTURE.md); un solo sistema di ricerca, mappa, dettaglio e filtri.
 
+## Blocco 4 — rilascio verificato delle prime località G2 (28/11/2026)
+
+- **Release su main completata:** [workflow #46117176744](https://github.com/MatteoCurro/cima-becco/actions/runs/46117176744), inclusi test Python, 292 test Vitest, TypeScript, build reale, verifica permalink e attribuzioni. Il catalogo `public/data/atlas/settlements-v1.json` contiene **14 schede G2**, tutte con QID/coordinate/fotografia Commons/licenza e testo verificato; nessuna entità G0/G1 è stata promossa.
+- **Territorio ufficiale in archivio di staging:** 8.882 centri/nuclei tra Trentino-Alto Adige e Veneto, corrispondenze puntuali ISTAT 2021 complete con dati `POP21`, `FAM21`, `ABI21`, `EDI21`. Le entità restano separate dalle frazioni giuridiche salvo evidenza specifica. Le relazioni `near` a rifugi/ricoveri non dimostrano accessi.
+- **Cursore corretto:** [PR #23](https://github.com/MatteoCurro/cima-becco/pull/23). Lo storico `import-history-localita-v1.json` conserva l'offset soltanto delle esecuzioni riuscite; ultimo batch verificato `offset=0`. Mai saltare lotti a causa di run falliti. Dopo 80 candidati verificati si prosegue con i successivi, tornando al primo dopo il lotto finale.
+- **Concorrenza sicura:** [PR #24](https://github.com/MatteoCurro/cima-becco/pull/24) contiene unione per QID/ID/slug del catalogo G2, conservazione di foto storiche con autore/licenza/data, rifiuto dei conflitti d'identità, rebuild SEO/credits dell'unione e retry senza force-push; necessario perché altre Actions aggiornano `main` contemporaneamente.
+- **Programmazione:** workflow `release-settlements-v1.yml` alle 06:10 UTC ogni giorno e all'occorrenza manualmente; solo cataloghi G2 pubblicati e report QA conservati. Sorgenti ufficiali ISTAT 2021 cache riutilizzata. Sono ancora arricchimenti futuri, non dati impliciti: figure collegate alla località esatta, foto storiche rigorosamente attribuite, popolazione aggiornata oltre il censimento 2021.
+
+---
+
 ## Stato di preparazione alla produzione del blocco 4 (28/11/2026)
 
 **Prima prova G2 su fonti reali:** 8 dossier eleggibili su 80 candidati Wikidata/OSM, con QID italiano, coordinate compatibili, P18 Commons, autore/licenza e estratto Wikipedia con QID corrispondente. Queste 8 schede erano ancora in **staging**, non pubblicate. 69.003 righe punti ufficiali ISTAT 2021 disponibili per georeferenziazione (EPSG:32632) e demografia di località con POP21/FAM21/ABI21/EDI21. La prova temporanea della build con 8 G2 ha superato 292 test unitari e la generazione di oltre 12.700 pagine SEO; il controllo permalink ha individuato l'assenza dei redirect legacy dei vecchi slug OSM. Correzione introdotta e test dedicati aggiunti: un errore in una prova NON equivale a una release superata.
