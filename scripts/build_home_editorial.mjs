@@ -90,6 +90,16 @@ if (refugeRelease?.releaseChannel === 'OSM_CAI_REFUGES' &&
     if (x) places.refuge.push(x);
   }
 }
+console.log('Home source audit: rifugi', (refugeRelease?.entities||[]).length,
+  (refugeRelease?.entities||[]).slice(0,2).map(e=>({
+    name:e.name,kind:e.kind,slug:e.slug,geo:!!e.geo?.point,
+    photoCount:e.media?.filter(m=>m.kind==='photo').length,
+    authors:e.media?.filter(m=>m.kind==='photo').slice(0,1).map(m=>Boolean(m.author)),
+    textLength:safe(e.description||e.shortSummary).length,
+    factsCount:Object.keys(e.facts||{}).length,
+    published:publishedPath(atlasCanonicalPath({...e,kind:'rifugio'})),
+    sourceIds:e.sourceIds
+  })));
 const sheltersRelease = release('shelters');
 if (sheltersRelease?.releaseChannel === 'CAI_OSM_BIVOUACS_SHELTERS' &&
   sheltersRelease?.schemaVersion === '2.0') {
@@ -100,6 +110,16 @@ if (sheltersRelease?.releaseChannel === 'CAI_OSM_BIVOUACS_SHELTERS' &&
     if (x) places.bivacco.push(x);
   }
 }
+console.log('Home source audit: bivacchi', (sheltersRelease?.entities||[]).length,
+  (sheltersRelease?.entities||[]).slice(0,2).map(e=>({
+    name:e.name,kind:e.kind,slug:e.slug,geo:!!e.geo?.point,
+    photoCount:e.media?.filter(m=>m.kind==='photo').length,
+    authors:e.media?.filter(m=>m.kind==='photo').slice(0,1).map(m=>Boolean(m.author)),
+    textLength:safe(e.description||e.shortSummary).length,
+    factsCount:Object.keys(e.facts||{}).length,
+    published:publishedPath(atlasCanonicalPath({...e,kind:'bivacco'})),
+    sourceIds:e.sourceIds
+  })));
 const summitRelease = release('summits');
 if (summitRelease?.isPublished && summitRelease?.releaseChannel === 'GEONAMES_SUMMITS_G2') {
   for (const e of summitRelease.entities || []) {
