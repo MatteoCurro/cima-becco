@@ -4,6 +4,7 @@ import { canonicalAtlasSlug } from './placePermalinks';
 import { mergeRefugeRelease } from './refugeRelease';
 import { mergeShelterRelease } from './shelterRelease';
 import { mergeMunicipalityRelease } from './municipalityRelease';
+import { mergeSettlementRelease } from './settlementRelease';
 
 export interface AlpinePlace extends AtlasEntityMetadata {
   slug: string;
@@ -68,9 +69,14 @@ export function loadAlpinePlaces(): Promise<AlpinePlacesDataset> {
     fetch(`${DATA_BASE}/atlas/municipalities-v1.json`)
       .then(response => response.ok ? response.json() as Promise<unknown> : null)
       .catch(() => null),
+    fetch(`${DATA_BASE}/atlas/settlements-v1.json`)
+      .then(response => response.ok ? response.json() as Promise<unknown> : null)
+      .catch(() => null),
   ])
-    .then(([legacy, refuges, shelters, municipalities]) => mergeMunicipalityRelease(
-      mergeShelterRelease(mergeRefugeRelease(legacy, refuges), shelters), municipalities))
+    .then(([legacy, refuges, shelters, municipalities, settlements]) => mergeSettlementRelease(
+      mergeMunicipalityRelease(
+        mergeShelterRelease(mergeRefugeRelease(legacy, refuges), shelters), municipalities),
+      settlements))
     .catch(() => { pending = null; return empty; });
   return pending;
 }
