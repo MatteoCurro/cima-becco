@@ -5,7 +5,9 @@ on:
     branches: [main]
     paths:
       - scripts/pilot_sat_trail_source_v1.py
+      - scripts/normalize_sat_trails_v1.py
       - tests/test_pilot_sat_trail_source_v1.py
+      - tests/test_normalize_sat_trails_v1.py
       - docs/PIANO_IMPORTATORI.md
       - docs/MODELLO_METADATI_E_LAYOUT.md
       - .github/workflows/test-sat-trails-source-g0-v1.yml
@@ -13,7 +15,9 @@ on:
     branches: [main]
     paths:
       - scripts/pilot_sat_trail_source_v1.py
+      - scripts/normalize_sat_trails_v1.py
       - tests/test_pilot_sat_trail_source_v1.py
+      - tests/test_normalize_sat_trails_v1.py
       - .github/workflows/test-sat-trails-source-g0-v1.yml
   workflow_dispatch:
 permissions:
@@ -35,7 +39,8 @@ jobs:
         run: |
           set -euo pipefail
           python -m unittest discover -s tests -p 'test_pilot_sat_trail_source_v1.py' -v
-          python -m compileall -q scripts/pilot_sat_trail_source_v1.py
+          python -m unittest discover -s tests -p 'test_normalize_sat_trails_v1.py' -v
+          python -m compileall -q scripts/pilot_sat_trail_source_v1.py scripts/normalize_sat_trails_v1.py
           test -z "$(git status --porcelain -- public/ src/)"
   source-real:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
@@ -50,6 +55,9 @@ jobs:
       - name: Audit published SAT source ZIP (metadata and original geometry only)
         run: |
           python scripts/pilot_sat_trail_source_v1.py \
+            --out build/sat-trails-g0-source-audit
+          python scripts/normalize_sat_trails_v1.py \
+            --source-zip build/sat-trails-g0-source-audit/source-sat-official.kml.zip \
             --out build/sat-trails-g0-source-audit
       - name: Guard source fingerprint, no SEO or auto crosswalk
         run: |
@@ -71,7 +79,20 @@ jobs:
           assert q['canonicalTrailIdsAssigned'] is False
           assert q['officialCategoryFieldVerified'] is False
           assert q['routingAllowed'] is False and q['publicationAllowed'] is False
+          typed=json.loads((root/'sat-trails-normalized-g0.json').read_text())
+          norm_audit=json.loads((root/'sat-trails-normalization-audit-g0.json').read_text())
+          assert typed['releaseChannel']=='SAT_TRAILS_TYPED_SOURCE_G0_V1'
+          assert typed['sourceArchiveSha256']==d['sourceArchiveSha256']
+          assert norm_audit['sourceArchiveSha256']==d['sourceArchiveSha256']
+          assert typed['counts']['sourcePlacemarks']==c['sourcePlacemarks']
+          assert len(typed['records'])==c['sourcePlacemarks']
+          assert typed['quality']['officialCategorySA_SAA_VFVerified'] is False
+          assert typed['quality']['osmCrosswalkVerified'] is False
+          assert typed['quality']['publicationAllowed'] is False
+          assert all(r['quality']['gate']=='G0' and not r['quality']['canonicalIdentityVerified']
+                     for r in typed['records'])
           print('SAT G0 source schema audit:',c)
+          print('SAT G0 normalized records:',typed['counts'])
           PY
           test -z "$(git status --porcelain -- public/)"
       - name: Preserve original SAT source and source-schema audit outside public
