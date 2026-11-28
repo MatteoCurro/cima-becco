@@ -5,7 +5,10 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import sys
 
+# importlib loader does not prepend scripts/ to sys.path as a direct script run does.
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 SCRIPT=Path(__file__).resolve().parents[1]/"scripts/import_natural_features_v1.py"
 spec=importlib.util.spec_from_file_location("natural_feature_import",SCRIPT)
 imp=importlib.util.module_from_spec(spec)
