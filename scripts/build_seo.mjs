@@ -47,7 +47,7 @@ if (!existsSync(DIST)) {
   process.exit(1);
 }
 // Start from the app alone, so a second run does not count its own pages.
-for (const dir of ['place', 'country', 'route', 'cime', 'passi']) rmSync(join(DIST, dir), { recursive: true, force: true });
+for (const dir of ['place', 'country', 'route', 'cime', 'passi', 'laghi']) rmSync(join(DIST, dir), { recursive: true, force: true });
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const venues = readJson(join(DATA, 'venues.json')).venues;
@@ -130,6 +130,37 @@ const naturalPasses=naturalRelease?.releaseChannel==='NATURAL_FEATURES_PASSES_G2
     : [];
 
 
+// Source-verified lakes are separate from the spring/fountain water catalog.
+// A center point is insufficient: exact OSM multipolygon provenance is mandatory.
+const naturalLakesPath=join(DATA,'atlas','natural-lakes-v1.json');
+const naturalLakesRelease=existsSync(naturalLakesPath)?readJson(naturalLakesPath):null;
+const naturalLakes=naturalLakesRelease?.releaseChannel==='NATURAL_FEATURES_LAKES_G2' &&
+  naturalLakesRelease?.isPublished===true && Array.isArray(naturalLakesRelease.entities)
+  ? naturalLakesRelease.entities.filter(e=>e.kind==='natural_feature' &&
+      ['lake','reservoir'].includes(e.subtype) &&
+      e.quality?.gate==='G2' && e.quality?.seoIndexable===true &&
+      e.quality?.geometryTopologyVerified===true &&
+      !e.quality.reviewRequired && !e.quality.slugRequiresReview &&
+      !e.quality.areaNotVerified && !e.quality.elevationConflictReview &&
+      !e.quality.wikiAltitudeDisagreementReview &&
+      e.geo?.area?.type==='MultiPolygon' && e.geo.area.coordinates?.length &&
+      e.geo?.areaSourceUrl==='https://www.openstreetmap.org/'+e.sourceIds?.osm &&
+      e.geo?.point &&
+      e.sourceIds?.wikidataVerifiedBy==='P1566+P625' &&
+      e.sourceIds?.osmVerifiedBy==='P1566_P625_and_exact_OSM_QID_or_GeoNames_ID' &&
+      e.facts?.osmMappedWaterSurfaceKm2?.method==='derived' &&
+      e.facts?.osmMappedWaterSurfaceKm2?.licence==='ODbL 1.0' &&
+      e.facts?.osmMappedWaterSurfaceKm2?.unit==='km2' &&
+      Number.isFinite(e.facts.osmMappedWaterSurfaceKm2.value) &&
+      Number.isFinite(e.facts?.elevationM?.value) &&
+      e.textSources?.some(t=>t.text?.length>=120 && t.licence==='CC BY-SA 4.0' &&
+        t.sourceId?.startsWith('wikipedia:it:') &&
+        t.sourceUrl?.startsWith('https://it.wikipedia.org/')) &&
+      e.media?.some(m=>m.kind==='photo' && m.subjectVerified && m.reuseAllowed &&
+        m.sourceId==='wikidata:'+e.sourceIds.wikidata+':P18' &&
+        m.author && m.licence && m.sourceUrl?.startsWith('https://commons.wikimedia.org/')))
+  : [];
+
 const alpinePlacesBase = mergeSheltersForSeo(mergeRefugesForSeo(
   existsSync(join(DATA, 'alpine-places.json')) ? readJson(join(DATA, 'alpine-places.json')).places ?? [] : [],
   existsSync(join(DATA, 'atlas', 'refuges-v1.json')) ? readJson(join(DATA, 'atlas', 'refuges-v1.json')) : null
@@ -155,7 +186,7 @@ const peopleReleasePath=join(DATA,'atlas','people-v1.json');
 const peopleRelease=existsSync(peopleReleasePath)?readJson(peopleReleasePath):null;
 const people=peopleRelease?.releaseChannel==='ALPINE_PEOPLE_LINKS' &&
     Array.isArray(peopleRelease?.entities)?peopleRelease.entities:[];
-const centralCredits = makeCentralCredits(alpinePlaces, routes, legacyPeakCredits, TODAY,municipalities,people,summits,naturalPasses);
+const centralCredits = makeCentralCredits(alpinePlaces, routes, legacyPeakCredits, TODAY,municipalities,people,summits,naturalPasses,naturalLakes);
 mkdirSync(join(DIST,'data','atlas'),{recursive:true});
 writeFileSync(join(DIST,'data','atlas','credits-v1.json'),JSON.stringify(centralCredits));
 // Lightweight, public catalogue observability; regenerate on every deploy from
@@ -434,7 +465,7 @@ for (const venue of venues) {
 const countFiles = (dir) => readdirSync(dir, { withFileTypes: true }).reduce((n, entry) => n + (entry.isDirectory() ? countFiles(join(dir, entry.name)) : 1), 0);
 const refugeAliases = alpinePlaces.filter(p=>(p.kind==='rifugio'||p.kind==='bivacco') && canonicalAtlasSlug(p)!==p.slug).length;
 const reserved = countFiles(DIST) + Object.keys(index.byCountry).length + routes.length +
-  alpinePlaces.length + refugeAliases + trekProjects.length + summits.length * 2 + naturalPasses.length + 15;
+  alpinePlaces.length + refugeAliases + trekProjects.length + summits.length * 2 + naturalPasses.length + naturalLakes.length + 17;
 const room = Math.max(0, MAX_FILES - reserved);
 const score = (spec) => (spec.routesHere.length ? 4 : 0) + (spec.photo ? 2 : 0) + (spec.text ? 1 : 0);
 placeSpecs.sort((a, b) => score(b) - score(a) || (b.heightM ?? 0) - (a.heightM ?? 0));
@@ -580,6 +611,75 @@ if(naturalPasses.length) {
       '<p class="cima-seo-lead">Solo dossier territoriali verificati. Coordinate e tracce vicine non garantiscono percorribilità.</p>'+
       '<ul class="list">'+naturalPasses.map(e=>'<li><a href="'+SITE+'/passi/'+
         encodeURIComponent(e.slug)+'/">'+escape(e.name)+'</a></li>').join('')+'</ul>'
+  });
+}
+
+// Source verified lake G2. The shoreline is rendered by the existing map and
+// never becomes a claimed beach, trail crossing or official water surface.
+for(const e of naturalLakes){
+  const p=e.geo.point;
+  const altitude=e.facts.elevationM.value;
+  const surface=e.facts.osmMappedWaterSurfaceKm2.value;
+  const photo=e.media.find(m=>m.kind==='photo'&&m.subjectVerified&&m.reuseAllowed &&
+    m.sourceId==='wikidata:'+e.sourceIds.wikidata+':P18');
+  const narrative=e.textSources.find(t=>t.text?.length>=120 &&
+    t.sourceId?.startsWith('wikipedia:it:'))?.text;
+  if(!photo||!narrative||!Number.isFinite(altitude)||!Number.isFinite(surface))continue;
+  const href=SITE+'/laghi/'+encodeURIComponent(e.slug)+'/';
+  const kindName=e.subtype==='lake'?'Lago alpino':'Invaso artificiale';
+  const areaText=surface<1?
+    Number((surface*100).toFixed(1)).toLocaleString('it-IT')+' ha':
+    Number(surface.toFixed(2)).toLocaleString('it-IT')+' km²';
+  const title=e.name+' ('+metres(altitude)+') · '+kindName+' | Cima Becco';
+  const intro=e.name+', quota '+metres(altitude)+'. '+narrative.slice(0,210);
+  page({
+    path:'laghi/'+e.slug+'/',title,description:intro.slice(0,295),image:photo.url,
+    jsonLd:{'@context':'https://schema.org','@graph':[
+      {'@type':e.subtype==='lake'?'LakeBodyOfWater':'BodyOfWater',
+       '@id':href+'#lago',name:e.name,url:href,description:narrative,
+       geo:{'@type':'GeoCoordinates',latitude:p.lat,longitude:p.lng,elevation:altitude},
+       image:photo.url,
+       additionalProperty:[{
+         '@type':'PropertyValue',name:'Superficie cartografata OpenStreetMap, misura derivata',
+         value:surface,unitCode:'KMK',
+       }],
+       identifier:[
+         {'@type':'PropertyValue',propertyID:'GeoNames',value:e.sourceIds.geonames},
+         {'@type':'PropertyValue',propertyID:'Wikidata',value:e.sourceIds.wikidata},
+         {'@type':'PropertyValue',propertyID:'OpenStreetMap',value:e.sourceIds.osm},
+       ],
+       ...(e.localNames?.length?{alternateName:e.localNames.map(a=>a.value)}:{})},
+      breadcrumbLd([['Laghi',SITE+'/laghi/'],[e.name,null]])
+    ]},
+    body:crumbs([['Laghi',SITE+'/laghi/'],[e.name]])+
+      '<div class="cima-seo-eyebrow">CIMA BECCO · '+escape(kindName.toUpperCase())+'</div>'+
+      '<h1>'+escape(e.name)+'</h1>'+
+      '<figure class="cima-seo-photo"><img loading="lazy" src="'+escape(photo.url)+
+        '" alt="'+escape('Immagine documentata associata a '+e.name)+'"></figure>'+
+      '<ul class="facts cima-seo-facts">'+
+      '<li><strong>'+escape(metres(altitude))+'</strong>'+
+        escape(e.facts.elevationM.method==='estimated'?'Quota GeoNames · stimata DEM':'Quota GeoNames · registrata')+'</li>'+
+      '<li><strong>'+escape(areaText)+'</strong>Superficie mappata OSM · non ufficiale</li>'+
+      '<li><strong>'+escape(p.lat.toFixed(4)+', '+p.lng.toFixed(4))+'</strong>Coordinate GeoNames</li>'+
+      '</ul>'+
+      '<section class="cima-seo-body"><h2>Paesaggio e territorio</h2><p>'+
+      escape(narrative)+'</p></section>'+
+      '<p class="cima-seo-warning">Il perimetro deriva dalla cartografia OSM; la superficie non è una misura ufficiale. '+
+      'Riva, balneabilità, potabilità e accessibilità non sono verificate dalla sola mappa.</p>'+
+      '<p><a class="cta" href="'+href+'">ESPLORA IL LAGO NELL’ATLANTE</a></p>',
+  });
+}
+if(naturalLakes.length){
+  page({
+    path:'laghi/',
+    title:'Laghi alpini e invasi documentati · Cima Becco',
+    description:'Laghi alpini e invasi con geometrie OSM verificate, nomi GeoNames e Wikidata, fotografie Commons e testi documentati.',
+    jsonLd:{'@context':'https://schema.org','@type':'CollectionPage',
+      name:'Laghi alpini documentati',url:SITE+'/laghi/'},
+    body:crumbs([['Laghi']])+'<h1>LAGHI. SENZA SPONDE INVENTATE.</h1>'+
+      '<p class="cima-seo-lead">Solo bacini con identità, perimetro e fonti documentate. Nessuna deduzione su accessi, potabilità e balneabilità.</p>'+
+      '<ul class="list">'+naturalLakes.map(e=>'<li><a href="'+SITE+'/laghi/'+
+        encodeURIComponent(e.slug)+'/">'+escape(e.name)+'</a></li>').join('')+'</ul>',
   });
 }
 
@@ -1158,7 +1258,7 @@ for (const trek of trekProjects) {
 page({
   path:'fonti-e-crediti',
   title:'Fonti, crediti fotografici e dati dell’Atlante | Cima Becco',
-  description:'Provenienza di dati, testi e fotografie di comuni, rifugi, bivacchi, sentieri, cime e passi. Ricerca autore, foto e licenze.',
+  description:'Provenienza di dati, testi e fotografie di comuni, rifugi, bivacchi, sentieri, cime, passi e laghi. Ricerca autore, foto e licenze.',
   jsonLd:{'@context':'https://schema.org','@type':'AboutPage',
     name:'Fonti e crediti · Cima Becco',url:SITE+'/fonti-e-crediti/'},
   body:`${crumbs([['Fonti e crediti']])}
