@@ -127,7 +127,7 @@ class SATTypedG0Tests(unittest.TestCase):
 
     def test_reported_endpoint_range_qa_is_explicit_without_rewriting_source(self):
         moderate = {**VALUES, "quota_iniz": "1325"}
-        large = {**VALUES, "numero": "O302", "quota_fine": "1490"}
+        large = {**VALUES, "numero": "O302", "quota_fine": "1580"}
         doc = normalize_archive(zip_records([placemark(moderate), placemark(large)]),
                                 retrieved_at=AT)
         a, b = doc["records"]
@@ -137,7 +137,7 @@ class SATTypedG0Tests(unittest.TestCase):
         self.assertEqual(b["quality"]["reportedEndpointRangeExcessM"], 13)
         self.assertIn("reported_endpoint_outside_reported_range_over_5m",
                       b["quality"]["issues"])
-        self.assertEqual(b["facts"]["elevationEndReportedM"]["value"], 1490)
+        self.assertEqual(b["facts"]["elevationEndReportedM"]["value"], 1580)
         self.assertEqual(doc["counts"]["recordsWithAnyReportedEndpointOutsideReportedRange"], 2)
         self.assertEqual(doc["counts"]["recordsWithEndpointRangeExcessOver5M"], 1)
         self.assertEqual(doc["counts"]["recordsRequiringReview"], 1)
