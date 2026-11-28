@@ -5,6 +5,7 @@ on:
     paths:
       - scripts/publish_natural_lake_census_map_v1.py
       - tests/test_publish_natural_lake_census_map_v1.py
+      - tests/lake-source-preview.spec.ts
       - src/lib/naturalLakeCensus.ts
       - src/lib/naturalLakeCensus.test.ts
       - src/components/NaturalLakePage.tsx
@@ -34,7 +35,7 @@ concurrency:
 jobs:
   contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 28
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -113,6 +114,20 @@ jobs:
           console.log('G0 map, '+previews.length+' noindex source previews, G2 dossier, sitemap and static build OK');
           JS
           test -z "$(git status --porcelain -- src/)"
+      - name: Browser proof that census pages open on real URLs and fit mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx playwright install --with-deps chromium webkit
+          npx playwright test tests/lake-source-preview.spec.ts --project=chromium --project=webkit
+      - name: Keep source preview browser evidence on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lake-census-preview-browser-failures
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
   publish:
     needs: contract
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
