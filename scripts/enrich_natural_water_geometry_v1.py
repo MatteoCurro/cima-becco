@@ -124,23 +124,26 @@ def ring_area_km2(points):
 
 
 def crossing(a,b,c,d):
-    def orient(p,q,r):
-        return (q[0]-p[0])*(r[1]-p[1])-(q[1]-p[1])*(r[0]-p[0])
-    oa=orient(a,b,c);ob=orient(a,b,d)
-    oc=orient(c,d,a);od=orient(c,d,b)
-    eps=1e-13
-    # Collinear overlaps and tangent boundaries are ambiguous: fail closed.
-    if abs(oa)<eps and abs(ob)<eps:
-        return not (max(a[0],b[0])<min(c[0],d[0])
-                    or max(c[0],d[0])<min(a[0],b[0])
-                    or max(a[1],b[1])<min(c[1],d[1])
-                    or max(c[1],d[1])<min(a[1],b[1]))
-    return (oa*ob<=eps and oc*od<=eps and
-            not(max(a[0],b[0])<min(c[0],d[0])
-            or max(c[0],d[0])<min(a[0],b[0])
-            or max(a[1],b[1])<min(c[1],d[1])
-            or max(c[1],d[1])<min(a[1],b[1])))
+    """Exact segment topology on 7-decimal OSM WGS84 grid.
 
+    The prior float epsilon treated close but disjoint shores as intersecting,
+    wrongly holding valid Lago di Fedaia/Landro polygons. Python integers
+    preserve the source's quantized coordinates without near-miss guesses.
+    """
+    a,b,c,d=[(int(round(p[0]*10_000_000)),
+              int(round(p[1]*10_000_000))) for p in (a,b,c,d)]
+    def orient(p,q,r):
+        return ((q[0]-p[0])*(r[1]-p[1])
+                -(q[1]-p[1])*(r[0]-p[0]))
+    def on_segment(p,q,r):
+        return (min(p[0],r[0])<=q[0]<=max(p[0],r[0])
+            and min(p[1],r[1])<=q[1]<=max(p[1],r[1]))
+    o1,o2,o3,o4=orient(a,b,c),orient(a,b,d),orient(c,d,a),orient(c,d,b)
+    if o1==0 and on_segment(a,c,b):return True
+    if o2==0 and on_segment(a,d,b):return True
+    if o3==0 and on_segment(c,a,d):return True
+    if o4==0 and on_segment(c,b,d):return True
+    return (o1>0)!=(o2>0) and (o3>0)!=(o4>0)
 
 def valid_ring(points):
     if not (4<=len(points)<=MAX_VERTICES+1) or points[0]!=points[-1]:
