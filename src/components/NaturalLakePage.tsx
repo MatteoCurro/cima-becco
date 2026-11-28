@@ -3,7 +3,7 @@ import type {Route} from '../types';
 import type {AlpinePlace} from '../lib/alpinePlaces';
 import {placeBounds} from '../lib/alpinePlaces';
 import {loadNaturalLakes,naturalLakeHref,naturalLakeLabel,type NaturalLake,type NaturalLakeDataset} from '../lib/naturalLakeRelease';
-import {loadLakeSourceCensus,lakeSourceLabel,lakeSourceClass,lakeSourceProvider,type LakeSourceCensus,type LakeSourceCensusRecord} from '../lib/naturalLakeCensus';
+import {loadLakeSourceCensus,lakeSourceLabel,lakeSourceClass,lakeSourceProvider,lakeSourcePreviewHref,type LakeSourceCensus,type LakeSourceCensusRecord} from '../lib/naturalLakeCensus';
 import {loadRoutesInBounds} from '../lib/routeTiles';
 import {routesNear} from '../lib/routes';
 import {loadAlpineWater,alpineWaterNear,type AlpineWaterPoint} from '../lib/alpineWater';
@@ -192,10 +192,102 @@ const viewSurface=(r:LakeSourceCensusRecord)=>
   r.agencyReportedAreaM2!==null
     ?fmt(r.agencyReportedAreaM2/10000,2)+' ha · dato ente'
     :fmt(r.derivedMappedKm2*100,2)+' ha · dal perimetro';
+function sourceProfileSlug():string|null{
+  const base=import.meta.env.BASE_URL;
+  if(!window.location.pathname.startsWith(base))return null;
+  const path=window.location.pathname.slice(base.length);
+  const result=/^laghi\/censiti\/([a-z0-9-]+)\/?$/.exec(path);
+  return result?.[1]||null;
+}
+function AgencyLakeSourceDetail({source}:{source:LakeSourceCensusRecord}){
+  const factItems=[
+    {label:source.agencyReportedAreaM2!==null?'Superficie dichiarata dall’ente':'Superficie derivata WFS',
+      value:viewSurface(source)},
+    ...(source.agencyReportedElevationM!==null?
+      [{label:'Quota · valore dell’ente',value:meters(source.agencyReportedElevationM)}]:[]),
+    ...(source.agencyReportedVolumeM3!==null&&source.agencyReportedVolumeM3>0?
+      [{label:'Volume · valore dell’ente',value:fmt(source.agencyReportedVolumeM3,0)+' m³'}]:[]),
+    ...(source.agencyReportedWidthM!==null&&source.agencyReportedWidthM>0?
+      [{label:'Larghezza · valore dell’ente',value:meters(source.agencyReportedWidthM)}]:[]),
+    ...(source.agencyReportedLengthM!==null&&source.agencyReportedLengthM>0?
+      [{label:'Lunghezza · valore dell’ente',value:meters(source.agencyReportedLengthM)}]:[]),
+  ];
+  const aliases=source.names.filter(n=>n.name!==source.name);
+  const poly=useMemo(()=>[sourcePolygon(source)],[source]);
+  useEffect(()=>{track('atlas_lake_source_preview',source.provider);},[source.provider,source.sourceFeatureId]);
+  return <DetailLayout
+    backHref={import.meta.env.BASE_URL+'laghi/'}
+    backLabel="Torna all’atlante dei laghi"
+    sidebarLabel={'Perimetro documentato dalla fonte di '+lakeSourceLabel(source)}
+    sidebar={<section id="cb-lake-source-map" className="cb-location-side-map" tabIndex={-1}>
+      <MapContextLabel kicker="PERIMETRO WFS · CENSIMENTO" title={lakeSourceLabel(source)}/>
+      <AlpineAtlasMap places={NO_PLACES} kind="borgo"
+        naturalPolygons={poly} selectedPolygonSlug={source.sourceKey}
+        height="100%" caption={'Perimetro WFS di '+lakeSourceLabel(source)}/>
+    </section>}>
+    <header className="cb-location-hero cb-lake-preview-hero">
+      <div className="cb-location-hero-copy">
+        <span className="cb-atlas-kind">SCHEDA DI CENSIMENTO · G0 / NON INDICIZZATA</span>
+        <h1>{lakeSourceLabel(source)}</h1>
+        {aliases.length>0&&<p className="cb-location-muted-note">
+          {aliases.map(n=>n.name+' ('+n.lang+')').join(' · ')}
+        </p>}
+        <p className="cb-location-lead">
+          {lakeSourceProvider(source.provider)}
+          {source.municipalityReported?' · Comune riportato: '+source.municipalityReported:''}.
+          {' '}Informazioni e perimetro cartografico disponibili; l’identità fra archivi è ancora in verifica.
+        </p>
+        <DetailMetrics label="Dati ufficiali e cartografici disponibili" items={factItems}/>
+        <div className="cb-location-actions">
+          <button type="button" className="cb-location-action-primary"
+            onClick={()=>scrollToDetailSection('cb-lake-source-map')}>ESPLORA IL CONTORNO</button>
+        </div>
+      </div>
+      <div className="cb-lake-preview-topo" aria-label="Fotografia non ancora verificata">
+        <span aria-hidden="true">≈</span>
+        <strong>PAESAGGIO IN VERIFICA.</strong>
+        <small>Una fotografia appare soltanto dopo una verifica del soggetto e della licenza.</small>
+      </div>
+    </header>
+    <section id="cb-lake-source-facts" className="cb-detail-group cb-location-section">
+      <DetailSectionHeading kicker="INVENTARIO · DATO SORGENTE" title="Quello che sappiamo."/>
+      <div className="cb-lake-source-fact-list">
+        <div><strong>Ente censitore</strong><span>{lakeSourceProvider(source.provider)}</span></div>
+        {source.municipalityReported&&
+          <div><strong>Comune riportato</strong><span>{source.municipalityReported}</span></div>}
+        {source.sourceDescriptionName&&source.sourceDescriptionName!==source.name&&
+          <div><strong>Denominazione descrittiva dell’ente</strong><span>{source.sourceDescriptionName}</span></div>}
+        {source.rawClass&&
+          <div><strong>Tipologia nel catalogo di origine</strong><span>{source.rawClass} · da verificare prima della riconciliazione</span></div>}
+        <div><strong>Identificativo originario</strong><span>{source.sourceFeatureId}</span></div>
+      </div>
+    </section>
+    <section className="cb-detail-group cb-location-section">
+      <DetailSectionHeading kicker="QUALITÀ · IN ARRICCHIMENTO" title="Le informazioni ancora da collegare."/>
+      <p>Questa scheda descrive un singolo record geografico ufficiale. La verifica con GeoNames, Wikidata e OpenStreetMap, l’eventuale classificazione naturale o artificiale e le fotografie del soggetto sono ancora in corso. Non rappresenta un dossier G2 e non è nella sitemap.</p>
+      <p>Il perimetro WFS rappresenta l’estensione cartografata, non il punto di accesso, la percorribilità della riva, la potabilità o l’idoneità alla balneazione.</p>
+    </section>
+  </DetailLayout>;
+}
+function SourceRow({row,active,onLocate}:{row:LakeSourceCensusRecord;active:boolean;onLocate:()=>void}){
+  const cells=<>
+    <span className="cb-lake-source-name">{lakeSourceLabel(row)}</span>
+    <span className="cb-lake-source-kind">{row.rawClass||'Classe non attestata'}</span>
+    <span className="cb-lake-source-place">{lakeSourceProvider(row.provider)}</span>
+    <span className="cb-lake-source-surface">{viewSurface(row)}</span>
+    <span className="cb-lake-source-action" aria-hidden="true">↗</span>
+  </>;
+  const className='cb-lake-source-row'+(active?' is-active':'');
+  const href=lakeSourcePreviewHref(row);
+  return href?<a className={className} href={href}>{cells}</a>:
+    <button className={className} type="button" onClick={onLocate}>{cells}</button>;
+}
+
 const INITIAL_PAGE=36;
 
 export function NaturalLakePage(){
   const [slug,setSlug]=useState(routeSlug);
+  const [sourceSlug,setSourceSlug]=useState(sourceProfileSlug);
   const [dataset,setDataset]=useState<NaturalLakeDataset>(EMPTY);
   const [loading,setLoading]=useState(true);
   const [census,setCensus]=useState<LakeSourceCensus|null>(null);
@@ -224,7 +316,7 @@ export function NaturalLakePage(){
   },[slug]);
   useEffect(()=>{
     const change=()=>{
-      setSlug(routeSlug());
+      setSlug(routeSlug());setSourceSlug(sourceProfileSlug());
       setQuery('');setSelectedSourceKey(null);
       setVisibleLimit(INITIAL_PAGE);window.scrollTo({top:0});
     };
@@ -234,6 +326,7 @@ export function NaturalLakePage(){
 
   const features=dataset.features;
   const current=slug?features.find(f=>f.slug===slug):null;
+  const preview=sourceSlug?census?.records.find(x=>x.previewSlug===sourceSlug):null;
   const allSources=census?.records||[];
   const q=query.trim().toLocaleLowerCase('it');
   const shown=useMemo(()=>features.filter(x=>
@@ -266,12 +359,18 @@ export function NaturalLakePage(){
     [allSources,selectedSourceKey]);
   const namedCount=census?Object.values(census.sourceCounts)
     .reduce((sum,p)=>sum+p.namedSourceRecords,0):0;
-  usePageTitle((current?current.name:'Laghi e invasi alpini')+' · Cima Becco');
+  usePageTitle((current?current.name:preview?lakeSourceLabel(preview)+' · Censimento':'Laghi e invasi alpini')+' · Cima Becco');
   return <div className="cb-atlas-page">
     <SiteHeader sticky/>
     <ExploreNavigation active="laghi"/>
     <main className={slug?'cb-atlas-shell cb-atlas-shell--detail':'cb-atlas-shell'}>
       {current?<LakeDetail feature={current}/>:
+       sourceSlug?(preview?<AgencyLakeSourceDetail source={preview}/>:
+         loadingCensus?<div className="cb-atlas-loading">Caricamento della scheda…</div>:
+         <div className="cb-atlas-empty"><h1>Scheda di censimento non disponibile.</h1>
+           <p>La voce potrebbe non avere ancora un nome verificabile o un perimetro cartografico valido.</p>
+           <a href={import.meta.env.BASE_URL+'laghi/'}>Torna all’elenco dei laghi</a>
+         </div>):
        slug?<div className="cb-atlas-empty"><h1>Questa scheda non è ancora disponibile.</h1>
          <p>Il lago non ha ancora superato la verifica di perimetro, identità e contenuti.</p>
          <a href={import.meta.env.BASE_URL+'laghi/'}>Torna ai laghi documentati</a></div>:
@@ -345,6 +444,7 @@ export function NaturalLakePage(){
                <p>{lakeSourceProvider(selectedSource.provider)} · {lakeSourceClass(selectedSource)}</p>
                <p>{viewSurface(selectedSource)}
                  {selectedSource.agencyReportedElevationM!==null?' · Quota ente '+meters(selectedSource.agencyReportedElevationM):''}</p>
+               {lakeSourcePreviewHref(selectedSource)&&<p><a className="cb-lake-profile-link" href={lakeSourcePreviewHref(selectedSource)!}>APRI LA SCHEDA DI CENSIMENTO ↗</a></p>}
                <small>ID della fonte: {selectedSource.sourceFeatureId}. Identità fra archivi non ancora accertata; nessuna indicazione di accessibilità o balneabilità.</small>
              </div>
              <button type="button" onClick={()=>setSelectedSourceKey(null)}>Chiudi dettagli</button>
@@ -374,22 +474,15 @@ export function NaturalLakePage(){
          <section className="cb-lake-census-list" aria-label="Elenco dei record regionali">
            <div className="cb-atlas-section-top"><span>INVENTARIO / FONTI REGIONALI</span>
              <h2>ALTRI SPECCHI D'ACQUA CENSITI.</h2>
-             <p>Ogni riga è un identificativo di origine, non ancora un lago unico nel grafo. Selezionalo per localizzare il contorno sulla mappa. Le geometrie non valide non vengono visualizzate.</p>
+             <p>Ogni riga è un identificativo di origine, non ancora un lago unico nel grafo. Apri le schede di censimento con nome documentato; i record senza un nome affidabile restano selezionabili sulla mappa. Le geometrie non validate non vengono rappresentate.</p>
            </div>
            {shownSource.length>0?<div className="cb-lake-source-rows">
-             {shownSource.slice(0,visibleLimit).map(r=><button
-               key={r.sourceKey} type="button"
-               className={'cb-lake-source-row'+(selectedSourceKey===r.sourceKey?' is-active':'')}
-               onClick={()=>{
+             {shownSource.slice(0,visibleLimit).map(r=><SourceRow key={r.sourceKey}
+               row={r} active={selectedSourceKey===r.sourceKey}
+               onLocate={()=>{
                  setSelectedSourceKey(r.sourceKey);
                  document.querySelector('.cb-atlas-list-map')?.scrollIntoView({behavior:'smooth',block:'start'});
-               }}>
-               <span className="cb-lake-source-name">{lakeSourceLabel(r)}</span>
-               <span className="cb-lake-source-kind">{r.rawClass||'Classe non attestata'}</span>
-               <span className="cb-lake-source-place">{lakeSourceProvider(r.provider)}</span>
-               <span className="cb-lake-source-surface">{viewSurface(r)}</span>
-               <span className="cb-lake-source-action" aria-hidden="true">↗</span>
-             </button>)}
+               }}/>)}
            </div>:<p className="cb-atlas-loading">
              {loadingCensus?'Caricamento dell’inventario…':
                q||providerFilter!=='all'||typeFilter!=='all'?'Nessun record per questi filtri.':'Inventario in aggiornamento.'}

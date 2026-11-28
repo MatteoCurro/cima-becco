@@ -8,6 +8,14 @@ export interface LakeSourceCensusRecord {
   name:string|null;
   names:{lang:'it'|'de';name:string}[];
   rawClass:string|null;
+  municipalityReported:string|null;
+  sourceDescriptionName:string|null;
+  previewSlug:string|null;
+  previewOnly:boolean;
+  previewNoindex:true;
+  agencyReportedVolumeM3:number|null;
+  agencyReportedWidthM:number|null;
+  agencyReportedLengthM:number|null;
   canonicalSubtypeVerified:false;
   qualityGate:'G0';
   seoIndexable:false;
@@ -31,9 +39,10 @@ export interface LakeSourceCensus {
   records:LakeSourceCensusRecord[];
   shownPolygons:number;
   geometryPendingReview:number;
+  sourcePreviewsReady:number;
   sourceCounts:Record<'bolzano_lakes'|'arpav_water_surfaces',CensusSource>;
 }
-const EMPTY:LakeSourceCensus={records:[],shownPolygons:0,geometryPendingReview:0,
+const EMPTY:LakeSourceCensus={records:[],shownPolygons:0,geometryPendingReview:0,sourcePreviewsReady:0,
   sourceCounts:{
     bolzano_lakes:{mappedSourceRecords:0,namedSourceRecords:0,geometryPendingReview:0,
       sourceFeatureIdsObserved:0,sourceLicence:'CC0 1.0',providerLabel:'Provincia autonoma di Bolzano',
@@ -69,6 +78,7 @@ export function verifiedLakeSourceCensus(input:unknown):LakeSourceCensus{
       d.individualPagesAllowed!==false||d.seoIndexable!==false||
       d.sourceRecordsAreNotDeduplicatedPhysicalLakes!==true||
       d.canonicalAtlasEntitiesAdded!==0||d.crossSourceIdentityLinksAdded!==0||
+      d.sourcePreviewPagesNoindexAllowed!==true||!count(d.sourcePreviewsReady)||
       !Array.isArray(d.records)||!count(d.shownPolygons)||
       !count(d.geometryPendingReview)||d.records.length!==d.shownPolygons||
       !d.sourceCounts||typeof d.sourceCounts!=='object')return EMPTY;
@@ -85,7 +95,8 @@ export function verifiedLakeSourceCensus(input:unknown):LakeSourceCensus{
   }))return EMPTY;
   if(pnames.reduce((n,p)=>n+counts[p].mappedSourceRecords,0)!==d.shownPolygons||
      pnames.reduce((n,p)=>n+counts[p].geometryPendingReview,0)!==d.geometryPendingReview)return EMPTY;
-  const ids=new Set<string>();
+  const ids=new Set<string>(),previewSlugs=new Set<string>();
+  let previewsReady=0;
   const records=d.records as LakeSourceCensusRecord[];
   for(const r of records){
     if(!r||!pnames.includes(r.provider)||
@@ -96,8 +107,16 @@ export function verifiedLakeSourceCensus(input:unknown):LakeSourceCensus{
         r.canonicalSubtypeVerified!==false||
         !validPolygon(r)||
         !optional(r.agencyReportedAreaM2)||!optional(r.agencyReportedElevationM)||
+        !optional(r.agencyReportedVolumeM3)||!optional(r.agencyReportedWidthM)||
+        !optional(r.agencyReportedLengthM)||
         !Number.isFinite(r.derivedMappedKm2)||r.derivedMappedKm2<=0||
         (r.name!==null&&(typeof r.name!=='string'||r.name.length>180))||
+        (r.municipalityReported!==null&&typeof r.municipalityReported!=='string')||
+        (r.sourceDescriptionName!==null&&typeof r.sourceDescriptionName!=='string')||
+        r.previewNoindex!==true||r.previewOnly!==Boolean(r.previewSlug)||
+        (r.previewSlug!==null&&(
+          !/^[a-z0-9]+(?:-[a-z0-9]+)*-[a-f0-9]{7}$/.test(r.previewSlug)||
+          !r.name||previewSlugs.has(r.previewSlug)))||
         !Array.isArray(r.names)||
         r.names.some(n=>!['it','de'].includes(n.lang)||typeof n.name!=='string')||
         r.sourceUrl!==counts[r.provider].sourceDatasetUrl||
@@ -106,9 +125,12 @@ export function verifiedLakeSourceCensus(input:unknown):LakeSourceCensus{
         'slug' in r||'relations' in r||'sourceIds' in r||
         ids.has(r.sourceKey))return EMPTY;
     ids.add(r.sourceKey);
+    if(r.previewSlug){previewSlugs.add(r.previewSlug);previewsReady++;}
   }
-  if(pnames.some(p=>records.filter(x=>x.provider===p).length!==counts[p].mappedSourceRecords))return EMPTY;
+  if(pnames.some(p=>records.filter(x=>x.provider===p).length!==counts[p].mappedSourceRecords)||
+      previewsReady!==d.sourcePreviewsReady)return EMPTY;
   return {records,shownPolygons:d.shownPolygons,geometryPendingReview:d.geometryPendingReview,
+    sourcePreviewsReady:previewsReady,
     sourceCounts:counts};
 }
 
@@ -124,3 +146,7 @@ export const lakeSourceClass=(r:LakeSourceCensusRecord):string=>
   r.rawClass||'Categoria non confermata';
 export const lakeSourceProvider=(provider:LakeSourceCensusRecord['provider']):string=>
   provider==='bolzano_lakes'?'Provincia di Bolzano':'ARPAV Veneto';
+
+/** Preview of agency data only, permanently separate from canonical G2 URLs. */
+export const lakeSourcePreviewHref=(r:LakeSourceCensusRecord):string|null=>
+  r.previewSlug?import.meta.env.BASE_URL+'laghi/censiti/'+encodeURIComponent(r.previewSlug)+'/':null;

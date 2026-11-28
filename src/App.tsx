@@ -110,6 +110,7 @@ function viewFromHash(): View {
   if(pathWithoutBase==='/comuni' && !hash) return 'atlas';
   if(!hash && /^\/passi(?:\/[a-z0-9-]+)?$/.test(pathWithoutBase)) return 'passes';
   if(/^#passi(?:\/[a-z0-9-]+)?$/.test(hash)) return 'passes';
+  if(!hash && /^\/laghi\/censiti\/[a-z0-9-]+$/.test(pathWithoutBase)) return 'lakes';
   if(!hash && /^\/laghi(?:\/[a-z0-9-]+)?$/.test(pathWithoutBase)) return 'lakes';
   if(/^#laghi(?:\/[a-z0-9-]+)?$/.test(hash)) return 'lakes';
   if(pathWithoutBase==='/cime' && !hash) return 'map';

@@ -7,7 +7,10 @@ const source={
   sourceKey:'bolzano_lakes:Lakes.10',sourceFeatureId:'Lakes.10',
   provider:'bolzano_lakes',name:'Lago di prova',
   names:[{lang:'it',name:'Lago di prova'},{lang:'de',name:'Testsee'}],
-  rawClass:null,canonicalSubtypeVerified:false,qualityGate:'G0',seoIndexable:false,
+  rawClass:null,municipalityReported:'Nova Levante',sourceDescriptionName:null,
+  previewSlug:'lago-di-prova-nova-levante-a12b3c4',previewOnly:true,previewNoindex:true,
+  agencyReportedVolumeM3:32000,agencyReportedWidthM:25,agencyReportedLengthM:130,
+  canonicalSubtypeVerified:false,qualityGate:'G0',seoIndexable:false,
   geom:geo,derivedMappedKm2:1.12,agencyReportedAreaM2:1000000,
   agencyReportedElevationM:2100,sourceUrl:'https://data.civis.bz.it/dataset/laghi',
   licence:'CC0 1.0',
@@ -27,6 +30,7 @@ const published={
   sourceOnlyCatalogue:true,isPublishedG2:false,individualPagesAllowed:false,
   seoIndexable:false,sourceRecordsAreNotDeduplicatedPhysicalLakes:true,
   canonicalAtlasEntitiesAdded:0,crossSourceIdentityLinksAdded:0,
+  sourcePreviewPagesNoindexAllowed:true,sourcePreviewsReady:1,
   shownPolygons:1,geometryPendingReview:2,sourceCounts,records:[source],
 };
 describe('G0-only public lake source map projection',()=>{
@@ -34,6 +38,9 @@ describe('G0-only public lake source map projection',()=>{
     const x=verifiedLakeSourceCensus(published);
     expect(x.records).toHaveLength(1);
     expect(x.geometryPendingReview).toBe(2);
+    expect(x.sourcePreviewsReady).toBe(1);
+    expect(x.records[0].previewNoindex).toBe(true);
+    expect(x.records[0].previewOnly).toBe(true);
     expect(lakeSourceLabel(x.records[0])).toBe('Lago di prova');
     expect(lakeSourceClass(x.records[0])).toBe('Categoria non confermata');
     expect(x.records[0]).not.toHaveProperty('slug');
@@ -41,6 +48,8 @@ describe('G0-only public lake source map projection',()=>{
   });
   it('rejects any SEO or individual page promotion',()=>{
     expect(verifiedLakeSourceCensus({...published,seoIndexable:true}).records).toHaveLength(0);
+    expect(verifiedLakeSourceCensus({...published,sourcePreviewsReady:100}).records).toHaveLength(0);
+    expect(verifiedLakeSourceCensus({...published,records:[{...source,previewNoindex:false}]}).records).toHaveLength(0);
     expect(verifiedLakeSourceCensus({...published,individualPagesAllowed:true}).records).toHaveLength(0);
     expect(verifiedLakeSourceCensus({...published,canonicalAtlasEntitiesAdded:1}).records).toHaveLength(0);
     expect(verifiedLakeSourceCensus({...published,records:[{...source,qualityGate:'G2'}]}).records).toHaveLength(0);

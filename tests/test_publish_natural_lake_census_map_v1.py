@@ -49,6 +49,14 @@ class CensusMapTest(unittest.TestCase):
         self.assertEqual(output["shownPolygons"],2)
         self.assertEqual(output["canonicalAtlasEntitiesAdded"],0)
         self.assertEqual(output["crossSourceIdentityLinksAdded"],0)
+        self.assertTrue(output["sourcePreviewPagesNoindexAllowed"])
+        self.assertEqual(output["sourcePreviewsReady"],2)
+        for row in output["records"]:
+            self.assertTrue(row["previewOnly"])
+            self.assertTrue(row["previewNoindex"])
+            self.assertRegex(row["previewSlug"],r"^[a-z0-9]+(?:-[a-z0-9]+)*-[a-f0-9]{7}$")
+            self.assertNotIn(row["sourceFeatureId"],row["previewSlug"])
+            self.assertNotIn("sameAs",row)
         for row in output["records"]:
             self.assertEqual(row["qualityGate"],"G0")
             self.assertFalse(row["canonicalSubtypeVerified"])
@@ -73,6 +81,10 @@ class CensusMapTest(unittest.TestCase):
         self.assertEqual(bz["agencyReportedElevationM"],1750)
         self.assertEqual(ar["rawClass"],"Lago")
         self.assertFalse(ar["canonicalSubtypeVerified"])
+        self.assertEqual(bz["agencyReportedVolumeM3"],4000000)
+        self.assertEqual(bz["agencyReportedWidthM"],330)
+        self.assertEqual(bz["agencyReportedLengthM"],700)
+        self.assertIsNone(bz["municipalityReported"])
         self.assertNotIn("subtype",ar)
 
     def test_held_geometry_has_count_but_never_polygon_or_point(self):
@@ -128,12 +140,29 @@ class CensusMapTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             build(bad,held,registry)
 
+    def test_rejects_pseudo_name_or_duplicate_homonym_uses_stable_suffix(self):
+        source,held,registry=fixtures()
+        p="arpav_water_surfaces"
+        bad=deepcopy(source)
+        bad[p]["entities"][0]["providerNames"]=[{"language":"it","value":"N.D."}]
+        blank=build(bad,held,registry)
+        r=next(x for x in blank["records"] if x["provider"]==p)
+        self.assertIsNone(r["previewSlug"])
+        self.assertFalse(r["previewOnly"])
+        # Same source FID and name give a stable URL even after refresh.
+        a=build(source,held,registry)
+        b=build(deepcopy(source),deepcopy(held),deepcopy(registry))
+        self.assertEqual([x["previewSlug"] for x in a["records"]],
+                         [x["previewSlug"] for x in b["records"]])
+
     def test_missing_name_keeps_null_and_no_invented_name(self):
         source,held,registry=fixtures()
         source["arpav_water_surfaces"]["entities"][0]["providerNames"]=[]
         out=build(source,held,registry)
         e=next(e for e in out["records"] if e["provider"]=="arpav_water_surfaces")
         self.assertIsNone(e["name"])
+        self.assertIsNone(e["previewSlug"])
+        self.assertFalse(e["previewOnly"])
         self.assertEqual(e["names"],[])
         self.assertFalse(out["individualPagesAllowed"])
 

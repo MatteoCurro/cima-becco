@@ -130,6 +130,29 @@ const naturalPasses=naturalRelease?.releaseChannel==='NATURAL_FEATURES_PASSES_G2
     : [];
 
 
+// Source catalogues are NOT verified G1/G2 entities. Named official polygons
+// can have separate noindex source previews, without inflating the G2 sitemap.
+const lakeCensusPath=join(DATA,'atlas','natural-lake-census-map-v1.json');
+const lakeCensus=existsSync(lakeCensusPath)?readJson(lakeCensusPath):null;
+const lakePreviews=lakeCensus?.releaseChannel==='NATURAL_LAKE_SOURCE_CENSUS_MAP_G0_V1' &&
+  lakeCensus.sourceOnlyCatalogue===true&&
+  lakeCensus.sourcePreviewPagesNoindexAllowed===true&&
+  lakeCensus.isPublishedG2===false&&lakeCensus.seoIndexable===false&&
+  lakeCensus.individualPagesAllowed===false&&
+  lakeCensus.canonicalAtlasEntitiesAdded===0&&
+  Array.isArray(lakeCensus.records)&&lakeCensus.records.length===lakeCensus.shownPolygons
+    ? lakeCensus.records.filter(r=>r.previewOnly===true&&r.previewNoindex===true&&
+      r.qualityGate==='G0'&&r.seoIndexable===false&&r.canonicalSubtypeVerified===false&&
+      typeof r.name==='string'&&r.name.length>=3&&
+      /^[a-z0-9]+(?:-[a-z0-9]+)*-[a-f0-9]{7}$/.test(r.previewSlug||'')&&
+      r.geom?.type==='MultiPolygon'&&r.geom?.coordinates?.length>0&&
+      Number.isFinite(r.derivedMappedKm2)&&r.derivedMappedKm2>0 &&
+      typeof r.sourceUrl==='string'&&r.sourceUrl.startsWith('https://'))
+    : [];
+if(lakeCensus?.sourcePreviewPagesNoindexAllowed===true&&
+   lakePreviews.length!==lakeCensus.sourcePreviewsReady)
+  throw Error('Unverified G0 source profile attempted HTML publish');
+
 // Source-verified lakes are separate from the spring/fountain water catalog.
 // A center point is insufficient: exact OSM multipolygon provenance is mandatory.
 const naturalLakesPath=join(DATA,'atlas','natural-lakes-v1.json');
@@ -667,6 +690,52 @@ for(const e of naturalLakes){
       '<p class="cima-seo-warning">Il perimetro deriva dalla cartografia OSM; la superficie non è una misura ufficiale. '+
       'Riva, balneabilità, potabilità e accessibilità non sono verificate dalla sola mappa.</p>'+
       '<p><a class="cta" href="'+href+'">ESPLORA IL LAGO NELL’ATLANTE</a></p>',
+  });
+}
+// Independent evidence pages: noindex,follow; NOT a unique/verified lake,
+// no schema.org LakeBodyOfWater assertion, no G2 relation or claimed access.
+for(const row of lakePreviews) {
+  const href=SITE+'/laghi/censiti/'+row.previewSlug+'/';
+  const number=v=>typeof v==='number'&&Number.isFinite(v)&&v>0;
+  const fmt=(v,d=0)=>v.toLocaleString('it-IT',{maximumFractionDigits:d});
+  const areaText=number(row.agencyReportedAreaM2)
+    ?fmt(row.agencyReportedAreaM2/10000,2)+' ha · superficie dichiarata dall’ente'
+    :fmt(row.derivedMappedKm2*100,2)+' ha · superficie dal perimetro WFS';
+  const where=row.municipalityReported?' · '+row.municipalityReported:'';
+  const kind=row.rawClass?'Classificazione della fonte: '+row.rawClass:
+    'Tipologia naturale/artificiale non ancora confermata';
+  const intro='Scheda di censimento '+row.name+where+'. '+areaText+
+    '. Informazioni dell’ente cartografico, identità fra archivi e fotografia non ancora verificate.';
+  const items=[
+    ['Superficie',areaText],
+    ...(number(row.agencyReportedElevationM)?[['Quota dichiarata',fmt(row.agencyReportedElevationM)+' m']]:[]),
+    ...(number(row.agencyReportedVolumeM3)?[['Volume dichiarato',fmt(row.agencyReportedVolumeM3)+' m³']]:[]),
+    ...(number(row.agencyReportedLengthM)?[['Lunghezza dichiarata',fmt(row.agencyReportedLengthM)+' m']]:[]),
+    ...(number(row.agencyReportedWidthM)?[['Larghezza dichiarata',fmt(row.agencyReportedWidthM)+' m']]:[]),
+  ];
+  page({
+    path:'laghi/censiti/'+row.previewSlug+'/',
+    title:row.name+' · Scheda di censimento non verificata | Cima Becco',
+    description:intro.slice(0,285),
+    noindex:true,
+    jsonLd:{'@context':'https://schema.org','@type':'WebPage',
+      name:row.name+' · Censimento in verifica',url:href,
+      isPartOf:{'@type':'CollectionPage',url:SITE+'/laghi/'},
+      description:intro},
+    body:crumbs([['Laghi',SITE+'/laghi/'],[row.name]])+
+      '<div class="cima-seo-eyebrow">CIMA BECCO · CENSIMENTO UFFICIALE / IN VERIFICA</div>'+
+      '<h1>'+escape(row.name)+'</h1>'+
+      '<p class="cima-seo-lead">'+escape(intro)+'</p>'+
+      '<ul class="facts cima-seo-facts">'+items.map(([label,value])=>
+         '<li><strong>'+escape(value)+'</strong>'+escape(label)+'</li>').join('')+'</ul>'+
+      '<section class="cima-seo-body"><h2>Informazioni disponibili</h2>'+
+      '<p>'+escape(kind)+'. '+escape(row.municipalityReported?
+         'Comune riportato dalla fonte: '+row.municipalityReported+'. ':'')+
+      'Questa è una singola scheda di censimento, non un dossier G2 e non una conferma dell’identità tra archivi.</p></section>'+
+      '<p class="cima-seo-warning">Il perimetro riportato deriva dal WFS originale: '+
+      'non identifica un accesso alle rive e non dimostra potabilità, balneabilità o sicurezza. '+
+      'Le eventuali fotografie richiedono una verifica indipendente.</p>'+
+      '<p><a class="cta" href="'+href+'">APRI LA MAPPA E I DATI DI CENSIMENTO</a></p>',
   });
 }
 if(naturalLakes.length){
