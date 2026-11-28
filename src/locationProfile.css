@@ -45,3 +45,15 @@
 .cb-location-content a{overflow-wrap:anywhere}
 @container(max-width:460px){.cb-location-water-grid{grid-template-columns:1fr}.cb-atlas-routes{grid-template-columns:1fr}}
 @media(max-width:900px){.cb-location-content{padding:18px clamp(14px,4vw,28px) 38px}.cb-location-hero-media>.cb-place-visual{height:clamp(210px,52vw,320px)}.cb-location-avatar{width:54px;height:54px;top:10px;right:10px}}
+
+
+/* Profili biografici come relazioni del dossier locale, senza una seconda shell. */
+.cb-person-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px;margin:15px 0}
+.cb-person-card{border:1px solid #cee2c5;border-radius:9px;background:#f5faef;padding:18px;min-width:0}
+.cb-person-card-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;color:#ad004f;font:800 9px 'Space Grotesk',sans-serif;letter-spacing:.04em}
+.cb-person-card h3{font:900 clamp(20px,2.2vw,26px)/1.08 'Bricolage Grotesque',sans-serif;letter-spacing:-.045em;color:#214c34;margin:12px 0 6px}
+.cb-person-card p{font:500 12px/1.6 'Space Grotesk',sans-serif;color:#435a47;margin:6px 0}
+.cb-person-card .cb-person-role{font-weight:800;color:#21563d}
+.cb-person-card .cb-person-dates{font-size:11px;color:#68806c}
+.cb-person-card a{display:inline-flex;margin:12px 0 0;font:800 11px 'Space Grotesk',sans-serif;color:#c3005d;text-decoration:underline}
+.cb-person-section-subtitle{font:900 21px 'Bricolage Grotesque',sans-serif;color:#214c34;margin:22px 0 10px}
