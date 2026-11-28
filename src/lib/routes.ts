@@ -1,6 +1,6 @@
 import { routeEstimateS } from './routeTime';
 import type { Route, RouteActivity, RoutePoint, Venue } from '../types';
-import { routeActivity } from './routeAnalysis';
+import { routePresentationCategory } from './routeClassification';
 import { computeGain, haversineM, totalDistanceM } from './elevation';
 import type { Bounds } from './venues';
 
@@ -15,7 +15,7 @@ export const ROUTE_CATEGORIES: { id: RouteCategory; label: string; shortLabel: s
   { id: 'all', label: 'Tutti i percorsi', shortLabel: 'Tutti' },
   { id: 'hike', label: 'Escursioni', shortLabel: 'Escursioni' },
   { id: 'trail', label: 'Trail running', shortLabel: 'Trail' },
-  { id: 'ferrata', label: 'Vie ferrate', shortLabel: 'Ferrate' },
+  { id: 'ferrata', label: 'Ferrate e attrezzati', shortLabel: 'Ferrate' },
   { id: 'saved', label: 'Salvati', shortLabel: 'Salvati' },
   { id: 'device', label: 'Sul dispositivo', shortLabel: 'Dispositivo' },
 ];
@@ -65,9 +65,13 @@ export function filterRoutes(routes: Route[], filters: RouteFilters, bookmarks: 
     if ((route.activity as string) === 'cycle' || (route.activity as string) === 'run') return false;
     switch (filters.category) {
       case 'hike':
+        return routePresentationCategory(route).kind === 'escursione';
       case 'trail':
-      case 'ferrata':
-        return routeActivity(route) === filters.category;
+        return routePresentationCategory(route).kind === 'trail';
+      case 'ferrata': {
+        const kind=routePresentationCategory(route).kind;
+        return kind === 'ferrata' || kind === 'attrezzato';
+      }
       case 'saved':
         return bookmarks.has(route.slug);
       case 'device':
