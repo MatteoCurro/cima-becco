@@ -1,0 +1,75 @@
+name: Pilot official lake WFS sources (Bolzano and ARPAV, G0 only)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/import_official_lake_wfs_v1.py
+      - tests/test_import_official_lake_wfs_v1.py
+      - .github/workflows/test-official-lake-wfs-v1.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cima-official-lakes-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: WFS source isolation, geometry, identity and licence gates
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_import_official_lake_wfs_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_natural_water_geometry_v1.py' -v
+          python -m unittest discover -s tests -p 'test_publish_natural_lakes_v1.py' -v
+          test -z "$(git status --porcelain -- public/ src/)"
+  source-probes:
+    needs: offline-regressions
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: [bolzano_lakes, arpav_water_surfaces]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify live capabilities and fetch at most 20 features in pilot bbox
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/import_official_lake_wfs_v1.py \
+            --provider "${{ matrix.provider }}" \
+            --live --out "build/official-lakes-${{ matrix.provider }}"
+          python - <<'PY'
+          import json, pathlib, os
+          p = pathlib.Path("build/official-lakes-" + os.environ["PROVIDER"])
+          stage = json.loads((p/"official-lake-source-g0.json").read_text())
+          report = json.loads((p/"official-lake-report.json").read_text())
+          assert stage["isPublished"] is False
+          assert all(x["quality"]["gate"] == "G0" and
+                     x["quality"]["seoIndexable"] is False and
+                     x["subtype"] is None for x in stage["entities"])
+          assert report["published"] == 0 and report["seoIndexable"] == 0
+          print("Official features accepted (staging only):", report["acceptedG0"])
+          PY
+          test -z "$(git status --porcelain -- public/ src/)"
+        env:
+          PROVIDER: ${{ matrix.provider }}
+      - name: Keep independent source snapshot and QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-lakes-${{ matrix.provider }}-G0-audit
+          path: build/official-lakes-${{ matrix.provider }}/
+          retention-days: 20
+          if-no-files-found: warn
