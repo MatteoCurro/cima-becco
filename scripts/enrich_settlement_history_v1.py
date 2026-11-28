@@ -74,8 +74,8 @@ def enrich_historical_settlements(release, *, getter=None, max_settlements=8,
             seen={(m.get("kind"),m.get("sourceUrl")) for m in place.get("media",[])}
             for filename,date,method,subject_method,page_id in qualifying[:2]:
                 asset=images.get(filename.replace(" ","_"))
-                if not asset or not safe_historical_scene(asset,date) or
-                    ("historical_photo",asset["sourceUrl"]) in seen:
+                if (not asset or not safe_historical_scene(asset,date) or
+                    ("historical_photo",asset["sourceUrl"]) in seen):
                     continue
                 record={**asset,
                     "id":"commons-local-history:"+hashlib.sha1((qid+filename).encode()).hexdigest()[:14],
