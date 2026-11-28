@@ -3,7 +3,7 @@ import type { Route, Venue } from '../types';
 import { SiteSearch } from './SearchBar';
 import { HEIGHT_LABEL, boundsOf, loadDataset, photoSrc, rankingHeight, townName, venueHeight, venueKindLabel, type Bounds, type Dataset } from '../lib/venues';
 import { DESTINATIONS, boundsToHash, normalisePlace, regionBounds, regionOf } from '../lib/regions';
-import { countrySummaries, type CountrySummary } from '../lib/worldPeaks';
+import { countrySummaries, loadPeakOverview, type CountrySummary } from '../lib/worldPeaks';
 import { SiteFooter, SiteHeader } from './SiteChrome';
 import { mixByDifficulty, routeHasElevation } from '../lib/routes';
 import { trailTitle, trailMood, trailArea } from '../lib/routeEditorial';
@@ -53,6 +53,16 @@ export function Landing() {
   }, []);
 
   const countries = useCountries();
+  const [peakOverview, setPeakOverview] = useState<Venue[]>([]);
+  useEffect(() => {
+    let active = true;
+    void loadPeakOverview().then(venues => { if (active) setPeakOverview(venues); }).catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+  const dolomiti = useMemo(() => showcase(peakOverview.filter(v =>
+    v.lat >= DOLOMITI.south && v.lat <= DOLOMITI.north &&
+    v.lng >= DOLOMITI.west && v.lng <= DOLOMITI.east,
+  )), [peakOverview]);
   const worldList = useMemo(() => worldRowCountries(countries), [countries]);
   // A country with its own "Highest peaks in …" row further down does not
   // also get a "Peaks in …" row from the local data: one row per country.
@@ -68,7 +78,7 @@ export function Landing() {
 
   // Local rows first (Singapore, Malaysia, then the rest), topped up with
   // "Highest peaks in …" rows to COUNTRY_ROWS in all.
-  const worldShown = rows ? worldList.slice(0, Math.max(0, COUNTRY_ROWS - rows.length)) : [];
+  const worldShown = rows ? worldList.slice(0, Math.max(0, COUNTRY_ROWS - rows.length - Number(dolomiti.length > 0))) : [];
 
   const placeRow = (row: RowSpec) => (
     <Row key={row.title} title={row.title} link={climbsIn(row.bounds)} loading={!rows} collage={collageOf(row.venues)}>
@@ -95,6 +105,11 @@ export function Landing() {
             <Row title="Pessime idee per il weekend" link={ROUTES_LINK} loading={!routes}>
               {routes?.map((route, i) => <RouteTile key={route.slug} route={route} index={i} />)}
             </Row>
+            {dolomiti.length > 0 && (
+              <Row title="Cime delle Dolomiti" link={climbsIn(DOLOMITI)} loading={false} collage={collageOf(dolomiti)}>
+                {dolomiti.map((venue, i) => <PlaceTile key={venue.slug} venue={venue} index={i} />)}
+              </Row>
+            )}
             {(rows ?? PLACEHOLDER_ROWS).slice(0, COUNTRY_ROWS).map(placeRow)}
             {worldShown.map((country) => (
               <Row
