@@ -4,7 +4,8 @@ import sys
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from enrich_municipalities_v1 import (
-    query_national_istat_qids,commons_files,wikipedia_intro,choose_candidates,enrich
+    query_national_istat_qids,commons_files,wikipedia_intro,choose_candidates,enrich,
+    municipality_heraldry_filename
 )
 
 QID="Q12345"
@@ -82,6 +83,36 @@ class MunicipalMediaTests(unittest.TestCase):
             del d["query"]["pages"]["200"]["imageinfo"][0]["thumburl"]
             return d
         self.assertEqual(commons_files(["Stemma di Canazei.svg"],getter=no_raster,allow_svg=True),{})
+    def test_heraldry_filename_must_explicitly_name_the_same_town(self):
+        self.assertTrue(municipality_heraldry_filename("File:Canazei-Stemma.svg","Canazei"))
+        self.assertTrue(municipality_heraldry_filename("File:Stemma di San Vito di Cadore.svg","San Vito di Cadore"))
+        self.assertFalse(municipality_heraldry_filename("File:Canazei panorama.jpg","Canazei"))
+        self.assertFalse(municipality_heraldry_filename("File:Trento-Stemma.svg","Canazei"))
+        self.assertFalse(municipality_heraldry_filename("File:Canazei blank-stemma.svg","Canazei"))
+    def test_wikipedia_infobox_crest_fallback_linked_to_verified_qid(self):
+        def verified(url,params):
+            if "wikipedia" in url:
+                d=fake_getter(url,params)
+                d["query"]["pages"]["20"]["images"]=[
+                  {"title":"File:Canazei-Stemma.svg"},
+                  {"title":"File:Trentino-Stemma.svg"}]
+                return d
+            if "commons.wikimedia.org" in url and "Canazei-Stemma" in params.get("titles",""):
+                return {"query":{"pages":{"9":{"title":"File:Canazei-Stemma.svg",
+                 "imageinfo":[{"thumburl":"https://upload.wikimedia.org/thumb/stemma.svg.png",
+                   "descriptionurl":"https://commons.wikimedia.org/wiki/File:Canazei-Stemma.svg",
+                   "extmetadata":{"LicenseShortName":{"value":"CC BY-SA 4.0"},
+                     "LicenseUrl":{"value":"https://creativecommons.org/licenses/by-sa/4.0/"},
+                     "Artist":{"value":"Autore verificato"}}}]}}}}
+            return fake_getter(url,params)
+        release,report=enrich(archive(),{CODE:QID},getter=verified,max_new=10)
+        self.assertEqual(report["publishedG2"],1)
+        logos=[m for m in release["entities"][0]["media"] if m["kind"]=="logo"]
+        self.assertEqual(len(logos),1)
+        self.assertEqual(logos[0]["symbolType"],"coat_of_arms")
+        self.assertEqual(logos[0]["subjectMethod"],"exact_named_heraldry_file_in_itwiki_article_verified_QID")
+        self.assertEqual(logos[0]["licence"],"CC BY-SA 4.0")
+        self.assertNotIn("linkedImages",release["entities"][0]["textSources"][0])
     def test_wikipedia_must_confirm_same_qid(self):
         self.assertTrue(wikipedia_intro("Canazei",QID,getter=fake_getter)["text"])
         self.assertIsNone(wikipedia_intro("Canazei","Q999",getter=fake_getter))
