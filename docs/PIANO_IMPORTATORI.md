@@ -1,8 +1,18 @@
 # Cima Becco — piano di importazione e collegamenti
 
-**Data aggiornamento:** 28/11/2026. **Stato verificato:** rifugi e ricoveri pubblicati; comuni e persone in aggiornamento G1/G2; località ISTAT/OSM incremental G2 pubblicate; **18 cime GeoNames/Wikidata G2 pubblicate**, release #46120388757 e deploy Pages #46120573758 riusciti, cursore offset 100; elementi naturali §5: due piloti OSM/GeoNames G0/G1 verificati, nessuna pubblicazione SEO.
+**Data aggiornamento:** 28/11/2026. **Stato verificato:** rifugi e ricoveri pubblicati; comuni e persone in aggiornamento G1/G2; località ISTAT/OSM incremental G2 pubblicate; **27 cime GeoNames/Wikidata G2 pubblicate**, release #46120388757 e #46123329772 riuscite, cursore offset 200; elementi naturali §5: **5 valichi G2 pubblicati**, release #46122593884 e deploy Pages #46122745479 riusciti; laghi/valli/aree restano G1 senza SEO.
 **Specifica superiore e vincolante:** [MODELLO_METADATI_E_LAYOUT.md](MODELLO_METADATI_E_LAYOUT.md). Il presente piano organizza i lavori e NON cambia la tassonomia o le regole canoniche.  
 **UI:** [ARCHITECTURE.md](ARCHITECTURE.md); un solo sistema di ricerca, mappa, dettaglio e filtri.
+
+## Blocco 6 — rilascio incrementale dei passi G2 (28/11/2026)
+
+**Release reale riuscita:** [#46122593884](https://github.com/MatteoCurro/cima-becco/actions/runs/46122593884), con build e simulazione SEO/crediti superate sulla PR [#32](https://github.com/MatteoCurro/cima-becco/pull/32), catalogo pubblico `public/data/atlas/natural-features-v1.json` (**5** entità con `quality.gate=G2`, `seoIndexable=true`, `isPublished=true`): **Passo di Sella, Passo della Máuria, Passo di Falzarego, Passo di Rolle, Passo Furcia**. Deploy Pages [#46122745479](https://github.com/MatteoCurro/cima-becco/actions/runs/46122745479) completato. HTTP indipendente sulle singole pagine non verificabile dal test remoto, distinto dal successo del deploy.
+
+**Una sola architettura:** [publisher dei passi](../scripts/publish_natural_passes_v1.py) unisce semanticamente i dossier G2 conservando ID stabili e quote/fonti; workflow [release-natural-passes-v1.yml](../.github/workflows/release-natural-passes-v1.yml) giornaliero alle **06:15 UTC**, con sorgente GeoNames e proprietà QID ricontrollate, nessun force push, retry su modifiche concorrenti e rilascio Pages esplicito. I testi e media verificati sono in `/passi/<slug>/`, la lista in `/passi/`, sulla stessa [mappa MapLibre](../src/components/AlpineAtlasMap.tsx) e [DetailLayout](../src/components/DetailPrimitives.tsx) di rifugi, borghi e altre risorse: la categoria è nella navigazione globale, non in una pagina scollegata. Gli autori delle fotografie e gli estratti Wikipedia si registrano solo nel catalogo centrale `/fonti-e-crediti/`; la caption mantiene il soggetto effettivo dichiarato da Commons.
+
+**Regole e coverage:** pubblicati solo `mountain_pass`/`saddle` senza differenze irrisolte di quota; i `near` sono semplici distanze in linea d'aria, mai `accessible_from` o una promessa di apertura stradale. Le sorgenti restano nel catalogo idrico autonomo. **Laghi, invasi, valli e cascate non sono in questa release**; per i primi la fase seguente riguarda la geometria OSM/geoportali e il crosswalk, poi contenuto e media G2, con test separati. Evitare una nuova query massiva quotidiana a Overpass; usare celle rate-limited e snapshot.
+
+---
 
 ## Blocco 6 — riconciliazione Wikidata/OSM e dossier informativi G2 in staging (28/11/2026)
 
@@ -10,7 +20,7 @@
 
 **Casi di qualità distinti:** 3 crosswalk inizialmente compatibili ma scartati nella seconda verifica P1566; immagini documentate disponibili per 16 entità, testi verificati per 44, 40 laghi/valli senza poligono rimangono da revisionare, 105 record senza foto Commons valida, 77 senza narrativa italiana riutilizzabile. Il testo Wikipedia può contenere una quota `m s.l.m.` differente: conservarla in `factsAlternatives[]` con fonte e licenza, non sostituire la quota GeoNames, e segnare `wikiAltitudeDisagreementReview` se differenza **maggiore di 45 m** per i valichi. Questa verifica ha trattenuto un ulteriore valico rispetto ai 6 candidati iniziali; altre discrepanze rimangono in audit. Le fotografie restano legate a `P18` del QID identificato, ma la didascalia riprende la descrizione concreta del file Commons per non chiamare «foto del passo» un impianto vicino.
 
-**Pipeline:** [resolve_natural_wikidata_v1.py](../scripts/resolve_natural_wikidata_v1.py) → [enrich_natural_wikimedia_v1.py](../scripts/enrich_natural_wikimedia_v1.py) → [test-natural-wikimedia-v1.yml](../.github/workflows/test-natural-wikimedia-v1.yml). Gli output in `build/` sono artefatti di audit senza modifiche a `public/data`; nessuna pubblicazione dei 5 finché non sono integrati il dettaglio condiviso, la mappa e la pagina centrale fonti-crediti, con un test SEO completo. Successivo rilascio: importatore di soli passi G2 in modalità incrementale, conservazione ID/alias, grafica e URL consoni; laghi e valli **non** passano in SEO senza geometria verificata. La fonte d'acqua resta separata.
+**Pipeline:** [resolve_natural_wikidata_v1.py](../scripts/resolve_natural_wikidata_v1.py) → [enrich_natural_wikimedia_v1.py](../scripts/enrich_natural_wikimedia_v1.py) → [test-natural-wikimedia-v1.yml](../.github/workflows/test-natural-wikimedia-v1.yml). Gli output in `build/` sono artefatti di audit senza modifiche a `public/data`; i cinque candidati di questo collaudo hanno poi superato i test SEO/UI e sono stati pubblicati nella release #46122593884; gli altri restano non indicizzati. Successivo rilascio: importatore di soli passi G2 in modalità incrementale, conservazione ID/alias, grafica e URL consoni; laghi e valli **non** passano in SEO senza geometria verificata. La fonte d'acqua resta separata.
 
 ---
 
@@ -29,6 +39,10 @@
 ---
 
 ## Blocco 5 — passaggio G2 e rilascio incrementale cime (28/11/2026)
+
+**Audit batch cime 100–199 (28/11/2026):** la release [#46123329772](https://github.com/MatteoCurro/cima-becco/actions/runs/46123329772) ha completato 84 identità GeoNames↔Wikidata verificate. 9 nuove cime con foto e testo G2 (totale pubblico **27**); una cima, **Monte Magro**, è conservata in `heldEntities[]` come G1 per divergenza altimetrica >100 m, con entrambe le quote e le fonti; nessuna pagina inventata. Lo storico `import-history-cime-v1.json` avanza soltanto dopo commit riuscito: **offset successivo 200**. Due problemi emersi dai test reali e corretti in [PR #33](https://github.com/MatteoCurro/cima-becco/pull/33) (QID unico globalmente, non per singolo batch) e [PR #35](https://github.com/MatteoCurro/cima-becco/pull/35) (quota discordante trattenuta G1, senza bloccare gli altri G2). I due tentativi precedenti falliti non hanno modificato i dati né fatto avanzare il cursore.
+
+
 
 - **Identità verificata nel pilot reale:** [run #46119578189](https://github.com/MatteoCurro/cima-becco/actions/runs/46119578189): 100 candidati campionati, 82 crosswalk P1566/P625 compatibili, 18 QID in revisione/non risolti, 18 dossier G2 con foto P18 Commons e testo itwiki verificato, 24 test Python superati. G2 in staging: 0 SEO fino alla release.
 - **Bibbia §§1/4/30–32 rispettata:** `wikidataElevationReportedM` (P2044) resta separata dalla quota originale GeoNames; P18 fotografa esattamente l'entità (non semplice vicinanza), Wikipedia conserva autore collettivo/licenza CC BY-SA nel registro centrale; gruppi senza perimetro e nomi ambigui restano G0/noindex.
