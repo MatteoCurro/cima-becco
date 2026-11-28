@@ -25,7 +25,7 @@ export const SOURCE_PROVIDERS = Object.freeze([
    url:'https://github.com/StarlightsJourney/HillGPX',licence:'MIT e altre licenze nelle dipendenze'},
 ]);
 
-export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedAt='',municipalities=[],people=[]) {
+export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedAt='',municipalities=[],people=[],summits=[]) {
   const records=[];
   const dedup=new Set();
   const add=(kind,slug,name,src,author,licence,mediaUrl)=>{
@@ -36,7 +36,7 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
     // SAME detail page: uniqueness must include each individual media URL.
     const key=[kind,slug,src,mediaUrl||''].join('\x1f');
     if(dedup.has(key))return; dedup.add(key);
-    const path=kind==='person'?'fonti-e-crediti':kind==='route'?'route':kind==='peak'?'place':kind==='municipality'?'comuni':
+    const path=kind==='person'?'fonti-e-crediti':kind==='route'?'route':kind==='peak'?'place':kind==='summit'?'cime':kind==='municipality'?'comuni':
       kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'borghi';
     records.push({
       kind,slug,name:String(name||slug).slice(0,180),
@@ -100,6 +100,23 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
           licence:source.licence,sourceId:source.sourceId,
           sourceUpdatedAt:source.sourceUpdatedAt||null});
       }
+    }
+  }
+  // Published G2 summit dossiers: photos and CC BY-SA excerpts are credited
+  // in the central register, never repeated as text overlays on each SEO page.
+  for(const e of summits) {
+    if(e?.kind!=='summit'||e?.quality?.gate!=='G2'||!e.quality.seoIndexable||!e.slug)continue;
+    for(const m of e.media||[]) {
+      if(m.kind==='photo'&&m.subjectVerified&&m.reuseAllowed&&m.author&&m.licence&&m.sourceUrl)
+        add('summit',e.slug,e.name,m.sourceUrl,m.author,m.licence,m.url);
+    }
+    for(const source of e.textSources||[]) {
+      if(source.text&&source.sourceId&&source.sourceUrl?.startsWith('https://')&&source.licence)
+        textCredits.push({kind:'summit',slug:e.slug,name:e.name,
+          entityUrl:'/cime/'+encodeURIComponent(e.slug)+'/',
+          sourceUrl:source.sourceUrl,author:'Contributori di Wikipedia',
+          licence:source.licence,sourceId:source.sourceId,
+          sourceUpdatedAt:source.sourceUpdatedAt||null});
     }
   }
   for(const r of routes) {

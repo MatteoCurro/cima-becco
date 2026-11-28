@@ -1,6 +1,7 @@
 import type { Venue } from '../types';
 import { DATA_BASE, loadDataset, type Bounds } from './venues';
 import { regionOf } from './regions';
+import { summitByGeonames, withVerifiedSummit, type PublishedSummit } from './summitRelease';
 
 /**
  * Worldwide summits (GeoNames, CC BY 4.0), built by scripts/fetch_world_peaks.py
@@ -32,6 +33,15 @@ export interface PeakIndex {
 const BASE = `${DATA_BASE}/peaks`;
 let indexPromise: Promise<PeakIndex | null> | null = null;
 const tiles = new Map<string, Promise<Venue[]>>();
+let summitPromise: Promise<Map<string, PublishedSummit>> | null = null;
+function verifiedSummits(): Promise<Map<string, PublishedSummit>> {
+  summitPromise ??= fetch(`${DATA_BASE}/atlas/summits-v1.json`)
+    .then((response) => response.ok ? response.json() : null)
+    .then(summitByGeonames)
+    .catch(() => new Map<string, PublishedSummit>());
+  return summitPromise;
+}
+
 
 export function loadPeakIndex(): Promise<PeakIndex | null> {
   indexPromise ??= fetch(`${BASE}/index.json`)
@@ -50,13 +60,13 @@ function tileKeyOf(lat: number, lng: number, size: number): string {
   return `${Math.floor(lat / size) * size}_${Math.floor(lng / size) * size}`;
 }
 
-function toVenue(row: PeakRow, size: number, photos?: Map<string, PeakPhoto>): Venue {
+function toVenue(row: PeakRow, size: number, photos?: Map<string, PeakPhoto>, summits?: Map<string, PublishedSummit>): Venue {
   const [id, name, lat, lng, ele, source] = row;
   const [south, west] = tileKeyOf(lat, lng, size).split('_').map(Number);
   const slug = `gn${id}-${token(south)}x${token(west)}`;
   // The landing's stored Commons photo, so map cards and the photo filter see it too.
   const photo = photos?.get(slug);
-  return {
+  const venue: Venue = {
     slug,
     name,
     type: 'hill',
@@ -76,6 +86,7 @@ function toVenue(row: PeakRow, size: number, photos?: Map<string, PeakPhoto>): V
       },
     }),
   };
+  return summits ? withVerifiedSummit(venue, summits) : venue;
 }
 
 export function isWorldPeakSlug(slug: string): boolean {
@@ -88,8 +99,9 @@ function loadTile(key: string, size: number): Promise<Venue[]> {
     pending = Promise.all([
       fetch(`${BASE}/${key}.json`).then((r) => (r.ok ? (r.json() as Promise<PeakRow[]>) : [])),
       loadPeakPhotos(),
+      verifiedSummits(),
     ])
-      .then(([rows, photos]) => rows.map((row) => toVenue(row, size, photos)))
+      .then(([rows, photos, summits]) => rows.map((row) => toVenue(row, size, photos, summits)))
       .catch(() => {
         tiles.delete(key);
         return [];
@@ -109,8 +121,8 @@ const MAX_TILES = 4;
  * Before this, every move rebuilt thousands of Venue objects and re-rendered
  * the whole page even when the visible summits had not changed.
  */
-let topCache: { size: number; photos: Map<string, PeakPhoto>; venues: Venue[] } | null = null;
-let viewCache: { sig: string; photos: Map<string, PeakPhoto>; venues: Venue[] } | null = null;
+let topCache: { size: number; photos: Map<string, PeakPhoto>; summits: Map<string, PublishedSummit>; venues: Venue[] } | null = null;
+let viewCache: { sig: string; photos: Map<string, PeakPhoto>; summits: Map<string, PublishedSummit>; venues: Venue[] } | null = null;
 
 /** Summits for a viewport: full tiles when zoomed in, the index's highlights when not. */
 export async function peaksInView(view: Bounds): Promise<Venue[]> {
@@ -125,17 +137,17 @@ export async function peaksInView(view: Bounds): Promise<Venue[]> {
       if (index.cells[key]) keys.add(key);
     }
   }
-  const photos = await loadPeakPhotos();
+  const [photos, summits] = await Promise.all([loadPeakPhotos(), verifiedSummits()]);
   if (keys.size > MAX_TILES) {
-    if (!topCache || topCache.size !== size || topCache.photos !== photos) {
-      topCache = { size, photos, venues: index.top.map((row) => toVenue(row, size, photos)) };
+    if (!topCache || topCache.size !== size || topCache.photos !== photos || topCache.summits !== summits) {
+      topCache = { size, photos, summits, venues: index.top.map((row) => toVenue(row, size, photos, summits)) };
     }
     return topCache.venues;
   }
   const sig = [...keys].sort().join('|');
-  if (viewCache?.sig === sig && viewCache.photos === photos) return viewCache.venues;
+  if (viewCache?.sig === sig && viewCache.photos === photos && viewCache.summits === summits) return viewCache.venues;
   const venues = (await Promise.all([...keys].map((key) => loadTile(key, size)))).flat();
-  viewCache = { sig, photos, venues };
+  viewCache = { sig, photos, summits, venues };
   return venues;
 }
 
@@ -149,6 +161,15 @@ export async function worldPeakBySlug(slug: string): Promise<Venue | null> {
   return venues.find((venue) => venue.slug === slug) ?? null;
 }
 
+/** Resolve a speaking SEO summit URL back into its existing GeoNames map entity. */
+export async function worldPeakByCanonicalSlug(slug: string): Promise<Venue | null> {
+  const profiles=await verifiedSummits();
+  const profile=[...profiles.values()].find(item=>item.slug===slug);
+  if(!profile)return null;
+  const legacy=profile.slugAliases.find(isWorldPeakSlug);
+  return legacy ? worldPeakBySlug(legacy) : null;
+}
+
 let notablePromise: Promise<Venue[]> | null = null;
 
 /**
@@ -157,7 +178,7 @@ let notablePromise: Promise<Venue[]> | null = null;
  * `HLLS`) are areas rather than summits and are left out.
  */
 export function notablePeaks(): Promise<Venue[]> {
-  notablePromise ??= Promise.all([loadPeakIndex(), loadPeakPhotos()]).then(([index, photos]) => {
+  notablePromise ??= Promise.all([loadPeakIndex(), loadPeakPhotos(), verifiedSummits()]).then(([index, photos, summits]) => {
     if (!index) {
       notablePromise = null;
       return [];
@@ -165,7 +186,7 @@ export function notablePeaks(): Promise<Venue[]> {
     return index.top
       .filter((row) => row[7] !== 'MTS' && row[7] !== 'HLLS')
       .map((row) => {
-        const venue = toVenue(row, index.tile, photos);
+        const venue = toVenue(row, index.tile, photos, summits);
         if (row[6]) notableCountries.set(venue.slug, countryName(row[6]));
         return venue;
       });
@@ -225,7 +246,7 @@ function tallestDistinct(venues: Venue[], limit: number): Venue[] {
  * map (toVenue), so a summit looks the same everywhere.
  */
 export function countrySummaries(): Promise<CountrySummary[]> {
-  summariesPromise ??= Promise.all([loadPeakIndex(), loadPeakPhotos(), loadDataset().catch(() => null)]).then(([index, photos, dataset]) => {
+  summariesPromise ??= Promise.all([loadPeakIndex(), loadPeakPhotos(), verifiedSummits(), loadDataset().catch(() => null)]).then(([index, photos, summits, dataset]) => {
     if (!index?.byCountry) {
       summariesPromise = null;
       return [];
@@ -260,7 +281,7 @@ export function countrySummaries(): Promise<CountrySummary[]> {
       .map(([code, [count, west, south, east, north]]) => {
         const name = countryName(code);
         const local = localBy.get(name) ?? [];
-        const world = landingRow(code).map((row) => toVenue(row, index.tile, photos));
+        const world = landingRow(code).map((row) => toVenue(row, index.tile, photos, summits));
         return {
           code,
           name,

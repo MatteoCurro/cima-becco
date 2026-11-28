@@ -1,8 +1,19 @@
 # Cima Becco — piano di importazione e collegamenti
 
-**Data aggiornamento:** 28/11/2026. **Stato verificato:** rifugi e ricoveri pubblicati; comuni e persone G1/G2 in arricchimento incrementale; località ISTAT/OSM: 14 schede G2 pubblicate nel run 46117176744. Blocco successivo: cime e gruppi GeoNames in staging G0/G1, nessuna pagina SEO nuova.
+**Data aggiornamento:** 28/11/2026. **Stato verificato:** rifugi e ricoveri pubblicati; comuni e persone G1/G2 in arricchimento incrementale; località ISTAT/OSM: 14 schede G2 pubblicate nel run 46117176744. Cime e gruppi GeoNames: G0/G1 implementato, 18 G2 reali in staging e rilascio incrementale in PR #29.
 **Specifica superiore e vincolante:** [MODELLO_METADATI_E_LAYOUT.md](MODELLO_METADATI_E_LAYOUT.md). Il presente piano organizza i lavori e NON cambia la tassonomia o le regole canoniche.  
 **UI:** [ARCHITECTURE.md](ARCHITECTURE.md); un solo sistema di ricerca, mappa, dettaglio e filtri.
+
+## Blocco 5 — passaggio G2 e rilascio incrementale cime (28/11/2026)
+
+- **Identità verificata nel pilot reale:** [run #46119578189](https://github.com/MatteoCurro/cima-becco/actions/runs/46119578189): 100 candidati campionati, 82 crosswalk P1566/P625 compatibili, 18 QID in revisione/non risolti, 18 dossier G2 con foto P18 Commons e testo itwiki verificato, 24 test Python superati. G2 in staging: 0 SEO fino alla release.
+- **Bibbia §§1/4/30–32 rispettata:** `wikidataElevationReportedM` (P2044) resta separata dalla quota originale GeoNames; P18 fotografa esattamente l'entità (non semplice vicinanza), Wikipedia conserva autore collettivo/licenza CC BY-SA nel registro centrale; gruppi senza perimetro e nomi ambigui restano G0/noindex.
+- **Release incrementale:** [workflow release-summits-v1](../.github/workflows/release-summits-v1.yml) alle 05:20 UTC 1 volta/giorno, 100 entità per lotto, cursore `import-history-cime-v1.json` che avanza esclusivamente dopo commit riuscito, retry su main concorrente senza force push. Conserva vecchi dossier G2 e le immagini storicamente verificate senza ricreare ID.
+- **SEO e UI:** /cime/<slug>/ è permalink informativo; /place/gn<ID>-<tile>/ è alias con redirect/noindex. Nell'app la cima mantiene lo slug GeoNames per pin, ricerca, favoriti e URL hash esistenti; nessun secondo layer mappe. Titoli e descrizioni soltanto se G2 e fonte verificata, nessun `accessible_from` desunto da una relazione `near`. Licenze, fotografie e testi sono nell'indice /fonti-e-crediti/.
+- **Qualità effettiva della release:** CI testa Python, TypeScript, Vitest, HTML statico, permalink e crediti. L'eventuale assenza di G2 verificabili o un conflitto d'identità blocca una promozione, mantenendo il catalogo precedente. Prima della diffusione su main, PR #29, successiva prova del workflow e deploy Pages devono essere verificati separatamente: uno staging verde non è una prova di sito live.
+- **Fonti successive per approfondimento G3:** OSM con riconciliazione multipla per nomi/gruppi, cataloghi storici CAI/SAT o archivi per prime ascensioni, foto storiche Commons con data, dati geologici/aree protette, restrizioni ufficiali e collegamenti sentieri verificati. Non moltiplicare chiamate Overpass: per queste entità i riferimenti GeoNames già versionati sono sufficienti come primo strato.
+
+---
 
 ## Blocco 5 — cime e gruppi montuosi: pilota GeoNames G0/G1 (28/11/2026)
 

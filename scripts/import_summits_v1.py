@@ -243,12 +243,16 @@ def nearby(entity, catalogs, max_each=3):
 
 
 def build(peak_dir, bbox, out, limit=250, country=None,
-          crosswalk=None, photo_file=None, catalogs=(), min_count=1):
+          crosswalk=None, photo_file=None, catalogs=(), min_count=1, offset=0):
     checked_at = datetime.now(timezone.utc).isoformat()
     rows, sha, rejected, conflicts = load_candidates(Path(peak_dir), bbox, country)
     names = Counter(slugify(r[1]) for r in rows)
     all_count = len(rows)
-    rows = rows[:limit] if limit else rows
+    if offset < 0:
+        raise ValueError("Negative summit batch offset")
+    if offset >= all_count:
+        offset = 0
+    rows = rows[offset:offset + limit] if limit else rows[offset:]
     links = read_crosswalk(crosswalk)
     index = json.loads((Path(peak_dir) / "index.json").read_text())
     photos = json.loads(Path(photo_file).read_text()).get("photos", {}) if photo_file and Path(photo_file).exists() else {}
@@ -287,8 +291,8 @@ def build(peak_dir, bbox, out, limit=250, country=None,
     dump(out / "review.json", review)
     report = {"source": "GeoNames", "license": LICENSE,
               "sourceSnapshotsSha256": sha,
-              "bbox": bbox, "eligible": all_count,
-              "staged": len(entities), "crosswalkMatched": sum(
+              "bbox": bbox, "eligible": all_count, "offset": offset,
+              "selectedCandidates": len(rows), "staged": len(entities), "crosswalkMatched": sum(
                   bool(e["sourceIds"].get("wikidata")) for e in entities),
               "summits": sum(e["kind"] == "summit" for e in entities),
               "groups": sum(e["kind"] == "mountain_group" for e in entities),
@@ -310,6 +314,7 @@ def main():
     parser.add_argument("--country", default=None)
     parser.add_argument("--wikidata-map", type=Path)
     parser.add_argument("--photos", type=Path, default=PHOTO_FILE)
+    parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--with-near", action="store_true")
     args = parser.parse_args()
     if args.max_entities < 0 or args.min_entities < 0:
@@ -323,7 +328,7 @@ def main():
         ]
     result = build(args.peak_dir, args.bbox, args.out, args.max_entities,
                    args.country, args.wikidata_map, args.photos, catalogs,
-                   args.min_entities)
+                   args.min_entities, args.offset)
     print(json.dumps(result, ensure_ascii=False))
 
 
