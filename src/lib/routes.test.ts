@@ -74,6 +74,17 @@ describe('filtri escursionistici', () => {
     expect(filterRoutes([cadore, trail, ferrata], { ...NO_ROUTE_FILTERS, category: 'trail' })).toEqual([trail]);
     expect(filterRoutes([cadore, trail, ferrata], { ...NO_ROUTE_FILTERS, category: 'ferrata' })).toEqual([ferrata]);
   });
+  it('estrae da escursioni le possibili ferrate e i sentieri EEA, con indizi espliciti', () => {
+    const named = { ...cadore, slug: 'possible', name: 'Via Ferrata degli Alpini' };
+    const technical = { ...cadore, slug: 'eea', caiDifficulty: 'EEA' as const };
+    const original = { ...cadore, slug: 'ordinary' };
+    const collection = [named, technical, original];
+    expect(filterRoutes(collection, { ...NO_ROUTE_FILTERS, category: 'ferrata' })).toEqual([named,technical]);
+    expect(filterRoutes(collection, { ...NO_ROUTE_FILTERS, category: 'hike' })).toEqual([original]);
+    // No importer rewrite: source activity remains untouched.
+    expect(named.activity).toBe('hike');
+    expect(technical.activity).toBe('hike');
+  });
   it('rifiuta dati ciclistici ereditati anche con filtro tutti', () => {
     const bike = { ...cadore, slug: 'legacy-bike', activity: 'cycle' as RouteActivity };
     const roadRun = { ...cadore, slug: 'legacy-road-run', activity: 'run' as RouteActivity };
