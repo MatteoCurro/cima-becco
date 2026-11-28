@@ -77,6 +77,18 @@ jobs:
             --points build/import-settlements-v1/input/LocalitaPuntuali_21.zip \
             --out build/import-settlements-v1/settlements.json \
             --report build/import-settlements-v1/geometry-report.json
+      - name: Verifica offline identità Wikidata, QID Wikipedia e licenze Commons
+        run: python -m unittest discover -s tests -p 'test_enrich_settlements_wikimedia_v1.py' -v
+      - name: Arricchisci candidati G2 con media e testi verificati (solo staging)
+        run: |
+          set -euo pipefail
+          python scripts/enrich_settlements_wikimedia_v1.py \
+            --settlements build/import-settlements-v1/settlements.json \
+            --municipalities public/data/atlas/municipalities-v1.json \
+            --people public/data/atlas/people-v1.json \
+            --max-new 80 \
+            --out build/import-settlements-v1/settlements-g2.json \
+            --report build/import-settlements-v1/wikimedia-report.json
       - name: Quality gate su fonti reali
         shell: bash
         run: |
@@ -95,6 +107,12 @@ jobs:
           assert not doc["isPublished"] and report["seoIndexable"] == 0
           assert len(ent) == len({x["id"] for x in ent}) == len({x["slug"] for x in ent})
           geo = json.loads((out/"geometry-report.json").read_text())
+          wiki = json.loads((out/"wikimedia-report.json").read_text())
+          g2 = json.loads((out/"settlements-g2.json").read_text())
+          assert g2["releaseChannel"] == "ISTAT21_OSM_SETTLEMENTS"
+          assert all(e["quality"]["gate"] == "G2" and e["quality"]["seoIndexable"]
+                     and e["description"] and e["textSources"] and e["media"] and e["geo"]["point"]
+                     for e in g2["entities"])
           assert geo["counts"]["matched"] > 8000, geo
           assert geo["counts"]["facts_popolazione"] > 8000, geo
           assert all(not x["quality"]["seoIndexable"] and x["quality"]["gate"] in ("G0","G1")
@@ -123,5 +141,7 @@ jobs:
             build/import-settlements-v1/settlements.json
             build/import-settlements-v1/report.json
             build/import-settlements-v1/geometry-report.json
+            build/import-settlements-v1/wikimedia-report.json
+            build/import-settlements-v1/settlements-g2.json
           retention-days: 14
           if-no-files-found: warn
