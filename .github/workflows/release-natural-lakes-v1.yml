@@ -1,0 +1,228 @@
+name: Release verified natural lakes and OSM polygons G2
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release-natural-lakes-v1.yml
+      - scripts/enrich_natural_lakes_wikimedia_v1.py
+      - scripts/enrich_natural_wikimedia_v1.py
+      - scripts/publish_natural_lakes_v1.py
+      - src/lib/naturalLakeRelease.ts
+      - src/components/NaturalLakePage.tsx
+      - src/components/AlpineAtlasMap.tsx
+      - src/lib/exploreNavigation.ts
+      - src/lib/analytics.ts
+      - src/App.tsx
+      - scripts/build_seo.mjs
+      - scripts/build_source_credits.mjs
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/release-natural-lakes-v1.yml
+      - scripts/publish_natural_lakes_v1.py
+      - tests/test_publish_natural_lakes_v1.py
+      - scripts/enrich_natural_lakes_wikimedia_v1.py
+      - tests/test_enrich_natural_lakes_wikimedia_v1.py
+      - src/lib/naturalLakeRelease.ts
+      - src/lib/naturalLakeRelease.test.ts
+      - src/components/NaturalLakePage.tsx
+      - src/components/AlpineAtlasMap.tsx
+      - src/lib/exploreNavigation.ts
+      - src/App.tsx
+      - scripts/build_seo.mjs
+      - scripts/build_source_credits.mjs
+  schedule:
+    # Wikimedia metadata and narrative daily; NOT Overpass refresh daily.
+    - cron: '35 6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: cima-natural-lakes-g2-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Native geometry, QID, lake media and publisher quality gates
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_enrich_natural_water_geometry_v1.py' -v
+          python -m unittest discover -s tests -p 'test_natural_wikimedia_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_natural_lakes_wikimedia_v1.py' -v
+          python -m unittest discover -s tests -p 'test_publish_natural_lakes_v1.py' -v
+      - name: TypeScript, UI, security and baseline SEO regression
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
+      - name: Complete G2 lake synthetic release SEO / credits / permalink smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0,'tests')
+          sys.path.insert(0,'scripts')
+          from test_enrich_natural_lakes_wikimedia_v1 import stages,wd,commons,wiki,AT
+          from enrich_natural_lakes_wikimedia_v1 import run
+          from publish_natural_lakes_v1 import empty,merge,write
+          geometry,crosswalk=stages()
+          doc,report=run(geometry,crosswalk,wd_getter=wd,
+                         commons_getter=commons,wiki_getter=wiki,at=AT)
+          assert report['candidateG2']==1 and doc['isPublished'] is False
+          release,stats=merge(empty(),doc)
+          assert stats['added']==1
+          write(Path('public/data/atlas/natural-lakes-v1.json'),release)
+          PY
+          npm run build
+          test -s dist/laghi/index.html
+          test -s dist/laghi/lago-verificato/index.html
+          grep -Fq '/laghi/lago-verificato/' dist/sitemap.xml
+          node - <<'JS'
+          const fs=require('node:fs');
+          const data=JSON.parse(fs.readFileSync('dist/data/atlas/credits-v1.json','utf8'));
+          if(!data.photoCredits.some(x=>x.kind==='natural_lake'&&x.slug==='lago-verificato'))
+            throw Error('No lake P18/photo author/licence in central credits');
+          if(!data.textCredits.some(x=>x.kind==='natural_lake'&&x.slug==='lago-verificato'))
+            throw Error('No lake itwiki QID text in central credits');
+          const seo=fs.readFileSync('dist/laghi/lago-verificato/index.html','utf8');
+          if(!seo.includes('application/ld+json') ||
+             seo.includes('noindex,follow') ||
+             !seo.includes('Superficie mappata OSM'))
+            throw Error('Verified lake SEO page has missing provenance or schema.org');
+          const published=JSON.parse(fs.readFileSync('dist/data/atlas/natural-lakes-v1.json'));
+          if(published.isPublished!==true||published.entities.length!==1)
+            throw Error('Published lake G2 catalog missing from built assets');
+          console.log('Lake geometry, SEO sitemap, central P18 credits and canonical route verified');
+          JS
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Reuse immutable G1 OSM source snapshot and GN/Wikidata identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/lake-source
+          if test -s data/snapshots/natural-lake-geometry-g1.json &&
+             test -s data/snapshots/natural-lake-identity-v1.json; then
+            cp data/snapshots/natural-lake-geometry-g1.json build/lake-source/geometry.json
+            cp data/snapshots/natural-lake-identity-v1.json build/lake-source/identity.json
+            echo 'Versioned lake source and QID crosswalk reused; no Overpass network call'
+          else
+            mkdir -p build/geometry-bootstrap build/identity-bootstrap
+            gh run download 46124793037 --repo ${{ github.repository }}               -n cima-becco-natural-water-polygons-g1 -D build/geometry-bootstrap
+            gh run download 46121844323 --repo ${{ github.repository }}               -n cima-becco-natural-wikidata-g2-staging -D build/identity-bootstrap
+            cp build/geometry-bootstrap/water-geometry-staging.json build/lake-source/geometry.json
+            cp build/identity-bootstrap/import-natural-features-v1/natural-identity.json build/lake-source/identity.json
+            echo 'Original audited source artifacts bootstrapped for versioned source cache'
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          g=json.loads(Path('build/lake-source/geometry.json').read_text())
+          i=json.loads(Path('build/lake-source/identity.json').read_text())
+          assert g['releaseChannel']=='OSM_NATURAL_WATER_GEOMETRIES_STAGING_V1'
+          assert g['isPublished'] is False and len(g['geonamesLinkedEntities'])==6
+          assert i['releaseChannel']=='NATURAL_FEATURES_IDENTITY_STAGING_V1'
+          assert i['isPublished'] is False
+          assert g['sourceSha256']=='eec7766c826349e55364f7d29cbed71927ea1de824b0a9d163ddd4d6552a9559'
+          print('Using immutable source geometry snapshot',g['sourceSha256'])
+          PY
+      - name: Refresh Wikidata P1566/P625, Commons P18, itwiki QID and altitude gate
+        run: |
+          python scripts/enrich_natural_lakes_wikimedia_v1.py             --geometry build/lake-source/geometry.json             --crosswalk build/lake-source/identity.json             --out build/lake-source/lakes-g2-candidates.json             --report build/lake-source/lakes-g2-report.json
+      - name: Require real independently verified G2 lakes and zero published staging
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          stage=json.loads(Path('build/lake-source/lakes-g2-candidates.json').read_text())
+          report=json.loads(Path('build/lake-source/lakes-g2-report.json').read_text())
+          assert stage['releaseChannel']=='NATURAL_WATER_G2_CANDIDATES_STAGING_V1'
+          assert stage['isPublished'] is False and report['published']==0
+          assert report['geometryVerified']==6
+          assert report['candidateG2']>=1, 'Source media/QID gate withheld all lake G2'
+          print('Real lake G2 source backed dossiers',report['candidateG2'])
+          PY
+      - name: Semantically merge latest main, save versioned G1 source cache, verify SEO, push atomically
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p data/snapshots
+            if ! test -s data/snapshots/natural-lake-geometry-g1.json; then
+              cp build/lake-source/geometry.json data/snapshots/natural-lake-geometry-g1.json
+            fi
+            if ! test -s data/snapshots/natural-lake-identity-v1.json; then
+              cp build/lake-source/identity.json data/snapshots/natural-lake-identity-v1.json
+            fi
+            python scripts/publish_natural_lakes_v1.py               --current public/data/atlas/natural-lakes-v1.json               --incoming build/lake-source/lakes-g2-candidates.json               --out public/data/atlas/natural-lakes-v1.json
+            npm run build
+            node scripts/check_permalinks.mjs
+            node scripts/test_central_credits.mjs
+            git add data/snapshots/natural-lake-geometry-g1.json               data/snapshots/natural-lake-identity-v1.json               public/data/atlas/natural-lakes-v1.json
+            if git diff --cached --quiet; then
+              echo 'No changes to verified lake G2 dossier'
+              exit 0
+            fi
+            git commit -m 'data(laghi): G2 source-verified lake polygons, text and media'
+            if git push origin HEAD:main; then
+              echo 'LAKES_RELEASE_COMMITTED=true' >> "$GITHUB_ENV"
+              echo 'Verified lake G2 release committed to main'
+              exit 0
+            fi
+            echo "Concurrent main data release; safe retry $attempt/3"
+          done
+          echo 'Lake release blocked after three safe retries; no forced source overwrite' >&2
+          exit 1
+      - name: Deploy new data commit to Pages (bot push does not trigger it)
+        if: env.LAKES_RELEASE_COMMITTED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref main
+      - name: Retain immutable source/claim/geometry/quality audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-natural-lakes-g2-release-audit
+          path: build/lake-source/
+          retention-days: 20
+          if-no-files-found: warn

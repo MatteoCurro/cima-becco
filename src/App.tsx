@@ -79,15 +79,16 @@ const NO_ALPINE_PLACES: import('./lib/alpinePlaces').AlpinePlace[] = [];
 const PlannerPage = lazy(() => import('./components/PlannerPage').then((m) => ({ default: m.PlannerPage })));
 const AlpineAtlasPage = lazy(() => import('./components/AlpineAtlasPage').then((m) => ({ default: m.AlpineAtlasPage })));
 const NaturalFeaturePage = lazy(() => import('./components/NaturalFeaturePage').then(m => ({ default: m.NaturalFeaturePage })));
+const NaturalLakePage = lazy(() => import('./components/NaturalLakePage').then(m => ({ default: m.NaturalLakePage })));
 const AlpineExplorePage = lazy(() => import('./components/AlpineExplorePage').then((m) => ({ default: m.AlpineExplorePage })));
 const SiteInsightsPage = lazy(() => import('./components/SiteInsightsPage').then((m) => ({ default: m.SiteInsightsPage })));
 const PublicProfilePage = lazy(() => import('./components/PublicProfilePage').then((m) => ({ default: m.PublicProfilePage })));
 
-type View = 'landing' | 'planner' | 'atlas' | 'explore' | 'passes' | 'insights' | 'public_profile' | 'map' | 'training' | 'account' | 'settings' | InfoPageId;
+type View = 'landing' | 'planner' | 'atlas' | 'explore' | 'passes' | 'lakes' | 'insights' | 'public_profile' | 'map' | 'training' | 'account' | 'settings' | InfoPageId;
 
 const INFO_PAGES: ReadonlySet<string> = new Set<InfoPageId>(['privacy', 'terms', 'community', 'data', 'contact']);
 
-type CleanEntity = {kind:'rifugi'|'bivacchi'|'paesi'|'route'|'trekking'|'cime';slug:string};
+type CleanEntity = {kind:'rifugi'|'bivacchi'|'paesi'|'route'|'trekking'|'cime'|'laghi';slug:string};
 function cleanEntity():CleanEntity|null{
   const path=window.location.pathname,base=import.meta.env.BASE_URL;
   if(!path.startsWith(base))return null;
@@ -96,7 +97,7 @@ function cleanEntity():CleanEntity|null{
   const [section,slug]=parts;
   if(!/^[a-zA-Z0-9_-]{2,120}$/.test(slug))return null;
   const kind=section==='borghi'||section==='comuni'?'paesi':section;
-  return kind==='rifugi'||kind==='bivacchi'||kind==='paesi'||kind==='route'||kind==='trekking'||kind==='cime'
+  return kind==='rifugi'||kind==='bivacchi'||kind==='paesi'||kind==='route'||kind==='trekking'||kind==='cime'||kind==='laghi'
     ?{kind,slug}:null;
 }
 function viewFromHash(): View {
@@ -109,6 +110,8 @@ function viewFromHash(): View {
   if(pathWithoutBase==='/comuni' && !hash) return 'atlas';
   if(!hash && /^\/passi(?:\/[a-z0-9-]+)?$/.test(pathWithoutBase)) return 'passes';
   if(/^#passi(?:\/[a-z0-9-]+)?$/.test(hash)) return 'passes';
+  if(!hash && /^\/laghi(?:\/[a-z0-9-]+)?$/.test(pathWithoutBase)) return 'lakes';
+  if(/^#laghi(?:\/[a-z0-9-]+)?$/.test(hash)) return 'lakes';
   if(pathWithoutBase==='/cime' && !hash) return 'map';
   const path=cleanEntity();if(path && !hash)return path.kind==='route'||path.kind==='cime'?'map':path.kind==='trekking'||window.location.pathname.includes('/comuni/')?'atlas':'explore';
   if (hash === '#pianifica') return 'planner';
@@ -185,6 +188,8 @@ export default function App() {
         <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><AlpineExplorePage /></Suspense>
       ) : view === 'passes' ? (
         <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><NaturalFeaturePage /></Suspense>
+      ) : view === 'lakes' ? (
+        <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><NaturalLakePage /></Suspense>
       ) : view === 'insights' ? (
         <Suspense fallback={<div className="map-skeleton" aria-busy="true" />}><SiteInsightsPage /></Suspense>
       ) : view === 'public_profile' ? (
