@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import type { Route } from '../types';
 import { routeIntersects } from '../lib/routes';
 import { trailMood, trailTitle, trailArea } from '../lib/routeEditorial';
+import { routePresentationCategory } from '../lib/routeClassification';
 import { useTrailGain } from '../lib/useTrailGain';
 import type { Bounds } from '../lib/venues';
 
@@ -94,6 +95,7 @@ function RoutesListInner({ routes, bounds, selectedSlug, onSelect, onHover, onIm
           {visible.map((route, index) => {
             const region = trailArea(route);
             const mood = trailMood(route);
+            const category = routePresentationCategory(route);
             return (
               <li
                 key={route.slug}
@@ -116,10 +118,10 @@ function RoutesListInner({ routes, bounds, selectedSlug, onSelect, onHover, onIm
                   <RouteThumb route={route} />
                   <span className="result-card-top">
                     <span className="result-card-name">{trailTitle(route)}</span>
-                    <ActivityTag activity={routeActivity(route)} />
+                    <ActivityTag activity={category.kind==='ferrata'?'ferrata':routeActivity(route)} />
                   </span>
                   <span className="result-card-meta">
-                    {[region, route.loop ? 'Anello' : 'Andata', route.source === 'local' ? 'Sul dispositivo' : null]
+                    {[category.kind==='attrezzato'?'PERCORSO ATTREZZATO · DA VERIFICARE':category.kind==='ferrata'&&category.evidence==='inferred'?'POSSIBILE FERRATA · DA VERIFICARE':null,region, route.loop ? 'Anello' : 'Andata', route.source === 'local' ? 'Sul dispositivo' : null]
                       .filter(Boolean)
                       .join(' · ')}
                     {route.downloads !== undefined && (
