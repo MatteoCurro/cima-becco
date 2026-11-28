@@ -177,6 +177,7 @@ export interface AtlasEntityMetadata {
   localNames?:AtlasNameVariant[];
   slugAliases?:string[];
   shortSummary?:string;
+  textSources?:{text:string;sourceId:string;sourceUrl:string;licence:string;retrievedAt?:string;sourceUpdatedAt?:string|null;method?:string;kind?:string}[];
   geo?:AtlasGeo;
   administrativeHierarchy?:AtlasAdministrativeHierarchy;
   sourceIds?:Record<string,string>;
