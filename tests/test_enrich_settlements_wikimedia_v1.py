@@ -99,6 +99,37 @@ class WikiG2Tests(unittest.TestCase):
                           commons_getter=commons,wiki_getter=bad_wiki)
         self.assertFalse(release["entities"])
 
+    def test_ambiguous_slug_remains_outside_new_g2_release(self):
+        candidate=legacy()
+        candidate["slug"]="alba-12345678"
+        candidate["quality"]["slugRequiresReview"]=True
+        stage={"releaseChannel":"STAGING_ISTAT21_OSM_SETTLEMENTS",
+               "isPublished":False,"entities":[candidate]}
+        release,report=enrich(stage,MUNICIPALITIES,limit=2,wd_getter=wd,
+                              commons_getter=commons,wiki_getter=wiki)
+        self.assertFalse(release["entities"])
+        self.assertEqual(report["heldReasons"].get(
+            "ambiguous_slug_pending_editorial_review"),1)
+
+    def test_existing_g2_urls_are_preserved_until_explicit_migration(self):
+        stage={"releaseChannel":"STAGING_ISTAT21_OSM_SETTLEMENTS",
+               "isPublished":False,"entities":[legacy()]}
+        first,_=enrich(stage,MUNICIPALITIES,limit=2,wd_getter=wd,
+                       commons_getter=commons,wiki_getter=wiki)
+        existing=first["entities"][0]
+        existing["quality"]["slugRequiresReview"]=True
+        former_slug=existing["slug"]
+        new_candidate=legacy()
+        new_candidate["quality"]["slugRequiresReview"]=True
+        stage["entities"]=[new_candidate]
+        release,report=enrich(stage,MUNICIPALITIES,limit=2,previous=first,
+                              wd_getter=wd,commons_getter=commons,wiki_getter=wiki)
+        self.assertEqual(len(release["entities"]),1)
+        self.assertEqual(release["entities"][0]["slug"],former_slug)
+        self.assertEqual(release["entities"][0]["id"],existing["id"])
+        self.assertEqual(report["heldReasons"].get(
+            "ambiguous_slug_pending_editorial_review"),1)
+
     def test_old_g2_preserved_when_wikidata_unavailable(self):
         stage={"releaseChannel":"STAGING_ISTAT21_OSM_SETTLEMENTS","isPublished":False,
                "entities":[legacy()]}
