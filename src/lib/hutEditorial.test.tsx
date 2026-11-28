@@ -35,6 +35,23 @@ describe('dossier bivacchi e servizi condivisi',()=>{
     expect(markup).not.toContain("La disponibilità d'acqua");
     expect(markup).not.toContain('secondo le fonti');
   });
+  it('ordina in ogni capitolo prima i servizi disponibili e poi alfabeticamente, senza nuovi titoli',()=>{
+    const place:AlpinePlace={...base,facts:{
+      mattressAvailableReported:fact(true),blanketAvailableReported:fact(false),
+      sleepingBagLiner:fact(true),showers:fact(false),hotWater:fact(true),
+      waterAvailableReported:fact(false),
+    }};
+    const riposo=hutServiceChapters(place).find(ch=>ch.id==='riposo');
+    expect(riposo?.items.map(item=>item.label)).toEqual([
+      'acqua calda','Materassi','sacco lenzuolo in vendita','Coperte','docce',
+    ]);
+    const markup=renderToStaticMarkup(createElement(HutServices,{place}));
+    const names=['acqua calda','Materassi','sacco lenzuolo in vendita','Coperte','docce'];
+    expect(names.map(name=>markup.indexOf(name))).toEqual(
+      [...names.map(name=>markup.indexOf(name))].sort((a,b)=>a-b));
+    expect(markup).not.toContain('Servizi disponibili');
+    expect(markup).not.toContain('Servizi non disponibili');
+  });
   it('non perde dotazioni CAI valide quando le categorie sono specifiche dei bivacchi',()=>{
     const place:AlpinePlace={...base,facts:{
       meals:fact(true),showers:fact(false),hotWater:fact(true),

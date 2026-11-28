@@ -24,6 +24,17 @@ export const HUT_SERVICE_CHAPTERS={
   ],
 };
 
+/** Disponibili prima; a parità di stato, ordine alfabetico italiano.
+ * Restituisce un nuovo array: i dati normalizzati non vengono modificati.
+ * Regola condivisa fra schede interattive e pagine SEO statiche. */
+const HUT_SERVICE_COLLATOR = new Intl.Collator('it', {sensitivity:'base',numeric:true});
+export function sortHutServices(items) {
+  return [...items].sort((a,b)=>
+    Number(b.value)-Number(a.value) ||
+    HUT_SERVICE_COLLATOR.compare(a.label,b.label) ||
+    HUT_SERVICE_COLLATOR.compare(a.key,b.key));
+}
+
 /** False è un'assenza esplicita. Null / campi non attribuiti sono ignoti e non vengono mostrati. */
 export function hutServiceFacts(place) {
   const base=refugeServiceFacts(place);
@@ -35,7 +46,7 @@ export function hutServiceFacts(place) {
 export function hutServiceChapters(place) {
   const items=hutServiceFacts(place);
   const def=HUT_SERVICE_CHAPTERS[place?.kind==='bivacco'?'bivacco':'rifugio'];
-  return def.map(chapter=>({...chapter,items:items.filter(item=>chapter.keys.includes(item.key))}))
+  return def.map(chapter=>({...chapter,items:sortHutServices(items.filter(item=>chapter.keys.includes(item.key)))}))
     .filter(chapter=>chapter.items.length);
 }
 

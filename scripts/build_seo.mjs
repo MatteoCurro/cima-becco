@@ -25,7 +25,7 @@ import { makeCentralCredits } from './build_source_credits.mjs';
 import { atlasCanonicalPath,atlasLegacyPath,canonicalAtlasSlug } from '../src/lib/placePermalinks.js';
 import { resolveRefugeTerritory, relatedAtlasPlaces } from '../src/lib/atlasConnections.js';
 import { refugeFact, refugeOverview, refugeSeoDescription, refugeServiceFacts } from '../src/lib/refugeEditorial.js';
-import { hutAliases,hutServiceFacts,shelterSeoDescription } from '../src/lib/hutEditorial.js';
+import { hutAliases,hutServiceFacts,sortHutServices,shelterSeoDescription } from '../src/lib/hutEditorial.js';
 import { shelterSchemaProperties } from '../src/lib/shelterStructuredData.js';
 import { refugeSchemaProperties } from '../src/lib/refugeStructuredData.js';
 
@@ -602,7 +602,7 @@ for (const place of alpinePlaces) {
     (place.description?`${place.description} `:'')+
     `${place.name} è ${kind==='località di montagna'?'una':'un'} ${kind} mappat${place.kind==='borgo'?'a':'o'} ${isCaiOnly?"nell'Atlante Cima Becco":"nelle Dolomiti"}${altitude}.`+
     (related.length?` Esplora ${related.length} sentieri collegati geograficamente e GPX.`:' Consulta posizione e sentieri nei dintorni.');
-  const refugeServices=isHut?hutServiceFacts(place):[];
+  const refugeServices=isHut?sortHutServices(hutServiceFacts(place)):[];
   const refugeBeds=refugeFact(place,'bedsTotal') ?? place.capacity;
   const knownCaiFacts=isHut ? Object.values(place.facts||{}).filter(f=>
     f && f.value!==null && f.value!==undefined && (f.sourceId||f.sourceUrl)).length : 0;
@@ -642,8 +642,12 @@ for (const place of alpinePlaces) {
     description:description.slice(0,285),
     image:photo?.url||null,
     jsonLd:{'@context':'https://schema.org','@graph':[
+      {'@type':'WebPage','@id':SITE+canonicalPath+'#webpage',
+        url:SITE+canonicalPath,name:place.name+' | Cima Becco',inLanguage:'it',
+        mainEntity:{'@id':SITE+canonicalPath+'#luogo'}},
       {'@type':place.kind==='rifugio'&&hasDocumentedStay?'LodgingBusiness':'Place',
         '@id':SITE+canonicalPath+'#luogo',name:place.name,
+        mainEntityOfPage:{'@id':SITE+canonicalPath+'#webpage'},
         description:(isHut&&place.description)||description,
         ...(aliases.length?{alternateName:aliases.map(item=>item.value)}:{}),
         url:SITE+canonicalPath,
@@ -654,8 +658,8 @@ for (const place of alpinePlaces) {
           place.kind==='bivacco'?shelterSchemaProperties(place):{}),
         hasMap:place.osmUrl,
         ...(place.phone?{telephone:place.phone}:{}),
-      },breadcrumbLd([[category==='rifugi'?'Rifugi':category==='bivacchi'?'Bivacchi':'Paesi',appLink(`#${category==='borghi'?'paesi':category}`)],[place.name,null]])]},
-    body:`${crumbs([['Atlante',appLink(`#atlante/${category}`)],[place.name]])}
+      },breadcrumbLd([[category==='rifugi'?'Rifugi':category==='bivacchi'?'Bivacchi':'Paesi',SITE+'/'+category+'/'],[place.name,null]])]},
+    body:`${crumbs([[category==='rifugi'?'Rifugi':category==='bivacchi'?'Bivacchi':'Paesi',SITE+'/'+category+'/'],[place.name]])}
       <div class="cima-seo-eyebrow">CIMA BECCO · ${place.kind==='rifugio'?'RIFUGIO':place.kind==='bivacco'?'BIVACCO':'PAESE'} · ${isCaiOnly?'ITALIA':'DOLOMITI'}</div>
       <h1>${escape(place.name)}</h1>
       ${aliases.length?`<p class="cima-hut-aliases">Conosciuto anche come: ${aliases.map(item=>`<strong>${escape(item.value)}</strong>${item.historical?' (nome storico)':''}`).join(' · ')}</p>`:''}
