@@ -188,6 +188,14 @@ Per le fotografie, la pagina attribuisce ogni media visibile alla sua **scheda c
 | sentieri di accesso, traversate vicine, cime e tempi dichiarati | P1 | rete verificata | M, B |
 | fotografie, stato apparente non certificato, storia e intitolazione | P2 | WC, CAI/archivi | V, B |
 
+**Malga / casera / baita: interpretazione tipologica (28/11/2026).** La denominazione tradizionale indica il manufatto o l'uso d'alpeggio, **non** prova il diritto d'accesso, l'attività ricettiva o la disponibilità di posti letto. Analogamente, il tag OSM `tourism=alpine_hut` senza ulteriori verifiche non dimostra un rifugio escursionistico con pernottamento. Tenere distinti:
+- **Rifugio**: funzione ricettiva attestata da ente CAI/SAT, sito ufficiale o evidenza specifica di pernottamento; anche i rifugi non custoditi possono esserlo.
+- **Casera / malga a uso ricovero**: `alpine_casera_shelter` nella navigazione «Bivacchi e ricoveri», con capienza solo se documentata. *Malga Casera Campigàt* e *Malga Valbona* sono esempi con fonte territoriale puntuale, identità OSM stabile e redirect dagli URL storici.
+- **Malga di ristoro / punto d'appoggio**: `support_point`; servizi alimentari stagionali, eventuale riparo d'emergenza e pernottamento **ordinario** sono informazioni indipendenti. *Malga Bosch Brusà* di Falcade va censita anche senza un OSM `alpine_hut`; ricovero soltanto d'emergenza dichiarato, nessuna apertura in tempo reale confermata.
+- **Tipologia rurale non confermata**: `rural_type_unverified`, G0, `reviewRequired`, noindex, nessuna promessa di ricovero, ristorazione o pernottamento. L'esistenza del nome «Malga/Casera» senza prova della funzione non autorizza una riclassificazione definitiva. I rifugi CAI confermati non devono essere declassati dal nome.
+
+**Import e relazioni:** Overpass acquisisce in revisione anche malghe censite come ristoranti, aziende ricettive agricole o fabbricati rurali (`amenity=restaurant/cafe`, `tourism=farmstay/attraction`, `building=cabin/farm_auxiliary`), senza generare automaticamente nuove schede G2. La coda `rural-classification-candidates-v1.json` conserva identità OSM, coordinate e tag in G0; un registro di evidenze ufficiali `alpine-structure-evidence-v1.json` conserva decisione, fonte, qualificazione, alternative e data. Deduplicare mediante ID OSM o fonte ufficiale sicura, mai per nome e prossimità soltanto. Se la tipologia cambia, conservare slug/ID e redirect dagli URL precedenti; non eliminare foto, collegamenti ai sentieri o fatti verificati.
+
 **Layout**: informazioni operative e limiti prima della storia. Non indicare un bivacco come aperto/sicuro soltanto perché mappato.
 
 ---
