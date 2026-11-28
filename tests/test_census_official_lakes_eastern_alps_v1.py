@@ -84,7 +84,7 @@ def fake_for(provider):
 class CensusTests(unittest.TestCase):
     def test_fixed_providers_and_alpine_bounds(self):
         self.assertEqual(set(REGION_BBOX),set(PROVIDERS))
-        self.assertEqual(MAX_REQUESTS,76)
+        self.assertEqual(MAX_REQUESTS,128)
         for provider,box in REGION_BBOX.items():
             self.assertTrue(box[0]<box[2] and box[1]<box[3])
             self.assertGreater(box[1],45)
@@ -122,7 +122,7 @@ class CensusTests(unittest.TestCase):
         for provider in PROVIDERS:
             with self.subTest(provider=provider):
                 fetch,calls=fake_for(provider)
-                doc,report=census(provider,fetcher=fetch,
+                doc,pending,report=census(provider,fetcher=fetch,
                                   max_requests=10,max_depth=2,pause=0)
                 self.assertEqual(report["requests"],5)  # parent + 4 children
                 self.assertEqual(report["acceptedIndependentSourceRecordsG0"],20)
@@ -142,7 +142,7 @@ class CensusTests(unittest.TestCase):
 
     def test_budget_exhaustion_is_detected_not_claimed_exhaustive(self):
         fetch,_=fake_for("arpav_water_surfaces")
-        doc,report=census("arpav_water_surfaces",fetcher=fetch,
+        doc,pending,report=census("arpav_water_surfaces",fetcher=fetch,
                           max_requests=1,max_depth=3,pause=0)
         self.assertEqual(report["requests"],1)
         self.assertEqual(report["acceptedIndependentSourceRecordsG0"],20)
@@ -152,7 +152,7 @@ class CensusTests(unittest.TestCase):
 
     def test_arpav_classification_never_promoted_to_kind(self):
         fetch,_=fake_for("arpav_water_surfaces")
-        doc,report=census("arpav_water_surfaces",fetcher=fetch,
+        doc,pending,report=census("arpav_water_surfaces",fetcher=fetch,
                           max_requests=10,max_depth=2,pause=0)
         self.assertEqual(report["providerClassifications"],{"Lago":20})
         for item in doc["entities"]:
@@ -162,13 +162,53 @@ class CensusTests(unittest.TestCase):
 
     def test_bolzano_aliases_are_preserved_as_provider_source_evidence(self):
         fetch,_=fake_for("bolzano_lakes")
-        doc,report=census("bolzano_lakes",fetcher=fetch,
+        doc,pending,report=census("bolzano_lakes",fetcher=fetch,
                           max_requests=10,max_depth=2,pause=0)
         self.assertEqual(report["namedAcceptedRecords"],20)
         self.assertEqual({v["language"] for v in doc["entities"][0]["providerNames"]},
                          {"it","de"})
         self.assertTrue(doc["entities"][0]["providerRecordCodes"]["verifiedAgainstFid"])
         self.assertNotIn("bathable",json.dumps(doc).lower())
+
+    def test_invalid_polygon_still_preserves_source_fid_and_facts_in_g0_review(self):
+        fetch,_=fake_for("bolzano_lakes")
+        def broken(url,**kwargs):
+            raw=fetch(url,**kwargs)
+            if parse_qs(urlsplit(url).query).get("request")==["GetFeature"]:
+                payload=json.loads(raw)
+                for row in payload["features"]:
+                    if row["id"]=="Lakes.100":
+                        ring=row["geometry"]["coordinates"][0]
+                        row["geometry"]["coordinates"]=[ring[:-1]]  # unclosed
+                return json.dumps(payload).encode()
+            return raw
+        doc,pending,report=census("bolzano_lakes",fetcher=broken,
+                                  max_requests=10,max_depth=2,pause=0)
+        self.assertEqual(report["featuresRawDistinctSeen"],20)
+        self.assertEqual(report["acceptedIndependentSourceRecordsG0"],19)
+        self.assertEqual(report["sourceIdsWithGeometryReviewG0"],1)
+        self.assertEqual(pending["entities"][0]["sourceFeatureId"],"Lakes.100")
+        self.assertNotIn("geo",pending["entities"][0])
+        self.assertIn("officialElevationReportedM",pending["entities"][0]["facts"])
+        self.assertFalse(pending["entities"][0]["quality"]["seoIndexable"])
+        self.assertTrue(report["regionEnumerationProvenByHits"])
+        self.assertFalse(pending["isPublished"])
+
+    def test_bogus_zero_wfs_hits_cannot_override_observed_features(self):
+        fetch,_=fake_for("arpav_water_surfaces")
+        def bogus(url,**kwargs):
+            if parse_qs(urlsplit(url).query).get("resultType")==["hits"]:
+                return (b'<wfs:FeatureCollection xmlns:wfs="x" '
+                        b'numberOfFeatures="0"/>')
+            return fetch(url,**kwargs)
+        doc,pending,report=census("arpav_water_surfaces",fetcher=bogus,
+                                  max_requests=10,max_depth=2,pause=0)
+        self.assertEqual(report["featuresRawDistinctSeen"],20)
+        self.assertIsNone(report["sourceLayerNumberMatched"])
+        self.assertIsNone(report["requestedRegionNumberMatched"])
+        self.assertEqual(len(report["hitsReliabilityWarnings"]),2)
+        self.assertTrue(report["regionEnumerationComplete"])
+        self.assertFalse(report["regionEnumerationProvenByHits"])
 
     def test_rejects_external_network_endpoints_and_excessive_work(self):
         with self.assertRaises(ValueError):
@@ -178,7 +218,7 @@ class CensusTests(unittest.TestCase):
                    max_requests=MAX_REQUESTS+1,pause=0)
         with self.assertRaises(ValueError):
             census("arpav_water_surfaces",fetcher=lambda url,**kw:b"",
-                   max_depth=4,pause=0)
+                   max_depth=5,pause=0)
         with self.assertRaises(ValueError):
             wfs_census_url("nonexistent","layer")
 
