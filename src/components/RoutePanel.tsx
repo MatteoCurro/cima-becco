@@ -13,6 +13,7 @@ import type { Route, RoutePoint, Venue } from '../types';
 import { computeGain, cumulativeDistances, totalDistanceM } from '../lib/elevation';
 import { linkVenues, routeDirectionsUrl, routeEndpoints, routeHasElevation } from '../lib/routes';
 import { trailArea, trailDescription, trailMood, trailTitle } from '../lib/routeEditorial';
+import { routePresentationCategory } from '../lib/routeClassification';
 import { hasRealElevation, terrainElevations } from '../lib/terrain';
 import { assessRoute } from '../lib/routeQuality';
 import { toGpx } from '../lib/gpx';
@@ -464,7 +465,8 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
   const { minM, maxM } = useMemo(() => computeGain(elevation.points), [elevation.points]);
   const overlaps = useMemo(() => findOverlaps(route.coordinates, allRoutes, route.slug), [route, allRoutes]);
   const region = trailArea(route);
-  const mood = trailMood(route);
+  const mood = trailMood(route, {gainM:elevation.gainM,elevationAvailable:hasElevation});
+  const routeKind = routePresentationCategory(route);
   const displayTitle = trailTitle(route);
   const touches = route.venueSlugs
     .map((slug) => venuesBySlug.get(slug))
@@ -489,7 +491,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
       {fullDetail&&<figure className="cb-route-hero">
         {route.photos?.[0]?<img src={route.photos[0].url} loading="lazy" alt={route.photos[0].caption||displayTitle}/>:
           <div className="cb-route-hero-fallback" role="img" aria-label="Illustrazione topografica del sentiero: fotografia non disponibile"/>}
-        <figcaption><span>{routeActivity(route)==='ferrata'?'VIA FERRATA':'SENTIERO / ESCURSIONE'}</span>
+        <figcaption><span>{routeKind.kind==='ferrata'?(routeKind.evidence==='inferred'?'POSSIBILE VIA FERRATA':'VIA FERRATA'):routeKind.kind==='attrezzato'?'ITINERARIO ATTREZZATO · DA VERIFICARE':'SENTIERO / ESCURSIONE'}</span>
           {route.photos?.[0]?<small>Foto: {route.photos[0].author||'Wikimedia Commons'} · {route.photos[0].license||'Licenza nella fonte'}</small>:<small>Foto da documentare</small>}</figcaption>
       </figure>}
       <header className="gpx-panel-head">
@@ -498,7 +500,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
           <InfoTip>
             <RecordedLine recordedAt={route.recordedAt} />
             {hasElevation && <ElevationSourceLine source={elevation.fromTerrain ? 'terrain' : route.elevationSource ?? 'gps'} />}
-            <span className="route-meta muted">{[ACTIVITY_LABEL[routeActivity(route)], region, route.loop ? 'Anello' : 'Percorso lineare'].filter(Boolean).join(' · ')}</span>
+            <span className="route-meta muted">{[routeKind.label, region, route.loop ? 'Anello' : 'Percorso lineare'].filter(Boolean).join(' · ')}</span>
             <button type="button" className="info-tip-action" onClick={() => setReporting(true)}>
               <FlagIcon />
               Segnala un problema con il percorso
@@ -570,12 +572,21 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
       ) : (
         <>
       {fullDetail&&<AtlasDossierBlocks record={route} placement="alerts"/>}
+      {(routeKind.kind==='ferrata'||routeKind.kind==='attrezzato')&&<div className="cb-route-equipment-warning" role="note">
+        <strong>{routeKind.evidence==='inferred'?'TIPOLOGIA TECNICA DA CONFERMARE':'ATTENZIONE: PERCORSO ATTREZZATO'}</strong>
+        <p>{routeKind.reason}. Un GPX non documenta protezioni, esposizione, condizioni degli infissi né chiusure.
+          {routeKind.kind==='ferrata'?' Per affrontare una ferrata occorrono preparazione e dispositivi di protezione specifici; verifica una relazione tecnica aggiornata.':' Verifica con una fonte qualificata se occorre il kit da ferrata.'}</p>
+      </div>}
       <div id={fullDetail?'cb-route-summary':undefined} className="cima-trail-mood">
         <strong className={`cima-mood-pill cima-mood-pill--${mood.level}`} title={mood.basis}>{mood.quip}</strong>
         <span className="cima-mood-technical">{mood.label}</span>
         <span className="cima-trail-area">{region}{route.loop ? ' · Anello' : ''}</span>
       </div>
       <p className="cima-route-description">{trailDescription(route)}</p>
+      {(fullDetail||expanded)&&<div className="cb-route-effort-explanation">
+        <strong>Perché questa etichetta?</strong>
+        <p>{mood.explanation}</p>
+      </div>}
       <DetailMetrics label="Dati principali del percorso" items={[
         { label: 'Distanza', value: units.distance(route.distanceM) },
         { label: 'Dislivello positivo', value: hasElevation ? units.height(elevation.gainM) : unavailable },
@@ -666,7 +677,7 @@ export function RoutePanel({ placement = 'map', onToggleDock, fullDetail = false
                   route.operator ? `Gestore: ${route.operator}` : null,
                 ].filter(Boolean).join(' · ')}
               </p>
-              {routeActivity(route) === 'ferrata' && <p className="route-meta muted">Via ferrata: la sola traccia GPX non indica condizioni, difficoltà effettiva né tempi tecnici. Verifica sempre la relazione ufficiale e l'attrezzatura necessaria.</p>}
+              {(routeKind.kind === 'ferrata'||routeKind.kind==='attrezzato') && <p className="route-meta muted">{routeKind.label}: la sola traccia GPX non certifica condizioni, difficoltà tecnica, protezioni o accessibilità. Consulta una relazione e una fonte aggiornata.</p>}
             </section>
           )}
           <DetailMetrics label="Quote e pendenze del percorso" items={[
