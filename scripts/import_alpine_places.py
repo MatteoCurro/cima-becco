@@ -40,7 +40,7 @@ BANNED = re.compile(r"^(?:unnamed|senza nome|rifugio|hut|bivacco|unknown)$", re.
 
 RURAL_EVIDENCE = DATA / "atlas" / "alpine-structure-evidence-v1.json"
 RURAL_CANDIDATES = DATA / "atlas" / "rural-classification-candidates-v1.json"
-RURAL_NAME = re.compile(r"^(?:malga|casera|casere|baita|alpeggio)\\b", re.I)
+RURAL_NAME = re.compile(r"^(?:malga|casera|casere|baita|alpeggio)\b", re.I)
 
 
 def official_rural_osm_types():
@@ -89,9 +89,9 @@ def fetch_places(bbox=None):
         f'nwr["amenity"="shelter"]["shelter_type"="basic_hut"]{rect};'
         # Do not lose operating malghe which OSM calls restaurants/farmstays.
         # These enter a separate G0 review queue, NOT public bivouacs by name.
-        f'nwr["name"~"^(Malga|Casera|Casere|Baita)\\\\b",i]["amenity"~"^(restaurant|cafe)$"]{rect};'
-        f'nwr["name"~"^(Malga|Casera|Casere|Baita)\\\\b",i]["tourism"~"^(farmstay|attraction)$"]{rect};'
-        f'nwr["name"~"^(Malga|Casera|Casere|Baita)\\\\b",i]["building"~"^(cabin|farm_auxiliary)$"]{rect};'
+        f'nwr["name"~"^(Malga|Casera|Casere|Baita)( |$)",i]["amenity"~"^(restaurant|cafe)$"]{rect};'
+        f'nwr["name"~"^(Malga|Casera|Casere|Baita)( |$)",i]["tourism"~"^(farmstay|attraction)$"]{rect};'
+        f'nwr["name"~"^(Malga|Casera|Casere|Baita)( |$)",i]["building"~"^(cabin|farm_auxiliary)$"]{rect};'
         f'nwr["place"~"^(town|village|hamlet)$"]{rect};'
         ");out center tags;"
     )
