@@ -4,11 +4,14 @@ import type { NearbyAtlasPlace } from '../lib/nearbyAtlas';
 import { AlpinePlaceIcon } from './AlpinePlaceIcon';
 import { DetailSectionHeading } from './DetailPrimitives';
 
-export function NearbyAtlasPlaces({ items }: { items: readonly NearbyAtlasPlace[] }) {
+export function NearbyAtlasPlaces({ items, embedded=false }: { items: readonly NearbyAtlasPlace[]; embedded?:boolean }) {
   if (!items.length) return null;
-  return <section id="cb-place-nearby" className="cb-location-section cb-detail-group cb-nearby-entities" aria-labelledby="cb-place-nearby-title">
-    <DetailSectionHeading kicker="ATLANTE / LUOGHI COLLEGATI" title="ALTRI LUOGHI NEI DINTORNI."
-      id="cb-place-nearby-title" description="Distanze geografiche in linea d’aria. Vicinanza non significa accessibilità, collegamento diretto o percorso verificato."/>
+  return <section id={embedded?undefined:"cb-place-nearby"}
+    className={"cb-nearby-entities"+(embedded?" cb-nearby-entities--embedded":" cb-location-section cb-detail-group")}
+    aria-label={embedded?"Luoghi geograficamente vicini":undefined}
+    aria-labelledby={embedded?undefined:"cb-place-nearby-title"}>
+    {!embedded&&<DetailSectionHeading kicker="ATLANTE / LUOGHI COLLEGATI" title="ALTRI LUOGHI NEI DINTORNI."
+      id="cb-place-nearby-title" description="Distanze geografiche in linea d’aria. Vicinanza non significa accessibilità, collegamento diretto o percorso verificato."/>}
     <div className="cb-nearby-entities-grid">
       {items.map(({ place, distanceKm })=><a key={place.kind+':'+place.slug}
         className="cb-nearby-entity" href={alpinePlaceLink(place)}>
