@@ -31,6 +31,7 @@ WIKIPEDIA_API = "https://it.wikipedia.org/w/api.php"
 UA = "CimaBecco/1.0 (https://www.cimabecco.it; public metadata import)"
 QID = re.compile(r"Q[1-9]\d*")
 PHOTO_EXT = re.compile(r"\.(jpe?g|png|webp|tiff?)$", re.I)
+SYMBOL_EXT = re.compile(r"\.(jpe?g|png|webp|tiff?|svg)$", re.I)
 # No file named "map"/"coat of arms" promoted as a landscape.
 NON_PHOTO = re.compile(r"(^|[\s_-])(stemma|wappen|coat.of.arms|flag|bandiera|mappa|map|locator|logo|svg)([\s_.-]|$)",re.I)
 ALLOWED_LICENSES = {"CC0", "Public domain", "Public Domain", "CC BY 2.0",
@@ -130,7 +131,7 @@ def text_only(value):
 def meta_value(meta,key):
     return (meta.get(key) or {}).get("value")
 
-def commons_files(filenames,*, getter=None):
+def commons_files(filenames,*, getter=None, allow_svg=False):
     """One batched imageinfo call; no guessing photo from file name."""
     filenames = list(dict.fromkeys(name for name in filenames if name))
     if not filenames:return {}
@@ -150,9 +151,14 @@ def commons_files(filenames,*, getter=None):
         fileurl=info.get("thumburl") or info.get("url") or ""
         original=info.get("descriptionurl") or ""
         title=page.get("title","")
+        is_svg=title.lower().endswith(".svg")
+        # SVGs represent most municipal coats of arms. Use Commons'
+        # rasterized thumb rather than embedding unreviewed SVG bytes.
+        if is_svg and not (allow_svg and (info.get("thumburl") or "").startswith("https://")):
+            continue
         if not (fileurl.startswith("https://") and original.startswith("https://")
                 and license_name in ALLOWED_LICENSES and artist
-                and len(artist)<=240 and PHOTO_EXT.search(title)
+                and len(artist)<=240 and (SYMBOL_EXT if allow_svg else PHOTO_EXT).search(title)
                 and (license_name.startswith("Public") or license_name=="CC0" or
                      (isinstance(licence_url,str) and licence_url.startswith("https://")))):
             continue
@@ -242,8 +248,8 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
                 failures.append("p635_mismatch:"+code);continue
             relevant.append((code,qid,item))
         imgs=list(dict.fromkeys(name for _,_,item in relevant
-                               for name in (claim_string(item,"P18"),claim_string(item,"P94")) if name))
-        try: images=commons_files(imgs,getter=getter)
+                               for name in (claim_string(item,"P18"),claim_string(item,"P94"),claim_string(item,"P154")) if name))
+        try: images=commons_files(imgs,getter=getter,allow_svg=True)
         except Exception as exc:
             images={};failures.append("commons:"+str(exc)[:120])
         for code,qid,item in relevant:
@@ -274,14 +280,21 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
             if website and website.startswith("https://"):
                 entity["facts"]["sitoUfficiale"]=fact(website,"wikidata:"+qid+":P856",
                     wd_url,as_of=retrieved_at,licence="CC0")
-            for prop,kind in (("P18","photo"),("P94","logo")):
+            for prop,kind,symbol_type in (
+                ("P18","photo",None),("P94","logo","coat_of_arms"),
+                ("P154","logo","institutional_logo")):
                 file=claim_string(item,prop)
-                if not file or (kind=="photo" and NON_PHOTO.search(file)):
+                if not file or (kind=="photo" and (NON_PHOTO.search(file) or
+                    not PHOTO_EXT.search(file))):
                     continue
                 image=images.get(file.replace(" ","_"))
                 if image:
                     entity["media"].append({**image,"id":"wikimedia:"+qid+":"+prop+":"+hashlib.sha1(file.encode()).hexdigest()[:12],
-                        "kind":kind,"retrievedAt":retrieved_at,
+                        "kind":kind,"symbolType":symbol_type,
+                        "caption":("Stemma del Comune di "+entity["name"] if prop=="P94" else
+                            "Logo istituzionale di "+entity["name"] if prop=="P154" else
+                            "Fotografia di "+entity["name"]),
+                        "retrievedAt":retrieved_at,
                         "subjectMethod":"explicit_wikidata_"+prop+"_confirmed_P635"})
                     if not any(m.get("url")==image["url"] and m.get("kind")==kind
                                for m in old.get(code,{}).get("media",[])):
@@ -314,6 +327,19 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
             elif has_point:
                 entity["quality"]={"gate":"G1","seoIndexable":False,"reviewRequired":False}
                 entity["editorialStatus"]="linked"
+    # Refresh of present dossiers must not discard previously licensed
+    # coats of arms, images or archival photographs on provider outages.
+    for code,previous in old.items():
+        current=entities.get(code)
+        if not current:continue
+        known={(m.get("kind"),m.get("sourceUrl")) for m in current.get("media",[])}
+        for media in previous.get("media",[]):
+            key=(media.get("kind"),media.get("sourceUrl"))
+            if (key not in known and media.get("reuseAllowed") and
+                media.get("subjectVerified") and media.get("licence") and
+                media.get("author") and media.get("sourceUrl")):
+                current.setdefault("media",[]).append(media)
+                known.add(key)
     # Existing G2 records must keep their facts when a run only processes
     # *new* candidates; ISTAT/DAIT facts in the current snapshot win.
     # preserve existing enriched identities/media across incremental refresh
@@ -348,6 +374,8 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
             "newG2":g2_count,"newMedia":media_count,"newWikiText":text_count,
             "elevationReportedCoverage":sum(e.get("facts",{}).get("elevationReportedM",{}).get("value") is not None for e in public),
             "areaCoverage":sum(e.get("facts",{}).get("superficieKm2",{}).get("value") is not None for e in public),
+            "municipalitiesWithSymbols":sum(any(m.get("kind")=="logo" for m in e.get("media",[])) for e in public),
+            "municipalitiesWithHistoricPhotos":sum(any(m.get("kind")=="historical_photo" for m in e.get("media",[])) for e in public),
             "selectedCandidates":len(chosen),"failures":failures,
             "qualityG1":sum(e.get("quality",{}).get("gate")=="G1" for e in enriched),
             "qualityG0":sum(e.get("quality",{}).get("gate")=="G0" for e in enriched)}
