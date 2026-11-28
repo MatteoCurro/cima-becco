@@ -4,7 +4,8 @@ import sys
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from enrich_municipalities_v1 import (
-    query_national_istat_qids,commons_files,wikipedia_intro,choose_candidates,enrich
+    query_national_istat_qids,commons_files,wikipedia_intro,choose_candidates,enrich,
+    municipality_heraldry_filename,find_heraldry_commons,verified_article_town_photos
 )
 
 QID="Q12345"
@@ -63,6 +64,105 @@ class MunicipalMediaTests(unittest.TestCase):
             payload["query"]["pages"]["1"]["imageinfo"][0]["extmetadata"].pop("Artist")
             return payload
         self.assertEqual(commons_files(["Canazei.jpg"],getter=bad_getter),{})
+    def test_heraldry_svg_uses_commons_raster_thumbnail_and_cannot_be_photo(self):
+        def svg_getter(url,params):
+            return {"query":{"pages":{"200":{
+              "title":"File:Stemma di Canazei.svg","imageinfo":[{
+                "url":"https://upload.wikimedia.org/coat.svg",
+                "thumburl":"https://upload.wikimedia.org/thumb/coat.svg.png",
+                "descriptionurl":"https://commons.wikimedia.org/wiki/File:Stemma_di_Canazei.svg",
+                "extmetadata":{"LicenseShortName":{"value":"CC BY-SA 4.0"},
+                  "LicenseUrl":{"value":"https://creativecommons.org/licenses/by-sa/4.0/"},
+                  "Artist":{"value":"Autore stemma"}}}]}}}}
+        self.assertEqual(commons_files(["Stemma di Canazei.svg"],getter=svg_getter),{})
+        approved=commons_files(["Stemma di Canazei.svg"],getter=svg_getter,allow_svg=True)
+        self.assertEqual(approved["Stemma_di_Canazei.svg"]["url"],
+                         "https://upload.wikimedia.org/thumb/coat.svg.png")
+        def no_raster(url,params):
+            d=svg_getter(url,params)
+            del d["query"]["pages"]["200"]["imageinfo"][0]["thumburl"]
+            return d
+        self.assertEqual(commons_files(["Stemma di Canazei.svg"],getter=no_raster,allow_svg=True),{})
+    def test_commons_direct_crest_requires_description_not_only_filename(self):
+        def factory(description):
+            def answer(url,params):
+                if params.get("list")=="search":
+                    return {"query":{"search":[{"title":"File:Canazei-Stemma.svg","pageid":14}]}}
+                return {"query":{"pages":{"14":{
+                  "title":"File:Canazei-Stemma.svg","imageinfo":[{
+                   "thumburl":"https://upload.wikimedia.org/commons/thumb/coat.svg.png",
+                   "descriptionurl":"https://commons.wikimedia.org/wiki/File:Canazei-Stemma.svg",
+                   "extmetadata":{"LicenseShortName":{"value":"CC BY 4.0"},
+                     "LicenseUrl":{"value":"https://creativecommons.org/licenses/by/4.0/"},
+                     "Artist":{"value":"Araldista"},"ImageDescription":{"value":description}}}]}}}}
+            return answer
+        yes=find_heraldry_commons("Canazei",getter=factory("Stemma di Canazei, comune in Trentino."))
+        self.assertEqual(len(yes),1)
+        self.assertEqual(yes[0][1]["licence"],"CC BY 4.0")
+        self.assertEqual(find_heraldry_commons("Canazei",getter=factory("Stemma del Trentino.")),[])
+    def test_wikipedia_photo_source_only_with_confirmed_qid_and_exact_town(self):
+        intro={"linkedImages":[
+          "File:Canazei inverno 1930.jpg","File:Trento panorama.jpg",
+          "File:Canazei-Stemma.svg","File:Map of Canazei.png"]}
+        self.assertEqual(verified_article_town_photos(intro,"Canazei"),
+          ["Canazei inverno 1930.jpg"])
+        def verified(url,params):
+            if "wikidata.org/w/api.php" in url:
+                d=fake_getter(url,params)
+                d["entities"][QID]["claims"].pop("P18",None)
+                return d
+            if "wikipedia" in url:
+                d=fake_getter(url,params)
+                d["query"]["pages"]["20"]["images"]=[
+                   {"title":"File:Canazei inverno 1930.jpg"}]
+                return d
+            if "commons.wikimedia" in url and "Canazei inverno" in params.get("titles",""):
+                return {"query":{"pages":{"4":{"title":"File:Canazei inverno 1930.jpg",
+                 "imageinfo":[{
+                   "thumburl":"https://upload.wikimedia.org/thumb/canazei1930.jpg",
+                   "descriptionurl":"https://commons.wikimedia.org/wiki/File:Canazei_inverno_1930.jpg",
+                   "extmetadata":{"LicenseShortName":{"value":"CC BY-SA 4.0"},
+                     "LicenseUrl":{"value":"https://creativecommons.org/licenses/by-sa/4.0/"},
+                     "Artist":{"value":"Fotografo"}}}]}}}}
+            return fake_getter(url,params)
+        doc,report=enrich(archive(),{CODE:QID},getter=verified,max_new=10)
+        self.assertEqual(report["publishedG2"],1)
+        photos=[x for x in doc["entities"][0]["media"] if x["kind"]=="photo"]
+        self.assertEqual(len(photos),1)
+        self.assertEqual(photos[0]["subjectMethod"],"exact_named_photo_in_itwiki_article_verified_QID")
+        self.assertEqual(photos[0]["author"],"Fotografo")
+    def test_heraldry_filename_must_explicitly_name_the_same_town(self):
+        self.assertTrue(municipality_heraldry_filename("File:Canazei-Stemma.svg","Canazei"))
+        self.assertTrue(municipality_heraldry_filename("File:Stemma di San Vito di Cadore.svg","San Vito di Cadore"))
+        self.assertFalse(municipality_heraldry_filename("File:Canazei panorama.jpg","Canazei"))
+        self.assertFalse(municipality_heraldry_filename("File:Trento-Stemma.svg","Canazei"))
+        self.assertFalse(municipality_heraldry_filename("File:Stemma principato vescovile Bressanone.jpg","Bressanone"))
+        self.assertFalse(municipality_heraldry_filename("File:San Fermo, Belluno - Stemma su una casa.jpg","Belluno"))
+        self.assertFalse(municipality_heraldry_filename("File:Canazei blank-stemma.svg","Canazei"))
+    def test_wikipedia_infobox_crest_fallback_linked_to_verified_qid(self):
+        def verified(url,params):
+            if "wikipedia" in url:
+                d=fake_getter(url,params)
+                d["query"]["pages"]["20"]["images"]=[
+                  {"title":"File:Canazei-Stemma.svg"},
+                  {"title":"File:Trentino-Stemma.svg"}]
+                return d
+            if "commons.wikimedia.org" in url and "Canazei-Stemma" in params.get("titles",""):
+                return {"query":{"pages":{"9":{"title":"File:Canazei-Stemma.svg",
+                 "imageinfo":[{"thumburl":"https://upload.wikimedia.org/thumb/stemma.svg.png",
+                   "descriptionurl":"https://commons.wikimedia.org/wiki/File:Canazei-Stemma.svg",
+                   "extmetadata":{"LicenseShortName":{"value":"CC BY-SA 4.0"},
+                     "LicenseUrl":{"value":"https://creativecommons.org/licenses/by-sa/4.0/"},
+                     "Artist":{"value":"Autore verificato"}}}]}}}}
+            return fake_getter(url,params)
+        release,report=enrich(archive(),{CODE:QID},getter=verified,max_new=10)
+        self.assertEqual(report["publishedG2"],1)
+        logos=[m for m in release["entities"][0]["media"] if m["kind"]=="logo"]
+        self.assertEqual(len(logos),1)
+        self.assertEqual(logos[0]["symbolType"],"coat_of_arms")
+        self.assertEqual(logos[0]["subjectMethod"],"exact_named_heraldry_file_in_itwiki_article_verified_QID")
+        self.assertEqual(logos[0]["licence"],"CC BY-SA 4.0")
+        self.assertNotIn("linkedImages",release["entities"][0]["textSources"][0])
     def test_wikipedia_must_confirm_same_qid(self):
         self.assertTrue(wikipedia_intro("Canazei",QID,getter=fake_getter)["text"])
         self.assertIsNone(wikipedia_intro("Canazei","Q999",getter=fake_getter))

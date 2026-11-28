@@ -12,7 +12,7 @@ export interface AlpinePlace extends AtlasEntityMetadata {
   access?: string;
   fee?: string;
   /** Logo ufficiale verificato/licenziato, mai generato automaticamente. */
-  logo?: {url:string;sourceUrl:string;author:string;license:string};
+  logo?: {url:string;sourceUrl:string;author:string;license:string;symbolType?:'coat_of_arms'|'institutional_logo'};
   winterRoom?: string;
   seasonal?: string;
   lat: number;

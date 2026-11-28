@@ -28,6 +28,7 @@ export function summarizeImportCatalog(){
   const routes=file('routes-manifest.json');
   const people=file('atlas/people-v1.json');
   const peopleEntities=people?.entities||[];
+  const progress=file('atlas/municipality-import-progress-v1.json');
   const mun=municipalities?.entities||[];
   const ref=refuges?.entities||[];
   const she=shelters?.entities||[];
@@ -43,7 +44,9 @@ export function summarizeImportCatalog(){
     'Foto attribuita':coverage(mun,e=>(e.media||[]).some(m=>m.kind==='photo'&&m.reuseAllowed&&m.subjectVerified&&m.author&&m.licence)),
     'Testo documentato':coverage(mun,e=>Boolean(e.textSources?.length)),
     'Relazioni territoriali':coverage(mun,e=>(e.relations||[]).length>0),
-    'Stemma':coverage(mun,e=>(e.media||[]).some(m=>m.kind==='logo'&&m.reuseAllowed&&m.subjectVerified)),
+    'Stemma o logo verificato':coverage(mun,e=>(e.media||[]).some(m=>m.kind==='logo'&&m.reuseAllowed&&m.subjectVerified)),
+    'Stemma comunale':coverage(mun,e=>(e.media||[]).some(m=>m.kind==='logo'&&m.symbolType==='coat_of_arms'&&m.reuseAllowed&&m.subjectVerified)),
+    'Archivio fotografico storico datato':coverage(mun,e=>(e.media||[]).some(m=>m.kind==='historical_photo'&&m.capturedAt&&m.reuseAllowed&&m.subjectVerified)),
     'Personaggi documentati':coverage(mun,e=>(e.connectedPeople||[]).some(p=>p.verified)),
     'Figure di montagna':coverage(mun,e=>(e.connectedPeople||[]).some(p=>p.verified&&p.category==='montagna')),
   };
@@ -100,6 +103,11 @@ export function summarizeImportCatalog(){
       documentedPeopleBiographies:peopleEntities.filter(e=>(e.textSources||[]).length>0).length,
       peopleExternalConnections:peopleEntities.reduce((s,e)=>s+(e.externalEntityLinks||[]).length,0),
       municipalityPersonRelations:mun.reduce((s,e)=>s+(e.connectedPeople||[]).filter(p=>p.verified).length,0),
+      municipalitiesWithHeraldry:coverage(mun,e=>(e.media||[]).some(m=>m.kind==='logo'&&m.symbolType==='coat_of_arms')),
+      municipalitiesWithHistoricalPhotos:coverage(mun,e=>(e.media||[]).some(m=>m.kind==='historical_photo'&&m.capturedAt)),
+      verifiedHistoricalPhotos:mun.reduce((s,e)=>s+(e.media||[]).filter(m=>m.kind==='historical_photo'&&m.capturedAt&&m.reuseAllowed).length,0),
+      municipalitiesEverAttempted:progress?.statistics?.processedDistinct||0,
+      municipalitiesPendingRetry:progress?.statistics?.pendingRevisit||0,
       osmPlaces:osm.length,routes:Number(routes?.routeCount)||0,
       sourcedFacts:totalFacts,attributedMedia:countMedia([...mun,...all,...peopleEntities]),
       documentedRelations:sources.reduce((sum,s)=>sum+s.relations,0)},
@@ -139,7 +147,7 @@ export function appendSuccessfulImport(pipeline,runId,{report=null,sourceSha=nul
         ['municipalities','mayorsMatched','daitRowsOfficialCrosswalkRejected',
          'newG2','newMedia','newWikiText','selectedCandidates','publishedG2',
          'metricsAdded','matched','failuresCount',
-         'municipalityPeopleLinks','peopleCatalogued','mountainLinks','otherNotableLinks','sourceAltimetryMatched',
+         'municipalityPeopleLinks','peopleCatalogued','mountainLinks','otherNotableLinks','sourceAltimetryMatched','historicPhotosAdded','historicCommunesCovered','historicCandidatesChecked',
          'portraitsAdded','profilesWithPortrait','imagesHeldForReview','biographiesAdded','profilesWithBiography','associationsObserved'].includes(k) &&
         (typeof v==='number'||typeof v==='string'))):{},
   };

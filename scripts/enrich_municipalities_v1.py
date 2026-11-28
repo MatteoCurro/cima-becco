@@ -31,8 +31,9 @@ WIKIPEDIA_API = "https://it.wikipedia.org/w/api.php"
 UA = "CimaBecco/1.0 (https://www.cimabecco.it; public metadata import)"
 QID = re.compile(r"Q[1-9]\d*")
 PHOTO_EXT = re.compile(r"\.(jpe?g|png|webp|tiff?)$", re.I)
+SYMBOL_EXT = re.compile(r"\.(jpe?g|png|webp|tiff?|svg)$", re.I)
 # No file named "map"/"coat of arms" promoted as a landscape.
-NON_PHOTO = re.compile(r"(^|[\s_-])(stemma|wappen|coat.of.arms|flag|bandiera|mappa|map|locator|logo|svg)([\s_.-]|$)",re.I)
+NON_PHOTO = re.compile(r"(^|[\s_-])(stemma|wappen|coat.of.arms|flag|bandiera|mappa|map|maps|locator|logo|svg|mkl|lexikon|encyklop[a-z]*|encyclop[a-z]*|illustraz[a-z]*|illustrat[a-z]*|incision[a-z]*|engraving|etching|stampa|dipinto)([\s_.-]|$)",re.I)
 ALLOWED_LICENSES = {"CC0", "Public domain", "Public Domain", "CC BY 2.0",
                     "CC BY 3.0", "CC BY 4.0", "CC BY-SA 3.0", "CC BY-SA 4.0"}
 ALPINE_PROVINCES = {"BL","TN","BZ","SO","AO","UD","PN","VI","VR","CO","LC","BG","BS","VB","CN","TO","TV","BI"}
@@ -130,7 +131,7 @@ def text_only(value):
 def meta_value(meta,key):
     return (meta.get(key) or {}).get("value")
 
-def commons_files(filenames,*, getter=None):
+def commons_files(filenames,*, getter=None, allow_svg=False):
     """One batched imageinfo call; no guessing photo from file name."""
     filenames = list(dict.fromkeys(name for name in filenames if name))
     if not filenames:return {}
@@ -150,27 +151,135 @@ def commons_files(filenames,*, getter=None):
         fileurl=info.get("thumburl") or info.get("url") or ""
         original=info.get("descriptionurl") or ""
         title=page.get("title","")
+        is_svg=title.lower().endswith(".svg")
+        # SVGs represent most municipal coats of arms. Use Commons'
+        # rasterized thumb rather than embedding unreviewed SVG bytes.
+        if is_svg and not (allow_svg and (info.get("thumburl") or "").startswith("https://")):
+            continue
         if not (fileurl.startswith("https://") and original.startswith("https://")
                 and license_name in ALLOWED_LICENSES and artist
-                and len(artist)<=240 and PHOTO_EXT.search(title)
+                and len(artist)<=240 and (SYMBOL_EXT if allow_svg else PHOTO_EXT).search(title)
                 and (license_name.startswith("Public") or license_name=="CC0" or
                      (isinstance(licence_url,str) and licence_url.startswith("https://")))):
             continue
         result[title.removeprefix("File:").replace(" ","_")]={
             "url":fileurl,"sourceUrl":original,"licence":license_name,
             "licenceUrl":licence_url if licence_url and str(licence_url).startswith("https://") else None,
-            "author":artist,"retrievedAt":None,
+            "author":artist,
+            "descriptionText":text_only(meta_value(meta,"ImageDescription"))[:400] or None,
+            "retrievedAt":None,
             "sourceUpdatedAt":info.get("timestamp"),
             "subjectVerified":True,"reuseAllowed":True
         }
     return result
+
+def municipality_heraldry_filename(filename, municipality):
+    """Require the *town's own* coat of arms, not a heraldic object in town.
+
+    'Stemma principato vescovile Bressanone' is NOT the Comune's crest;
+    neither is 'San Fermo, Belluno - stemma su una casa'.
+    """
+    if not isinstance(filename,str) or not isinstance(municipality,str):return False
+    import unicodedata
+    def normalize(s):
+        s=unicodedata.normalize("NFKD",s)
+        s="".join(x for x in s if not unicodedata.combining(x))
+        return re.sub(r"[^a-z0-9]+"," ",s.casefold()).strip()
+    name=normalize(municipality)
+    basename=normalize(filename.removeprefix("File:").rsplit(".",1)[0])
+    if len(name)<3:return False
+    disallowed=("principato","vescovile","principality","bishopric",
+      "su una casa","on a house"," chiesa "," church "," famiglia ",
+      " family "," san fermo "," frazione "," parrocchia ",
+      " template "," blank "," bozza "," provisional "," fake ")
+    if any(term in " "+basename+" " for term in disallowed):return False
+    expected=[
+       name+" stemma","stemma di "+name,
+       "stemma del comune di "+name,"stemma comune di "+name,
+       "stemma "+name, name+" coat of arms","coat of arms of "+name,
+       "coat of arms "+name,name+" wappen","wappen "+name,
+       "wappen von "+name,"blason "+name,"armoiries de "+name]
+    return any(basename==prefix or basename.startswith(prefix+" ") for prefix in expected)
+
+def find_heraldry_commons(municipality, *,getter=None):
+    """Fallback direct Commons search, with strong subject evidence.
+
+    An image filename alone is NOT enough: the Commons description must
+    explicitly say the image is the municipality's crest. P635 identity is
+    independently verified by the calling importer.
+    """
+    if not municipality or len(municipality)<3:return []
+    d=request_json(COMMONS_API,{"action":"query","format":"json",
+       "list":"search","srsearch":'intitle:"'+municipality.replace('"','')+'" stemma',
+       "srnamespace":"6","srlimit":"20","srprop":""},getter=getter)
+    names=[x.get("title","") for x in (d.get("query") or {}).get("search",[])
+           if municipality_heraldry_filename(x.get("title",""),municipality)]
+    if not names:return []
+    assets=commons_files([name.removeprefix("File:") for name in names[:6]],getter=getter,allow_svg=True)
+    import unicodedata
+    def norm(v):
+        v=unicodedata.normalize("NFKD",str(v or ""))
+        v="".join(z for z in v if not unicodedata.combining(z))
+        return re.sub(r"[^a-z0-9]+"," ",v.casefold()).strip()
+    town=norm(municipality)
+    matched=[]
+    for name in names[:6]:
+        basename=name.removeprefix("File:")
+        asset=assets.get(basename.replace(" ","_"))
+        if not asset:continue
+        desc=norm(asset.get("descriptionText"))
+        if not desc:continue
+        heraldic_proof=("stemma di "+town,"stemma del comune di "+town,
+          "stemma comune di "+town,"coat of arms of "+town,
+          "wappen von "+town,"wappen "+town,"blason de "+town,
+          town+" coat of arms",town+" stemma")
+        if not any(proof in desc for proof in heraldic_proof):continue
+        # Do not mistake the crest of a bishopric, a family or a
+        # historic building for the municipal administration's own.
+        if any(term in desc for term in (
+          "principato","vescovile","principality","bishopric",
+          "su una casa","on a house","stemma di famiglia","family arms")):
+            continue
+        matched.append((basename,asset))
+    return matched[:2]
+
+def verified_article_town_photos(intro, municipality):
+    """Town photos referenced by the exact same QID article, filename names town.
+
+    Any filename-only web result is refused: this is a confirmed itwiki
+    article list and the image is also licensed on Commons before reuse.
+    """
+    if not isinstance(intro,dict):return []
+    found=[]
+    for title in intro.get("linkedImages") or []:
+        file=title.removeprefix("File:")
+        if not isinstance(file,str) or not PHOTO_EXT.search(file) or NON_PHOTO.search(file):
+            continue
+        # Reuse the exact-name matcher, without the heraldic term.
+        # Token boundaries avoid unrelated towns with partially matching names.
+        import unicodedata
+        def norm(value):
+            text=unicodedata.normalize("NFKD",str(value))
+            text="".join(ch for ch in text if not unicodedata.combining(ch))
+            return re.sub(r"[^a-z0-9]+"," ",text.casefold()).strip()
+        name=norm(municipality)
+        base=norm(file.rsplit(".",1)[0])
+        if len(name)>=3 and " "+name+" " in " "+base+" ":
+            found.append(file)
+    return list(dict.fromkeys(found))[:4]
+
+def verified_article_heraldry_images(intro, municipality):
+    if not isinstance(intro,dict):return []
+    images=intro.get("linkedImages") or []
+    return list(dict.fromkeys(
+        s for s in images if municipality_heraldry_filename(s,municipality)))[:4]
 
 def wikipedia_intro(title,qid,*,getter=None):
     """Exact itwiki sitelink, with pageprops wikibase_item identity proof."""
     if not title:return None
     data = request_json(WIKIPEDIA_API,{
         "action":"query","format":"json","titles":title,
-        "prop":"extracts|pageprops","exintro":"1","explaintext":"1",
+        "prop":"extracts|pageprops|images","imlimit":"max","exintro":"1","explaintext":"1",
         "ppprop":"wikibase_item","redirects":"1","exchars":"1400"
     },getter=getter)
     pages=(data.get("query") or {}).get("pages",{})
@@ -191,12 +300,15 @@ def wikipedia_intro(title,qid,*,getter=None):
                 "sourceUrl":"https://it.wikipedia.org/wiki/"+quote(title.replace(" ","_")),
                 "licence":"CC BY-SA 4.0","method":"reported",
                 "sourceUpdatedAt":None,"retrievedAt":None,
-                "originalLanguage":"it","kind":"source_excerpt_not_original_editorial"}
+                "originalLanguage":"it","kind":"source_excerpt_not_original_editorial",
+                "linkedImages":[img.get("title","") for img in page.get("images",[])
+                                if isinstance(img,dict) and img.get("title","").startswith("File:")]}
     return None
 
-def choose_candidates(entities, crosswalk, limit=48, previous=None):
+def choose_candidates(entities, crosswalk, limit=48, previous=None, progress=None):
     done = {e["sourceIds"]["istat"] for e in (previous or {}).get("entities",[])
             if e.get("quality",{}).get("gate")=="G2"}
+    attempts=(progress or {}).get("attempts",{})
     pool=[]
     for e in entities:
         code=e["sourceIds"]["istat"]
@@ -207,24 +319,31 @@ def choose_candidates(entities, crosswalk, limit=48, previous=None):
         name=e["name"]
         try:priority=PRIORITY_NAMES.index(name)
         except ValueError:priority=1000
-        pool.append((priority,0 if p in ("BL","TN","BZ") else 1,p,name,code))
+        count=int((attempts.get(code) or {}).get("attempts",0))
+        # Unprocessed candidates first: bad candidates must not monopolise
+        # every daily batch. Existing G2s are refreshed independently.
+        pool.append((count,priority,0 if p in ("BL","TN","BZ") else 1,p,name,code))
     pool.sort()
     # Periodically refresh previously published dossiers as well as new ones:
     # they must not lose facts when ISTAT/DAIT is reimported from scratch.
-    existing=sorted([code for code in done if code in crosswalk],key=lambda code:
-      next((i for i,e in enumerate(entities) if e["sourceIds"]["istat"]==code),999999))
-    return existing[:30]+[x[-1] for x in pool[:limit]]
+    existing=sorted([code for code in done if code in crosswalk])
+    # Rotate refreshed G2 so a growing catalogue does not force re-fetching
+    # the same first 30 towns forever. No more than eight refreshes per run.
+    start=(int((progress or {}).get("successfulRuns",0))*8)%max(1,len(existing))
+    refreshed=(existing+existing)[start:start+min(8,len(existing))]
+    return refreshed+[x[-1] for x in pool[:limit]]
 
-def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieved_at=None):
+def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, progress=None, retrieved_at=None):
     """Deterministic after source fixtures; a failed source never fabricates data."""
     require(archive.get("releaseChannel")=="ISTAT_DAIT_MUNICIPALITIES_STAGING",
             "Input non è l'archivio ISTAT canonico")
     retrieved_at = retrieved_at or archive.get("retrievedAt")
     entities={e["sourceIds"]["istat"]:e for e in archive.get("entities",[])}
     old={e["sourceIds"]["istat"]:e for e in (previous or {}).get("entities",[])}
-    chosen=choose_candidates(list(entities.values()),qid_map,max_new,previous)
+    chosen=choose_candidates(list(entities.values()),qid_map,max_new,previous,progress)
     media_count=text_count=g2_count=0
     failures=[]
+    commons_crest_searches=0
     for offset in range(0,len(chosen),25):
         part=chosen[offset:offset+25]
         qids=[qid_map[code] for code in part]
@@ -242,8 +361,8 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
                 failures.append("p635_mismatch:"+code);continue
             relevant.append((code,qid,item))
         imgs=list(dict.fromkeys(name for _,_,item in relevant
-                               for name in (claim_string(item,"P18"),claim_string(item,"P94")) if name))
-        try: images=commons_files(imgs,getter=getter)
+                               for name in (claim_string(item,"P18"),claim_string(item,"P94"),claim_string(item,"P154")) if name))
+        try: images=commons_files(imgs,getter=getter,allow_svg=True)
         except Exception as exc:
             images={};failures.append("commons:"+str(exc)[:120])
         for code,qid,item in relevant:
@@ -274,14 +393,21 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
             if website and website.startswith("https://"):
                 entity["facts"]["sitoUfficiale"]=fact(website,"wikidata:"+qid+":P856",
                     wd_url,as_of=retrieved_at,licence="CC0")
-            for prop,kind in (("P18","photo"),("P94","logo")):
+            for prop,kind,symbol_type in (
+                ("P18","photo",None),("P94","logo","coat_of_arms"),
+                ("P154","logo","institutional_logo")):
                 file=claim_string(item,prop)
-                if not file or (kind=="photo" and NON_PHOTO.search(file)):
+                if not file or (kind=="photo" and (NON_PHOTO.search(file) or
+                    not PHOTO_EXT.search(file))):
                     continue
                 image=images.get(file.replace(" ","_"))
                 if image:
                     entity["media"].append({**image,"id":"wikimedia:"+qid+":"+prop+":"+hashlib.sha1(file.encode()).hexdigest()[:12],
-                        "kind":kind,"retrievedAt":retrieved_at,
+                        "kind":kind,"symbolType":symbol_type,
+                        "caption":("Stemma del Comune di "+entity["name"] if prop=="P94" else
+                            "Logo istituzionale di "+entity["name"] if prop=="P154" else
+                            "Fotografia di "+entity["name"]),
+                        "retrievedAt":retrieved_at,
                         "subjectMethod":"explicit_wikidata_"+prop+"_confirmed_P635"})
                     if not any(m.get("url")==image["url"] and m.get("kind")==kind
                                for m in old.get(code,{}).get("media",[])):
@@ -292,12 +418,81 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
                     intro=wikipedia_intro(wiki,qid,getter=getter)
                     if intro:
                         intro["retrievedAt"]=retrieved_at
-                        entity["textSources"]=[intro]
+                        entity["textSources"]=[{k:v for k,v in intro.items() if k!="linkedImages"}]
                         entity["description"]=intro["text"]
                         if not any(t.get("sourceId")==intro["sourceId"]
                                    for t in old.get(code,{}).get("textSources",[])):
                             text_count+=1
+                        # A verified municipal Wikipedia page is a second
+                        # acquisition path for its photographs. We also
+                        # require the *full* town name in the image filename
+                        # and a reusable Commons file with credited author.
+                        if not any(m.get("kind")=="photo" for m in entity["media"]):
+                            candidates=verified_article_town_photos(intro,entity["name"])
+                            if candidates:
+                                try:
+                                    town_assets=commons_files(candidates,getter=getter)
+                                except Exception as exc:
+                                    town_assets={}
+                                    failures.append("itwiki_photo:"+code+":"+str(exc)[:70])
+                                for filename in candidates:
+                                    img=town_assets.get(filename.replace(" ","_"))
+                                    if not img:continue
+                                    entity["media"].append({**img,
+                                      "id":"wikimedia:"+qid+":itwiki-photo:"+
+                                        hashlib.sha1(filename.encode()).hexdigest()[:12],
+                                      "kind":"photo","retrievedAt":retrieved_at,
+                                      "sourceId":intro["sourceId"],
+                                      "caption":"Fotografia di "+entity["name"],
+                                      "subjectMethod":"exact_named_photo_in_itwiki_article_verified_QID"})
+                                    media_count+=1
+                                    break
+                        # The municipality's confirmed itwiki infobox may
+                        # list a crest even when P94 is absent in Wikidata.
+                        if not any(m.get("kind")=="logo" for m in entity["media"]):
+                            candidates=verified_article_heraldry_images(intro,entity["name"])
+                            if candidates:
+                                try:
+                                    crest_assets=commons_files([p.removeprefix("File:")
+                                        for p in candidates],getter=getter,allow_svg=True)
+                                except Exception as exc:
+                                    crest_assets={}
+                                    failures.append("itwiki_crest:"+code+":"+str(exc)[:75])
+                                for filename in candidates[:2]:
+                                    file=filename.removeprefix("File:")
+                                    image=crest_assets.get(file.replace(" ","_"))
+                                    if not image:continue
+                                    entity["media"].append({**image,
+                                        "id":"wikimedia:"+qid+":article:crest:"+
+                                           hashlib.sha1(file.encode()).hexdigest()[:12],
+                                        "kind":"logo","symbolType":"coat_of_arms",
+                                        "caption":"Stemma di "+entity["name"],
+                                        "retrievedAt":retrieved_at,
+                                        "sourceId":"wikipedia:it:"+str(intro["sourceId"]),
+                                        "subjectMethod":"exact_named_heraldry_file_in_itwiki_article_verified_QID"})
+                                    media_count+=1
+                                    break
                 except Exception as exc:failures.append("wiki:"+code+":"+str(exc)[:70])
+            # A named Commons file may be absent from P94 and from the
+            # verified itwiki infobox. Require both an exact municipal name
+            # and an explicitly heraldic Commons description; otherwise
+            # retain as an unverified candidate, never force a logo.
+            if not any(m.get("kind")=="logo" for m in entity.get("media",[])) and commons_crest_searches<24:
+                commons_crest_searches+=1
+                try:
+                    direct=find_heraldry_commons(entity["name"],getter=getter)
+                except Exception as exc:
+                    direct=[]
+                    failures.append("commons_crest_search:"+code+":"+str(exc)[:80])
+                for filename,asset in direct[:1]:
+                    entity["media"].append({**asset,
+                      "id":"commons:crest:"+qid+":"+
+                         hashlib.sha1(filename.encode()).hexdigest()[:12],
+                      "kind":"logo","symbolType":"coat_of_arms",
+                      "retrievedAt":retrieved_at,
+                      "caption":"Stemma del Comune di "+entity["name"],
+                      "subjectMethod":"verified_P635_and_exact_heraldic_commons_description"})
+                    media_count+=1
             if code in old and not any(m["kind"]=="photo" for m in entity["media"]):
                 entity["media"]=old[code].get("media",[])
             if code in old and not entity.get("textSources"):
@@ -314,6 +509,19 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
             elif has_point:
                 entity["quality"]={"gate":"G1","seoIndexable":False,"reviewRequired":False}
                 entity["editorialStatus"]="linked"
+    # Refresh of present dossiers must not discard previously licensed
+    # coats of arms, images or archival photographs on provider outages.
+    for code,previous in old.items():
+        current=entities.get(code)
+        if not current:continue
+        known={(m.get("kind"),m.get("sourceUrl")) for m in current.get("media",[])}
+        for media in previous.get("media",[]):
+            key=(media.get("kind"),media.get("sourceUrl"))
+            if (key not in known and media.get("reuseAllowed") and
+                media.get("subjectVerified") and media.get("licence") and
+                media.get("author") and media.get("sourceUrl")):
+                current.setdefault("media",[]).append(media)
+                known.add(key)
     # Existing G2 records must keep their facts when a run only processes
     # *new* candidates; ISTAT/DAIT facts in the current snapshot win.
     # preserve existing enriched identities/media across incremental refresh
@@ -338,6 +546,24 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
             for source in ("wikidata","wikidataVerifiedBy"):
                 if source in old_e.get("sourceIds",{}):
                     e["sourceIds"][source]=old_e["sourceIds"][source]
+    # Migrate old P94/P154 metadata and discard false heraldry inferred
+    # from a geographic name inside an unrelated heraldic photograph.
+    from urllib.parse import unquote
+    for e in entities.values():
+        accepted=[]
+        for media in e.get("media",[]):
+            if media.get("kind")=="logo":
+                if media.get("id","").find(":P94:")>=0:
+                    media.setdefault("symbolType","coat_of_arms")
+                    media.setdefault("caption","Stemma del Comune di "+e["name"])
+                if media.get("id","").find(":P154:")>=0:
+                    media.setdefault("symbolType","institutional_logo")
+                if media.get("subjectMethod")=="verified_P635_and_exact_heraldic_commons_description":
+                    filename=unquote(media.get("sourceUrl","").rsplit("/",1)[-1]).replace("_"," ")
+                    if not municipality_heraldry_filename("File:"+filename,e["name"]):
+                        continue
+            accepted.append(media)
+        e["media"]=accepted
     enriched = list(entities.values())
     for e in enriched:
         if e.get("quality",{}).get("gate")=="G0":
@@ -348,7 +574,12 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
             "newG2":g2_count,"newMedia":media_count,"newWikiText":text_count,
             "elevationReportedCoverage":sum(e.get("facts",{}).get("elevationReportedM",{}).get("value") is not None for e in public),
             "areaCoverage":sum(e.get("facts",{}).get("superficieKm2",{}).get("value") is not None for e in public),
-            "selectedCandidates":len(chosen),"failures":failures,
+            "commonsCrestSearches":commons_crest_searches,
+            "municipalitiesWithSymbols":sum(any(m.get("kind")=="logo" for m in e.get("media",[])) for e in public),
+            "municipalitiesWithHistoricPhotos":sum(any(m.get("kind")=="historical_photo" for m in e.get("media",[])) for e in public),
+            "selectedCandidates":len(chosen),"selectedCodes":chosen,
+            "firstAttempts":sum((progress or {}).get("attempts",{}).get(code) is None for code in chosen),
+            "failures":failures,
             "qualityG1":sum(e.get("quality",{}).get("gate")=="G1" for e in enriched),
             "qualityG0":sum(e.get("quality",{}).get("gate")=="G0" for e in enriched)}
     return {"schemaVersion":"1.0","releaseChannel":"ISTAT_DAIT_MUNICIPALITIES",
@@ -362,6 +593,7 @@ def main():
     p.add_argument("--out",type=Path,default=ROOT/"public/data/atlas/municipalities-v1.json")
     p.add_argument("--report",type=Path,default=ROOT/"build/import-municipalities-v1/enrichment-report.json")
     p.add_argument("--max-new",type=int,default=48)
+    p.add_argument("--progress",type=Path)
     args=p.parse_args()
     archive=load(args.archive)
     wd_map,collisions={},[]
@@ -380,7 +612,8 @@ def main():
     except Exception as exc:
         print("Wikidata national P635 lookup unavailable; using verified P635 pilot only:",str(exc)[:160])
     old=load(args.previous) if args.previous and args.previous.is_file() else None
-    result,report=enrich(archive,wd_map,max_new=args.max_new,previous=old)
+    progress=load(args.progress) if args.progress and args.progress.is_file() else None
+    result,report=enrich(archive,wd_map,max_new=args.max_new,previous=old,progress=progress)
     report["wikidataP635Available"]=len(wd_map)
     report["wikidataP635Collisions"]=collisions[:100]
     require(report["publishedG2"]>0,"Nessuna scheda G2 verificata; vietata pubblicazione")

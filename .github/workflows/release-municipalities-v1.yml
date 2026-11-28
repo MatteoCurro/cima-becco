@@ -1,10 +1,14 @@
 name: Release Comuni con Wikimedia (G2)
 on:
   push:
-    branches: [main, feat/people-portraits-source-graph-20261128]
+    branches: [main, feat/municipality-release-compatible-20261128]
     paths:
       - .github/workflows/release-municipalities-v1.yml
       - scripts/enrich_municipalities_v1.py
+      - scripts/enrich_municipality_history_v1.py
+      - tests/test_enrich_municipality_history_v1.py
+      - scripts/update_municipality_progress_v1.py
+      - tests/test_municipality_progress_v1.py
       - tests/test_enrich_municipalities_v1.py
       - scripts/enrich_municipality_altimetry_v1.py
       - tests/test_enrich_municipality_altimetry_v1.py
@@ -48,6 +52,8 @@ jobs:
           python -m unittest discover -s tests -p 'test_enrich_municipality_altimetry_v1.py' -v
           python -m unittest discover -s tests -p 'test_enrich_municipality_people_v1.py' -v
           python -m unittest discover -s tests -p 'test_person_profile_media_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_municipality_history_v1.py' -v
+          python -m unittest discover -s tests -p 'test_municipality_progress_v1.py' -v
       - name: Scarica ISTAT e DAIT ufficiali
         shell: bash
         run: |
@@ -90,7 +96,10 @@ jobs:
           args=(--archive build/import-municipalities-v1/municipalities.json
             --out public/data/atlas/municipalities-v1.json
             --report build/import-municipalities-v1/enrichment-report.json
-            --max-new 48)
+            --max-new 72)
+          if [ -f public/data/atlas/municipality-import-progress-v1.json ]; then
+            args+=(--progress public/data/atlas/municipality-import-progress-v1.json)
+          fi
           if [ "${QID_READY:-false}" = true ]; then args+=(--qid-map build/import-municipalities-v1/wikidata-resolver.json); fi
           if [ -f public/data/atlas/municipalities-v1.json ]; then
             cp public/data/atlas/municipalities-v1.json build/import-municipalities-v1/previous.json
@@ -117,6 +126,15 @@ jobs:
             --municipalities public/data/atlas/municipalities-v1.json \
             --people public/data/atlas/people-v1.json \
             --report build/import-municipalities-v1/people-report.json
+      - name: Ricerca fotografie storiche con soggetto e data verificati
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/enrich_municipality_history_v1.py \
+            --municipalities public/data/atlas/municipalities-v1.json \
+            --report build/import-municipalities-v1/history-report.json \
+            --max-municipalities 20 \
+            --cycle "$GITHUB_RUN_NUMBER"
       - name: Quality gate reale dei documenti pubblicabili
         shell: bash
         run: |
@@ -132,6 +150,20 @@ jobs:
           assert e and len(e)==len({x['id'] for x in e})==len({x['slug'] for x in e})
           assert all(any(x['facts'].get(k,{}).get('value') is not None for k in \
             ('quotaCentroM','elevationReportedM','altitudineTerritorioMediaM','altitudineTerritorioMinM','altitudineTerritorioMaxM')) for x in e), 'Comuni G2 senza quota documentata'
+          for x in e:
+              for m in x.get('media',[]):
+                  if m['kind'] not in ('logo','historical_photo'):continue
+                  assert m.get('reuseAllowed') and m.get('subjectVerified')
+                  assert m.get('author') and m.get('licence') and m.get('sourceUrl','').startswith('https://commons.wikimedia.org/')
+                  if m['kind']=='logo' and m.get('symbolType'):
+                      assert m['symbolType'] in ('coat_of_arms','institutional_logo')
+                      if m['sourceUrl'].lower().endswith('.svg'):
+                          assert not m['url'].lower().endswith('.svg'), 'Use raster thumbnail, no raw SVG'
+                  if m['kind']=='historical_photo':
+                      assert int(m['capturedAt'][:4])<1975 and int(m['capturedAt'][:4])>=1800
+                      assert m.get('subjectMethod') in (
+                        'commons_media_info_P180_exact_municipality_QID',
+                        'same_QID_itwiki_article_and_full_town_filename')
           for x in e:
               assert x['kind']=='municipality' and x['quality']['gate']=='G2'
               assert x['sourceIds'].get('wikidataVerifiedBy')=='P635'
@@ -199,6 +231,7 @@ jobs:
             build/import-municipalities-v1/enrichment-report.json
             build/import-municipalities-v1/altimetry-report.json
             build/import-municipalities-v1/people-report.json
+            build/import-municipalities-v1/history-report.json
             build/import-municipalities-v1/combined-report.json
           retention-days: 14
           if-no-files-found: warn
@@ -214,6 +247,7 @@ jobs:
           registry=json.loads((base/'report.json').read_text())
           alt=json.loads((base/'altimetry-report.json').read_text())
           people=json.loads((base/'people-report.json').read_text())
+          history=json.loads((base/'history-report.json').read_text())
           data.update({
               'municipalities':registry['municipalities'],
               'mayorsMatched':registry['mayorsMatched'],
@@ -230,10 +264,22 @@ jobs:
               'biographiesAdded':people.get('biographiesAdded',0),
               'profilesWithBiography':people.get('profilesWithBiography',0),
               'associationsObserved':people.get('associationsObserved',0),
+              'historicPhotosAdded':history.get('imagesSaved',0),
+              'historicCommunesCovered':history.get('historicalMunicipalities',0),
+              'historicCandidatesChecked':history.get('imagesConsidered',0),
               'failuresCount':len(data.get('failures') or [])+len(people.get('errors') or [])
           })
           (base/'combined-report.json').write_text(json.dumps(data,ensure_ascii=False,indent=2))
           PY
+      - name: Avanza cursore importatori dopo tutti i gate di qualità
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/update_municipality_progress_v1.py \
+            --previous public/data/atlas/municipality-import-progress-v1.json \
+            --enrichment-report build/import-municipalities-v1/enrichment-report.json \
+            --municipalities public/data/atlas/municipalities-v1.json \
+            --run-id "$GITHUB_RUN_ID"
       - name: Registra telemetria pubblica solo dopo il collaudo
         shell: bash
         run: |
@@ -245,7 +291,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/data/atlas/municipalities-v1.json public/data/atlas/people-v1.json public/data/atlas/import-history-comuni-v1.json
+          git add public/data/atlas/municipalities-v1.json public/data/atlas/people-v1.json public/data/atlas/import-history-comuni-v1.json public/data/atlas/municipality-import-progress-v1.json
           if ! git diff --cached --quiet; then
             git commit -m 'data(atlas): update source-verified municipality dossiers'
             git fetch origin "$GITHUB_REF_NAME"
