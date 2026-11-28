@@ -20,7 +20,7 @@ import re
 import struct
 from zipfile import ZipFile
 
-from import_municipalities_v1 import load, save, fact, code6, header
+from import_municipalities_v1 import load, save, fact, code6, header, near_links
 from import_settlements_v1 import digits
 
 URL = "https://www.istat.it/storage/cartografia/basi_territoriali/2021/LocalitaPuntuali_21.zip"
@@ -193,6 +193,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--settlements", required=True)
     parser.add_argument("--points", required=True)
+    parser.add_argument("--refuges")
+    parser.add_argument("--shelters")
     parser.add_argument("--out", required=True)
     parser.add_argument("--report", required=True)
     args=parser.parse_args()
@@ -201,6 +203,12 @@ def main():
     rows,digest=records_from_archive(args.points)
     doc, report = enrich(load(args.settlements),rows,
                          xy_to_lonlat=to_wgs84,digest=digest)
+    resources=[]
+    if args.refuges:resources.extend(load(args.refuges).get("entities",[]))
+    if args.shelters:resources.extend(load(args.shelters).get("entities",[]))
+    official=[x for x in doc["entities"] if x.get("sourceIds",{}).get("istatLocality")
+              and x.get("geo",{}).get("point")]
+    report["nearUnverifiedAdded"]=near_links(official,resources,max_km=10,limit=4)
     save(args.out,doc)
     save(args.report,report)
     print(json.dumps(report,ensure_ascii=False,sort_keys=True))
