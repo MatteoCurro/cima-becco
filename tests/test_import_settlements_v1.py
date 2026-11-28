@@ -115,6 +115,7 @@ class SettlementImportTests(unittest.TestCase):
         self.assertEqual(x["relations"], [])
         self.assertIsNone(x["parentMunicipalityId"])
         self.assertEqual(x["quality"]["gate"], "G0")
+        self.assertEqual(x["slugAliases"], ["osm-n-202"])
 
     def test_slug_collision_with_existing_suffix_is_not_recreated(self):
         from import_settlements_v1 import unique_slug
