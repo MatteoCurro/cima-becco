@@ -89,6 +89,16 @@ jobs:
             --max-new 80 \
             --out build/import-settlements-v1/settlements-g2.json \
             --report build/import-settlements-v1/wikimedia-report.json
+      - name: Test immagini storiche località (soggetto, data e attribuzione)
+        run: python -m unittest discover -s tests -p 'test_enrich_settlement_history_v1.py' -v
+      - name: Pilota Commons foto storiche datate, no eredità comunale
+        run: |
+          set -euo pipefail
+          python scripts/enrich_settlement_history_v1.py \
+            --settlements build/import-settlements-v1/settlements-g2.json \
+            --out build/import-settlements-v1/settlements-g2.json \
+            --report build/import-settlements-v1/history-report.json \
+            --max 6
       - name: Quality gate su fonti reali
         shell: bash
         run: |
@@ -108,6 +118,8 @@ jobs:
           assert len(ent) == len({x["id"] for x in ent}) == len({x["slug"] for x in ent})
           geo = json.loads((out/"geometry-report.json").read_text())
           wiki = json.loads((out/"wikimedia-report.json").read_text())
+          historical = json.loads((out/"history-report.json").read_text())
+          assert isinstance(historical.get("saved"),int)
           g2 = json.loads((out/"settlements-g2.json").read_text())
           assert g2["releaseChannel"] == "ISTAT21_OSM_SETTLEMENTS"
           assert all(e["quality"]["gate"] == "G2" and e["quality"]["seoIndexable"]
@@ -142,6 +154,7 @@ jobs:
             build/import-settlements-v1/report.json
             build/import-settlements-v1/geometry-report.json
             build/import-settlements-v1/wikimedia-report.json
+            build/import-settlements-v1/history-report.json
             build/import-settlements-v1/settlements-g2.json
           retention-days: 14
           if-no-files-found: warn
