@@ -56,8 +56,8 @@ def validate_item(e,staging=False):
         or alt.get("licence")!="CC BY 4.0"):
         raise ValueError("Pass requires a typed source-backed altitude")
     checked=e.get("facts",{}).get("wikidataIdentityVerified",{})
-    if not checked or checked.get("value") is not True or
-       checked.get("sourceId")!="wikidata:"+qid+":P1566+P625":
+    if (not checked or checked.get("value") is not True
+        or checked.get("sourceId")!="wikidata:"+qid+":P1566+P625"):
         raise ValueError("Pass requires second-pass Wikidata proof")
     media=e.get("media") or []
     if not any(m.get("kind")=="photo"
