@@ -179,6 +179,37 @@ class TestOfficialLakeWFS(unittest.TestCase):
         self.assertEqual(raw, payload([feature()]))
         self.assertEqual(url, calls[1])
 
+    def test_wfs_axis_order_alternative_is_bounded_and_logged_by_url(self):
+        calls = []
+        def fake_fetch(url, **kwargs):
+            calls.append(url)
+            if "GetCapabilities" in url:
+                return CAPABILITIES
+            if len(calls) == 2:
+                return payload([])
+            return payload([feature()])
+        with patch("import_official_lake_wfs_v1.fetch_limited",
+                   side_effect=fake_fetch):
+            raw, url, _, _ = run_live("bolzano_lakes")
+        self.assertEqual(len(calls), 3)
+        self.assertNotEqual(calls[1], calls[2])
+        self.assertIn("bbox=", calls[1])
+        self.assertIn("bbox=", calls[2])
+        self.assertIn("count=20", url)
+        doc, report = parse_geojson(raw, "bolzano_lakes", at=AT,
+                                    request_url=url)
+        self.assertEqual(report["acceptedG0"], 1)
+        self.assertFalse(doc["isPublished"])
+        self.assertEqual(doc["requestUrl"], url)
+
+    def test_all_empty_live_probes_fail_closed(self):
+        def fake_fetch(url, **kwargs):
+            return CAPABILITIES if "GetCapabilities" in url else payload([])
+        with patch("import_official_lake_wfs_v1.fetch_limited",
+                   side_effect=fake_fetch):
+            with self.assertRaisesRegex(RuntimeError, "zero features"):
+                run_live("bolzano_lakes")
+
     def test_provenance_hash_does_not_depend_on_entity_name(self):
         src = payload([feature(properties={"NOME": "Lago X"})])
         first, _ = parse_geojson(src, "arpav_water_surfaces", at=AT)
