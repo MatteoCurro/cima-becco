@@ -169,6 +169,52 @@ export async function peaksInView(view: Bounds): Promise<Venue[]> {
   return venues;
 }
 
+/**
+ * All raw GeoNames names, fetched only after the visitor starts searching.
+ * No 5-degree mapping tiles are downloaded for a global name lookup.
+ */
+let searchRowsPromise: Promise<PeakRow[]> | null = null;
+function loadPeakSearchRows(): Promise<PeakRow[]> {
+  if (!searchRowsPromise) {
+    searchRowsPromise = fetch(`${BASE}/search.json`)
+      .then(response => {
+        if (!response.ok) throw new Error('GeoNames search catalog unavailable');
+        return response.json() as Promise<PeakRow[]>;
+      })
+      .then(rows => {
+        if (!Array.isArray(rows)) throw new Error('Invalid GeoNames search catalog');
+        return rows;
+      })
+      .catch(error => {
+        searchRowsPromise = null;
+        throw error;
+      });
+  }
+  return searchRowsPromise;
+}
+
+/** Finds uncatalogued as well as G2 summits while preserving their original pin slug. */
+export async function searchGeoNamesPeaks(query: string, limit = 24): Promise<Venue[]> {
+  const fold = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const search = fold(query.trim());
+  if (search.length < 2) return [];
+  const [rows, index, photos, summits] = await Promise.all([
+    loadPeakSearchRows(), loadPeakIndex(), loadPeakPhotos(), verifiedSummits(),
+  ]);
+  if (!index) return [];
+  const matching = rows.filter(row => fold(row[1]).includes(search) && row[7] !== 'MTS' && row[7] !== 'HLLS');
+  const score = (row: PeakRow) => {
+    const name = fold(row[1]);
+    return name === search ? 2 : name.startsWith(search) ? 1 : 0;
+  };
+  matching.sort((a,b) => score(b)-score(a) || b[4]-a[4] || a[0]-b[0]);
+  return matching.slice(0,limit).map(row => {
+    const venue=toVenue(row,index.tile,photos,summits);
+    if (row[6]) notableCountries.set(venue.slug,countryName(row[6]));
+    return venue;
+  });
+}
+
 /** Find one summit by slug (for links and favourites), loading just its tile. */
 export async function worldPeakBySlug(slug: string): Promise<Venue | null> {
   const match = /^gn\d+-(m?\d+)x(m?\d+)$/.exec(slug);
