@@ -4,6 +4,7 @@ import type {AlpinePlace} from '../lib/alpinePlaces';
 import {placeBounds} from '../lib/alpinePlaces';
 import {loadNaturalLakes,naturalLakeHref,naturalLakeLabel,type NaturalLake,type NaturalLakeDataset} from '../lib/naturalLakeRelease';
 import {loadLakeSourceCensus,lakeSourceLabel,lakeSourceClass,lakeSourceProvider,lakeSourcePreviewHref,type LakeSourceCensus,type LakeSourceCensusRecord} from '../lib/naturalLakeCensus';
+import {loadIdentifiedLakePoints,lakeIdentifiedHref,lakeIdentifiedDisplayName,type LakeIdentifiedG1,type LakeIdentifiedG1Dataset} from '../lib/naturalLakePointsG1';
 import {loadRoutesInBounds} from '../lib/routeTiles';
 import {routesNear} from '../lib/routes';
 import {loadAlpineWater,alpineWaterNear,type AlpineWaterPoint} from '../lib/alpineWater';
@@ -283,11 +284,122 @@ function SourceRow({row,active,onLocate}:{row:LakeSourceCensusRecord;active:bool
     <button className={className} type="button" onClick={onLocate}>{cells}</button>;
 }
 
+const NO_POINT_G1:LakeIdentifiedG1Dataset={
+  entities:[],counts:{profiles:0,pointOnly:0,withOsmGeometry:0,withVerifiedP18:0,withVerifiedItwiki:0},
+  sourceG1Candidates:0,excludedCanonicalG2:0,
+};
+function identifiedLakeSlug():string|null{
+  const base=import.meta.env.BASE_URL;
+  if(!window.location.pathname.startsWith(base))return null;
+  return /^laghi\/identificati\/([a-z0-9-]+)\/?$/
+    .exec(window.location.pathname.slice(base.length))?.[1]||null;
+}
+function identifiedAsPolygon(item:LakeIdentifiedG1):NaturalWaterPolygon[]{
+  return item.geo.area?[{
+    slug:'g1:'+item.slug,name:lakeIdentifiedDisplayName(item),
+    subtype:'lake',quality:'G1',geometry:item.geo.area,
+  }]:[];
+}
+function IdentifiedLakeDetail({feature}:{feature:LakeIdentifiedG1}){
+  const display=lakeIdentifiedDisplayName(feature);
+  const area=feature.facts.osmMappedWaterSurfaceKm2;
+  const alt=feature.facts.elevationM;
+  const poly=useMemo(()=>identifiedAsPolygon(feature),[feature]);
+  const photo=feature.media.find(m=>m.kind==='photo'&&m.reuseAllowed&&m.subjectVerified);
+  const summary=feature.textSources?.[0]?.text;
+  const altNames=[
+    ...feature.localNames.map(x=>x.value),
+    feature.name,...feature.aliases.map(x=>x.value),
+  ].filter((x,i,a)=>x!==display&&a.indexOf(x)===i).slice(0,5);
+  const facts=[
+    ...(alt&&typeof alt.value==='number'?
+      [{label:alt.method==='estimated'?'Quota · stima GeoNames/DEM':'Quota · GeoNames',
+        value:meters(alt.value)}]:[]),
+    ...(area&&typeof area.value==='number'?
+      [{label:'Superficie · perimetro OSM verificato',value:mappedSurface(area.value)}]:[]),
+    {label:'Geometria disponibile',
+      value:feature.geo.area?'Perimetro OSM':'Posizione GeoNames'},
+  ];
+  useEffect(()=>{track('atlas_lake_identified_view',feature.slug);},[feature.slug]);
+  return <DetailLayout
+    backHref={import.meta.env.BASE_URL+'laghi/'}
+    backLabel="Torna all’atlante dei laghi"
+    sidebarLabel={feature.geo.area?'Perimetro verificato del '+display:'Posizione verificata del '+display}
+    sidebar={<section id="cb-lake-g1-map" tabIndex={-1} className="cb-location-side-map">
+      <MapContextLabel kicker={feature.geo.area?'PERIMETRO OSM · IDENTITÀ G1':'POSIZIONE GEONAMES · IDENTITÀ G1'}
+        title={display}/>
+      <AlpineAtlasMap places={NO_PLACES} kind="borgo"
+        selectedPoint={{...feature.geo.point,name:display,icon:'≈'}}
+        naturalPolygons={poly}
+        height="100%"
+        caption={feature.geo.area?'Perimetro OSM associato con identità verificata':
+          'Punto geografico verificato GeoNames e Wikidata; contorno non disponibile'}/>
+    </section>}>
+    <header className="cb-location-hero cb-lake-preview-hero">
+      <div className="cb-location-hero-copy">
+        <span className="cb-atlas-kind">LAGO IDENTIFICATO · G1 / NON INDICIZZATO</span>
+        <h1>{display}</h1>
+        {altNames.length>0&&<p className="cb-location-muted-note">
+          Noto anche come {altNames.join(' · ')}
+        </p>}
+        <p className="cb-location-lead">{summary?.slice(0,240)||
+          'Il lago ha un’identità geografica verificata tramite GeoNames e Wikidata. La scheda si arricchisce con informazioni ulteriori quando documentate.'}</p>
+        <DetailMetrics label="Dati geografici verificati" items={facts}/>
+        <div className="cb-location-actions">
+          <button className="cb-location-action-primary" type="button"
+            onClick={()=>scrollToDetailSection('cb-lake-g1-map')}>
+            {feature.geo.area?'ESPLORA IL PERIMETRO':'VEDI LA POSIZIONE'}
+          </button>
+        </div>
+      </div>
+      {photo?
+        <figure className="cb-location-hero-media">
+          <img src={photo.url} alt={'Fotografia documentata associata a '+display}
+            loading="eager" decoding="async"/>
+          <figcaption>{photo.caption||'Fotografia associata all’identità Wikidata del lago'}</figcaption>
+        </figure>:
+        <div className="cb-lake-preview-topo" aria-label="Fotografia del soggetto non ancora verificata">
+          <span aria-hidden="true">≈</span>
+          <strong>UN LAGO. NON UNA FOTO A CASO.</strong>
+          <small>Le immagini vengono aggiunte solo dopo la verifica del soggetto e dei diritti.</small>
+        </div>}
+    </header>
+    {summary&&<section className="cb-detail-group cb-location-section">
+      <DetailSectionHeading kicker="TERRITORIO / TESTO DOCUMENTATO" title="Paesaggio e territorio."/>
+      <p>{summary}</p>
+    </section>}
+    <section className="cb-detail-group cb-location-section">
+      <DetailSectionHeading kicker="GEOREFERENZIAZIONE / IDENTITÀ" title="I dati che possiamo confermare."/>
+      <div className="cb-lake-source-fact-list">
+        <div><strong>Identità</strong><span>GeoNames e Wikidata, proprietà P1566 e P625</span></div>
+        <div><strong>Coordinate GeoNames</strong><span>
+          {fmt(feature.geo.point.lat,5)}° N · {fmt(feature.geo.point.lng,5)}° E
+        </span></div>
+        <div><strong>Contorno dello specchio d’acqua</strong><span>
+          {feature.geo.area?'Perimetro OSM associato tramite identificativi verificati':
+            'Non ancora disponibile: la mappa mostra solo il punto geografico'}
+        </span></div>
+        {feature.facts.wikidataElevationReportedM&&
+          <div><strong>Quota riportata da Wikidata</strong>
+            <span>{meters(Number(feature.facts.wikidataElevationReportedM.value))}</span>
+          </div>}
+      </div>
+    </section>
+    <section className="cb-detail-group cb-location-section">
+      <DetailSectionHeading kicker="QUALITÀ / STATO DEI DATI" title="Una scheda in arricchimento."/>
+      <p>Identità verificata, contenuti pubblicati solo se documentati. Il perimetro, quando presente, è cartografia OSM e non una misura ufficiale della superficie. Un punto GeoNames non rappresenta un punto di partenza, una riva né un accesso. Balneabilità, potabilità e percorribilità richiedono fonti specifiche.</p>
+    </section>
+  </DetailLayout>;
+}
+
 const INITIAL_PAGE=36;
 
 export function NaturalLakePage(){
   const [slug,setSlug]=useState(routeSlug);
   const [sourceSlug,setSourceSlug]=useState(sourceProfileSlug);
+  const [identifiedSlug,setIdentifiedSlug]=useState(identifiedLakeSlug);
+  const [identified,setIdentified]=useState<LakeIdentifiedG1Dataset>(NO_POINT_G1);
+  const [loadingIdentified,setLoadingIdentified]=useState(true);
   const [dataset,setDataset]=useState<NaturalLakeDataset>(EMPTY);
   const [loading,setLoading]=useState(true);
   const [census,setCensus]=useState<LakeSourceCensus|null>(null);
@@ -307,16 +419,24 @@ export function NaturalLakePage(){
     return ()=>{active=false;};
   },[]);
   useEffect(()=>{
-    if(slug)return;
+    let active=true;
+    void loadIdentifiedLakePoints().then(doc=>{
+      if(active){setIdentified(doc);setLoadingIdentified(false);}
+    });
+    return ()=>{active=false;};
+  },[]);
+  useEffect(()=>{
+    if(slug||identifiedSlug)return;
     let active=true;
     void loadLakeSourceCensus().then(doc=>{
       if(active){setCensus(doc);setLoadingCensus(false);}
     });
     return ()=>{active=false;};
-  },[slug]);
+  },[slug,identifiedSlug]);
   useEffect(()=>{
     const change=()=>{
       setSlug(routeSlug());setSourceSlug(sourceProfileSlug());
+      setIdentifiedSlug(identifiedLakeSlug());
       setQuery('');setSelectedSourceKey(null);
       setVisibleLimit(INITIAL_PAGE);window.scrollTo({top:0});
     };
@@ -327,6 +447,7 @@ export function NaturalLakePage(){
   const features=dataset.features;
   const current=slug?features.find(f=>f.slug===slug):null;
   const preview=sourceSlug?census?.records.find(x=>x.previewSlug===sourceSlug):null;
+  const g1Detail=identifiedSlug?identified.entities.find(x=>x.slug===identifiedSlug):null;
   const allSources=census?.records||[];
   const q=query.trim().toLocaleLowerCase('it');
   const shown=useMemo(()=>features.filter(x=>
@@ -337,6 +458,12 @@ export function NaturalLakePage(){
       :sort==='surface'
       ?Number(b.facts.osmMappedWaterSurfaceKm2.value)-Number(a.facts.osmMappedWaterSurfaceKm2.value)
       :a.name.localeCompare(b.name,'it')),[features,q,sort]);
+  const shownG1=useMemo(()=>identified.entities.filter(x=>
+    [x.name,...x.localNames.map(n=>n.value),...x.aliases.map(n=>n.value)]
+      .some(n=>n.toLocaleLowerCase('it').includes(q)) &&
+    !(providerFilter!=='all' && providerFilter!=='bolzano_lakes' &&
+      providerFilter!=='arpav_water_surfaces')), 
+    [identified.entities,q,providerFilter]);
   const shownSource=useMemo(()=>allSources.filter(r=>
     (providerFilter==='all'||r.provider===providerFilter)&&
     (typeFilter==='all'||sourceType(r)===typeFilter)&&
@@ -352,19 +479,26 @@ export function NaturalLakePage(){
     }),[allSources,providerFilter,typeFilter,q,sort]);
   const polygons=useMemo(()=>[
     ...shownSource.map(sourcePolygon),
+    ...shownG1.flatMap(identifiedAsPolygon),
     ...shown.map(lake=>({...lakePolygon(lake),quality:'G2' as const})),
-  ],[shownSource,shown]);
+  ],[shownSource,shownG1,shown]);
   const selectedSource=useMemo(()=>
     allSources.find(r=>r.sourceKey===selectedSourceKey)||null,
     [allSources,selectedSourceKey]);
   const namedCount=census?Object.values(census.sourceCounts)
     .reduce((sum,p)=>sum+p.namedSourceRecords,0):0;
-  usePageTitle((current?current.name:preview?lakeSourceLabel(preview)+' · Censimento':'Laghi e invasi alpini')+' · Cima Becco');
+  usePageTitle((current?current.name:g1Detail?lakeIdentifiedDisplayName(g1Detail):
+    preview?lakeSourceLabel(preview)+' · Censimento':'Laghi e invasi alpini')+' · Cima Becco');
   return <div className="cb-atlas-page">
     <SiteHeader sticky/>
     <ExploreNavigation active="laghi"/>
-    <main className={slug?'cb-atlas-shell cb-atlas-shell--detail':'cb-atlas-shell'}>
+    <main className={slug||identifiedSlug||sourceSlug?'cb-atlas-shell cb-atlas-shell--detail':'cb-atlas-shell'}>
       {current?<LakeDetail feature={current}/>:
+       identifiedSlug?(g1Detail?<IdentifiedLakeDetail feature={g1Detail}/>:
+         loadingIdentified?<div className="cb-atlas-loading">Caricamento della scheda…</div>:
+         <div className="cb-atlas-empty"><h1>Lago identificato non disponibile.</h1>
+           <a href={import.meta.env.BASE_URL+'laghi/'}>Torna all’elenco dei laghi</a>
+         </div>):
        sourceSlug?(preview?<AgencyLakeSourceDetail source={preview}/>:
          loadingCensus?<div className="cb-atlas-loading">Caricamento della scheda…</div>:
          <div className="cb-atlas-empty"><h1>Scheda di censimento non disponibile.</h1>
@@ -379,7 +513,7 @@ export function NaturalLakePage(){
          <div className="cb-atlas-intro">
            <div><span className="cb-atlas-eyebrow">SPECCHI D'ACQUA / DOLOMITI / ALPI</span>
              <h1>LAGHI. SENZA SPONDE INVENTATE.</h1>
-             <p>Una mappa, due livelli di conoscenza: perimetri censiti da enti pubblici e dossier approfonditi con identità verificata. Nessun nome o tratto di riva ricostruito per supposizione.</p>
+             <p>Una mappa, tre livelli di conoscenza: censimenti regionali, laghi identificati mediante GeoNames e Wikidata e dossier approfonditi. Senza inventare rive, foto o collegamenti.</p>
            </div>
            <div className="cb-atlas-intro-symbol" aria-hidden="true">≈</div>
          </div>
@@ -388,6 +522,7 @@ export function NaturalLakePage(){
            <span><strong>{loadingCensus?'…':namedCount}</strong> con nome censito</span>
            <span><strong>{loadingCensus?'…':census?.geometryPendingReview||0}</strong> geometrie in revisione</span>
            <span><strong>{loading?'…':features.length}</strong> dossier completi</span>
+           <span><strong>{loadingIdentified?'…':identified.counts.profiles}</strong> laghi identificati G1</span>
          </div>
          <div className="cb-atlas-toolbar cb-lake-census-toolbar">
            <label htmlFor="cb-lake-query">CERCA</label>
@@ -422,21 +557,35 @@ export function NaturalLakePage(){
          <section className="cb-atlas-list-map" aria-label="Mappa dei corpi idrici censiti">
            <div className="cb-atlas-section-top"><span>ATLANTE / CARTOGRAFIA</span>
              <h2>PERIMETRI, NON IPOTESI.</h2>
-             <p>I contorni chiari sono record dei censimenti ufficiali G0; quelli marcati sono dossier G2. Due contorni sovrapposti possono rappresentare lo stesso luogo: non li fondiamo senza una corrispondenza d'identità verificata.</p>
+             <p>I contorni chiari sono record ufficiali G0; i punti e i perimetri intermedi sono laghi G1 identificati; i contorni marcati sono dossier G2. Una sovrapposizione fra fonti non ne dimostra automaticamente l’identità.</p>
            </div>
            <div className="cb-lake-map-key" aria-label="Legenda livello dei dati">
              <span><i className="cb-lake-key-g0" aria-hidden="true"/>Censimento · G0</span>
+             <span><i className="cb-lake-key-g1" aria-hidden="true"/>Identificato · G1</span>
              <span><i className="cb-lake-key-g2" aria-hidden="true"/>Dossier · G2</span>
            </div>
            {polygons.length>0?
              <AlpineAtlasMap places={NO_PLACES} kind="borgo"
+               naturalPoints={shownG1.map(x=>({
+                 slug:x.slug,name:lakeIdentifiedDisplayName(x),
+                 lat:x.geo.point.lat,lng:x.geo.point.lng,subtype:x.subtype,
+               }))}
+               onNaturalSelect={p=>{
+                 const item=identified.entities.find(x=>x.slug===p.slug);
+                 if(item)window.location.assign(lakeIdentifiedHref(item));
+               }}
                naturalPolygons={polygons}
                selectedPolygonSlug={selectedSourceKey}
                onNaturalPolygonSelect={p=>{
                  if(p.quality==='G0'){setSelectedSourceKey(p.sourceKey||null);return;}
+                 if(p.quality==='G1'){
+                   const item=identified.entities.find(x=>'g1:'+x.slug===p.slug);
+                   if(item)window.location.assign(lakeIdentifiedHref(item));
+                   return;
+                 }
                  window.location.assign(naturalLakeHref(p.slug));
                }}
-               height={430} caption="Perimetri WFS ufficiali censiti G0 e laghi documentati G2"/>:
+               height={430} caption="Perimetri WFS G0, punti e poligoni G1 e dossier documentati G2"/>:
              <p className="cb-atlas-loading">{loadingCensus?'Caricamento dei perimetri…':'Nessun perimetro corrisponde ai filtri.'}</p>}
            {selectedSource&&<div className="cb-lake-source-selected" id="cb-lake-source-selected" aria-live="polite">
              <div><span className="cb-atlas-eyebrow">RECORD CARTOGRAFICO · G0</span>
@@ -471,6 +620,29 @@ export function NaturalLakePage(){
            </div>:<p className="cb-atlas-loading">{loading?'Caricamento delle schede…':'Nessun dossier con questo nome.'}</p>}
          </section>
 
+         <section className="cb-lake-complete-section" aria-label="Laghi identificati anche senza perimetro">
+           <div className="cb-atlas-section-top"><span>IDENTITÀ / GEOREFERENZIAZIONE G1</span>
+             <h2>UN NOME, UNA POSIZIONE, UNA STORIA DA COMPLETARE.</h2>
+             <p>Laghi già collegati a GeoNames e Wikidata tramite identificativi e coordinate verificati. Le schede sono consultabili ma non indicizzate. Il punto geografico non dimostra l’accesso e i contorni mancanti non sono simulati.</p>
+           </div>
+           {shownG1.length>0?<div className="cb-atlas-grid cb-lake-g1-grid">
+             {shownG1.map(x=><a href={lakeIdentifiedHref(x)} key={x.id} className="cb-atlas-card">
+               <span className="cb-atlas-kind">IDENTIFICATO · G1</span>
+               {x.media[0]?.url?
+                 <img className="cb-atlas-card-photo" src={x.media[0].url}
+                   alt="" loading="lazy"/>:
+                 <span className="cb-lake-g1-card-placeholder" aria-hidden="true">≈</span>}
+               <h2>{lakeIdentifiedDisplayName(x)}</h2>
+               {typeof x.facts.elevationM?.value==='number'&&
+                 <strong>{meters(x.facts.elevationM.value)}</strong>}
+               <span>{x.geo.area?'Perimetro OSM verificato':'Posizione GeoNames · contorno assente'}</span>
+               <span className="cb-atlas-card-go">APRI LA SCHEDA ↗</span>
+             </a>)}
+           </div>:<p className="cb-atlas-loading">
+             {loadingIdentified?'Caricamento dei laghi identificati…':
+               q?'Nessun lago G1 corrisponde alla ricerca.':'Nessun lago G1 aggiuntivo rispetto ai dossier completi.'}
+           </p>}
+         </section>
          <section className="cb-lake-census-list" aria-label="Elenco dei record regionali">
            <div className="cb-atlas-section-top"><span>INVENTARIO / FONTI REGIONALI</span>
              <h2>ALTRI SPECCHI D'ACQUA CENSITI.</h2>
