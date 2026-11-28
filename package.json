@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "node scripts/check_chrome_css.mjs && tsc --noEmit && vite build && node scripts/build_seo.mjs",
+    "build": "node scripts/rebuild_peak_index.mjs --check && node scripts/check_chrome_css.mjs && tsc --noEmit && vite build && node scripts/build_seo.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
