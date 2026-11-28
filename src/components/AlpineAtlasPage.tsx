@@ -23,7 +23,8 @@ import { NearbyAtlasPlaces } from './NearbyAtlasPlaces';
 import { canonicalAtlasSlug } from '../lib/placePermalinks';
 import { nearbyAtlasPlaces } from '../lib/nearbyAtlas';
 import type { AtlasEntityMetadata } from '../lib/atlasDossier';
-import { loadAlpineWater, alpineWaterNear, potabilityLabel, type AlpineWaterPoint } from '../lib/alpineWater';
+import { loadAlpineWater, alpineWaterNear, type AlpineWaterPoint } from '../lib/alpineWater';
+import { WaterNearbyList } from './WaterNearbyList';
 import { track } from '../lib/analytics';
 import '../alpineAtlas.css';
 import '../locationProfile.css';
@@ -89,6 +90,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
   const [nearby,setNearby]=useState<Route[]>([]);
   const [loading,setLoading]=useState(true);
   const [water,setWater]=useState<AlpineWaterPoint[]>([]);
+  const [selectedWaterSlug,setSelectedWaterSlug]=useState<string|null>(null);
   const [localAtlas,setLocalAtlas]=useState<AlpinePlace[]>([]);
   const mapPlaces=useMemo(()=>[place],[place]);
   const nearbyPlaces=useMemo(()=>{
@@ -114,7 +116,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
     return ()=>{active=false;};
   },[place]);
   useEffect(()=>{
-    let active=true;setWater([]);
+    let active=true;setWater([]);setSelectedWaterSlug(null);
     void loadAlpineWater().then(data=>{if(active)setWater(alpineWaterNear(data.sources,place.lng,place.lat,1800,14));});
     return ()=>{active=false;};
   },[place]);
@@ -160,11 +162,13 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
     sidebar={<section id="cb-place-map" tabIndex={-1} className="cb-location-side-map">
       <MapContextLabel kicker="CARTOGRAFIA DEL LUOGO" title={place.name}/>
       <AlpineAtlasMap places={mapPlaces} kind={place.kind} selected={place} routes={nearby}
-        water={water.map(w=>({lng:w.lng,lat:w.lat,name:w.name,kind:w.kind,potable:w.potable}))}
+        water={water} selectedWaterSlug={selectedWaterSlug} onWaterSelect={setSelectedWaterSlug}
         height="100%" caption={place.name}/>
     </section>}
   >
-    {(place.kind==='rifugio'||place.kind==='bivacco') ? <RefugeProfile place={place} routes={nearby} loadingRoutes={loading} nearbyPlaces={nearbyPlaces} allPlaces={localAtlas} water={water}/> : <>
+    {(place.kind==='rifugio'||place.kind==='bivacco') ? <RefugeProfile place={place} routes={nearby} loadingRoutes={loading} nearbyPlaces={nearbyPlaces} allPlaces={localAtlas} water={water} onWaterSelect={slug=>{
+        setSelectedWaterSlug(slug);scrollToDetailSection('cb-place-map');
+      }}/> : <>
     <header className="cb-location-hero">
       <div className="cb-location-hero-copy">
         <PlaceBadge place={place}/>
@@ -209,6 +213,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
       ...(!municipality&&(place.description||wikiUrl)?[{id:"cb-place-story",label:"Territorio",icon:"mountain" as const}]:[]),
       {id:"cb-place-weather",label:"Meteo",icon:"compass"},
       {id:"cb-place-itineraries",label:"Sentieri",icon:"route"},
+      ...(water.length?[{id:'cb-place-water',label:'Acqua',icon:'water' as const}]:[]),
       ...(nearbyPlaces.length?[{id:"cb-place-nearby",label:"Dintorni",icon:"location-dot" as const}]:[]),
       {id:"cb-place-map",label:"Mappa",icon:"map"},
     ]}/>
@@ -279,11 +284,10 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
           </>}
         </section>
 
-        {water.length>0&&<section className="cb-detail-group cb-location-section cb-location-water">
+        {water.length>0&&<section id="cb-place-water" className="cb-detail-group cb-location-section cb-location-water">
           <DetailSectionHeading kicker="04 / RISORSE IN ZONA" title="ACQUA NEI DINTORNI." description="Fonti mappate entro circa 1,8 km in linea d'aria. La potabilità, l'accessibilità e la disponibilità vanno verificate sul posto."/>
-          <div className="cb-location-water-grid">{water.slice(0,8).map(w=><div key={w.slug}>
-            <AlpinePlaceIcon kind="acqua" size={22}/><div><strong>{w.name}</strong><small>{w.kind} · {potabilityLabel(w.potable)}{w.seasonal?' · stagionale':''}</small></div>
-          </div>)}</div>
+          <WaterNearbyList points={water} selectedSlug={selectedWaterSlug}
+            onSelect={slug=>{setSelectedWaterSlug(slug);scrollToDetailSection('cb-place-map');}}/>
         </section>}
 
         <AtlasDossierBlocks record={place} placement="core"/>
