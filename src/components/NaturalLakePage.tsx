@@ -250,7 +250,7 @@ function AgencyLakeSourceDetail({source}:{source:LakeSourceCensusRecord}){
       </div>
     </header>
     <section id="cb-lake-source-facts" className="cb-detail-group cb-location-section">
-      <DetailSectionHeading eyebrow="INVENTARIO · DATO SORGENTE" title="Quello che sappiamo."/>
+      <DetailSectionHeading kicker="INVENTARIO · DATO SORGENTE" title="Quello che sappiamo."/>
       <div className="cb-lake-source-fact-list">
         <div><strong>Ente censitore</strong><span>{lakeSourceProvider(source.provider)}</span></div>
         {source.municipalityReported&&
@@ -263,7 +263,7 @@ function AgencyLakeSourceDetail({source}:{source:LakeSourceCensusRecord}){
       </div>
     </section>
     <section className="cb-detail-group cb-location-section">
-      <DetailSectionHeading eyebrow="QUALITÀ · IN ARRICCHIMENTO" title="Le informazioni ancora da collegare."/>
+      <DetailSectionHeading kicker="QUALITÀ · IN ARRICCHIMENTO" title="Le informazioni ancora da collegare."/>
       <p>Questa scheda descrive un singolo record geografico ufficiale. La verifica con GeoNames, Wikidata e OpenStreetMap, l’eventuale classificazione naturale o artificiale e le fotografie del soggetto sono ancora in corso. Non rappresenta un dossier G2 e non è nella sitemap.</p>
       <p>Il perimetro WFS rappresenta l’estensione cartografata, non il punto di accesso, la percorribilità della riva, la potabilità o l’idoneità alla balneazione.</p>
     </section>
