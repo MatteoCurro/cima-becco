@@ -163,24 +163,47 @@ jobs:
           npm run build
           node scripts/check_permalinks.mjs
           node scripts/test_central_credits.mjs
-      - name: Aggiorna dati osservatorio verificato
-        run: |
-          node scripts/import_metrics_v1.mjs localita "$GITHUB_RUN_ID" \
-            build/import-settlements-v1/wikimedia-report.json
-      - name: Commit atomico solo dopo tutti i gate
+      - name: Test fusione semantica di release verificate e concorrenti
+        run: python -m unittest discover -s tests -p 'test_merge_settlement_publication_v1.py' -v
+      - name: Pubblica con unione G2 e retry ottimistico senza force push
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/atlas/settlements-v1.json public/data/atlas/import-history-localita-v1.json
-          if git diff --cached --quiet; then
-            echo "Nessuna variazione delle schede G2."
-            exit 0
-          fi
-          git commit -m "data(localita): publish verified ISTAT21/OSM G2"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          workdir="$(mktemp -d)"
+          cp public/data/atlas/settlements-v1.json "$workdir/incoming.json"
+          for attempt in 1 2 3; do
+            echo "Tentativo di commit G2 protetto $attempt/3"
+            git fetch origin main
+            # Only reset this disposable CI checkout, after saving validated
+            # incoming G2 separately. Never force-push and never drop remote G2.
+            git reset --hard origin/main
+            python scripts/merge_settlement_publication_v1.py \
+              --current public/data/atlas/settlements-v1.json \
+              --incoming "$workdir/incoming.json" \
+              --out public/data/atlas/settlements-v1.json
+            node scripts/import_metrics_v1.mjs localita "$GITHUB_RUN_ID" \
+              build/import-settlements-v1/wikimedia-report.json
+            # Recheck URLs and centralized attributions on the FINAL union,
+            # not just the independently validated incoming batch.
+            npm run build
+            node scripts/check_permalinks.mjs
+            node scripts/test_central_credits.mjs
+            git add public/data/atlas/settlements-v1.json public/data/atlas/import-history-localita-v1.json
+            if git diff --cached --quiet; then
+              echo "Nessuna variazione dopo unione G2."
+              exit 0
+            fi
+            git commit -m "data(localita): merge verified ISTAT21/OSM G2 without overwriting concurrent changes"
+            if git push origin HEAD:main; then
+              echo "Dossier G2 pubblicati dopo controllo di concorrenza."
+              exit 0
+            fi
+            echo "Nuovo commit remoto: ripeto la riconciliazione dal branch aggiornato."
+          done
+          echo "Blocco pubblicazione: troppe modifiche concorrenti, nessun force push." >&2
+          exit 1
       - name: Report audit della pubblicazione
         if: always()
         uses: actions/upload-artifact@v4
