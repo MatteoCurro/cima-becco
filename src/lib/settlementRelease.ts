@@ -12,6 +12,7 @@ type PublishedSettlement = {
   administrativeHierarchy?:AlpinePlace['administrativeHierarchy'];
   connectedPeople?:AlpinePlace['connectedPeople'];
   description?:string;shortSummary?:string;
+  textSources?:AlpinePlace['textSources'];
   quality:{gate:string;seoIndexable:boolean;reviewRequired?:boolean};
 };
 type Release = {releaseChannel:string;isPublished:boolean;entities:PublishedSettlement[]};
@@ -38,6 +39,7 @@ export function settlementAsAlpinePlace(entity:PublishedSettlement):AlpinePlace|
     aliases:entity.aliases,administrativeHierarchy:entity.administrativeHierarchy,
     connectedPeople:entity.connectedPeople,
     description:entity.description,shortSummary:entity.shortSummary,
+    textSources:entity.textSources,
     elevationM:typeof elevation==='number'?elevation:undefined,
     photo:{url:photo.url,sourceUrl:photo.sourceUrl,author:photo.author||'',license:photo.licence},
   };
