@@ -127,7 +127,8 @@ def run(stage_file, out, *, max_items=80, batch_size=20, pause=1.2, getter=fetch
     if stage.get("isPublished") is not False or stage.get("releaseChannel") != "GEONAMES_SUMMITS_STAGING_V1":
         raise ValueError("Expected unmodified GeoNames staging input")
     entities=stage.get("entities", [])[:max_items]
-    links=[]
+    rows_all=[]
+    group_ok_ids=set()
     reasons=Counter()
     failures=[]
     for i, group in enumerate(chunks(entities,batch_size)):
@@ -137,14 +138,20 @@ def run(stage_file, out, *, max_items=80, batch_size=20, pause=1.2, getter=fetch
             rows=response.get("results",{}).get("bindings",[])
             if not isinstance(rows,list):
                 raise ValueError("SPARQL bindings not a list")
-            verified, held=verify(rows,group)
-            links.extend(verified)
-            reasons.update(held)
+            # Collect the raw bindings; do NOT resolve independently per batch.
+            # Two different GeoNames IDs in different requests can reference
+            # the same Wikidata QID. The one-to-one gate has global scope.
+            rows_all.extend(rows)
+            group_ok_ids.update(str(x) for x in ids)
         except Exception as error:
             failures.append({"batch":i,"count":len(group),"error":str(error)[:200]})
             reasons["source_unavailable"] += len(group)
         if pause and (i+1)*batch_size < len(entities):
             time.sleep(pause)
+    verified_entities=[e for e in entities
+                       if str(e["sourceIds"]["geonames"]) in group_ok_ids]
+    links,held=verify(rows_all,verified_entities)
+    reasons.update(held)
     at=datetime.now(timezone.utc).isoformat()
     out=Path(out)
     out.parent.mkdir(parents=True,exist_ok=True)
