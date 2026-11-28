@@ -109,7 +109,11 @@ const municipalities=municipalityRelease?.releaseChannel==='ISTAT_DAIT_MUNICIPAL
      e.quality?.seoIndexable && e.geo?.point && e.textSources?.length &&
      e.media?.some(m=>m.kind==='photo'&&m.subjectVerified&&m.reuseAllowed&&m.sourceUrl&&m.licence)) : [];
 // Credits derived from every published image and text, not a second source of truth.
-const centralCredits = makeCentralCredits(alpinePlaces, routes, peakPhotos, TODAY,municipalities);
+const peopleReleasePath=join(DATA,'atlas','people-v1.json');
+const peopleRelease=existsSync(peopleReleasePath)?readJson(peopleReleasePath):null;
+const people=peopleRelease?.releaseChannel==='ALPINE_PEOPLE_LINKS' &&
+    Array.isArray(peopleRelease?.entities)?peopleRelease.entities:[];
+const centralCredits = makeCentralCredits(alpinePlaces, routes, peakPhotos, TODAY,municipalities,people);
 mkdirSync(join(DIST,'data','atlas'),{recursive:true});
 writeFileSync(join(DIST,'data','atlas','credits-v1.json'),JSON.stringify(centralCredits));
 // Lightweight, public catalogue observability; regenerate on every deploy from
@@ -788,7 +792,10 @@ for(const e of municipalities) {
   const people=(e.connectedPeople||[]).filter(p=>p.verified&&p.quality==='G1'&&p.personId&&p.name);
   const peopleHtml=people.length?'<section class="cima-seo-related"><h2>Personaggi nati o legati al territorio</h2>'+
      '<p>Il luogo di nascita, la residenza storica e l’attività documentata sono relazioni diverse; nessuna connessione è ricavata dalla sola provincia.</p>'+
-     people.map(person=>'<article><strong>'+escape(person.name)+'</strong> · '+
+     people.map(person=>'<article>'+
+       (person.portrait?.url&&person.portrait.subjectVerified&&person.portrait.reuseAllowed?
+         '<img src="'+escape(person.portrait.url)+'" width="140" loading="lazy" alt="'+escape('Ritratto di '+person.name)+'">':'')+
+       '<strong>'+escape(person.name)+'</strong> · '+
        escape(person.role||'')+' · '+escape(person.relationType==='birthplace_of'?'Nata/o qui':
        person.relationType==='historical_residence_of'?'Residenza storica':'Luogo di attività')+
        (person.birthDate?' · '+escape(person.birthDate):'')+
