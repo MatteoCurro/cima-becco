@@ -209,7 +209,11 @@ def choose_candidates(entities, crosswalk, limit=48, previous=None):
         except ValueError:priority=1000
         pool.append((priority,0 if p in ("BL","TN","BZ") else 1,p,name,code))
     pool.sort()
-    return [x[-1] for x in pool[:limit]]
+    # Periodically refresh previously published dossiers as well as new ones:
+    # they must not lose facts when ISTAT/DAIT is reimported from scratch.
+    existing=sorted([code for code in done if code in crosswalk],key=lambda code:
+      next((i for i,e in enumerate(entities) if e["sourceIds"]["istat"]==code),999999))
+    return existing[:30]+[x[-1] for x in pool[:limit]]
 
 def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieved_at=None):
     """Deterministic after source fixtures; a failed source never fabricates data."""
@@ -244,6 +248,8 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
             images={};failures.append("commons:"+str(exc)[:120])
         for code,qid,item in relevant:
             entity=entities[code]
+            if code in old:
+                entity["facts"]={**old[code].get("facts",{}), **entity["facts"]}
             entity["sourceIds"]["wikidata"]=qid
             entity["sourceIds"]["wikidataVerifiedBy"]="P635"
             wd_url="https://www.wikidata.org/wiki/"+qid
@@ -288,6 +294,11 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
                         entity["description"]=intro["text"]
                         text_count+=1
                 except Exception as exc:failures.append("wiki:"+code+":"+str(exc)[:70])
+            if code in old and not any(m["kind"]=="photo" for m in entity["media"]):
+                entity["media"]=old[code].get("media",[])
+            if code in old and not entity.get("textSources"):
+                entity["textSources"]=old[code].get("textSources",[])
+                entity["description"]=old[code].get("description","")
             photo=any(m["kind"]=="photo" for m in entity["media"])
             has_text=any(len(x.get("text",""))>=120 for x in entity.get("textSources",[]))
             has_point=bool(entity["geo"].get("point"))
@@ -304,7 +315,7 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
     for code,old_e in old.items():
         if code not in entities:continue
         e=entities[code]
-        if e.get("quality",{}).get("gate")=="G0" and old_e.get("quality",{}).get("gate") in ("G1","G2"):
+        if e.get("quality",{}).get("gate")!="G2" and old_e.get("quality",{}).get("gate") in ("G1","G2"):
             e["facts"]={**old_e.get("facts",{}), **e.get("facts",{})}
             for k in ("geo","media","textSources","description","editorialStatus","quality"):
                 if k in old_e:e[k]=old_e[k]
