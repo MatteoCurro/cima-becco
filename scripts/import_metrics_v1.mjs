@@ -26,7 +26,8 @@ export function summarizeImportCatalog(){
   const shelters=file('atlas/shelters-v1.json');
   const places=file('alpine-places.json');
   const routes=file('routes-manifest.json');
-  const cai=file('atlas/cai-refuges-v1.json');
+  const people=file('atlas/people-v1.json');
+  const peopleEntities=people?.entities||[];
   const mun=municipalities?.entities||[];
   const ref=refuges?.entities||[];
   const she=shelters?.entities||[];
@@ -43,6 +44,8 @@ export function summarizeImportCatalog(){
     'Testo documentato':coverage(mun,e=>Boolean(e.textSources?.length)),
     'Relazioni territoriali':coverage(mun,e=>(e.relations||[]).length>0),
     'Stemma':coverage(mun,e=>(e.media||[]).some(m=>m.kind==='logo'&&m.reuseAllowed&&m.subjectVerified)),
+    'Personaggi documentati':coverage(mun,e=>(e.connectedPeople||[]).some(p=>p.verified)),
+    'Figure di montagna':coverage(mun,e=>(e.connectedPeople||[]).some(p=>p.verified&&p.category==='montagna')),
   };
   const sources=[
     {id:'comuni',name:'Comuni ISTAT / DAIT',count:mun.length,
@@ -67,6 +70,11 @@ export function summarizeImportCatalog(){
     {id:'luoghi',name:'Località OSM (archivio)',count:osm.length,
       facts:0,media:osm.filter(e=>e.photo?.sourceUrl&&e.photo?.license).length,
       relations:0,checkedAt:places?.generatedAt||null,coverage:{},denominator:osm.length},
+    {id:'persone',name:'Persone nel grafo (G1)',count:peopleEntities.length,
+      facts:0,media:0,relations:peopleEntities.reduce((s,e)=>s+(e.relations||[]).length,0),
+      checkedAt:people?.generatedAt||null,
+      coverage:{'Con relazione documentata':coverage(peopleEntities,e=>(e.relations||[]).some(r=>r.verified))},
+      denominator:peopleEntities.length},
     {id:'sentieri',name:'Sentieri GPX (manifest)',count:Number(routes?.routeCount)||0,
       facts:0,media:0,relations:0,checkedAt:routes?.generatedAt||null,
       coverage:{},denominator:Number(routes?.routeCount)||0},
@@ -78,13 +86,17 @@ export function summarizeImportCatalog(){
     sources,total:{
       publicEntities:mun.length+ref.length+she.length,
       municipalities:mun.length,refuges:ref.length,shelters:she.length,
+      peopleInGraph:peopleEntities.length,
+      municipalityPersonRelations:mun.reduce((s,e)=>s+(e.connectedPeople||[]).filter(p=>p.verified).length,0),
       osmPlaces:osm.length,routes:Number(routes?.routeCount)||0,
       sourcedFacts:totalFacts,attributedMedia:countMedia([...mun,...all]),
       documentedRelations:sources.reduce((sum,s)=>sum+s.relations,0)},
     quality:{
       municipalitiesG2:mun.filter(e=>e.quality?.gate==='G2').length,
       missingMunicipalElevation:mun.filter(e=>!(
-        available(e,'quotaCentroM')||available(e,'elevationReportedM'))).length,
+        available(e,'quotaCentroM')||available(e,'elevationReportedM')||
+        available(e,'altitudineTerritorioMinM')||available(e,'altitudineTerritorioMediaM')||
+        available(e,'altitudineTerritorioMaxM'))).length,
       missingMunicipalPopulation:mun.filter(e=>!(
         available(e,'popolazione')&&available(e,'populationReferenceDate'))).length,
     }
