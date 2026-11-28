@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ENDPOINT = "https://query.wikidata.org/sparql"
 UA = "CimaBecco/1.0 (open-source alpine atlas; https://github.com/MatteoCurro/cima-becco)"
 POINT = re.compile(r"^Point\((-?[0-9.]+) (-?[0-9.]+)\)$")
-QID = re.compile(r"^https://www\.wikidata\.org/entity/(Q[1-9][0-9]*)$")
+QID = re.compile(r"^https?://www\.wikidata\.org/entity/(Q[1-9][0-9]*)$")
 
 
 def chunks(data, length):
