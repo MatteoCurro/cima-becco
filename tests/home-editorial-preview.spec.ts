@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+
+// Questa verifica richiede gli asset generati da npm run build.
+test.skip(!process.env.CB_HOME_PREVIEW, 'Richiede preview della build pubblicata');
 test('Home: focus editoriale stabile nel giorno e senza vette GeoNames legacy',async({page})=>{
   await page.setViewportSize({width:1440,height:900});
   await page.goto('/');
