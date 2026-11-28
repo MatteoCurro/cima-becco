@@ -39,7 +39,8 @@ on:
       - tests/test_publish_summits_v1.py
       - tests/test_summit_batch_cursor_v1.py
   schedule:
-    - cron: '20 5 * * *'
+    # Three small, serialized G2 batches per day; raw GeoNames tiles remain unchanged.
+    - cron: '20 5,13,21 * * *'
   workflow_dispatch:
 permissions:
   contents: write
