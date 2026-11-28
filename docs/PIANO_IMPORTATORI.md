@@ -1,8 +1,22 @@
 # Cima Becco — piano di importazione e collegamenti
 
-**Data aggiornamento:** 28/11/2026. **Stato verificato:** rifugi e ricoveri pubblicati; comuni e persone G1/G2 in arricchimento incrementale; località ISTAT/OSM: 14 schede G2 pubblicate nel run 46117176744. Cime e gruppi GeoNames: G0/G1 implementato, 18 G2 reali in staging e rilascio incrementale in PR #29.
+**Data aggiornamento:** 28/11/2026. **Stato verificato:** rifugi e ricoveri pubblicati; comuni e persone in aggiornamento G1/G2; località ISTAT/OSM incremental G2 pubblicate; **18 cime GeoNames/Wikidata G2 pubblicate**, release #46120388757 e deploy Pages #46120573758 riusciti, cursore offset 100; elementi naturali §5: due piloti OSM/GeoNames G0/G1 verificati, nessuna pubblicazione SEO.
 **Specifica superiore e vincolante:** [MODELLO_METADATI_E_LAYOUT.md](MODELLO_METADATI_E_LAYOUT.md). Il presente piano organizza i lavori e NON cambia la tassonomia o le regole canoniche.  
 **UI:** [ARCHITECTURE.md](ARCHITECTURE.md); un solo sistema di ricerca, mappa, dettaglio e filtri.
+
+## Blocco 6 — passi, laghi, valli, cascate e punti panoramici: primo importatore G0/G1 (28/11/2026)
+
+**Contratto canonico:** [MODELLO_METADATI_E_LAYOUT.md](MODELLO_METADATI_E_LAYOUT.md) §§1, 5, 30–32. **Staging senza pubblicazione:** [adapter OSM](../scripts/import_natural_features_v1.py), [adapter GeoNames IT](../scripts/import_natural_geonames_v1.py), [registro](../scripts/natural_feature_field_registry_v1.json), [CI](../.github/workflows/test-import-natural-features-v1.yml). Un blocco tipologico e due adapter sorgente indipendenti, non due schedulatori sovrapposti.
+
+**Pilota OSM reale verificato:** [run #46120830491](https://github.com/MatteoCurro/cima-becco/actions/runs/46120830491) verde. Overpass, una sola cella Dolomiti (cella 2/6 della pipeline già esistente): **497 elementi raw**, **276 candidati tipizzati**, 250 elaborati (58 selle, 53 valli, 45 punti panoramici, 39 passi, 28 laghi e 27 invasi artificiali nel lotto), 3 gruppi di nomi collidenti, 7 entità in revisione, 473 collegamenti `near` senza attestare accessi, 10 test offline. L'endpoint Kumi ha dato timeout e NCHC errore DNS, il terzo ha risposto dopo i fallback: **fonte intermittente, non adatta a cron massivi**. Gli elementi senza nome/coordinate/tag appropriati restano esclusi da schede editoriali.
+
+**Pilota GeoNames ufficiale verificato:** [run #46121051196](https://github.com/MatteoCurro/cima-becco/actions/runs/46121051196) verde. Download dump `IT.zip` fonte GeoNames CC BY 4.0 con SHA256, area Dolomiti **206 candidati/staged**: 105 passi, 52 laghi, 44 valli, 5 cascate; 1 gruppo di omonimie (2 record in revisione); 294 archi `near` senza asserzioni di passaggio; 5 test offline per codici GeoNames e quote (15 test complessivi OSM + GeoNames). Nessun codice GeoNames viene confuso con l'ID OSM.
+
+**Riuso:** sorgenti/fontanelle/rubinetti sono già proprietari di `public/data/alpine-water.json` e `import_alpine_water.py`, quindi non vengono acquisiti nuovamente come feature naturali. Un lago con centro di poligono non implica una riva accessibile; `waterfallDropM` non è quota altimetrica; `reservoir` non è lago naturale; `near` non implica sicurezza/itinerario. Gli attributi dell'acqua potabile restano solo dove esplicitamente attestati.
+
+**Gate del blocco:** entrambi i pilot producono raw/QA come artifact CI e 0 pagine SEO. Prima di G2: crosswalk GeoNames–Wikidata–OSM indipendente e documentato, QID e coordinate congruenti, perimetri geoportale/OSM quando opportuni, fotografie Commons con soggetto/autore/licenza, testo documentato non generico, fonti ufficiali di accessi/restrizioni e integrazione nella ricerca/mappa/DetailLayout esistenti. Programmazione N/giorno solo dopo gate e release reale: GeoNames con checksum a nuova versione; OSM con celle incrementali/rate limit, non interrogazione totale quotidiana.
+
+---
 
 ## Blocco 5 — passaggio G2 e rilascio incrementale cime (28/11/2026)
 
