@@ -25,7 +25,7 @@ export const SOURCE_PROVIDERS = Object.freeze([
    url:'https://github.com/StarlightsJourney/HillGPX',licence:'MIT e altre licenze nelle dipendenze'},
 ]);
 
-export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedAt='',municipalities=[]) {
+export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedAt='',municipalities=[],people=[]) {
   const records=[];
   const dedup=new Set();
   const add=(kind,slug,name,src,author,licence,mediaUrl)=>{
@@ -36,11 +36,11 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
     // SAME detail page: uniqueness must include each individual media URL.
     const key=[kind,slug,src,mediaUrl||''].join('\x1f');
     if(dedup.has(key))return; dedup.add(key);
-    const path=kind==='route'?'route':kind==='peak'?'place':kind==='municipality'?'comuni':
+    const path=kind==='person'?'fonti-e-crediti':kind==='route'?'route':kind==='peak'?'place':kind==='municipality'?'comuni':
       kind==='rifugio'?'rifugi':kind==='bivacco'?'bivacchi':'borghi';
     records.push({
       kind,slug,name:String(name||slug).slice(0,180),
-      entityUrl:'/'+path+'/'+encodeURIComponent(slug)+'/',
+      entityUrl:kind==='person'?'/fonti-e-crediti/':'/'+path+'/'+encodeURIComponent(slug)+'/',
       sourceUrl:src,author:author.trim().slice(0,240),
       licence:licence.slice(0,150),mediaUrl:mediaUrl||null,
     });
@@ -68,6 +68,25 @@ export function makeCentralCredits(places=[],routes=[],peakPhotos={}, generatedA
           entityUrl:'/comuni/'+encodeURIComponent(municipality.slug)+'/',
           sourceUrl:source.sourceUrl,author:'Contributori di Wikipedia',licence:source.licence,
           sourceId:source.sourceId,sourceUpdatedAt:source.sourceUpdatedAt||null});
+      }
+    }
+  }
+  // People are G1 linked entities, not yet indexable Person dossier pages.
+  // Central credits link back to the credits register until a verified public
+  // /persone/<slug>/ page is actually implemented.
+  for(const person of people){
+    if(!/^Q[1-9][0-9]*$/.test(String(person?.qid||'')))continue;
+    for(const m of person.media||[]){
+      if(m.kind==='photo'&&m.subjectVerified&&m.reuseAllowed&&m.author&&m.licence&&m.sourceUrl)
+        add('person',person.qid,person.name,m.sourceUrl,m.author,m.licence,m.url);
+    }
+    for(const source of person.textSources||[]){
+      if(source.text&&source.sourceId&&source.sourceUrl?.startsWith('https://')&&source.licence){
+        textCredits.push({kind:'person',slug:person.qid,name:person.name,
+          entityUrl:'/fonti-e-crediti/',
+          sourceUrl:source.sourceUrl,author:source.author||'Contributori di Wikipedia',
+          licence:source.licence,sourceId:source.sourceId,
+          sourceUpdatedAt:source.sourceUpdatedAt||null});
       }
     }
   }
