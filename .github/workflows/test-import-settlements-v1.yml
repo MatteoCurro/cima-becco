@@ -53,6 +53,10 @@ jobs:
             https://www.istat.it/storage/cartografia/basi_territoriali/2021/LocalitaPuntuali_21.zip \
             -o build/import-settlements-v1/input/LocalitaPuntuali_21.zip
           python scripts/inspect_istat_geometry_v1.py build/import-settlements-v1/input/LocalitaPuntuali_21.zip
+      - name: Test georeferenziazione ISTAT 2021 e coordinate WGS84
+        run: |
+          python -m unittest discover -s tests -p 'test_enrich_settlement_istat_geometry_v1.py' -v
+          python -m pip install 'pyproj==3.7.2'
       - name: Importa localita censuarie e OSM SENZA pubblicazione
         shell: bash
         run: |
@@ -65,6 +69,14 @@ jobs:
             --refuges public/data/atlas/refuges-v1.json \
             --shelters public/data/atlas/shelters-v1.json \
             --out build/import-settlements-v1
+      - name: Arricchisci località con punto e dati popolazione censuaria (match identità)
+        run: |
+          set -euo pipefail
+          python scripts/enrich_settlement_istat_geometry_v1.py \
+            --settlements build/import-settlements-v1/settlements.json \
+            --points build/import-settlements-v1/input/LocalitaPuntuali_21.zip \
+            --out build/import-settlements-v1/settlements.json \
+            --report build/import-settlements-v1/geometry-report.json
       - name: Quality gate su fonti reali
         shell: bash
         run: |
@@ -82,8 +94,13 @@ jobs:
           assert report["totalEntities"] == len(ent)
           assert not doc["isPublished"] and report["seoIndexable"] == 0
           assert len(ent) == len({x["id"] for x in ent}) == len({x["slug"] for x in ent})
-          assert all(not x["quality"]["seoIndexable"] and x["quality"]["gate"] == "G0"
+          geo = json.loads((out/"geometry-report.json").read_text())
+          assert geo["counts"]["matched"] > 8000, geo
+          assert geo["counts"]["facts_popolazione"] > 8000, geo
+          assert all(not x["quality"]["seoIndexable"] and x["quality"]["gate"] in ("G0","G1")
                      for x in ent)
+          assert all(x["quality"]["gate"] == "G1" and "populationReferenceDate" in x["facts"]
+                     for x in ent if x["sourceIds"].get("istatLocality") and x["geo"].get("point"))
           assert all(x["kind"] == "settlement" and x["subtype"] != "frazione" for x in ent)
           assert all(rel["type"] in ("near", "part_of") for x in ent for rel in x["relations"])
           assert all(rel["verified"] is True and x["sourceIds"].get("istatLocality")
@@ -105,5 +122,6 @@ jobs:
           path: |
             build/import-settlements-v1/settlements.json
             build/import-settlements-v1/report.json
+            build/import-settlements-v1/geometry-report.json
           retention-days: 14
           if-no-files-found: warn
