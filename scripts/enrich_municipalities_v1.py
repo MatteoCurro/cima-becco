@@ -283,7 +283,9 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
                     entity["media"].append({**image,"id":"wikimedia:"+qid+":"+prop+":"+hashlib.sha1(file.encode()).hexdigest()[:12],
                         "kind":kind,"retrievedAt":retrieved_at,
                         "subjectMethod":"explicit_wikidata_"+prop+"_confirmed_P635"})
-                    media_count+=1
+                    if not any(m.get("url")==image["url"] and m.get("kind")==kind
+                               for m in old.get(code,{}).get("media",[])):
+                        media_count+=1
             wiki=((item.get("sitelinks") or {}).get("itwiki") or {}).get("title")
             if wiki:
                 try:
@@ -292,7 +294,9 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
                         intro["retrievedAt"]=retrieved_at
                         entity["textSources"]=[intro]
                         entity["description"]=intro["text"]
-                        text_count+=1
+                        if not any(t.get("sourceId")==intro["sourceId"]
+                                   for t in old.get(code,{}).get("textSources",[])):
+                            text_count+=1
                 except Exception as exc:failures.append("wiki:"+code+":"+str(exc)[:70])
             if code in old and not any(m["kind"]=="photo" for m in entity["media"]):
                 entity["media"]=old[code].get("media",[])
@@ -305,7 +309,8 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
             if has_text and photo and has_point:
                 entity["quality"]={"gate":"G2","seoIndexable":True,"reviewRequired":False,
                     "photoSourceVerified":True,"textLicenseVerified":True}
-                entity["editorialStatus"]="enriched";g2_count+=1
+                entity["editorialStatus"]="enriched"
+                if old.get(code,{}).get("quality",{}).get("gate")!="G2":g2_count+=1
             elif has_point:
                 entity["quality"]={"gate":"G1","seoIndexable":False,"reviewRequired":False}
                 entity["editorialStatus"]="linked"
