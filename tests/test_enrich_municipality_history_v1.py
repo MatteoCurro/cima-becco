@@ -4,7 +4,8 @@ import sys
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from enrich_municipality_history_v1 import (
-  parse_history_date,recorded_history_date,sdc_depicts_exact,enrich_historical)
+  parse_history_date,recorded_history_date,sdc_depicts_exact,enrich_historical,
+  article_history_candidates)
 def claim_item(qid,rank="normal"):
   return {"rank":rank,"mainsnak":{"datavalue":{"value":{"entity-type":"item","id":qid}}}}
 def claim_date(d):
@@ -63,6 +64,21 @@ class HistoryContract(unittest.TestCase):
     self.assertEqual(items[0]["subjectMethod"],"commons_media_info_P180_exact_municipality_QID")
     self.assertEqual(items[0]["author"],"Archive photographer")
     self.assertEqual(items[0]["licence"],"CC BY-SA 4.0")
+  def test_article_photo_candidate_needs_same_QID_and_full_name(self):
+    doc=release()["entities"][0]
+    doc["textSources"]=[{"sourceUrl":"https://it.wikipedia.org/wiki/Canazei"}]
+    def wiki(url,params):
+      return {"query":{"pages":{"42":{"pageprops":{"wikibase_item":"Q12345"},
+        "images":[{"title":"File:Canazei panorama 1930.jpg"},
+                  {"title":"File:Canazei-Stemma.svg"},
+                  {"title":"File:Trento old view.jpg"},
+                  {"title":"File:Canazei map 1930.jpg"}]}}}}
+    self.assertEqual(article_history_candidates(doc,getter=wiki),["Canazei panorama 1930.jpg"])
+    def other(url,params):
+      result=wiki(url,params)
+      result["query"]["pages"]["42"]["pageprops"]["wikibase_item"]="Q99999"
+      return result
+    self.assertEqual(article_history_candidates(doc,getter=other),[])
   def test_outage_does_not_erase_prior_photos(self):
     doc=release()
     doc["entities"][0]["media"]=[{"kind":"historical_photo","sourceUrl":"https://commons.wikimedia.org/wiki/File:old"}]
