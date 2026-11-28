@@ -5,7 +5,7 @@ import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from enrich_municipality_history_v1 import (
   parse_history_date,recorded_history_date,sdc_depicts_exact,enrich_historical,
-  article_history_candidates)
+  article_history_candidates,safe_historical_scene)
 def claim_item(qid,rank="normal"):
   return {"rank":rank,"mainsnak":{"datavalue":{"value":{"entity-type":"item","id":qid}}}}
 def claim_date(d):
@@ -49,6 +49,11 @@ class HistoryContract(unittest.TestCase):
     self.assertIsNone(parse_history_date("old picture around 1912"))
     self.assertIsNone(parse_history_date("+2010-02-01T00:00:00Z"))
     self.assertIsNone(parse_history_date("+1770-01-01T00:00:00Z"))
+  def test_college_before_after_cannot_be_dated_as_single_1960_scene(self):
+    self.assertFalse(safe_historical_scene(
+      {"descriptionText":"Longarone (BL) prima e dopo il disastro del Vajont del 1963"},"1960"))
+    self.assertTrue(safe_historical_scene(
+      {"descriptionText":"Pirago, hamlet of Longarone before Vajont dam disaster"},"1961"))
   def test_exact_depicts_and_date_not_upload(self):
     self.assertTrue(sdc_depicts_exact({"claims":{"P180":[claim_item("Q12345") ]}},"Q12345"))
     self.assertFalse(sdc_depicts_exact({"claims":{"P180":[claim_item("Q999")]}},"Q12345"))
