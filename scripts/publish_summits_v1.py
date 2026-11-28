@@ -49,7 +49,8 @@ def validate_entity(entity, *, staging):
         or not entity.get("id") or not isinstance(entity.get("id"),str)
         or not SLUG.fullmatch(str(entity.get("slug") or ""))
         or not entity.get("geo",{}).get("point")
-        or not any(LEGACY.fullmatch(str(s)) for s in entity.get("slugAliases",[]))
+        or not any(LEGACY.fullmatch(str(s)) and str(s).startswith("gn"+str(gn)+"-") for s in entity.get("slugAliases",[]))
+        or any(LEGACY.fullmatch(str(s)) and not str(s).startswith("gn"+str(gn)+"-") for s in entity.get("slugAliases",[]))
         or not entity.get("description") or len(entity["description"])<120
         or not any(verified_photos(entity))
         or not any(s.get("text") and len(s["text"])>=120
