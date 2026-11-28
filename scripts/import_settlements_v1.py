@@ -71,12 +71,23 @@ def official_rows(data):
         data = data.decode("utf-16").encode("utf-8")
     elif b"\x00" in data[:128]:
         raise ValueError("CSV ISTAT con codifica non riconosciuta")
-    try:
-        rows, _columns, _preamble = headered_rows(csv_matrix(data), required)
-    except ValueError as error:
-        preview = data.decode("utf-8-sig", errors="replace").splitlines()[:3]
-        raise ValueError("Intestazioni LOC 2021 non riconosciute; anteprima: " + repr([x[:240] for x in preview])) from error
-    return rows
+    # Il parser condiviso usa anche match "contains" sulle intestazioni, percio
+    # puo scegliere un separatore errato se tutta la header TAB risulta in una
+    # singola cella. Qui il tracciato ufficiale richiede match ESATTO dei campi.
+    required_exact = {"pro com", "loc21 id", "tipo loc", "nome"}
+    for matrix in csv_matrix(data):
+        for index, titles in enumerate(matrix[:25]):
+            cols = [header(x) for x in titles]
+            if not required_exact.issubset(set(cols)):
+                continue
+            if len(cols) != len(set(cols)):
+                raise ValueError("Intestazioni duplicate nel CSV ISTAT")
+            return [{key: (row[i] if i < len(row) else None)
+                     for i, key in enumerate(cols) if key}
+                    for row in matrix[index + 1:]
+                    if any(x is not None and str(x).strip() for x in row)]
+    preview = data.decode("utf-8-sig", errors="replace").splitlines()[:3]
+    raise ValueError("Intestazioni LOC 2021 non riconosciute; anteprima: " + repr([x[:240] for x in preview]))
 
 def value(row, *keys):
     for key in keys:
