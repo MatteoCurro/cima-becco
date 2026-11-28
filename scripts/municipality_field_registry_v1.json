@@ -2,14 +2,15 @@
   "version": "1.0",
   "canonicalSpec": "docs/MODELLO_METADATI_E_LAYOUT.md",
   "entityKind": "municipality",
-  "status": "staging_pilot_not_public",
-  "updatedAt": "2026-11-27",
+  "status": "published_incremental_g2_and_graph_person_g1",
+  "updatedAt": "2026-11-28",
   "rules": {
     "identity": "ISTAT code 6 chars; preserve legacy id/slug on reimport; never identity by name/distance alone",
     "safety": "mayor != fraction; population requires reference date; near != reaches != contains",
     "publication": "noindex and staging until G2 manual gate",
     "credits": "per-fact source retained; only /fonti-e-crediti/ displays attribution",
-    "daitCrosswalk": "DAIT codice_comune is NOT ISTAT; unique audited crosswalk (regionCode, provinceSigla, exact normalized official Italian name), independent source IDs, 3 unresolved discrepancies in 2026-11-27 final official pilot."
+    "daitCrosswalk": "DAIT codice_comune is NOT ISTAT; unique audited crosswalk (regionCode, provinceSigla, exact normalized official Italian name), independent source IDs, 3 unresolved discrepancies in 2026-11-27 final official pilot.",
+    "people": "person ID stable Wikidata QID; P19 birthplace direct; P551 historic deceased only; P937 work; no province or first ascent inference; no G1 person permalink; P106 mountain roles and itwiki biographical relevance for culture."
   },
   "fields": [
     {
@@ -96,7 +97,7 @@
         "ISTAT"
       ],
       "status": "partial",
-      "validation": "meters; only_if_explicit_column"
+      "validation": "Only explicit altitude of town centre; P2044 Wikidata and territory DEM are separate fields"
     },
     {
       "key": "superficieKm2",
@@ -348,7 +349,7 @@
         "internal_graph"
       ],
       "status": "partial",
-      "validation": "near_requires_point; no_implicit_located_in"
+      "validation": "near != reachable; birthplace_of != mountaineering ascent, P19/P551/P937 exact QID"
     },
     {
       "key": "sourceIds",
@@ -601,6 +602,69 @@
       ],
       "status": "implemented",
       "validation": "source_specific_reported; may_be_null; preserve_code_strings_and_reference_year"
+    },
+    {
+      "key": "elevationReportedM",
+      "priority": "P1",
+      "sources": [
+        "Wikidata P2044"
+      ],
+      "status": "implemented",
+      "validation": "metre Q11573; not equivalent to town centre altitude"
+    },
+    {
+      "key": "altitudineTerritorioMinM",
+      "priority": "P1",
+      "sources": [
+        "ISTAT Altimetria DEM 2021"
+      ],
+      "status": "implemented",
+      "validation": "territorial minimum, metre, reference 2021-12-31"
+    },
+    {
+      "key": "altitudineTerritorioMaxM",
+      "priority": "P1",
+      "sources": [
+        "ISTAT Altimetria DEM 2021"
+      ],
+      "status": "implemented",
+      "validation": "territorial maximum, metre, reference 2021-12-31"
+    },
+    {
+      "key": "altitudineTerritorioMediaM",
+      "priority": "P2",
+      "sources": [
+        "ISTAT Altimetria DEM 2021"
+      ],
+      "status": "partial",
+      "validation": "publish only if explicitly supplied"
+    },
+    {
+      "key": "connectedPeople",
+      "priority": "P2",
+      "sources": [
+        "Wikidata P19 P551 P937 P106"
+      ],
+      "status": "implemented",
+      "validation": "verified link and person ID, with categories mountain or culture, no province inference"
+    },
+    {
+      "key": "personProfiles",
+      "priority": "P2",
+      "sources": [
+        "Wikidata"
+      ],
+      "status": "implemented",
+      "validation": "separate atlas/people-v1.json G1 noindex, P19/P106 direct and P569/P570"
+    },
+    {
+      "key": "importHistory",
+      "priority": "P1",
+      "sources": [
+        "GitHub Actions"
+      ],
+      "status": "implemented",
+      "validation": "per-pipeline success events, no synthetic historical points"
     }
   ]
 }
