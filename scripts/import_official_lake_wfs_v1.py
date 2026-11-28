@@ -87,7 +87,7 @@ def discover_typename(capabilities: bytes, provider: str):
     return matches[0]
 
 
-def wfs_urls(provider: str, typename: str):
+def wfs_urls(provider: str, typename: str, *, bbox_mode="native"):
     p = PROVIDERS[provider]
     base = p["endpoint"]
     version = p["wfsVersion"]
@@ -97,17 +97,20 @@ def wfs_urls(provider: str, typename: str):
     # WFS 2.0 EPSG:4326 advertises latitude/longitude axis ordering in
     # BBOX; WFS 1.0 uses longitude/latitude. GeoJSON output is always lon/lat.
     west, south, east, north = PILOT_BBOX
-    bounds = (
-        (south, west, north, east) if version == "2.0.0"
-        else (west, south, east, north)
-    )
+    if bbox_mode not in ("native", "alternate", "none"):
+        raise ValueError("Unsupported WFS BBOX probe mode")
+    latlon = version == "2.0.0"
+    if bbox_mode == "alternate":
+        latlon = not latlon
+    bounds = (south, west, north, east) if latlon else (west, south, east, north)
     params = {
         "service": "WFS", "version": version, "request": "GetFeature",
         ("typeNames" if version == "2.0.0" else "typeName"): typename,
         ("count" if version == "2.0.0" else "maxFeatures"): MAX_FEATURES,
-        "bbox": ",".join(map(str, bounds)) + ",EPSG:4326",
         "srsName": "EPSG:4326", "outputFormat": "application/json",
     }
+    if bbox_mode != "none":
+        params["bbox"] = ",".join(map(str, bounds)) + ",EPSG:4326"
     return cap, base + "?" + urlencode(params)
 
 
@@ -258,9 +261,19 @@ def run_live(provider: str):
     cap_url, _ = wfs_urls(provider, p["layerSuffix"])
     capabilities = fetch_limited(cap_url, limit=2_000_000)
     typename = discover_typename(capabilities, provider)
-    _, get_url = wfs_urls(provider, typename)
-    raw = fetch_limited(get_url)
-    return raw, get_url, sha256(capabilities).hexdigest(), typename
+    # Some GeoServers disagree on EPSG:4326 BBOX axis order in WFS 2.0.
+    # Probe both *bounded* interpretations before a last, at-most-20-feature
+    # non-geographic diagnostic. Never silently assert sample completeness.
+    for mode in ("native", "alternate", "none"):
+        _, get_url = wfs_urls(provider, typename, bbox_mode=mode)
+        raw = fetch_limited(get_url)
+        response = json.loads(raw)
+        if response.get("type") != "FeatureCollection" or not isinstance(response.get("features"), list):
+            raise ValueError("Unexpected response from official WFS GetFeature")
+        if response["features"]:
+            print("WFS live source probe mode:", mode, "sample:", len(response["features"]), flush=True)
+            return raw, get_url, sha256(capabilities).hexdigest(), typename
+    raise RuntimeError("Official WFS returned zero features in both BBOX orders and capped diagnostic")
 
 
 def main():
