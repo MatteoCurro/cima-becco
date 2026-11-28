@@ -731,7 +731,7 @@ for (const place of alpinePlaces) {
     const former={...place,kind:'rifugio'};
     const oldPaths=new Set([atlasLegacyPath(former),atlasCanonicalPath(former)]);
     for(const oldPath of oldPaths) {
-      const file=join(DIST,oldPath.replace(/^\\//,''),'index.html');
+      const file=join(DIST,oldPath.slice(1),'index.html');
       mkdirSync(dirname(file),{recursive:true});
       writeFileSync(file,'<!doctype html><html lang="it"><head><meta charset="utf-8">'+
         '<link rel="canonical" href="'+escape(target)+'">'+
