@@ -62,7 +62,7 @@ jobs:
     timeout-minutes: 18
     permissions:
       contents: write
-      actions: read
+      actions: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -132,4 +132,9 @@ jobs:
           done
           echo 'SAT source links held because main changed during verification' >&2
           exit 1
-      # A successful push to main automatically triggers the existing Deploy workflow.
+      # GitHub deliberately suppresses workflow runs caused by GITHUB_TOKEN pushes.
+      - name: Dispatch Pages after a verified bot commit
+        if: env.SAT_ROUTE_G1_COMMITTED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --repo ${{ github.repository }} --ref main
