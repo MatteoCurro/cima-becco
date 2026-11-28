@@ -66,6 +66,27 @@ class SummitWikidataTest(unittest.TestCase):
                           [entity(100,kind="mountain_group")])
         self.assertFalse(links)
 
+    def test_cross_batch_same_wikidata_qid_never_creates_two_links(self):
+        # Previously, every 20-source batch was verified separately: the
+        # second batch could reuse the first batch's QID unnoticed.
+        with tempfile.TemporaryDirectory() as tmp:
+            src=Path(tmp)/"summits.json"
+            output=Path(tmp)/"wd-crosswalk.json"
+            src.write_text(json.dumps({"isPublished":False,
+                "releaseChannel":"GEONAMES_SUMMITS_STAGING_V1",
+                "entities":[entity(100),entity(101)]}),encoding="utf-8")
+            def api(ids):
+                if ids==["100"]:
+                    return {"results":{"bindings":[result(100,"Q123")]}}
+                if ids==["101"]:
+                    return {"results":{"bindings":[result(101,"Q123")]}}
+                raise AssertionError("Unexpected source batch")
+            report=wd.run(src,output,max_items=2,batch_size=1,pause=0,getter=api)
+            self.assertEqual(report["matched"],0)
+            self.assertEqual(report["heldReasons"]["ambiguous_geonames_for_qid"],2)
+            self.assertEqual(json.loads(output.read_text())["links"],[])
+            self.assertFalse(report["networkFailures"])
+
     def test_bounded_batch_offline_and_network_failure_reporting(self):
         with tempfile.TemporaryDirectory() as tmp:
             source=Path(tmp)/"summits.json"
