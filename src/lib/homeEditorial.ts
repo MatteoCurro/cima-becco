@@ -2,7 +2,7 @@
 export interface HomeEditorialPlace {
   kind:'town'|'refuge'|'bivacco'|'summit';
   id:string;slug:string;name:string;href:string;lat:number;lng:number;
-  cover:{url:string;sourceUrl:string;author:string;licence:string;sourceId:string|null}|null;
+  cover:{url:string;sourceUrl:string;author:string|null;licence:string;sourceId:string|null}|null;
   text:string;elevationM:number|null;factsCount:number;
   sourceIds:Record<string,string>;
   distanceToRouteKm?:number;relation?:'mapped_route'|'nearby';
@@ -50,7 +50,7 @@ export function homeDiscoveryForDay(feed:HomeEditorialFeed,date:Date,territory:H
   const daily=romeDay(date).ordinal;
   const kinds:HomeEditorialKind[]=['refuge','bivacco','town','summit'];
   return kinds.map(kind=>{
-    const items=(feed.discovery?.[kind]||[]).filter(x=>x?.href&&x?.cover?.url&&!exclude.has(x.href));
+    const items=(feed.discovery?.[kind]||[]).filter(x=>x?.href&&!exclude.has(x.href));
     if(!items.length)return {kind,items:[] as HomeEditorialPlace[]};
     const start=((daily%items.length)+items.length)%items.length;
     return {kind,items:Array.from({length:Math.min(2,items.length)},(_,i)=>items[(start+i)%items.length])};
