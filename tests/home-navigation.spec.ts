@@ -55,3 +55,26 @@ test('Ricerca cime: trova una vetta non presente fra le 74 vette in evidenza',as
   await expect(page.locator('.searchbar-results .result-name').filter({hasText:/^Monte Piana$/}).first())
     .toBeVisible({timeout:30_000});
 });
+
+
+test('Home: focus editoriale stabile nel giorno e senza vette GeoNames legacy',async({page})=>{
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/');
+  await expect(page.getByRole('heading',{name:/Cime delle Dolomiti|Le vette più alte/})).toHaveCount(0);
+  await expect(page.locator('.cb-home-daily')).toBeVisible({timeout:30_000});
+  const title=await page.locator('#cb-home-daily-title').textContent();
+  await expect(page.locator('.cb-home-focus-grid .cb-home-focus-card')).toHaveCount(6);
+  const links=await page.locator('.cb-home-focus-grid a[href]').evaluateAll(items=>
+    items.map(item=>item.getAttribute('href')||''));
+  expect(links.some(href=>/\/route\/[^/]+\/$/.test(href))).toBe(true);
+  expect(links.some(href=>/\/(comuni|borghi)\/[^/]+\/$/.test(href))).toBe(true);
+  expect(links.some(href=>/\/rifugi\/[^/]+\/$/.test(href))).toBe(true);
+  expect(links.every(href=>!href.includes('/place/gn'))).toBe(true);
+  await page.reload();
+  await expect(page.locator('.cb-home-daily')).toBeVisible({timeout:30_000});
+  expect(await page.locator('#cb-home-daily-title').textContent()).toBe(title);
+  await page.setViewportSize({width:390,height:844});
+  await expect(page.locator('.cb-home-focus-grid')).toBeVisible();
+  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(2);
+});
