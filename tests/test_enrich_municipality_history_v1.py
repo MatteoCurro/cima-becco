@@ -57,6 +57,21 @@ class HistoryContract(unittest.TestCase):
     self.assertFalse(safe_historical_scene(
       {"descriptionText":"Meyers Konversations-Lexikon 1890",
        "sourceUrl":"https://commons.wikimedia.org/wiki/File:Bozen-Bolzano_MKL_Bd._3_1890.jpg"},"1890"))
+  def test_dated_artwork_is_not_a_historical_photograph(self):
+    self.assertFalse(safe_historical_scene({
+      "sourceUrl":"https://commons.wikimedia.org/wiki/File:Bozen-Bolzano_MKL_Bd._3_1890.jpg",
+      "descriptionText":"Meyers Konversations-Lexikon, Leipzig 1890"},"1890"))
+    self.assertTrue(safe_historical_scene({
+      "sourceUrl":"https://commons.wikimedia.org/wiki/File:Dobbiaco_post_alluvione_1882.JPG",
+      "descriptionText":"Dobbiaco post alluvione del 1882"},"1882"))
+  def test_date_precision_and_conflict(self):
+    self.assertEqual(parse_history_date({"time":"+1950-07-01T00:00:00Z","precision":9}),"1950")
+    self.assertEqual(parse_history_date({"time":"+1950-07-01T00:00:00Z","precision":10}),"1950-07")
+    self.assertEqual(parse_history_date({"time":"+1950-07-01T00:00:00Z","precision":11}),"1950-07-01")
+    self.assertIsNone(parse_history_date({"time":"+1950-01-01T00:00:00Z","precision":8}))
+    self.assertFalse(safe_historical_scene({
+      "descriptionText":"Umberto di Savoia al Passo della Mauria, il 26 agosto 1926",
+      "sourceUrl":"https://commons.wikimedia.org/wiki/File:Lorenzago_di_Cadore.jpg"},"1926-08-23"))
   def test_exact_depicts_and_date_not_upload(self):
     self.assertTrue(sdc_depicts_exact({"claims":{"P180":[claim_item("Q12345") ]}},"Q12345"))
     self.assertFalse(sdc_depicts_exact({"claims":{"P180":[claim_item("Q999")]}},"Q12345"))
