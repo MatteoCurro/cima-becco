@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from enrich_municipality_people_v1 import enrich_profiles
+from enrich_municipality_people_v1 import enrich_profiles,portrait_candidate
 
 def item_claim(qid):
     return {"rank":"normal","mainsnak":{"datavalue":{"value":{"entity-type":"item","id":qid}}}}
@@ -75,6 +75,26 @@ class PersonProfileContract(unittest.TestCase):
         self.assertEqual(person["claim"]["status"],"not_enabled")
         self.assertIsNone(person["claim"]["verifiedUserId"])
         self.assertFalse(person["quality"]["seoIndexable"])
+    def test_p18_can_be_a_monument_or_banner_not_person_avatar(self):
+        for filename in (
+          "Claus_Gatterer_Filmretrospektive_Banner_Bruneck_2014_b.jpg",
+          "Annibale_De_Lotto_monumento_carlotti_03_firma.jpg",
+          "Titian_-_Allegorie_der_Zeit_(cropped).jpg",
+          "Luigi_Gillarduzzi_Hagar_und_Ismael.jpg",
+          "Споруда_з_круглим_храмом.jpg",
+        ):
+            self.assertFalse(portrait_candidate(filename),filename)
+        self.assertTrue(portrait_candidate("Valentino_Rovisi_Autoportret_1730.jpg"))
+        self.assertTrue(portrait_candidate("Anna_Comarella_850_4530.jpg"))
+        # The media is still archived with provenance, only avatar use is
+        # disabled until manual subject review.
+        profiles=self.base()
+        result_item=test_item("Claus_Gatterer_Filmretrospektive_Banner.jpg")
+        report=enrich_profiles(profiles,{"Q101":result_item},getter=source)
+        self.assertEqual(report["portraitsAdded"],1)
+        self.assertEqual(report["imagesHeldForReview"],1)
+        self.assertFalse(profiles["Q101"]["media"][0]["portraitCandidate"])
+        self.assertNotIn("avatarMediaId",profiles["Q101"])
     def test_wrong_biography_qid_rejected(self):
         def invalid(url,params):
             result=source(url,params)
