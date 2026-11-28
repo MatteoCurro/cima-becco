@@ -28,7 +28,8 @@
 .cb-municipality-profile .cb-person-card h4{font:900 clamp(19px,2vw,25px)/1.1 'Bricolage Grotesque',sans-serif;letter-spacing:-.03em;margin:10px 0 6px}
 .cb-municipality-profile .cb-atlas-nearby h3{margin:18px 0 8px}
 .cb-municipality-historical-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.cb-municipality-historical-gallery figure{margin:0}.cb-municipality-historical-gallery img{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:7px}
+.cb-municipality-historical-gallery figure{margin:0;min-width:0}
+.cb-municipality-historical-gallery img{display:block;width:100%;aspect-ratio:3/2;object-fit:contain;background:#e3eadf;border-radius:7px}
 .cb-municipality-historical-gallery figcaption{font:600 11px/1.5 'Space Grotesk',sans-serif;color:#6c806f;margin:6px 0}
 .cb-municipality-archive{margin-top:25px}
 .cb-municipality-archive>details{padding:18px 0;border-top:1px solid #d7e5d5}
