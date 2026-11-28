@@ -1176,7 +1176,7 @@ function spotlightMarker(venue: Venue): Marker {
   pin.addEventListener('click', (event) => {
     event.stopPropagation();
     // Venue pages open in their own tab, like the cards.
-    window.open(`#venue/${venue.slug}`, '_blank', 'noopener');
+    window.open(import.meta.env.BASE_URL+'#venue/'+encodeURIComponent(venue.slug), '_blank', 'noopener');
   });
   anchor.appendChild(pin);
   return new Marker({ element: anchor, anchor: 'center' }).setLngLat([venue.lng, venue.lat]);
