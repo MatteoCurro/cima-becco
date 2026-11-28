@@ -42,21 +42,22 @@ function qualified(row:NaturalPass):boolean{
     !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(row.slug||'')||
     !Number.isFinite(row.geo?.point?.lat)||
     !Number.isFinite(row.geo?.point?.lng)||
-    !Number.isFinite(row.facts?.elevationM?.value)||
+    typeof row.facts?.elevationM?.value!=='number'||
+    !Number.isFinite(row.facts.elevationM.value)||
     !row.description||row.description.length<120)return false;
-  return row.media?.some(m=>
+  return Boolean(row.media?.some(m=>
     m.kind==='photo'&&m.subjectVerified===true&&m.reuseAllowed===true&&
     m.subjectMethod==='verified_GeoNames_P1566_Wikidata_P625_P18'&&
     m.sourceId==='wikidata:'+row.sourceIds.wikidata+':P18'&&
     !!m.author&&!!m.licence&&
     m.sourceUrl?.startsWith('https://commons.wikimedia.org/')&&
     m.url?.startsWith('https://')
-  ) && row.textSources?.some(t=>
+  )) && Boolean(row.textSources?.some(t=>
     t.licence==='CC BY-SA 4.0'&&
     t.sourceId?.startsWith('wikipedia:it:')&&
     t.sourceUrl?.startsWith('https://it.wikipedia.org/')&&
     !!t.text&&t.text.length>=120
-  )===true;
+  ));
 }
 
 /** Invalid provider release, duplicate QID or suspect rows fail closed. */
