@@ -256,8 +256,8 @@ def build(release,*,getter=None,previous_people=None,checked_at=None,batch=6,max
       "municipalitiesWithPeople":sum(bool(m.get("connectedPeople")) for m in municipalities),
       "municipalityPeopleLinks":sum(len(m.get("connectedPeople",[])) for m in municipalities),
       "newLinksInRun":linked,
-      "mountainLinks":sum(sum(p["category"]=="montagna" for p in m.get("connectedPeople",[])) for m in municipalities),
-      "otherNotableLinks":sum(sum(p["category"]=="cultura_e_ricerca" for p in m.get("connectedPeople",[])) for m in municipalities),
+      "mountainLinks":sum(sum(p.get("category")=="montagna" for p in m.get("connectedPeople",[])) for m in municipalities),
+      "otherNotableLinks":sum(sum(p.get("category")=="cultura_e_ricerca" for p in m.get("connectedPeople",[])) for m in municipalities),
       "errors":errors,
       "quality":"G1; no personal permalink or inferred ascent"
     }
