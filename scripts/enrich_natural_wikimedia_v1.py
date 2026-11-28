@@ -29,7 +29,7 @@ GN_STAGE="GEONAMES_NATURAL_FEATURES_STAGING_V1"
 CROSSWALK_STAGE="NATURAL_FEATURES_IDENTITY_STAGING_V1"
 OUT_STAGE="NATURAL_FEATURES_G2_CANDIDATES_STAGING_V1"
 WIKIDATA="https://www.wikidata.org/wiki/"
-G2_ALLOWED={"mountain_pass","saddle","waterfall","viewpoint"}
+G2_ALLOWED={"mountain_pass","saddle","waterfall","viewpoint","lake","reservoir"}
 
 def batches(rows,size=20):
     for start in range(0,len(rows),size):
@@ -238,7 +238,17 @@ def enrich(geonames, crosswalk, *, limit=240,
                 held["no_verified_itwiki_narrative"]+=1
             # The coordinate of a water polygon/valley is not its physical
             # extent; an informative text alone does not certify the geometry.
-            geo_review=doc["subtype"] in ("lake","reservoir","valley") and not doc["geo"].get("area")
+            water_body=doc["subtype"] in ("lake","reservoir")
+            water_area_verified=(bool(doc["geo"].get("area"))
+                and doc["geo"]["area"].get("type")=="MultiPolygon"
+                and doc["quality"].get("geometryTopologyVerified") is True
+                and doc["sourceIds"].get("osmVerifiedBy")=="P1566_P625_and_exact_OSM_QID_or_GeoNames_ID"
+                and (doc["geo"].get("areaSourceUrl")==
+                     "https://www.openstreetmap.org/"+str(doc["sourceIds"].get("osm","")))
+                and doc["facts"].get("osmMappedWaterSurfaceKm2",{}).get("licence")=="ODbL 1.0"
+                and doc["facts"].get("osmMappedWaterSurfaceKm2",{}).get("method")=="derived")
+            geo_review=(water_body and not water_area_verified) or (
+                doc["subtype"]=="valley" and not doc["geo"].get("area"))
             if geo_review:
                 doc["quality"]["needsAreaGeometryReview"]=True
                 held["lake_valley_polygon_not_verified"]+=1
