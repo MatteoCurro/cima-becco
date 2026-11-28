@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "canonicalSpec": "docs/MODELLO_METADATI_E_LAYOUT.md sections 1 and 5",
   "kind": "natural_feature",
-  "status": "G0_G1_real_pilots_verified_and_five_G2_staging_candidates",
+  "status": "G1_water_geometry_58_real_OSM_boundaries_6_verified_GN_links_pending_G2",
   "subtypes": [
     {
       "type": "mountain_pass",
@@ -117,6 +117,22 @@
       "id": "regional_meteo",
       "status": "future",
       "content": "closures, restrictions, seasonal flow; separate TTL"
+    },
+    {
+      "id": "bolzano_lakes_wfs",
+      "status": "official_catalog_metadata_verified_no_features_imported",
+      "sourceUrl": "https://data.civis.bz.it/dataset/laghi",
+      "license": "CC0",
+      "scope": "Provincia autonoma Bolzano, physical lake boundaries",
+      "notes": "Verify live WFS GetCapabilities/GetFeature and source IDs before adapter; never correlate on name alone."
+    },
+    {
+      "id": "arpav_water_bodies_wfs",
+      "status": "official_rndt_metadata_verified_no_features_imported",
+      "sourceUrl": "https://geodati.gov.it/geoportale/visualizzazione-metadati/scheda-metadati?metadataid=arpa_ve:idrografia_specchio_acqua",
+      "license": "CC BY 3.0",
+      "scope": "Veneto, mapped surface water bodies at 1:10,000 scale",
+      "notes": "Geometries are a second independently attributed source, not replacements for OSM or confirmed lake accesses."
     }
   ],
   "verifiedNow": [
@@ -129,7 +145,10 @@
     "waterfallDropM if explicit height",
     "localNames if explicit OSM tagged",
     "facts provenance fields",
-    "near only with no access claims"
+    "near only with no access claims",
+    "geo.area source-backed lake/reservoir multipolygon geometry with OSM ID and island holes (58 verified in real pilot)",
+    "osmMappedWaterSurfaceKm2 derived calculation with ODbL and no official-area claim",
+    "6 GeoNames/Wikidata/OSM exact-identity water polygon bridges; no name-distance merges"
   ],
   "pendingG2": [
     "Verified P1566/P625 with OSM QID bridge and Commons P18 is completed for candidates; require same checks for next source batches",
@@ -181,12 +200,45 @@
       "offlineTests": 32,
       "sourceFailures": 0,
       "decisions": "No cross-source joins based on name or proximity; Wikipedia altitude alternatives audited; no lake/valley G2 without area."
+    },
+    "waterGeometry": {
+      "run": "46124793037",
+      "originalSourceRun": "46124442053",
+      "realOverpassElements": 59,
+      "verifiedBoundaries": 58,
+      "lakeBoundaries": 35,
+      "reservoirBoundaries": 23,
+      "geonamesQidOsmBridges": 6,
+      "unverifiedComplexGeometry": 1,
+      "geonamesPointOutsideBoundary": 1,
+      "osmVsGeonamesSubtypeConflicts": 4,
+      "osmExactIdentifierNotUniqueOrMissing": 2,
+      "intermittentTagged": 2,
+      "sourceSnapshotSha256": "eec7766c826349e55364f7d29cbed71927ea1de824b0a9d163ddd4d6552a9559",
+      "g2PotentialFromPreviouslyAuditedP18Wiki": [
+        "Lago Sorapis",
+        "Lago di Landro"
+      ],
+      "published": 0,
+      "seo": 0,
+      "offlineTests": 45
     }
   },
   "stagingArtifacts": [
     "build/import-natural-features-v1/features.json when Overpass available",
     "build/import-natural-features-v1/features-geonames.json from official GeoNames",
-    "run-reports and source snapshots in GitHub Actions artifacts"
+    "run-reports and source snapshots in GitHub Actions artifacts",
+    "build/import-natural-water-geometry-v1/water-geometry-staging.json (G1/noindex)",
+    "build/import-natural-water-geometry-v1/raw/water-geometry-response.json (OSM raw query+sha)"
   ],
-  "nextStep": "Cross-source entity resolution and source-specific multimedia enrichment before any G2/SEO release"
+  "nextStep": "G2 independently revalidate at least Sorapis/Landro P18, itwiki, typed altitude and exact outlines; then safe canonical lake detail+SEO release; retain all other lake/reservoir G1 and pilot regional WFS separately",
+  "geometryContract": {
+    "geometry": "geo.area as GeoJSON MultiPolygon (lon,lat WGS84)",
+    "source": "OSM way/relation out geom; for new requests out meta geom",
+    "identity": "independent P1566/P625 crosswalk plus exact OSM QID or ref:geonames, matching lake/reservoir subtype and GN point strictly inside water excluding island holes",
+    "topology": "closed simple rings; stitch outer+inner; reject missing members, self intersections, oversized rings, undetermined islands",
+    "areaFact": "facts.osmMappedWaterSurfaceKm2 (km2, derived, ODbL 1.0, not official surface)",
+    "review": "ambiguous or conflicting QIDs; lake/reservoir classification; GN representative point outside water; unsupported geometry; seasonal only if explicitly tagged",
+    "seo": "G1/noindex; no full lake page or water access/potability invented"
+  }
 }
