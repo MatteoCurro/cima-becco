@@ -144,6 +144,31 @@ jobs:
                 report["nearUnverified"], "vicinanze NON attestanti accessibilita")
           print("Coda di revisione:", report["rejected"])
           PY
+      - name: Verifica frontend/SEO con catalogo G2 in working tree effimero
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp build/import-settlements-v1/settlements-g2.json public/data/atlas/settlements-v1.json
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          doc=json.loads(Path('public/data/atlas/settlements-v1.json').read_text())
+          s=Path('dist/sitemap.xml').read_text()
+          for entity in doc['entities']:
+              dest=Path('dist/borghi')/entity['slug']/'index.html'
+              assert dest.is_file(), ('G2 without SEO permalink',entity['slug'])
+              assert '/borghi/'+entity['slug']+'/' in s,entity['slug']
+              html=dest.read_text()
+              assert entity['name'] in html,entity['slug']
+              assert 'schema.org' in html,entity['slug']
+          print('G2 in build simulata:',len(doc['entities']))
+          PY
       - name: Pubblica solo artefatti di staging, NON public/data
         if: always()
         uses: actions/upload-artifact@v4
