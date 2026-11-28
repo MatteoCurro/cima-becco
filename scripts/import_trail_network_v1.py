@@ -175,6 +175,10 @@ def _components(edges):
             parent[find(node)]=find(nodes[0])
     return len({find(n) for n in parent})
 
+def canonical_source_json(source):
+    """Byte-stable source representation for reproducible audit and checksum."""
+    return json.dumps(source,ensure_ascii=False,sort_keys=True,separators=(",",":"))
+
 def build_graph(source,bbox=BBOX,*,at="2026-11-28T00:00:00+00:00",max_ways=1400):
     validate_bbox(bbox)
     if not isinstance(source,dict) or not isinstance(source.get("elements"),list) or source.get("remark"):
@@ -286,8 +290,7 @@ def build_graph(source,bbox=BBOX,*,at="2026-11-28T00:00:00+00:00",max_ways=1400)
         "schemaVersion":"1.0","releaseChannel":CHANNEL,"isPublished":False,
         "seoIndexable":False,"routeCatalogueModified":False,"source":"OpenStreetMap",
         "licence":"ODbL 1.0","retrievedAt":at,
-        "sourceSnapshotSha256":sha256(json.dumps(source,ensure_ascii=False,sort_keys=True,
-            separators=(",",":")).encode()).hexdigest(),
+        "sourceSnapshotSha256":sha256(canonical_source_json(source).encode("utf-8")).hexdigest(),
         "bbox":[*bbox],
         "counts":{"sourceElements":len(rows),"waysAccepted":len(ways),
             "graphNodes":len(coords_by_id),"graphSegments":len(segments),
@@ -315,9 +318,17 @@ def main():
     now=datetime.now(timezone.utc).isoformat()
     output=build_graph(src,tuple(args.bbox),at=now,max_ways=args.max_ways)
     args.out.mkdir(parents=True,exist_ok=True)
+    # The checksum is not useful as evidence unless the original Overpass
+    # elements are also retained. Artifact only: never write this in public/.
+    snapshot=canonical_source_json(src)
+    if sha256(snapshot.encode("utf-8")).hexdigest()!=output["sourceSnapshotSha256"]:
+        raise ValueError("Source snapshot checksum mismatch; refusing G0 audit")
+    (args.out/"source-overpass-g0.json").write_text(snapshot+"\n",encoding="utf-8")
     for name,doc in (("physical-graph-g0.json",output),
                      ("audit.json",{"releaseChannel":CHANNEL,"counts":output["counts"],
-                                    "bbox":output["bbox"],"isPublished":False})):
+                                    "bbox":output["bbox"],"isPublished":False,
+                                    "sourceSnapshotFile":"source-overpass-g0.json",
+                                    "sourceSnapshotSha256":output["sourceSnapshotSha256"]})):
         (args.out/name).write_text(json.dumps(doc,ensure_ascii=False,sort_keys=True,
               indent=2)+"\n",encoding="utf-8")
     print(json.dumps(output["counts"],ensure_ascii=False))
