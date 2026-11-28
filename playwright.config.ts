@@ -20,9 +20,13 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
+    // Only the dedicated published-home smoke test needs the built Vite assets.
+    // Legacy responsive tests run against the dev server exactly as before.
+    command: process.env.CB_HOME_PREVIEW
+      ? 'npm run preview -- --host 127.0.0.1 --port 5180'
+      : 'npm run dev',
     url: 'http://localhost:5180',
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
     timeout: 30_000,
   },
 });
