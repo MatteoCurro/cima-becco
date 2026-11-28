@@ -116,6 +116,19 @@ class SettlementImportTests(unittest.TestCase):
         self.assertIsNone(x["parentMunicipalityId"])
         self.assertEqual(x["quality"]["gate"], "G0")
 
+    def test_slug_collision_with_existing_suffix_is_not_recreated(self):
+        from import_settlements_v1 import unique_slug
+        entities = [
+            {"id": "11111111-0000-0000-0000-000000000000", "slug": "alba", "quality": {}},
+            {"id": "22222222-0000-0000-0000-000000000000", "slug": "alba", "quality": {}},
+            {"id": "33333333-0000-0000-0000-000000000000", "slug": "alba-1", "quality": {}},
+            {"id": "44444444-0000-0000-0000-000000000000", "slug": "alba-11111111", "quality": {}},
+        ]
+        self.assertEqual(unique_slug(entities), 1)
+        self.assertEqual(len({x["slug"] for x in entities}), len(entities))
+        self.assertEqual(entities[0]["slug"], "alba-111111110000")
+        self.assertTrue(entities[0]["quality"]["slugRequiresReview"])
+
     def test_bad_identity_rejected_instead_of_derived(self):
         row = official_rows(CSV.encode())[0].copy()
         row["loc21 id"] = ""
