@@ -1,0 +1,169 @@
+name: Release verified GeoNames summit dossiers G2
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release-summits-v1.yml
+      - scripts/import_summits_v1.py
+      - scripts/publish_summits_v1.py
+      - scripts/summit_batch_cursor_v1.py
+      - scripts/enrich_summits_wikimedia_v1.py
+      - scripts/build_seo.mjs
+      - scripts/build_source_credits.mjs
+      - src/lib/summitRelease.ts
+      - src/lib/worldPeaks.ts
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/release-summits-v1.yml
+      - scripts/import_summits_v1.py
+      - scripts/publish_summits_v1.py
+      - scripts/summit_batch_cursor_v1.py
+      - scripts/enrich_summits_wikimedia_v1.py
+      - scripts/build_seo.mjs
+      - scripts/build_source_credits.mjs
+      - src/lib/summitRelease.ts
+      - src/lib/worldPeaks.ts
+  schedule:
+    - cron: '20 5 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: cima-summits-g2-main-safe-release
+  cancel-in-progress: false
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Offline source, release and cursor regressions
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_import_summits_v1.py' -v
+          python -m unittest discover -s tests -p 'test_resolve_summit_wikidata_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_summits_wikimedia_v1.py' -v
+          python -m unittest discover -s tests -p 'test_publish_summits_v1.py' -v
+          python -m unittest discover -s tests -p 'test_summit_batch_cursor_v1.py' -v
+      - name: Full frontend and SEO regression suite
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build
+          node scripts/check_permalinks.mjs
+          node scripts/test_central_credits.mjs
+  publish:
+    needs: contract
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Select only next successfully completed source batch
+        run: |
+          offset="$(python scripts/summit_batch_cursor_v1.py --history public/data/atlas/import-history-cime-v1.json --size 100)"
+          echo "CIME_OFFSET=$offset" >> "$GITHUB_ENV"
+          echo "Summit G2 source cursor: $offset"
+      - name: Read unchanged GeoNames tile dataset and candidate relations
+        run: |
+          python scripts/import_summits_v1.py \
+            --bbox 46.1 11.2 47.1 13.0 \
+            --max-entities 100 --offset "$CIME_OFFSET" --min-entities 1 \
+            --with-near --out build/import-summits-v1
+      - name: Audited exact-source Wikidata P1566/P625
+        run: |
+          python scripts/resolve_summit_wikidata_v1.py \
+            --stage build/import-summits-v1/summits.json \
+            --out build/import-summits-v1/wikidata-map.json \
+            --max-items 100 --batch-size 20 --pause 1.5
+      - name: Verified Commons P18 and QID-matched Wikipedia text
+        run: |
+          python scripts/enrich_summits_wikimedia_v1.py \
+            --stage build/import-summits-v1/summits.json \
+            --wikidata-map build/import-summits-v1/wikidata-map.json \
+            --out build/import-summits-v1/summits-g2.json \
+            --report build/import-summits-v1/g2-report.json \
+            --max-items 100
+      - name: Require at least one genuinely complete G2
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('build/import-summits-v1/summits-g2.json').read_text())
+          x=json.loads(Path('build/import-summits-v1/g2-report.json').read_text())
+          assert d['isPublished'] is False and d['releaseChannel']=='GEONAMES_SUMMITS_G2_STAGING_V1'
+          assert len(d['entities'])==x['enrichedG2'] and d['entities'], x
+          print('Verified G2 summit candidates:',len(d['entities']))
+          PY
+      - name: Install build tools for the FINAL union
+        run: npm ci
+      - name: Merge latest G2 safely, rebuild SEO and push without overwrite
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          temp="$(mktemp -d)"
+          cp build/import-summits-v1/summits-g2.json "$temp/incoming.json"
+          cp build/import-summits-v1/report.json "$temp/source-report.json"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            # The source dossier is kept outside this disposable CI checkout.
+            git reset --hard origin/main
+            python scripts/publish_summits_v1.py \
+              --current public/data/atlas/summits-v1.json \
+              --incoming "$temp/incoming.json" \
+              --out public/data/atlas/summits-v1.json \
+              --history public/data/atlas/import-history-cime-v1.json \
+              --source-report "$temp/source-report.json" \
+              --run-id "$GITHUB_RUN_ID"
+            npm run build
+            node scripts/check_permalinks.mjs
+            node scripts/test_central_credits.mjs
+            git add public/data/atlas/summits-v1.json public/data/atlas/import-history-cime-v1.json
+            if git diff --cached --quiet; then
+              echo 'No changes after checked merge.'
+              exit 0
+            fi
+            git commit -m "data(cime): publish GeoNames-Wikidata G2 and advance audited cursor"
+            if git push origin HEAD:main; then
+              echo 'Summit G2 data committed on main.'
+              echo 'CIME_RELEASE_COMMITTED=true' >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "Concurrent main update: retry G2 semantic union ($attempt/3)"
+          done
+          echo 'Summit G2 publication blocked by concurrent edits; never force push.' >&2
+          exit 1
+      - name: Request Pages publication of the latest main commit
+        if: env.CIME_RELEASE_COMMITTED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref main
+      - name: Archive audited source, G2 and report artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cima-becco-summits-g2-release-audit
+          path: build/import-summits-v1/
+          retention-days: 14
+          if-no-files-found: warn
