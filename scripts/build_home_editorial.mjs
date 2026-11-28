@@ -19,9 +19,9 @@ const safe = value => typeof value === 'string' ? value.trim() : '';
 const validPoint = value => Number.isFinite(value?.lat) && Number.isFinite(value?.lng) &&
   Math.abs(value.lat) <= 90 && Math.abs(value.lng) <= 180;
 const validName = name => safe(name).length >= 3 && !/^[\d\s.,m-]+$/i.test(name);
-const richness = item => (safe(item.description).length >= 110 ? 4 : 0) +
-  Math.min(7, Object.values(item.facts || {}).filter(f => f?.value !== null && f?.value !== undefined).length) +
-  (item.cover ? 4 : 0);
+const richness = item => (safe(item.description || item.text).length >= 110 ? 4 : 0) +
+  Math.min(7, item.factsCount ?? Object.values(item.facts || {}).filter(f => f?.value != null).length) +
+  (item.cover || photo(item) ? 4 : 0);
 const excerpt = value => {
   const s = safe(value).replace(/\s+/g, ' ');
   if (s.length <= 195) return s;
