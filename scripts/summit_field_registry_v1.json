@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "kind": "summit",
+  "spec": "docs/MODELLO_METADATI_E_LAYOUT.md section 4",
+  "status": "staging_only",
+  "publishing": "G0/G1 noindex; G2 requires verified identity, enriched dossier and licensed media",
+  "reuse": [
+    "public/data/peaks/index.json",
+    "public/data/peaks/5-degree tiles",
+    "public/data/peaks/photos.json"
+  ],
+  "sources": [
+    {
+      "id": "geonames",
+      "role": "primary identity, feature code and elevation",
+      "license": "CC BY 4.0",
+      "status": "existing_catalog"
+    },
+    {
+      "id": "wikidata",
+      "role": "crosswalk through exact P1566",
+      "license": "CC0",
+      "status": "supported offline; live source pending"
+    },
+    {
+      "id": "osm",
+      "role": "complementary source and aliases",
+      "status": "pending; no proximity-only merge"
+    },
+    {
+      "id": "commons",
+      "role": "photographs",
+      "status": "legacy photos are review-only, not certified"
+    },
+    {
+      "id": "dem",
+      "role": "provider elevation flag d is estimated",
+      "status": "supported"
+    },
+    {
+      "id": "cai_sat",
+      "role": "access trails and history",
+      "status": "future verified-only relations"
+    }
+  ],
+  "fields": [
+    {
+      "name": "id/sourceIds",
+      "priority": "P0",
+      "status": "staging implemented"
+    },
+    {
+      "name": "kind/subtype",
+      "priority": "P0",
+      "status": "GeoNames PK MT HLL MTS HLLS PKSU classified"
+    },
+    {
+      "name": "slug/slugAliases",
+      "priority": "P0",
+      "status": "human-readable candidate; old GeoNames links preserved; collisions reviewed"
+    },
+    {
+      "name": "geo.point",
+      "priority": "P0",
+      "status": "provider coordinate"
+    },
+    {
+      "name": "geo.area",
+      "priority": "P1",
+      "status": "pending; groups do not imply polygons"
+    },
+    {
+      "name": "elevationM/elevationMethod",
+      "priority": "P1",
+      "status": "reported or estimated; source fact"
+    },
+    {
+      "name": "aliases/localNames",
+      "priority": "P1",
+      "status": "pending Wikidata/OSM"
+    },
+    {
+      "name": "prominenceM",
+      "priority": "P1",
+      "status": "pending verified catalog"
+    },
+    {
+      "name": "administrativeHierarchy",
+      "priority": "P1",
+      "status": "country only; municipality verified-link pending"
+    },
+    {
+      "name": "relations.near",
+      "priority": "P1",
+      "status": "haversine, unverified physical access"
+    },
+    {
+      "name": "relations.accessible_from/ascends_to",
+      "priority": "P1",
+      "status": "pending qualified route evidence"
+    },
+    {
+      "name": "history/firstAscent",
+      "priority": "P1/P2",
+      "status": "pending historical sources"
+    },
+    {
+      "name": "media",
+      "priority": "P1",
+      "status": "unverified GeoNames-cache files not public"
+    },
+    {
+      "name": "geology/protection",
+      "priority": "P2",
+      "status": "pending geoportal"
+    },
+    {
+      "name": "weatherRef/alerts",
+      "priority": "P2/P0",
+      "status": "future separate TTL"
+    }
+  ]
+}

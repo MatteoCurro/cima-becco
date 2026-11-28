@@ -1,8 +1,24 @@
 # Cima Becco — piano di importazione e collegamenti
 
-**Data aggiornamento:** 28/11/2026. **Stato verificato:** rifugi e ricoveri pubblicati; Comuni incrementali G2 pubblicati (111 al run 46108239132) e 258 profili persone G1 noindex; blocco 4 località ISTAT/OSM in pilota isolato PR #21, non pubblicato.  
+**Data aggiornamento:** 28/11/2026. **Stato verificato:** rifugi e ricoveri pubblicati; comuni e persone G1/G2 in arricchimento incrementale; località ISTAT/OSM: 14 schede G2 pubblicate nel run 46117176744. Blocco successivo: cime e gruppi GeoNames in staging G0/G1, nessuna pagina SEO nuova.
 **Specifica superiore e vincolante:** [MODELLO_METADATI_E_LAYOUT.md](MODELLO_METADATI_E_LAYOUT.md). Il presente piano organizza i lavori e NON cambia la tassonomia o le regole canoniche.  
 **UI:** [ARCHITECTURE.md](ARCHITECTURE.md); un solo sistema di ricerca, mappa, dettaglio e filtri.
+
+## Blocco 5 — cime e gruppi montuosi: pilota GeoNames G0/G1 (28/11/2026)
+
+**Codice:** [import_summits_v1.py](../scripts/import_summits_v1.py) · **registro metadati:** [summit_field_registry_v1.json](../scripts/summit_field_registry_v1.json) · **test:** [test_import_summits_v1.py](../tests/test_import_summits_v1.py) · **workflow isolato:** [test-import-summits-v1.yml](../.github/workflows/test-import-summits-v1.yml).
+
+**Esito verificato su fonti già presenti in repository:** [run #46118389236](https://github.com/MatteoCurro/cima-becco/actions/runs/46118389236) verde, 8 test offline superati, **1.884 candidati** nella finestra geografica 46,1–47,1 N / 11,2–13,0 E, **250 dossier** campionati (246 cime + 4 gruppi), **21 nomi ambigui** segnalati, **53 archi `near`** senza attestare accessibilità, **3 fotografie solo candidate**; nessuna fotografia promossa, nessuna associazione Wikidata P1566 ancora acquisita nel pilota, **zero schede indicizzate o pubblicate**. 33 righe del tile non superano il parser limitato alle feature di montagna.
+
+**Fonte e riuso:** GeoNames esistente in `public/data/peaks` (CC BY 4.0); non generare una seconda mappa delle cime finché non vengono riconciliate con gli slug legacy `gn<ID>-<tile>` del frontend `worldPeaks.ts`. I record hanno identificativo UUID5 stabile, campo origine e SHA256 di indice/tiles, quote `s` dichiarate vs `d` stimate, tipologia PK/MT/HLL distinta dai gruppi MTS/HLLS/PKSU. Un punto rappresentativo del gruppo **non** equivale al suo perimetro. Il modulo legge solo tiles necessari e i cataloghi del grafo già verificati; le sorgenti adiacenti sono caricate una volta sola.
+
+**Arricchimento Wikidata su fonti reali:** [run #46118701120](https://github.com/MatteoCurro/cima-becco/actions/runs/46118701120) su 40 cime GeoNames: **34 collegamenti P1566/P625 compatibili**, 6 non convalidati, di cui 4 collisioni un medesimo QID ↔ identificativi GeoNames diversi; **0 errori di rete**. Test offline dell'adapter P1566/P625: 8 superati. La prima verifica live aveva restituito 0 match per un parser URI che ammetteva soltanto `https`; corretto per il formato SPARQL canonico `http`, rifatto il test su dati reali. Questi 34 crosswalk sono **solo in staging**, non sono prove di fotografie, storia o percorribilità. Il resolver separato [resolve_summit_wikidata_v1.py](../scripts/resolve_summit_wikidata_v1.py) è parte del medesimo importatore (fase di entity resolution), batch limitati e tracciamento errori.
+
+**Fonti aggiuntive necessarie prima di G2:** P18/Commons con autore/licenza/soggetto verificati, OSM per alias e classificazione *senza merge per distanza*, geoportali/DEM con quota distinta da quella ufficiale e fonti storiche CAI/SAT per prime ascensioni e vie. Medie, prominenze, accessibilità, panorami e storia non si sintetizzano in mancanza di fonte.
+
+**Gate:** nessun aggiornamento a `public/data` o al frontend, snapshot raw locale e artefatto CI, G0 per slug ambigui e per gruppi senza geometria, G1 per cime nominate e identificate, tutte `noindex`. Prima della promozione: matrice di conflitti GeoNames/OSM/Wikidata, risoluzione toponimi omonimi, esempi di fotografie specifiche, fonti narrative reali e prova di SEO/permalink su identità canoniche senza rompere gli URL condivisi. Nessun cron per questo pilota.
+
+---
 
 ## Blocco 4 — rilascio verificato delle prime località G2 (28/11/2026)
 
