@@ -813,7 +813,19 @@ for(const e of municipalities) {
     description:(lead+' '+wikiText).slice(0,275),
     image:photo.url,
     jsonLd:{'@context':'https://schema.org','@graph':[
-      {'@type':'AdministrativeArea',name:e.name,url,description:lead,
+      {'@type':'WebPage','@id':url+'#webpage',url,name:e.name+' | Cima Becco',
+        inLanguage:'it',mainEntity:{'@id':url+'#comune'}},
+      {'@type':'AdministrativeArea','@id':url+'#comune',name:e.name,url,description:lead,
+       mainEntityOfPage:{'@id':url+'#webpage'},
+       ...(province?{containedInPlace:{'@type':'AdministrativeArea',name:province}}:{}),
+       ...(e.aliases?.length?{alternateName:[...new Set(e.aliases.map(a=>a.name||a.value).filter(Boolean))]}:{}),
+       additionalProperty:[
+         ['Quota riportata',e.facts?.elevationReportedM?.value,'m'],
+         ['Quota minima del territorio (DEM 2021)',e.facts?.altitudineTerritorioMinM?.value,'m'],
+         ['Quota massima del territorio (DEM 2021)',e.facts?.altitudineTerritorioMaxM?.value,'m'],
+         ['Superficie comunale',e.facts?.superficieKm2?.value,'km²']
+       ].filter(([,value])=>typeof value==='number'&&Number.isFinite(value))
+        .map(([name,value,unitText])=>({'@type':'PropertyValue',name,value,unitText})),
        identifier:{'@type':'PropertyValue',propertyID:'ISTAT',value:id},
        geo:{'@type':'GeoCoordinates',latitude:p.lat,longitude:p.lng,
          ...(typeof e.facts?.quotaCentroM?.value==='number'?{

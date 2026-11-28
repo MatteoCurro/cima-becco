@@ -6,7 +6,8 @@ import { homeHref } from '../lib/navigation';
 import { loadAlpinePlaces, alpinePlaceLink, atlasCategory, placeBounds, type AlpinePlace, type AlpinePlacesDataset } from '../lib/alpinePlaces';
 import { loadRouteBySlug, loadRoutesInBounds } from '../lib/routeTiles';
 import { routesNear } from '../lib/routes';
-import { trailMood, trailTitle } from '../lib/routeEditorial';
+import { AtlasRouteGroup as RouteGroup } from './AtlasRouteGroup';
+import { MunicipalityProfile } from './MunicipalityProfile';
 import { usePageTitle } from '../lib/pageTitle';
 import { AlpinePlaceIcon } from './AlpinePlaceIcon';
 import { AlpinePlaceVisual } from './AlpinePlaceVisual';
@@ -68,22 +69,6 @@ function PlaceBadge({ place }: { place: AlpinePlace }) {
     <AlpinePlaceIcon kind={place.kind} size={19}/>
     {place.kind === 'rifugio' ? 'RIFUGIO' : place.kind === 'bivacco' ? (place.shelterTypeLabel || 'BIVACCO').toLocaleUpperCase('it-IT') : place.subtype==='italian_municipality'?'COMUNE':'PAESE'}{place.elevationM ? ` · ${place.elevationM.toLocaleString('it-IT')} m` : ''}
   </span>;
-}
-
-function RouteGroup({title,items}:{title:string;items:Route[]}) {
-  if(!items.length)return null;
-  return <section className="cb-atlas-nearby">
-    <h2>{title} <span>{items.length}</span></h2>
-    <div className="cb-atlas-routes">{items.map(route=>{
-      const mood=trailMood(route);
-      return <a key={route.slug} href={`${import.meta.env.BASE_URL}route/${encodeURIComponent(route.slug)}/`}>
-        <strong>{trailTitle(route)}</strong>
-        <span>{(route.distanceM/1000).toLocaleString('it-IT',{maximumFractionDigits:1})} km · {mood.quip}
-          <small> · {mood.label}</small>
-        </span>
-      </a>;
-    })}</div>
-  </section>;
 }
 
 export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: string }) {
@@ -168,7 +153,11 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
   >
     {(place.kind==='rifugio'||place.kind==='bivacco') ? <RefugeProfile place={place} routes={nearby} loadingRoutes={loading} nearbyPlaces={nearbyPlaces} allPlaces={localAtlas} water={water} onWaterSelect={slug=>{
         setSelectedWaterSlug(slug);scrollToDetailSection('cb-place-map');
-      }}/> : <>
+      }}/> : municipality ? <MunicipalityProfile
+        place={place} routeGroups={{departures,arrivals,passes,around}}
+        loadingRoutes={loading} nearbyPlaces={nearbyPlaces} water={water}
+        selectedWaterSlug={selectedWaterSlug}
+        onWaterSelect={slug=>{setSelectedWaterSlug(slug);scrollToDetailSection('cb-place-map');}}/> : <>
     <header className="cb-location-hero">
       <div className="cb-location-hero-copy">
         <PlaceBadge place={place}/>
