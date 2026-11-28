@@ -5,6 +5,8 @@ on:
     paths:
       - .github/workflows/release-summits-v1.yml
       - scripts/import_summits_v1.py
+      - scripts/resolve_summit_wikidata_v1.py
+      - tests/test_resolve_summit_wikidata_v1.py
       - scripts/publish_summits_v1.py
       - scripts/summit_batch_cursor_v1.py
       - scripts/enrich_summits_wikimedia_v1.py
@@ -22,6 +24,8 @@ on:
     paths:
       - .github/workflows/release-summits-v1.yml
       - scripts/import_summits_v1.py
+      - scripts/resolve_summit_wikidata_v1.py
+      - tests/test_resolve_summit_wikidata_v1.py
       - scripts/publish_summits_v1.py
       - scripts/summit_batch_cursor_v1.py
       - scripts/enrich_summits_wikimedia_v1.py
