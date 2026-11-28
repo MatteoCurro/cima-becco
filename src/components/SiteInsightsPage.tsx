@@ -17,7 +17,8 @@ type ImportEvent={
 type ImportStats={
   schemaVersion:string;generatedAt:string;sources:SourceStats[];history:ImportEvent[];
   total:{publicEntities:number;municipalities:number;refuges:number;shelters:number;
-    routes:number;osmPlaces:number;sourcedFacts:number;attributedMedia:number;documentedRelations:number};
+    routes:number;osmPlaces:number;sourcedFacts:number;attributedMedia:number;documentedRelations:number;
+    peopleInGraph:number;municipalityPersonRelations:number};
   quality:{municipalitiesG2:number;missingMunicipalElevation:number;missingMunicipalPopulation:number};
 };
 type Metric='count'|'facts'|'media'|'relations';
@@ -28,7 +29,7 @@ const fmtDate=(v:string|null|undefined)=>v&&Number.isFinite(Date.parse(v))
 const metricLabels:Record<Metric,string>={
   count:'Schede',facts:'Fatti documentati',media:'Media attribuiti',relations:'Relazioni'};
 const sourceHref:Record<string,string>={
-  comuni:'/comuni/',rifugi:'/rifugi/',ricoveri:'/bivacchi/',luoghi:'/borghi/',sentieri:'/#routes'};
+  comuni:'/comuni/',rifugi:'/rifugi/',ricoveri:'/bivacchi/',luoghi:'/borghi/',sentieri:'/#routes',persone:'/comuni/'};
 const fmtDelta=(v:number|null|undefined)=>v==null?'—':(v>0?'+':'')+nf(v);
 
 function Rank({title,data}:{title:string;data:{name:string;total:number}[]}) {
@@ -156,7 +157,9 @@ export function SiteInsightsPage(){
             ['FATTI CON VALORE',stats.total.sourcedFacts],
             ['MEDIA ATTRIBUITI',stats.total.attributedMedia],
             ['RELAZIONI',stats.total.documentedRelations],
-            ['COMUNI G2',stats.quality.municipalitiesG2]
+            ['COMUNI G2',stats.quality.municipalitiesG2],
+            ['PERSONE NEL GRAFO (G1)',stats.total.peopleInGraph||0],
+            ['LEGAMI PERSONA-COMUNE',stats.total.municipalityPersonRelations||0]
           ].map(([label,value])=><div key={label}><strong>{nf(Number(value))}</strong><span>{label}</span></div>)}
         </div>
         <div className="cb-import-section-heading"><div>
@@ -210,11 +213,12 @@ export function SiteInsightsPage(){
         </section>
         <div className="cb-insights-grid">
           <section className="cb-insights-rank">
-            <h2>Copertura nazionale dei comuni</h2>
+            <h2>Completezza dei Comuni</h2>
             <p className="cb-import-big-number">{nf(stats.total.municipalities)} <small>schede G2 pubblicate</small></p>
             {latestComuni?.report?.municipalities!=null&&<p>Su {nf(Number(latestComuni.report.municipalities))} comuni presenti nell'ultimo snapshot ISTAT.</p>}
             <p>{nf(stats.quality.missingMunicipalElevation)} schede senza quota documentata;
               {' '}{nf(stats.quality.missingMunicipalPopulation)} senza popolazione ISTAT datata.</p>
+            <p>{nf(stats.total.peopleInGraph||0)} profili persona G1 e {nf(stats.total.municipalityPersonRelations||0)} relazioni documentate persona–comune. Non equivalgono a biografie G2 indicizzate.</p>
             <p className="cb-insights-note">I livelli G0/G1 non diventano automaticamente pagine indicizzate. I dati DEM 2021 misurano il territorio, non il centro comunale.</p>
           </section>
           <section className="cb-insights-rank">
