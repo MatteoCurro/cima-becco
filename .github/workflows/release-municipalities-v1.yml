@@ -8,6 +8,8 @@ on:
       - tests/test_enrich_municipalities_v1.py
       - scripts/enrich_municipality_altimetry_v1.py
       - tests/test_enrich_municipality_altimetry_v1.py
+      - scripts/enrich_municipality_people_v1.py
+      - tests/test_enrich_municipality_people_v1.py
       - scripts/import_metrics_v1.mjs
       - src/components/SiteInsightsPage.tsx
   schedule:
@@ -35,6 +37,7 @@ jobs:
           python -m unittest discover -s tests -p 'test_import_municipalities_v1.py' -v
           python -m unittest discover -s tests -p 'test_enrich_municipalities_v1.py' -v
           python -m unittest discover -s tests -p 'test_enrich_municipality_altimetry_v1.py' -v
+          python -m unittest discover -s tests -p 'test_enrich_municipality_people_v1.py' -v
       - name: Scarica ISTAT e DAIT ufficiali
         shell: bash
         run: |
@@ -96,6 +99,14 @@ jobs:
             --municipalities public/data/atlas/municipalities-v1.json \
             --source build/import-municipalities-v1/input/istat-altimetry-2021.xlsx \
             --report build/import-municipalities-v1/altimetry-report.json
+      - name: Personaggi del territorio e della montagna da Wikidata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/enrich_municipality_people_v1.py \
+            --municipalities public/data/atlas/municipalities-v1.json \
+            --people public/data/atlas/people-v1.json \
+            --report build/import-municipalities-v1/people-report.json
       - name: Quality gate reale dei documenti pubblicabili
         shell: bash
         run: |
@@ -147,6 +158,7 @@ jobs:
             build/import-municipalities-v1/report.json
             build/import-municipalities-v1/enrichment-report.json
             build/import-municipalities-v1/altimetry-report.json
+            build/import-municipalities-v1/people-report.json
           retention-days: 14
           if-no-files-found: warn
       - name: Registra telemetria pubblica solo dopo il collaudo
@@ -160,7 +172,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/data/atlas/municipalities-v1.json public/data/atlas/import-history-v1.json
+          git add public/data/atlas/municipalities-v1.json public/data/atlas/people-v1.json public/data/atlas/import-history-comuni-v1.json
           if ! git diff --cached --quiet; then
             git commit -m 'data(atlas): update source-verified municipality dossiers'
             git fetch origin "$GITHUB_REF_NAME"
