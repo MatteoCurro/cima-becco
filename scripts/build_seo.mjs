@@ -21,6 +21,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mergeRefugesForSeo } from './merge_refuges_for_seo.mjs';
 import { mergeSheltersForSeo } from './merge_shelters_for_seo.mjs';
+import { applyRuralStructureEvidence } from '../src/lib/ruralStructureEvidence.js';
 import { makeCentralCredits } from './build_source_credits.mjs';
 import { atlasCanonicalPath,atlasLegacyPath,canonicalAtlasSlug } from '../src/lib/placePermalinks.js';
 import { resolveRefugeTerritory, relatedAtlasPlaces } from '../src/lib/atlasConnections.js';
@@ -95,11 +96,14 @@ writeFileSync(join(DIST,'data','featured-routes.json'),JSON.stringify({generated
 const descriptions = existsSync(join(DATA, 'descriptions.json')) ? readJson(join(DATA, 'descriptions.json')).descriptions ?? {} : {};
 const index = readJson(join(DATA, 'peaks', 'index.json'));
 const peakPhotos = existsSync(join(DATA, 'peaks', 'photos.json')) ? readJson(join(DATA, 'peaks', 'photos.json')).photos ?? {} : {};
-const alpinePlaces = mergeSheltersForSeo(mergeRefugesForSeo(
+const alpinePlacesBase = mergeSheltersForSeo(mergeRefugesForSeo(
   existsSync(join(DATA, 'alpine-places.json')) ? readJson(join(DATA, 'alpine-places.json')).places ?? [] : [],
   existsSync(join(DATA, 'atlas', 'refuges-v1.json')) ? readJson(join(DATA, 'atlas', 'refuges-v1.json')) : null
 ), existsSync(join(DATA, 'atlas', 'shelters-v1.json')) ?
   readJson(join(DATA, 'atlas', 'shelters-v1.json')) : null);
+const ruralEvidencePath=join(DATA,'atlas','alpine-structure-evidence-v1.json');
+const alpinePlaces=applyRuralStructureEvidence(alpinePlacesBase,
+  existsSync(ruralEvidencePath)?readJson(ruralEvidencePath):null);
 // Comuni G2, dataset semantico distinto dagli OSM borghi.
 const municipalityReleasePath=join(DATA,'atlas','municipalities-v1.json');
 const municipalityRelease=existsSync(municipalityReleasePath)?readJson(municipalityReleasePath):null;
@@ -586,7 +590,8 @@ function writePlaceAlias(place){
 // Evita pagine seriali prive di contenuto: i borghi senza sentieri o fonte propria
 // restano consultabili nell'app ma non vengono generati come pagine indicizzabili.
 for (const place of alpinePlaces) {
-  if (!/^(?:osm-[nwr]-\d+|cai-\d+)$/.test(place.slug)) continue;
+  if (!/^(?:osm-[nwr]-\d+|cai-\d+)$/.test(place.slug) &&
+      !place.sourceIds?.official) continue;
   const related=(byStop.get(place.slug)||[]).slice(0,24);
   const canonicalPath=atlasCanonicalPath(place);
   const isHut=place.kind==='rifugio'||place.kind==='bivacco';
@@ -640,7 +645,8 @@ for (const place of alpinePlaces) {
   const photo=place.photo?.url?.startsWith('https://') && place.photo?.license && place.photo?.sourceUrl ? place.photo : null;
   page({
     path:canonicalPath.replace(/^\//,''),
-    noindex:(place.kind==='borgo' && !related.length && !place.website && !place.description && !place.photo) ||
+    noindex:Boolean(place.sourceIds?.official && place.quality?.gate!=='G2') ||
+      (place.kind==='borgo' && !related.length && !place.website && !place.description && !place.photo) ||
       (isCaiOnly && knownCaiFacts<5 && (!place.description || place.description.length < 100) && !photo),
     title:`${place.name} · ${place.kind==='rifugio'?'Rifugio':place.kind==='bivacco'?'Bivacco':'Paese'}, altitudine, sentieri e meteo | Cima Becco`,
     description:description.slice(0,285),
@@ -718,6 +724,22 @@ for (const place of alpinePlaces) {
       <p class="sub">Dati e immagini con provenienza conservata nel <a href="${SITE}/fonti-e-crediti/">registro centralizzato delle fonti e dei crediti</a>.</p>`,
   });
   if(isHut)writePlaceAlias(place);
+  // A documented casera was previously published as an alpine hut on OSM.
+  // Preserve BOTH old /rifugi/ URLs as noindex, canonical redirect aliases.
+  if(place.kind==='bivacco' && place.classificationEvidence?.previousKind==='rifugio') {
+    const target=SITE+canonicalPath;
+    const former={...place,kind:'rifugio'};
+    const oldPaths=new Set([atlasLegacyPath(former),atlasCanonicalPath(former)]);
+    for(const oldPath of oldPaths) {
+      const file=join(DIST,oldPath.replace(/^\\//,''),'index.html');
+      mkdirSync(dirname(file),{recursive:true});
+      writeFileSync(file,'<!doctype html><html lang="it"><head><meta charset="utf-8">'+
+        '<link rel="canonical" href="'+escape(target)+'">'+
+        '<meta name="robots" content="noindex,follow">'+
+        '<meta http-equiv="refresh" content="0;url='+escape(target)+'"></head>'+
+        '<body><a href="'+escape(target)+'">'+escape(place.name)+'</a></body></html>');
+    }
+  }
 }
 
 // Categoria SEO vera: un ingresso indicizzabile agli itinerari locali,
