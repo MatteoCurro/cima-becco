@@ -1,0 +1,92 @@
+name: Trail physical network G0 source/topology pilot
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/import_trail_network_v1.py
+      - tests/test_import_trail_network_v1.py
+      - docs/PIANO_IMPORTATORI.md
+      - docs/MODELLO_METADATI_E_LAYOUT.md
+      - .github/workflows/test-trail-network-g0-v1.yml
+  push:
+    branches: [main]
+    paths:
+      - scripts/import_trail_network_v1.py
+      - tests/test_import_trail_network_v1.py
+      - .github/workflows/test-trail-network-g0-v1.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: cima-trail-network-g0-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Exact OSM node IDs, ferrata conservatism and graph QA
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_import_trail_network_v1.py' -v
+          python -m unittest discover -s tests -p 'test_import_osm_routes.py' -v
+          python -m unittest discover -s tests -p 'test_harvest_routes.py' -v
+          python -m compileall -q scripts/import_trail_network_v1.py
+      - name: Ensure staging cannot write the existing active importer catalog
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain -- public/ src/)"
+          ! grep -q "DATA / 'routes-tiles'" scripts/import_trail_network_v1.py
+          ! grep -q "DEST.write_text" scripts/import_trail_network_v1.py
+          echo 'Physical graph pilot strictly isolated from existing 12k+ route catalog'
+  real-source-pilot:
+    # Source-real audit runs once on first main push; no new production cron.
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bounded Overpass original-ways + route-relation real pilot
+        run: |
+          python scripts/import_trail_network_v1.py \
+            --bbox 46.59 12.16 46.68 12.29 \
+            --max-ways 1800 \
+            --out build/trail-network-g0-pilot
+      - name: Assert source topology and explicitly non-published QA
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('build/trail-network-g0-pilot/physical-graph-g0.json').read_text())
+          c=d['counts']
+          assert d['releaseChannel']=='OSM_TRAIL_PHYSICAL_GRAPH_G0_STAGING_V1'
+          assert d['isPublished'] is False and d['seoIndexable'] is False
+          assert d['routeCatalogueModified'] is False
+          assert c['waysAccepted']>=5 and c['graphSegments']>=5
+          assert c['graphNodes']>=6 and c['graphSegments']>=c['waysAccepted']
+          assert len({x['id'] for x in d['segments']})==c['graphSegments']
+          assert all(x['quality']['topologyMethod']=='exact_OSM_node_id'
+                     and x['quality']['safetyVerified'] is False
+                     and x['quality']['traversableVerified'] is False
+                     for x in d['segments'])
+          assert all(r['canonicalItinerary'] is False for r in d['routeRelations'])
+          print('G0 real network pilot:',c)
+          PY
+          test -z "$(git status --porcelain -- public/)"
+      - name: Retain independent source audit only (never publish G0 to atlas)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trail-network-g0-real-pilot
+          path: build/trail-network-g0-pilot/
+          retention-days: 14
+          if-no-files-found: warn
