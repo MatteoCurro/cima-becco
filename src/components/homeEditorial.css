@@ -112,3 +112,11 @@
   .cb-home-focus-card,.cb-home-focus-media img{transition:none}
   .cb-home-focus-card:hover,.cb-home-focus-card:hover .cb-home-focus-media img{transform:none}
 }
+
+/* Verified identity but no reuse-ready photograph: graphic sign, never stock imagery. */
+.cb-home-mountain-mark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:repeating-linear-gradient(145deg,#2a624b 0,#2a624b 3px,#315d46 3px,#315d46 40px);
+  color:#b9dab8;font:900 clamp(88px,13vw,185px)/1 'Bricolage Grotesque',sans-serif;
+  letter-spacing:-.38em;padding-right:.38em;opacity:.58}
+.cb-home-category-placeholder{display:flex;width:100%;height:100%;align-items:center;justify-content:center;
+  background:#29563f;color:#cee2bd;font:900 37px/1 'Bricolage Grotesque',sans-serif}
