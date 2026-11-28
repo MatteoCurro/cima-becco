@@ -42,8 +42,8 @@ export interface NaturalWaterPolygon {
   subtype:'lake'|'reservoir'|'unspecified';
   quality?:'G0'|'G2';
   sourceKey?:string;
-  lat:number;
-  lng:number;
+  lat?:number;
+  lng?:number;
   geometry:{type:'MultiPolygon';coordinates:number[][][][]};
 }
 const NO_NATURAL_POLYGONS:NaturalWaterPolygon[]=[];
