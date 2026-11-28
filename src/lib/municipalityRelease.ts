@@ -1,4 +1,5 @@
 import type { AlpinePlacesDataset, AlpinePlace } from './alpinePlaces';
+import type { AtlasPersonConnection } from './atlasDossier';
 
 type Municipality = {
   id:string;kind:string;subtype:string;slug:string;name:string;
@@ -7,6 +8,7 @@ type Municipality = {
   facts?:Record<string,{value:unknown;unit?:string}>;
   relations?:AlpinePlace['relations'];media?:AlpinePlace['media'];
   description?:string;shortSummary?:string;quality:{gate:string;seoIndexable:boolean};
+  connectedPeople?:AtlasPersonConnection[];
   textSources?:{sourceUrl:string;licence:string}[];
   administrativeHierarchy?:AlpinePlace['administrativeHierarchy'];
   aliases?:AlpinePlace['aliases'];
@@ -31,6 +33,7 @@ export function municipalityAsAlpinePlace(e:Municipality):AlpinePlace|null {
     facts:e.facts as AlpinePlace['facts'],media:e.media,relations:e.relations,
     description:e.description,shortSummary:e.shortSummary,
     aliases:e.aliases,administrativeHierarchy:e.administrativeHierarchy,
+    connectedPeople:e.connectedPeople,
     elevationM:typeof e.facts?.quotaCentroM?.value==='number'?e.facts.quotaCentroM.value:
       typeof e.facts?.elevationReportedM?.value==='number'?e.facts.elevationReportedM.value:undefined,
     elevationSource:undefined,
