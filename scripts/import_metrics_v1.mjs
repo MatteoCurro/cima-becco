@@ -46,7 +46,6 @@ export function summarizeImportCatalog(){
   };
   const sources=[
     {id:'comuni',name:'Comuni ISTAT / DAIT',count:mun.length,
-      recordsInSource:7894, // overwritten below when last import report exists in history
       facts:mun.reduce((s,e)=>s+countFacts(e),0),
       media:countMedia(mun),relations:mun.reduce((s,e)=>s+(e.relations||[]).length,0),
       checkedAt:municipalities?.retrievedAt||null,
