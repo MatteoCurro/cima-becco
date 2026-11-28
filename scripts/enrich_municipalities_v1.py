@@ -320,6 +320,17 @@ def enrich(archive, qid_map, *, getter=None, max_new=48, previous=None, retrieve
     for code,old_e in old.items():
         if code not in entities:continue
         e=entities[code]
+        if old_e.get("connectedPeople") and not e.get("connectedPeople"):
+            e["connectedPeople"]=old_e["connectedPeople"]
+        for historic_link in old_e.get("relations",[]):
+            if historic_link.get("type") not in (
+                "birthplace_of","historical_residence_of","workplace_of"
+            ) or not historic_link.get("verified"):
+                continue
+            if not any(r.get("type")==historic_link["type"] and
+                       r.get("target",{}).get("id")==historic_link.get("target",{}).get("id")
+                       for r in e.get("relations",[])):
+                e["relations"].append(historic_link)
         if e.get("quality",{}).get("gate")!="G2" and old_e.get("quality",{}).get("gate") in ("G1","G2"):
             e["facts"]={**old_e.get("facts",{}), **e.get("facts",{})}
             for k in ("geo","media","textSources","description","editorialStatus","quality"):
