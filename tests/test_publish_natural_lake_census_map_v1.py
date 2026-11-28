@@ -81,10 +81,10 @@ class CensusMapTest(unittest.TestCase):
         self.assertEqual(bz["agencyReportedElevationM"],1750)
         self.assertEqual(ar["rawClass"],"Lago")
         self.assertFalse(ar["canonicalSubtypeVerified"])
-        self.assertEqual(bz["agencyReportedVolumeM3"],500000)
-        self.assertEqual(bz["agencyReportedWidthM"],50)
-        self.assertEqual(bz["agencyReportedLengthM"],100)
-        self.assertEqual(bz["municipalityReported"],"Nova Levante")
+        self.assertEqual(bz["agencyReportedVolumeM3"],4000000)
+        self.assertEqual(bz["agencyReportedWidthM"],330)
+        self.assertEqual(bz["agencyReportedLengthM"],700)
+        self.assertIsNone(bz["municipalityReported"])
         self.assertNotIn("subtype",ar)
 
     def test_held_geometry_has_count_but_never_polygon_or_point(self):
