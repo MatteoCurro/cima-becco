@@ -239,8 +239,9 @@ def enrich(archive,municipalities,people=None,*,limit=48,offset=0,
     # publish a new source-less placeholder. Existing IDs remain stable.
     seen={e["sourceIds"].get("wikidata") for e in published}
     for qid, entity in sorted(old.items()):
-        if qid not in seen and entity.get("quality",{}).get("gate")=="G2" and
-           entity.get("media") and entity.get("textSources") and entity.get("geo",{}).get("point"):
+        if (qid not in seen and entity.get("quality",{}).get("gate")=="G2" and
+            entity.get("media") and entity.get("textSources") and
+            entity.get("geo",{}).get("point")):
             published.append(entity)
             seen.add(qid)
     ids=[x["id"] for x in published]
