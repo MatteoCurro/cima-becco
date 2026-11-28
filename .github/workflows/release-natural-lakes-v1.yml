@@ -204,14 +204,40 @@ jobs:
               exit 0
             fi
             git commit -m 'data(laghi): G2 source-verified lake polygons, text and media'
-            if git push origin HEAD:main; then
-              echo 'LAKES_RELEASE_COMMITTED=true' >> "$GITHUB_ENV"
-              echo 'Verified lake G2 release committed to main'
-              exit 0
-            fi
-            echo "Concurrent main data release; safe retry $attempt/3"
+            # Competing release workflows commit different, unrelated source
+            # files every few seconds. Rebuilding Vite after each push reject
+            # kept losing the short compare-and-swap window. Rebase ONLY the
+            # single validated data commit onto latest main and reattempt
+            # fast-forward pushes. No force, no blind merges or source drops.
+            for sync in 1 2 3 4 5 6 7 8 9 10 11 12; do
+              if git push origin HEAD:main; then
+                echo 'LAKES_RELEASE_COMMITTED=true' >> "$GITHUB_ENV"
+                echo 'Verified lake G2 release committed to main'
+                exit 0
+              fi
+              echo "Main changed concurrently: rebasing validated lake commit $sync/12"
+              sleep 2
+              git fetch origin main
+              if ! git rebase origin/main; then
+                git rebase --abort || true
+                echo "Same-file conflict: must recalculate semantic merge on main"
+                break
+              fi
+              # Fast-forward preserving the exact tested G2 source and polygon
+              # identity, while keeping all commits from concurrent importers.
+              python - <<'PY'
+          import json,sys
+          from pathlib import Path
+          sys.path.insert(0,'scripts')
+          from publish_natural_lakes_v1 import check
+          x=json.loads(Path('public/data/atlas/natural-lakes-v1.json').read_text())
+          check(x)
+          assert x['isPublished'] is True
+          PY
+            done
+            echo "Replaying from freshest main after conflict or contention $attempt/3"
           done
-          echo 'Lake release blocked after three safe retries; no forced source overwrite' >&2
+          echo 'Lake release blocked safely: too many concurrent writers; never force push' >&2
           exit 1
       - name: Deploy new data commit to Pages (bot push does not trigger it)
         if: env.LAKES_RELEASE_COMMITTED == 'true'
