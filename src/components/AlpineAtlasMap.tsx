@@ -40,7 +40,7 @@ export interface NaturalWaterPolygon {
   slug:string;
   name:string;
   subtype:'lake'|'reservoir'|'unspecified';
-  quality?:'G0'|'G2';
+  quality?:'G0'|'G1'|'G2';
   sourceKey?:string;
   lat?:number;
   lng?:number;
@@ -146,14 +146,15 @@ export function AlpineAtlasMap({places,kind,naturalPoints=[],onNaturalSelect,nat
         data:naturalWaterGeoJSON(waterPolygonsRef.current)});
       map.addLayer({id:'cb-atlas-natural-lakes-fill',type:'fill',
         source:'cb-atlas-natural-lakes',
-        paint:{'fill-color':['case',['==',['get','quality'],'G0'],'#aac7d1',
-            ['match',['get','subtype'],'reservoir','#679bb1','#57abb7']],
-          'fill-opacity':['case',['==',['get','quality'],'G0'],0.2,0.5]}});
+        paint:{'fill-color':['match',['get','quality'],
+            'G0','#aac7d1','G1','#82c8bd','#57abb7'],
+          'fill-opacity':['match',['get','quality'],'G0',0.2,'G1',0.34,0.5]}});
       map.addLayer({id:'cb-atlas-natural-lakes-outline',type:'line',
         source:'cb-atlas-natural-lakes',
-        paint:{'line-color':['case',['==',['get','quality'],'G0'],'#689bab','#154c5a'],
-          'line-width':['case',['==',['get','quality'],'G0'],1.2,2.5],
-          'line-opacity':['case',['==',['get','quality'],'G0'],0.65,0.9]}});
+        paint:{'line-color':['match',['get','quality'],
+            'G0','#689bab','G1','#25816c','#154c5a'],
+          'line-width':['match',['get','quality'],'G0',1.2,'G1',1.8,2.5],
+          'line-opacity':['match',['get','quality'],'G0',0.65,'G1',0.8,0.9]}});
       map.addLayer({id:'cb-atlas-natural-lakes-focused',type:'line',
         source:'cb-atlas-natural-lakes',
         filter:['==',['get','slug'],''],
