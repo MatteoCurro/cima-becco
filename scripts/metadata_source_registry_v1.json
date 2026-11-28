@@ -40,6 +40,18 @@
       "operations": "reuse parser pilot_sat_trekking_stages.py; HTML currently not matching"
     },
     {
+      "id": "sat_trail_kml",
+      "label": "SAT — catasto dei sentieri e KML ufficiale",
+      "url": "https://www.sat.tn.it/sentieri/mappa-sentieri/",
+      "format": "KML ZIP WGS84, 16 attributi sorgente, geometrie LineString",
+      "rights": "ODbL 1.0; attribuzione SAT e contributori, confronti con OSM ODbL; foto e narrativa escluse",
+      "evidence": "GitHub Actions #46154342017 SAT G0 1.083 record; #46154774150 SAT/OSM crosswalk fisico con 38 candidati; G1 solo reg_ref SAT esatto con operatore, difficoltà originale e geometria corrispondente",
+      "status": "source_audited_g0_and_guarded_route_reference_g1",
+      "licenseGate": "known_with_obligations",
+      "refresh": "snapshot con checksum, aggiornare solo dopo nuovo audit di identità e confronto; nessun cron produttivo aggiuntivo",
+      "operations": "scripts/pilot_sat_trail_source_v1.py, normalize_sat_trails_v1.py, candidate_sat_osm_trail_links_v1.py, publish_sat_route_source_refs_v1.py; source facts only, no routing/SA-SAA-VF automatic or new canonical pages"
+    },
+    {
       "id": "cai_infomont",
       "label": "CAI INFOMONT",
       "url": "https://www.cai.it/sentieri-e-rifugi/infomont/",
