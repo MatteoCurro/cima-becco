@@ -62,7 +62,7 @@ class SettlementImportTests(unittest.TestCase):
         self.assertEqual(len(parsed), 1)
         item, err = locality(parsed[0], source_url="https://www.istat.it/",
             checked_at="2026-11-28T00:00:00Z", municipality_by_code={})
-        self.assertIsNone(err)
+        self.assertIsNone(err, {"parsed": parsed[0], "code": __import__("import_settlements_v1").code6(__import__("import_settlements_v1").value(parsed[0], "PRO_COM")), "locality": __import__("import_settlements_v1").digits(__import__("import_settlements_v1").value(parsed[0], "LOC21_ID"), 11), "subtype": __import__("import_settlements_v1").digits(__import__("import_settlements_v1").value(parsed[0], "TIPO_LOC"), 1)})
         self.assertEqual(item["sourceIds"]["istatMunicipality"], "021001")
         self.assertEqual(item["sourceIds"]["istatLocality"], "02100110001")
         self.assertEqual(item["facts"]["elevationM"]["value"], 1225)
