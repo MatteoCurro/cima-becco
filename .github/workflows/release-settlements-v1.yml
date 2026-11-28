@@ -104,7 +104,8 @@ jobs:
           if [ -f public/data/atlas/settlements-v1.json ]; then
             previous=(--previous public/data/atlas/settlements-v1.json)
           fi
-          offset=$(( ((GITHUB_RUN_NUMBER - 1) * 80) % 770 ))
+          offset="$(python scripts/settlement_batch_cursor_v1.py --history public/data/atlas/import-history-localita-v1.json --size 80)"
+          echo "Lotto localita: offset $offset (solo import successivi a gate G2)"
           python scripts/enrich_settlements_wikimedia_v1.py \
             --settlements build/import-settlements-v1/settlements.json \
             --municipalities public/data/atlas/municipalities-v1.json \
