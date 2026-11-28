@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "description": "Verified successful import snapshots, no invented history",
+  "events": [
+    {
+      "runId": "46103812507",
+      "pipeline": "rifugi-ricoveri",
+      "status": "success",
+      "recordedAt": "2026-11-28T03:39:30.935Z",
+      "sourceSha": "81f184611eed9ab6293bfd9315a14818d83d31a9",
+      "sources": {
+        "rifugi": {
+          "count": 779,
+          "facts": 22123,
+          "media": 659,
+          "relations": 2589,
+          "coverage": {
+            "Quota": 456,
+            "Posti letto": 370,
+            "Fotografie": 355
+          },
+          "denominator": 779
+        },
+        "ricoveri": {
+          "count": 389,
+          "facts": 11034,
+          "media": 546,
+          "relations": 268,
+          "coverage": {
+            "Quota": 389,
+            "Posti dichiarati": 346,
+            "Fotografie": 317
+          },
+          "denominator": 389
+        }
+      },
+      "report": {},
+      "delta": {
+        "rifugi": null,
+        "ricoveri": null
+      }
+    }
+  ]
+}
