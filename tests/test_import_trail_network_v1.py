@@ -50,7 +50,11 @@ class TestPhysicalNetworkPilot(unittest.TestCase):
         self.assertIn('way["highway"',q)
         self.assertIn('way["via_ferrata_scale"]',q)
         self.assertIn('foot|hiking|via_ferrata|ferrata',q)
-        self.assertIn('out body geom',q)
+        self.assertIn('out meta geom;',q)
+        self.assertIn('out meta;',q)
+        self.assertLess(q.index("out meta geom;"),q.index('relation["type"="route"]'))
+        # Relations carry only IDs, roles and metadata: no distant member geometry.
+        self.assertEqual(q.count("geom;"),1)
         self.assertNotIn('bike',q)
         for invalid in [(30,12,31,13),(46,10,46.3,10.5),(47,13,46,14)]:
             with self.assertRaises(ValueError):query_for_bbox(invalid)
@@ -107,6 +111,18 @@ class TestPhysicalNetworkPilot(unittest.TestCase):
         self.assertGreaterEqual(d["counts"]["ferrataSegmentsCandidateOnly"],1)
         self.assertFalse(actual["quality"]["safetyVerified"])
         self.assertFalse(actual["quality"]["traversableVerified"])
+
+    def test_full_original_osm_tag_provenance_survives_g0(self):
+        src=pilot()
+        src["elements"][0]["tags"]["cai_scale"]="E"
+        src["elements"][0]["tags"]["source:ref"]="survey;CAI"
+        d=self.run_stage(src)
+        edge=next(x for x in d["segments"] if x["sourceIds"]["osmWay"]=="way/11")
+        self.assertEqual(edge["sourceTags"]["cai_scale"],"E")
+        self.assertEqual(edge["sourceTags"]["source:ref"],"survey;CAI")
+        self.assertNotIn("cai_scale",edge["operationalTags"])
+        self.assertEqual(edge["sourceUpdatedAt"],"2026-11-28T13:50:00Z")
+        self.assertEqual(d["routeRelations"][0]["sourceUpdatedAt"],"2026-11-28T13:55:00Z")
 
     def test_access_restrictions_are_source_metadata_not_operational_approval(self):
         src=pilot();src["elements"][0]["tags"]["foot"]="private"

@@ -31,8 +31,8 @@ ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/"build/trail-network-g0-pilot"
 CHANNEL="OSM_TRAIL_PHYSICAL_GRAPH_G0_STAGING_V1"
 BBOX=(46.59,12.16,46.68,12.29)  # small, bounded Dolomites pilot
-ENDPOINTS=("https://overpass.kumi.systems/api/interpreter",
-           "https://overpass-api.de/api/interpreter")
+ENDPOINTS=("https://overpass.private.coffee/api/interpreter",
+           "https://ovp.dresel.systems/api/interpreter")
 HIGHWAYS={"path","footway","track","steps","via_ferrata"}
 ROUTES={"foot","hiking","via_ferrata","ferrata"}
 TECHNICAL={"yes","designated","official","1","true"}
@@ -51,14 +51,19 @@ def query_for_bbox(bbox):
     validate_bbox(bbox)
     s,w,n,e=bbox
     area=f"({s},{w},{n},{e})"
-    return ("[out:json][timeout:90];("
+    # Geometry is requested only for the physical ways in the bounded box.
+    # Route relations can extend far beyond the box: fetch metadata/member IDs
+    # WITHOUT requesting every distant member geometry. Missing source members
+    # are then explicitly reported as partial; never filled in by proximity.
+    return ("[out:json][timeout:65];("
        f'way["highway"~"^(path|footway|track|steps|via_ferrata)$"]{area};'
        f'way["via_ferrata"]{area};'
        f'way["via_ferrata_scale"]{area};'
+       ");out meta geom;"
        f'relation["type"="route"]["route"~"^(foot|hiking|via_ferrata|ferrata)$"]{area};'
-       ");out body geom;")
+       "out meta;")
 
-def fetch_osm(bbox,*,endpoints=ENDPOINTS,retries=2):
+def fetch_osm(bbox,*,endpoints=ENDPOINTS,retries=1):
     query=query_for_bbox(bbox)
     failures=[]
     for endpoint in endpoints:
@@ -124,8 +129,12 @@ def parse_way(row):
     geometry=_way_points(row)
     if geometry is None:return None
     ids,points=geometry
+    # Retain the complete publicly mapped OSM tag set in isolated G0 staging.
+    # A selected subset alone would discard source-specific evidence needed for
+    # future CAI/SAT reconciliation and could not support a full source audit.
+    raw_tags={k:v for k,v in tags.items() if isinstance(k,str) and isinstance(v,str)}
     return {"osmWayId":ident,"nodeIds":ids,"coordinates":points,
-            "tags":_report_access(tags),
+            "tags":raw_tags,"operationalTags":_report_access(tags),
             "sourceUpdatedAt":row.get("timestamp") if isinstance(row.get("timestamp"),str) else None}
 
 def parse_relation(row):
@@ -242,6 +251,7 @@ def build_graph(source,bbox=BBOX,*,at="2026-11-28T00:00:00+00:00",max_ways=1400)
                     "licence":"ODbL 1.0"},
                 "routeRelationIds":sorted(set(relation_of_way[ident])),
                 "sourceTags":tags,
+                "operationalTags":w["operationalTags"],
                 "accessStatus":"restriction_reported" if any(
                     tags.get(x) in NO_ACCESS for x in ("access","foot")) else "not_verified",
                 "sourceUpdatedAt":w["sourceUpdatedAt"],
