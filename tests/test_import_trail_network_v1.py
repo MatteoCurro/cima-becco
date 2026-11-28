@@ -1,7 +1,11 @@
 """Physical trail graph pilot: test topology, separation of ferrata and route relations."""
 from copy import deepcopy
+from hashlib import sha256
+import json
 from pathlib import Path
+import subprocess
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
@@ -111,6 +115,27 @@ class TestPhysicalNetworkPilot(unittest.TestCase):
         self.assertGreaterEqual(d["counts"]["ferrataSegmentsCandidateOnly"],1)
         self.assertFalse(actual["quality"]["safetyVerified"])
         self.assertFalse(actual["quality"]["traversableVerified"])
+
+    def test_offline_cli_keeps_replayable_original_source_snapshot(self):
+        src=pilot()
+        with tempfile.TemporaryDirectory() as tmp:
+            folder=Path(tmp)
+            input_path=folder/"overpass-input.json"
+            out=folder/"staging"
+            input_path.write_text(json.dumps(src),encoding="utf-8")
+            cli=Path(__file__).resolve().parents[1]/"scripts/import_trail_network_v1.py"
+            run=subprocess.run([sys.executable,str(cli),"--input",str(input_path),
+                "--out",str(out)],check=False,capture_output=True,text=True)
+            self.assertEqual(run.returncode,0,msg=run.stderr)
+            original=(out/"source-overpass-g0.json").read_text(encoding="utf-8")
+            graph=json.loads((out/"physical-graph-g0.json").read_text(encoding="utf-8"))
+            audit=json.loads((out/"audit.json").read_text(encoding="utf-8"))
+            self.assertEqual(json.loads(original),src)
+            self.assertEqual(sha256(original.rstrip("\n").encode("utf-8")).hexdigest(),
+                             graph["sourceSnapshotSha256"])
+            self.assertEqual(audit["sourceSnapshotSha256"],graph["sourceSnapshotSha256"])
+            self.assertEqual(audit["sourceSnapshotFile"],"source-overpass-g0.json")
+            self.assertFalse(graph["isPublished"])
 
     def test_full_original_osm_tag_provenance_survives_g0(self):
         src=pilot()
