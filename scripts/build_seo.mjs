@@ -645,10 +645,11 @@ for (const place of alpinePlaces) {
   const photo=place.photo?.url?.startsWith('https://') && place.photo?.license && place.photo?.sourceUrl ? place.photo : null;
   page({
     path:canonicalPath.replace(/^\//,''),
-    noindex:Boolean(place.sourceIds?.official && place.quality?.gate!=='G2') ||
+    noindex:Boolean((place.subtype==='rural_type_unverified') ||
+      (place.sourceIds?.official && place.quality?.gate!=='G2')) ||
       (place.kind==='borgo' && !related.length && !place.website && !place.description && !place.photo) ||
       (isCaiOnly && knownCaiFacts<5 && (!place.description || place.description.length < 100) && !photo),
-    title:`${place.name} · ${place.kind==='rifugio'?'Rifugio':place.kind==='bivacco'?'Bivacco':'Paese'}, altitudine, sentieri e meteo | Cima Becco`,
+    title:`${place.name} · ${place.subtype==='rural_type_unverified'?'Malga o casera':place.subtype==='support_point'?'Malga e ristoro':place.kind==='rifugio'?'Rifugio':place.kind==='bivacco'?'Bivacco':'Paese'}, altitudine, sentieri e meteo | Cima Becco`,
     description:description.slice(0,285),
     image:photo?.url||null,
     jsonLd:{'@context':'https://schema.org','@graph':[
