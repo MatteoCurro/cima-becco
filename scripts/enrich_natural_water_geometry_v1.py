@@ -262,7 +262,15 @@ def inspect_source(osm,gn,cross):
            if x.get("subtype") in ("lake","reservoir") and
            x.get("wikidataIdentityVerified") is True and
            x.get("identityMethod")=="exact_P1566_P625_one_to_one" and
-           QID_RE.fullmatch(str(x.get("qid") or ""))]
+           QID_RE.fullmatch(str(x.get("qid") or "")) and
+           x.get("wikidataUrl")=="https://www.wikidata.org/wiki/"+x["qid"] and
+           type(x.get("coordinateDistanceKm")) in (int,float) and
+           type(x.get("coordinateGateKm")) in (int,float) and
+           0<=x["coordinateDistanceKm"]<=x["coordinateGateKm"]<=2.0]
+    if len(links)!=len([x for x in cross["links"] if x.get("subtype") in ("lake","reservoir")]):
+        raise ValueError("Water source contains unaudited GeoNames/Wikidata identity")
+    if len({str(x["geonameid"]) for x in links})!=len(links):
+        raise ValueError("Duplicate water GeoNames ID in crosswalk")
     geom_ids=[e["sourceIds"]["osm"] for e in osms
               if re.fullmatch(r"(?:way|relation)/[1-9]\d*",e["sourceIds"].get("osm",""))]
     return osms,links,geom_ids
@@ -311,6 +319,10 @@ def run(osm,gn,cross,rows,*,query=None,at=None):
             held["intermittent_water_requires_context"]+=1
         source=f"{OSM_SOURCE}{osm_id}"
         osm_e=deepcopy(prior_osm.get(osm_id))
+        if osm_e is not None and osm_e["subtype"]!=tags["water"]:
+            held["source_subtype_changed"]+=1
+            diagnostics.append({"osm":osm_id,"reason":"OSM lake/reservoir type changed since original G1 snapshot"})
+            continue
         if osm_e is None:
             # A requested P1566/P625 QID may have matching OSM geometry even
             # if outside the original bounded 250-entity OSM stage sample.
