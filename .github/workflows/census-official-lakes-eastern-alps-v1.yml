@@ -1,0 +1,67 @@
+name: Census official Alpine lakes (region-wide source IDs, G0 only)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/census_official_lakes_eastern_alps_v1.py
+      - tests/test_census_official_lakes_eastern_alps_v1.py
+      - scripts/import_official_lake_wfs_v1.py
+      - scripts/normalize_official_lake_wfs_facts_v1.py
+      - .github/workflows/census-official-lakes-eastern-alps-v1.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cima-lakes-census-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Conservative lake census, source isolation and quality gates
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tests -p 'test_census_official_lakes_eastern_alps_v1.py' -v
+          python -m unittest discover -s tests -p 'test_import_official_lake_wfs_v1.py' -v
+          python -m unittest discover -s tests -p 'test_normalize_official_lake_wfs_facts_v1.py' -v
+          test -z "$(git status --porcelain -- public/ src/)"
+
+  census:
+    needs: offline-regressions
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: [bolzano_lakes, arpav_water_surfaces]
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Enumerate region WFS source FIDs with adaptive split and request budget
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/census_official_lakes_eastern_alps_v1.py \
+            --provider "${{ matrix.provider }}" \
+            --max-requests 42 --max-depth 3 \
+            --out "build/eastern-alps-census-${{ matrix.provider }}"
+          test -z "$(git status --porcelain -- public/ src/)"
+      - name: Preserve independent G0 records and source coverage audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eastern-alps-census-${{ matrix.provider }}-G0
+          path: build/eastern-alps-census-${{ matrix.provider }}/
+          retention-days: 21
+          if-no-files-found: warn
