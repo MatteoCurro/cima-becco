@@ -31,7 +31,8 @@ export function municipalityAsAlpinePlace(e:Municipality):AlpinePlace|null {
     facts:e.facts as AlpinePlace['facts'],media:e.media,relations:e.relations,
     description:e.description,shortSummary:e.shortSummary,
     aliases:e.aliases,administrativeHierarchy:e.administrativeHierarchy,
-    elevationM:typeof e.facts?.quotaCentroM?.value==='number'?e.facts.quotaCentroM.value:undefined,
+    elevationM:typeof e.facts?.quotaCentroM?.value==='number'?e.facts.quotaCentroM.value:
+      typeof e.facts?.elevationReportedM?.value==='number'?e.facts.elevationReportedM.value:undefined,
     elevationSource:undefined,
     website:typeof e.facts?.sitoUfficiale?.value==='string'?e.facts.sitoUfficiale.value:undefined,
     photo:photo?{url:photo.url,sourceUrl:photo.sourceUrl,author:photo.author||'',license:photo.licence}:undefined,
