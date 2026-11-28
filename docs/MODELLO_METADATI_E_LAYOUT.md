@@ -48,6 +48,8 @@ Le informazioni operative (sindaco, gestore, apertura, prezzo, webcam, chiusure,
 
 Tipi richiesti: **located_in, part_of, contains, near (con straightLineKm e metodo), starts_at, ends_at, passes_near, passes_through, ascends_to, accessible_from (solo verificato), managed_by, owned_by, founded_by, first_ascended_by, opened_by, overlaps, alternative_to, stage_of, previous_stage, next_stage, served_by, recorded_by, restricted_by**.
 
+**Estensione tipizzata persone 28/11/2026**: `born_in` / `birthplace_of` (Wikidata P19, solo luogo esatto); `resided_in` / `historical_residence_of` (P551, per profili storici/deceduti); `worked_in` / `workplace_of` (P937, attività attestata). Sono legami biografici, **non** prima ascensione, fondazione, intitolazione o appartenenza provinciale: queste relazioni necessitano di una fonte specifica. Conservare QID persona, identificativo comune ISTAT-QID già riconciliato, ruolo P106, URL, timestamp e gate G1; una persona G1 non diventa pagina SEO prima di una scheda biografica G2. Per i viventi evitare dati di residenza privata o contatti personali.
+
 **Due invarianti**: prossimità geografica **non** prova attraversamento o raggiungibilità; il collegamento di un luogo a una persona **non** si deduce dalla sola appartenenza provinciale.
 
 ### 1.3 SEO e permalink
@@ -84,6 +86,7 @@ Per le fotografie, la pagina attribuisce ogni media visibile alla sua **scheda c
 | etimologia, prime attestazioni, storia sintetica, tradizioni legate alla montagna | P1 | Archivi locali, WP documentata, siti comunali, ICCD | B |
 | patrimonio naturale/culturale, musei e monumenti | P1 | ICCD, OSM, siti ufficiali | B, M |
 | alpinisti/guide e personalità montane nate o vissute qui | P2 | WD + riscontri CAI/biografie | B, M |
+| connectedPeople[] / relations[] persone | P2 | WD P19/P937/P551 + P106, verifica diretta del QID; futuro riscontro biografico CAI/archivi | B, M |
 | temperature e precipitazioni medie mensili, neve caduta vs manto | P1/P2 | METEO con periodo e quota modello | G |
 | currentWeather, forecastHourly/daily, stazioni, webcam | P1/P2 | METEO, portali autorizzati | H, G, V |
 | cime, rifugi, falesie, palestre, laghi, passi, impianti e sentieri vicini | P1 | Motore relazioni territoriali | M, B |
@@ -395,6 +398,8 @@ Include tutti i campi della via monotiro più:
 | fotografie storiche, citazioni brevi attribuite, bibliografia | P2 | V, C |
 
 **Layout**: profilo biografico e timeline delle imprese, vie e montagne collegate, luoghi documentati. Filtrare per figure realmente legate alla montagna, non celebrità generiche della stessa provincia.
+
+**Due livelli distinti:** nella scheda del comune si presentano relazioni G1 verificate (nome, ruolo, tipo di legame, eventuale biografia esterna); nel futuro dossier Persona G2 si aggiungeranno cronologia, foto, bibliografia e ascensioni con fonti proprie. Altre figure culturali rilevanti possono figurare in un blocco subordinato solo con **nascita nel comune verificata e biografia enciclopedica identificata**, senza attribuire loro un ruolo alpinistico inesistente.
 
 ## 22. Parchi naturali, aree protette e regolamenti
 

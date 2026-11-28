@@ -137,6 +137,10 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
   const detailRows: { label:string; value:string }[]=[
     ...(municipality?[{label:'Regione',value:place.administrativeHierarchy?.region||'Non indicata'},
       {label:'Provincia',value:place.administrativeHierarchy?.province||'Non indicata'},
+      ...(typeof place.facts?.superficieKm2?.value==='number'?[{label:'Superficie comunale',value:place.facts.superficieKm2.value.toLocaleString('it-IT',{maximumFractionDigits:2})+' km²'}]:[]),
+      ...(typeof place.facts?.altitudineTerritorioMinM?.value==='number'?[{label:'Quota minima territorio (ISTAT DEM 2021)',value:place.facts.altitudineTerritorioMinM.value.toLocaleString('it-IT')+' m'}]:[]),
+      ...(typeof place.facts?.altitudineTerritorioMaxM?.value==='number'?[{label:'Quota massima territorio (ISTAT DEM 2021)',value:place.facts.altitudineTerritorioMaxM.value.toLocaleString('it-IT')+' m'}]:[]),
+      ...(typeof place.facts?.altitudineTerritorioMediaM?.value==='number'?[{label:'Quota media territorio (ISTAT DEM 2021)',value:place.facts.altitudineTerritorioMediaM.value.toLocaleString('it-IT')+' m'}]:[]),
       ...(typeof place.facts?.sindacoNome?.value==='string'?[{label:'Sindaco rilevato dal DAIT',value:place.facts.sindacoNome.value}]:[]),
       ...(typeof place.facts?.mandatoInizio?.value==='string'?[{label:'In carica dal (DAIT)',value:place.facts.mandatoInizio.value}]:[]),
     ]:[]),
@@ -165,11 +169,23 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
       <div className="cb-location-hero-copy">
         <PlaceBadge place={place}/>
         <h1>{place.name}</h1>
+        {municipality&&Boolean(place.aliases?.length)&&<p className="cb-location-muted-note">Noto anche come {(place.aliases||[]).map(a=>a.value).join(' · ')}</p>}
         <p className="cb-location-lead">{place.shortSummary || placeLine}</p>
+        {municipality&&place.description&&<p className="cb-location-story">{place.description}</p>}
 
         <AtlasDossierBlocks record={place} placement="alerts"/>
         <DetailMetrics label="Informazioni principali" items={[
-          { label: 'Altitudine' + (place.elevationSource === 'dem' ? ' stimata' : ''), value: place.elevationM != null ? place.elevationM.toLocaleString('it-IT') + ' m' : 'n.d.' },
+          { label: municipality ? (place.facts?.quotaCentroM ? 'Quota del centro ISTAT' :
+              place.facts?.elevationReportedM ? 'Quota riportata Wikidata' :
+              place.facts?.altitudineTerritorioMinM&&place.facts?.altitudineTerritorioMaxM?'Quota territorio (min–max DEM)':'Quota non disponibile')
+              : 'Altitudine' + (place.elevationSource === 'dem' ? ' stimata' : ''),
+            value: place.elevationM != null ? place.elevationM.toLocaleString('it-IT') + ' m' :
+              municipality && typeof place.facts?.altitudineTerritorioMinM?.value==='number' &&
+              typeof place.facts?.altitudineTerritorioMaxM?.value==='number'?
+              place.facts.altitudineTerritorioMinM.value.toLocaleString('it-IT')+'–'+
+              place.facts.altitudineTerritorioMaxM.value.toLocaleString('it-IT')+' m':'n.d.' },
+          ...(municipality&&typeof place.facts?.superficieKm2?.value==='number'?[{label:'Superficie',value:place.facts.superficieKm2.value.toLocaleString('it-IT',{maximumFractionDigits:1})+' km²'}]:[]),
+          ...(municipality&&typeof place.facts?.altitudineTerritorioMaxM?.value==='number'?[{label:'Quota massima (territorio DEM)',value:place.facts.altitudineTerritorioMaxM.value.toLocaleString('it-IT')+' m'}]:[]),
           ...(place.capacity != null ? [{ label: 'Posti letto', value: place.capacity }] : []),
           { label: 'Sentieri vicini', value: loading ? '…' : nearby.length },
         ]}/>
@@ -189,14 +205,15 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
     <DetailJumpNav items={[
       {id:"cb-place-essential",label:"Dati",icon:"compass"},
       {id:"cb-place-contacts",label:"Contatti",icon:"house"},
-      ...(place.description||wikiUrl?[{id:"cb-place-story",label:"Territorio",icon:"mountain" as const}]:[]),
+      ...(municipality&&Boolean(place.connectedPeople?.length)?[{id:"cb-place-people",label:"Personaggi",icon:"mountain" as const}]:[]),
+      ...(!municipality&&(place.description||wikiUrl)?[{id:"cb-place-story",label:"Territorio",icon:"mountain" as const}]:[]),
       {id:"cb-place-weather",label:"Meteo",icon:"compass"},
       {id:"cb-place-itineraries",label:"Sentieri",icon:"route"},
       ...(nearbyPlaces.length?[{id:"cb-place-nearby",label:"Dintorni",icon:"location-dot" as const}]:[]),
       {id:"cb-place-map",label:"Mappa",icon:"map"},
     ]}/>
         <section id="cb-place-essential" className="cb-detail-group cb-detail-group--first cb-location-section cb-location-dossier" aria-labelledby="cb-location-info-heading">
-          <DetailSectionHeading kicker="01 / DATI ESSENZIALI" title="PRIMA DI PARTIRE." id="cb-location-info-heading" description="Informazioni disponibili nelle fonti cartografiche, da verificare con la struttura quando necessario."/>
+          <DetailSectionHeading kicker="01 / DATI ESSENZIALI" title={municipality?"IL COMUNE IN CIFRE.":"PRIMA DI PARTIRE."} id="cb-location-info-heading" description={municipality?"Dati ufficiali e indicatori territoriali. Le quote DEM 2021 descrivono l'intero territorio, non l'altitudine del municipio.":"Informazioni disponibili nelle fonti cartografiche, da verificare con la struttura quando necessario."}/>
           <DetailFacts rows={detailRows}/>
         </section>
         <section id="cb-place-contacts" className="cb-detail-group cb-detail-group--practical cb-location-section cb-location-contact-card" aria-labelledby="cb-location-contact-title">
@@ -215,10 +232,35 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
           </div>}
           {!place.phone&&!place.email&&!place.website&&<p className="cb-location-muted-note">Recapiti non disponibili nelle fonti: non significa che la struttura sia chiusa.</p>}
         </section>
-        {(place.description||wikiUrl)&&<section id="cb-place-story" className="cb-detail-group cb-location-section">
+        {!municipality&&(place.description||wikiUrl)&&<section id="cb-place-story" className="cb-detail-group cb-location-section">
           <DetailSectionHeading kicker="03 / STORIA E TERRITORIO" title="CONOSCERE IL LUOGO."/>
           {place.description&&<p className="cb-location-story">{place.description}</p>}
           {wikiUrl&&<a className="cb-location-wiki cb-icon-link" href={wikiUrl} target="_blank" rel="noopener noreferrer"><FaIcon name="arrow-up-right-from-square" size={12}/> Approfondimento enciclopedico</a>}
+        </section>}
+        {municipality&&Boolean(place.connectedPeople?.length)&&<section id="cb-place-people" className="cb-detail-group cb-location-section">
+          <DetailSectionHeading kicker="PERSONE / STORIA DEL TERRITORIO" title="VITE LEGATE ALLA MONTAGNA."
+            description="Nascita, residenza storica e luogo di attività sono relazioni distinte, verificate mediante gli identificativi di Wikidata. Nessuna appartenenza è dedotta dalla sola provincia."/>
+          <div className="cb-person-grid">
+            {place.connectedPeople!.filter(p=>p.verified&&p.category==='montagna').map(p=><article key={p.personId+':'+p.relationType} className="cb-person-card">
+              <div className="cb-person-card-top"><span>ALPINISMO E MONTAGNA</span><span>{p.relationType==='birthplace_of'?'NATA/O QUI':p.relationType==='historical_residence_of'?'RESIDENZA STORICA':'ATTIVITÀ QUI'}</span></div>
+              <h3>{p.name}</h3><p className="cb-person-role">{p.role}</p>
+              {(p.birthDate||p.deathDate)&&<p className="cb-person-dates">{[p.birthDate,p.deathDate].filter(Boolean).join(' – ')}</p>}
+              {p.description&&<p>{p.description}</p>}
+              {p.wikipediaUrl&&<a href={p.wikipediaUrl} target="_blank" rel="noopener noreferrer">Biografia documentata ↗</a>}
+            </article>)}
+          </div>
+          {place.connectedPeople!.some(p=>p.verified&&p.category==='cultura_e_ricerca')&&<>
+            <h3 className="cb-person-section-subtitle">Altre figure del territorio</h3>
+            <div className="cb-person-grid">
+              {place.connectedPeople!.filter(p=>p.verified&&p.category==='cultura_e_ricerca').map(p=><article key={p.personId+':'+p.relationType} className="cb-person-card">
+                <div className="cb-person-card-top"><span>CULTURA E RICERCA</span><span>PERSONA NATA QUI</span></div>
+                <h3>{p.name}</h3><p className="cb-person-role">{p.role}</p>
+                {(p.birthDate||p.deathDate)&&<p className="cb-person-dates">{[p.birthDate,p.deathDate].filter(Boolean).join(' – ')}</p>}
+                {p.description&&<p>{p.description}</p>}
+                {p.wikipediaUrl&&<a href={p.wikipediaUrl} target="_blank" rel="noopener noreferrer">Approfondimento biografico ↗</a>}
+              </article>)}
+            </div>
+          </>}
         </section>}
         <section id="cb-place-weather" className="cb-detail-group cb-location-section" aria-label="Meteo del luogo">
           <AlpineWeatherPanel lat={place.lat} lng={place.lng} name={place.name}/>

@@ -28,7 +28,9 @@ export type AtlasRelationKind =
   | 'accessible_from' | 'managed_by' | 'owned_by' | 'founded_by'
   | 'first_ascended_by' | 'opened_by' | 'overlaps' | 'alternative_to'
   | 'stage_of' | 'previous_stage' | 'next_stage' | 'served_by'
-  | 'recorded_by' | 'restricted_by';
+  | 'recorded_by' | 'restricted_by'
+  | 'born_in' | 'birthplace_of' | 'resided_in' | 'historical_residence_of'
+  | 'worked_in' | 'workplace_of';
 export interface AtlasRelation {
   type: AtlasRelationKind;
   target: { id: string; kind: string; name: string; href?: string };
@@ -50,6 +52,22 @@ export interface AtlasMedia {
   subjectVerified: boolean;
   /** Uso autorizzato dalla licenza/permesso della singola risorsa. */
   reuseAllowed: boolean;
+}
+export interface AtlasPersonConnection {
+  personId:string;
+  qid:string;
+  name:string;
+  relationType:'birthplace_of'|'historical_residence_of'|'workplace_of';
+  category:'montagna'|'cultura_e_ricerca';
+  role:string;
+  birthDate?:string|null;
+  deathDate?:string|null;
+  description?:string;
+  wikipediaUrl?:string|null;
+  sourceId:string;
+  sourceUrl:string;
+  verified:boolean;
+  quality:'G1'|'G2'|'G3';
 }
 export interface AtlasWebcam {
   id: string;
@@ -157,6 +175,8 @@ export interface AtlasEntityMetadata {
   facts?: Record<string, AtlasFact>;
   relations?: AtlasRelation[];
   media?: AtlasMedia[];
+  /** Profili G1 con legame diretto al comune, non persone genericamente vicine. */
+  connectedPeople?: AtlasPersonConnection[];
   webcams?: AtlasWebcam[];
   alerts?: AtlasAlert[];
   history?: string;
@@ -178,6 +198,9 @@ export const ATLAS_RELATION_LABELS: Record<AtlasRelationKind, string> = {
   alternative_to: 'Alternativa a', stage_of: 'Tappa di', previous_stage: 'Tappa precedente',
   next_stage: 'Tappa successiva', served_by: 'Servito da', recorded_by: 'Documentato da',
   restricted_by: 'Soggetto a restrizioni',
+  born_in:'Nato/a a', birthplace_of:'Persona nata qui',
+  resided_in:'Ha risieduto a',historical_residence_of:'Residenza storica di',
+  worked_in:'Ha operato a',workplace_of:'Luogo di attività di',
 };
 export function presentAtlasFacts(facts?: Record<string, AtlasFact>) {
   return Object.entries(facts ?? {}).filter(([, fact]) =>

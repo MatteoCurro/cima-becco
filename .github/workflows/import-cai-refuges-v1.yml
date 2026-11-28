@@ -22,6 +22,7 @@ on:
       - scripts/merge_shelters_for_seo.mjs
       - scripts/build_source_credits.mjs
       - scripts/build_seo.mjs
+      - scripts/import_metrics_v1.mjs
       - src/components/AtlasDossierBlocks.tsx
       - src/components/InfoPage.tsx
   schedule:
@@ -113,13 +114,18 @@ jobs:
             build/import-shelters-v1/report.json
             build/import-shelters-v1/identity-review.json
           retention-days: 21
+      - name: Registra riuscita import CAI e ricoveri nello storico per pipeline
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/import_metrics_v1.mjs rifugi-ricoveri "$GITHUB_RUN_ID" build/release-refuges-v1/report.json
       - name: Versiona soltanto i due JSON pubblici dopo i controlli
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/atlas/cai-refuges-v1.json public/data/atlas/refuges-v1.json public/data/atlas/shelters-v1.json
+          git add public/data/atlas/cai-refuges-v1.json public/data/atlas/refuges-v1.json public/data/atlas/shelters-v1.json public/data/atlas/import-history-rifugi-ricoveri-v1.json
           if ! git diff --cached --quiet; then
             git commit -m "data(atlas): refresh CAI refuges, bivouacs and support shelters"
             # Other files may have been edited in this PR during the slow CAI run.
