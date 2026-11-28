@@ -57,3 +57,6 @@
 .cb-person-card .cb-person-dates{font-size:11px;color:#68806c}
 .cb-person-card a{display:inline-flex;margin:12px 0 0;font:800 11px 'Space Grotesk',sans-serif;color:#c3005d;text-decoration:underline}
 .cb-person-section-subtitle{font:900 21px 'Bricolage Grotesque',sans-serif;color:#214c34;margin:22px 0 10px}
+
+/* Personaggi: la fotografia P18 è archivio pubblico verificato, non avatar utente. */
+.cb-person-portrait{display:block;width:100%;height:clamp(142px,17vw,205px);object-fit:cover;object-position:center 24%;border-radius:6px;margin:13px 0 6px;background:#e3ede0}
