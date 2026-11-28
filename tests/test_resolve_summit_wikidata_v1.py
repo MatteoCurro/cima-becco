@@ -18,7 +18,7 @@ def entity(ident, lat=46.5, lng=12.3, kind="summit"):
 
 def result(gid, qid, lon=12.3, lat=46.5):
     return {"gid":{"value":str(gid)},
-            "item":{"value":"https://www.wikidata.org/entity/"+qid},
+            "item":{"value":"http://www.wikidata.org/entity/"+qid},
             "coordinates":{"value":f"Point({lon} {lat})"}}
 
 
