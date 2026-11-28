@@ -71,6 +71,12 @@ class TestSummitPublication(unittest.TestCase):
         with self.assertRaises(ValueError):
             merge(first,staged([example(gn="101",qid="Q123",slug="another",uid=UUID2)]))
 
+    def test_cross_source_legacy_slug_alias_cannot_redirect_another_peak(self):
+        bad=example()
+        bad['slugAliases']=['gn101-45x10']
+        with self.assertRaises(ValueError):
+            merge(empty_release(),staged([bad]))
+
     def test_bad_photo_or_missing_text_never_promoted(self):
         base=example()
         for mutation in ("photo","text","ambiguity","no_alt","inferred_access"):
