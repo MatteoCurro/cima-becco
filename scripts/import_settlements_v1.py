@@ -66,6 +66,11 @@ def official_rows(data):
         ("tipo_loc", "tipo loc"),
         ("nome",),
     ]
+    if data.startswith((b"\xff\xfe", b"\xfe\xff")):
+        # I file reali LOC_Rxx_21.csv sono UTF-16 con colonne TAB.
+        data = data.decode("utf-16").encode("utf-8")
+    elif b"\x00" in data[:128]:
+        raise ValueError("CSV ISTAT con codifica non riconosciuta")
     try:
         rows, _columns, _preamble = headered_rows(csv_matrix(data), required)
     except ValueError as error:
@@ -160,6 +165,15 @@ def locality(row, *, source_url, checked_at, municipality_by_code):
                     "geolocationMissing": True},
         "checkedAt": checked_at,
     }
+    altitude_raw = value(row, "ALTITUDINE (in metri slm)", "ALTITUDINE")
+    if altitude_raw and re.fullmatch(r"[0-9]+(?:[.,][0-9]+)?", altitude_raw):
+        altitude = float(altitude_raw.replace(",", "."))
+        if math.isfinite(altitude) and 0 <= altitude < 5000:
+            entity["elevationM"] = altitude
+            entity["elevationMethod"] = "istat_reported_locality_2021"
+            entity["facts"]["elevationM"] = fact(
+                altitude, source_id, source_url, unit="m", as_of=checked_at,
+                valid_at="2021-12-31", licence="ISTAT open data")
     if capital is not None:
         entity["facts"]["isMunicipalCapital"] = fact(
             capital, source_id, source_url, as_of=checked_at,
