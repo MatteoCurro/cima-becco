@@ -1,0 +1,31 @@
+{
+  "releaseChannel": "OFFICIAL_LAKE_CENSUS_SOURCE_REGISTRY_G0_V1",
+  "isPublished": false,
+  "seoIndexable": false,
+  "sourceRecordsAreNotDeduplicatedPhysicalLakes": true,
+  "providers": {
+    "bolzano_lakes": {
+      "reportedLayerCount": 351,
+      "regionReportedCount": 351,
+      "validPolygons": 314,
+      "geometryReviewOnly": 37,
+      "observedSourceIds": 351,
+      "reportedHitsReliabilityIssues": [],
+      "regionEnumerationComplete": false,
+      "retrievedAt": "2026-11-28T11:31:10.766943+00:00"
+    },
+    "arpav_water_surfaces": {
+      "reportedLayerCount": null,
+      "regionReportedCount": null,
+      "validPolygons": 82,
+      "geometryReviewOnly": 5,
+      "observedSourceIds": 87,
+      "reportedHitsReliabilityIssues": [
+        "layer: hits 0 less than observed 87",
+        "region: hits 0 less than observed 87"
+      ],
+      "regionEnumerationComplete": false,
+      "retrievedAt": "2026-11-28T11:31:07.276902+00:00"
+    }
+  }
+}
