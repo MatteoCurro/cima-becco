@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "kind": "summit",
   "spec": "docs/MODELLO_METADATI_E_LAYOUT.md section 4",
-  "status": "staging_only",
-  "publishing": "G0/G1 noindex; G2 requires verified identity, enriched dossier and licensed media",
+  "status": "G2_source_verified_and_daily_release_pipeline",
+  "publishing": "Only source-validated G2; duplicate QID/slug, unresolved ID or elevation conflict fail closed; G0/G1 remain map-only noindex",
   "reuse": [
     "public/data/peaks/index.json",
     "public/data/peaks/5-degree tiles",
@@ -20,7 +20,7 @@
       "id": "wikidata",
       "role": "crosswalk through exact P1566",
       "license": "CC0",
-      "status": "supported offline; live source pending"
+      "status": "pilot P1566 and P625 validated on real summits"
     },
     {
       "id": "osm",
@@ -30,7 +30,7 @@
     {
       "id": "commons",
       "role": "photographs",
-      "status": "legacy photos are review-only, not certified"
+      "status": "pilot verified P18 Commons media + author/license"
     },
     {
       "id": "dem",
@@ -77,7 +77,7 @@
     {
       "name": "aliases/localNames",
       "priority": "P1",
-      "status": "pending Wikidata/OSM"
+      "status": "Wikidata multilingual labels imported for G2 (it/en/de where present)"
     },
     {
       "name": "prominenceM",
@@ -92,7 +92,7 @@
     {
       "name": "relations.near",
       "priority": "P1",
-      "status": "haversine, unverified physical access"
+      "status": "linked verified atlas coordinates, distance only; never accessible_from"
     },
     {
       "name": "relations.accessible_from/ascends_to",
@@ -107,7 +107,7 @@
     {
       "name": "media",
       "priority": "P1",
-      "status": "unverified GeoNames-cache files not public"
+      "status": "G2 verified Commons P18 with author and per-file license"
     },
     {
       "name": "geology/protection",
@@ -119,5 +119,13 @@
       "priority": "P2/P0",
       "status": "future separate TTL"
     }
-  ]
+  ],
+  "release": {
+    "batchSize": 100,
+    "frequency": "daily 05:20 UTC",
+    "deployment": "GitHub Pages only after verified G2 merge and build checks",
+    "canonicalPath": "/cime/<slug>/",
+    "legacyAliases": "/place/gn<geonameid>-<tile>/",
+    "identityOnMap": "existing gn... slug"
+  }
 }
