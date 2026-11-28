@@ -295,7 +295,7 @@ export function PlaceDetail({ place, onBack }: { place: AlpinePlace; onBack: str
           <DetailSectionHeading kicker="ARCHIVIO / MEMORIA DEL LUOGO" title="IERI E OGGI."
             description="Fotografie con data storica documentata e soggetto identificato su Wikimedia Commons; non attribuiamo date alle immagini prive di riscontri."/>
           <div className="cb-location-history-gallery">
-            {todayImage&&<figure><img src={todayImage.url} alt={'Veduta attuale documentata di '+place.name} loading="lazy"/><figcaption>Il luogo oggi · fotografia di riferimento</figcaption></figure>}
+            {todayImage&&<figure><img src={todayImage.url} alt={'Fotografia di riferimento di '+place.name} loading="lazy"/><figcaption>Veduta di riferimento · data dello scatto non disponibile</figcaption></figure>}
             {archivalImages.map(image=><figure key={image.id}>
               <img src={image.url} alt={'Fotografia storica di '+place.name+' del '+image.capturedAt} loading="lazy"/>
               <figcaption>{image.caption||'Fotografia storica di '+place.name}{image.capturedAt?' · '+image.capturedAt:''}</figcaption>
