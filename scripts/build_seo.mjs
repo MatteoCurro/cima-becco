@@ -766,6 +766,11 @@ for(const e of municipalities) {
   const linked=(e.relations||[]).filter(r=>r.type==='near'&&r.target?.slug&&r.straightLineKm!=null&&
     ['refuge','bivouac','shelter'].includes(r.target.kind)).slice(0,8);
   const fields=[['Regione',region],['Provincia',province],
+    ['Altitudine (quota riportata)',e.facts?.quotaCentroM?.value??e.facts?.elevationReportedM?.value],
+    ['Quota minima territorio (m)',e.facts?.altitudineTerritorioMinM?.value],
+    ['Quota media territorio (m)',e.facts?.altitudineTerritorioMediaM?.value],
+    ['Quota massima territorio (m)',e.facts?.altitudineTerritorioMaxM?.value],
+    ['Superficie comunale (km²)',e.facts?.superficieKm2?.value],
     ['Sindaco riportato dal DAIT',e.facts?.sindacoNome?.value],
     ['In carica dal (DAIT)',e.facts?.mandatoInizio?.value],
     ['Sito istituzionale indicato',e.facts?.sitoUfficiale?.value]].filter(([,v])=>v!=null&&v!=='');
@@ -776,6 +781,16 @@ for(const e of municipalities) {
     [['Provincia',province],['Regione',region],['Coordinate',p.lat.toFixed(4)+', '+p.lng.toFixed(4)],
      ['Rifugi e bivacchi vicini',String(linked.length)]].map(([label,value])=>
       '<li><strong>'+escape(value)+'</strong>'+escape(label)+'</li>').join('')+'</ul>';
+  const people=(e.connectedPeople||[]).filter(p=>p.verified&&p.quality==='G1'&&p.personId&&p.name);
+  const peopleHtml=people.length?'<section class="cima-seo-related"><h2>Personaggi nati o legati al territorio</h2>'+
+     '<p>Il luogo di nascita, la residenza storica e l’attività documentata sono relazioni diverse; nessuna connessione è ricavata dalla sola provincia.</p>'+
+     people.map(person=>'<article><strong>'+escape(person.name)+'</strong> · '+
+       escape(person.role||'')+' · '+escape(person.relationType==='birthplace_of'?'Nata/o qui':
+       person.relationType==='historical_residence_of'?'Residenza storica':'Luogo di attività')+
+       (person.birthDate?' · '+escape(person.birthDate):'')+
+       (person.description?'<p>'+escape(person.description)+'</p>':'')+
+       (person.wikipediaUrl?'<a href="'+escape(person.wikipediaUrl)+'">Biografia documentata</a>':'')+
+       '</article>').join('')+'</section>':'';
   const linkedHtml=linked.length?'<section class="cima-seo-related"><h2>Rifugi e bivacchi nei dintorni</h2>'+
     linked.map(r=>'<a href="'+SITE+'/'+(r.target.kind==='refuge'?'rifugi':'bivacchi')+'/'+
        encodeURIComponent(r.target.slug)+'/"><strong>'+escape(r.target.name)+'</strong><small>'+
@@ -791,6 +806,8 @@ for(const e of municipalities) {
        identifier:{'@type':'PropertyValue',propertyID:'ISTAT',value:id},
        geo:{'@type':'GeoCoordinates',latitude:p.lat,longitude:p.lng},
        image:photo.url,
+       ...(typeof (e.facts?.quotaCentroM?.value??e.facts?.elevationReportedM?.value)==='number'?
+         {elevation:{'@type':'QuantitativeValue',value:e.facts?.quotaCentroM?.value??e.facts?.elevationReportedM?.value,unitCode:'MTR'}}:{}),
        ...(e.facts?.sitoUfficiale?.value?{sameAs:e.facts.sitoUfficiale.value}:{})},
       breadcrumbLd([['Comuni',SITE+'/comuni/'],[e.name,null]])
     ]},
@@ -804,7 +821,7 @@ for(const e of municipalities) {
       fields.map(([label,v])=>'<div><dt>'+escape(label)+'</dt><dd>'+escape(v)+'</dd></div>').join('')+
       '</dl></section>'+
       (logo?'<figure><img src="'+escape(logo.url)+'" alt="'+escape('Stemma di '+e.name)+'" loading="lazy" width="110"></figure>':'')+
-      linkedHtml+
+      peopleHtml+linkedHtml+
       '<p class="sub">La distanza dai rifugi è in linea d’aria; non attesta sentieri o accessibilità.</p>',
   });
   // Explicit migration for an OSM municipality identity that was once a "borgo".
