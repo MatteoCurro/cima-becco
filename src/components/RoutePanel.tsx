@@ -17,7 +17,7 @@ import { routePresentationCategory } from '../lib/routeClassification';
 import { hasRealElevation, terrainElevations } from '../lib/terrain';
 import { assessRoute } from '../lib/routeQuality';
 import { toGpx } from '../lib/gpx';
-import { ACTIVITY_LABEL, findOverlaps, routeActivity, routeFingerprint, type RouteOverlap } from '../lib/routeAnalysis';
+import { findOverlaps, routeActivity, routeFingerprint, type RouteOverlap } from '../lib/routeAnalysis';
 import { errorText, publicUrl, uploadRouteThumb, SUPABASE_CONFIGURED } from '../lib/api';
 import { editMyRoute, useAuthUser } from '../lib/auth';
 import { updateMyRoute, useMyRoutes } from '../lib/myRoutes';
