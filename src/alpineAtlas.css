@@ -248,3 +248,16 @@
   .cb-lake-source-fact-list{grid-template-columns:1fr}
   .cb-lake-preview-topo{min-height:180px}
 }
+
+
+/* Lake G1 identified records: same atlas hierarchy, no artificial shoreline. */
+.cb-lake-map-key .cb-lake-key-g1{background:#82c8bd70;border:2px solid #25816c}
+.cb-lake-g1-grid .cb-atlas-card{overflow:hidden}
+.cb-lake-g1-grid .cb-atlas-card-photo{object-fit:cover;aspect-ratio:16/10}
+.cb-lake-g1-card-placeholder{display:flex;align-items:center;justify-content:center;
+  min-height:165px;margin:9px 0 12px;background:linear-gradient(145deg,#e3efdf,#c2d8cc);
+  color:#578a7b;border:1px solid #c7ddd0;border-radius:5px;
+  font:900 110px/.75 'Bricolage Grotesque',sans-serif;transform:translateZ(0)}
+.cb-lake-g1-grid .cb-atlas-card-go{margin-top:auto}
+.cb-lake-g1-grid .cb-atlas-card:hover .cb-lake-g1-card-placeholder{background:#d5eadd}
+@media(max-width:550px){.cb-lake-g1-card-placeholder{min-height:122px;font-size:88px}}
