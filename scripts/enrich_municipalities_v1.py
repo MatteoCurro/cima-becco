@@ -33,7 +33,7 @@ QID = re.compile(r"Q[1-9]\d*")
 PHOTO_EXT = re.compile(r"\.(jpe?g|png|webp|tiff?)$", re.I)
 SYMBOL_EXT = re.compile(r"\.(jpe?g|png|webp|tiff?|svg)$", re.I)
 # No file named "map"/"coat of arms" promoted as a landscape.
-NON_PHOTO = re.compile(r"(^|[\s_-])(stemma|wappen|coat.of.arms|flag|bandiera|mappa|map|locator|logo|svg)([\s_.-]|$)",re.I)
+NON_PHOTO = re.compile(r"(^|[\s_-])(stemma|wappen|coat.of.arms|flag|bandiera|mappa|map|maps|locator|logo|svg|mkl|lexikon|encyklop[a-z]*|encyclop[a-z]*|illustraz[a-z]*|illustrat[a-z]*|incision[a-z]*|engraving|etching|stampa|dipinto)([\s_.-]|$)",re.I)
 ALLOWED_LICENSES = {"CC0", "Public domain", "Public Domain", "CC BY 2.0",
                     "CC BY 3.0", "CC BY 4.0", "CC BY-SA 3.0", "CC BY-SA 4.0"}
 ALPINE_PROVINCES = {"BL","TN","BZ","SO","AO","UD","PN","VI","VR","CO","LC","BG","BS","VB","CN","TO","TV","BI"}
