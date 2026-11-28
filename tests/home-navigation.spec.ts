@@ -47,3 +47,11 @@ test('Rotellina: scorrimento verticale della pagina e carosello accessibile',asy
   await page.mouse.wheel(0,410);
   await expect.poll(()=>page.evaluate(()=>window.scrollY)).toBeGreaterThan(before);
 });
+
+test('Ricerca cime: trova una vetta non presente fra le 74 vette in evidenza',async({page})=>{
+  await page.goto('/');
+  const search=page.getByRole('searchbox',{name:/Cerca una cima, un sentiero/});
+  await search.fill('Monte Piana');
+  await expect(page.locator('.searchbar-results .result-name').filter({hasText:/^Monte Piana$/}).first())
+    .toBeVisible({timeout:30_000});
+});
